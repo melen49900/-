@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>急診教學個案評估暨資料庫系統</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;color:#1a2332;min-height:100vh}
+header{background:#0F6E56;color:white;padding:1rem 2rem;display:flex;align-items:center;gap:12px}
+header h1{font-size:17px;font-weight:500;letter-spacing:.02em}
+header p{font-size:12px;opacity:.7;margin-top:2px}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #e2e8f0;padding:0 2rem}
+.tab{padding:12px 20px;font-size:13px;font-weight:500;color:#64748b;border-bottom:2px solid transparent;cursor:pointer;transition:.15s}
+.tab.active{color:#0F6E56;border-bottom-color:#0F6E56}
+.content{max-width:860px;margin:0 auto;padding:1.5rem}
+
+.section-label{font-size:11px;font-weight:600;letter-spacing:.08em;color:#64748b;text-transform:uppercase;margin-bottom:10px}
+.item-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1rem 1.25rem;margin-bottom:8px}
+.item-head{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
+.num{width:26px;height:26px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#475569;flex-shrink:0;margin-top:1px}
+.item-name{font-size:14px;font-weight:500;color:#1e293b;line-height:1.4}
+.item-hint{font-size:11px;color:#94a3b8;margin-top:3px;line-height:1.5}
+.score-wrap{display:flex;align-items:center;gap:10px}
+.score-ticks{display:flex;justify-content:space-between;font-size:10px;color:#cbd5e1;margin-bottom:3px}
+input[type=range]{width:100%;accent-color:#1D9E75}
+.score-num{font-size:22px;font-weight:600;color:#1e293b;min-width:26px;text-align:right}
+
+.result-panel{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;margin:1rem 0}
+.result-top{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.big-score{font-size:36px;font-weight:700;color:#1e293b}
+.max-score{font-size:16px;color:#94a3b8}
+.prog-track{height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:width .3s,background .3s}
+.verdict{font-size:13px;color:#475569;margin-top:8px;line-height:1.6}
+.warn-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.wtag{font-size:11px;font-weight:500;padding:2px 8px;border-radius:6px;background:#fef2f2;color:#991b1b}
+
+.form-panel{border:2px solid #1D9E75;border-radius:12px;padding:1.25rem;margin-top:1rem;background:#f0faf6}
+.form-panel-title{font-size:14px;font-weight:600;color:#065f46;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.score-chips{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px}
+.chip{background:#fff;border:1px solid #a7f3d0;border-radius:8px;padding:6px 4px;text-align:center}
+.chip-lbl{font-size:10px;color:#065f46}
+.chip-val{font-size:17px;font-weight:700;color:#047857}
+.chip.total{background:#d1fae5}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid .full{grid-column:1/-1}
+.fld label{display:block;font-size:11px;font-weight:600;color:#065f46;margin-bottom:4px}
+.fld input,.fld select{width:100%;padding:8px 10px;border:1px solid #a7f3d0;border-radius:8px;font-size:13px;background:#fff;color:#1e293b;outline:none}
+.fld input:focus,.fld select:focus{border-color:#1D9E75;box-shadow:0 0 0 3px rgba(29,158,117,.12)}
+.submit-btn{margin-top:12px;width:100%;padding:11px;font-size:14px;font-weight:600;background:#1D9E75;color:white;border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
+.submit-btn:hover{background:#0F6E56}
+.submit-btn:disabled{background:#94a3b8;cursor:not-allowed}
+.err-msg{font-size:12px;color:#b91c1c;margin-top:6px}
+.ok-msg{background:#d1fae5;border:1px solid #6ee7b7;border-radius:10px;padding:1rem 1.25rem;margin-top:1rem;font-size:13px;color:#065f46;display:none}
+
+/* 設定提示區塊 */
+.setup-banner{background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.25rem;font-size:13px;color:#92400e}
+.setup-banner strong{display:block;margin-bottom:6px;font-size:14px}
+.setup-banner input{width:100%;margin-top:8px;padding:8px 10px;border:1px solid #fcd34d;border-radius:8px;font-size:13px;background:#fff;color:#1e293b;outline:none}
+.setup-banner input:focus{border-color:#d97706}
+.setup-banner .save-url-btn{margin-top:8px;padding:7px 16px;background:#d97706;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.setup-banner .save-url-btn:hover{background:#b45309}
+.url-ok{color:#065f46;background:#d1fae5;border-color:#6ee7b7}
+
+.toolbar{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.toolbar input{flex:1;min-width:160px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;background:#fff;color:#1e293b}
+.toolbar input:focus{border-color:#1D9E75}
+.toolbar select{padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:#fff;color:#1e293b;outline:none}
+.refresh-btn{padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:#fff;color:#475569;cursor:pointer;display:flex;align-items:center;gap:6px}
+.refresh-btn:hover{background:#f8fafc}
+.case-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1rem 1.25rem;margin-bottom:8px}
+.case-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+.case-diag{font-size:15px;font-weight:600;color:#1e293b}
+.score-pill{font-size:13px;font-weight:700;padding:3px 12px;border-radius:99px;background:#d1fae5;color:#065f46;white-space:nowrap}
+.case-meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:#64748b;margin-bottom:8px}
+.case-meta span{display:flex;align-items:center;gap:4px}
+.sc-row{display:flex;gap:5px;flex-wrap:wrap}
+.sc{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:2px 8px;font-size:11px;color:#64748b}
+.sc b{color:#1e293b;font-weight:600}
+.empty{text-align:center;padding:3rem;color:#94a3b8;font-size:14px}
+.count-tag{font-size:12px;background:#f1f5f9;color:#64748b;padding:3px 10px;border-radius:6px;margin-left:auto}
+.phead{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.ptitle{font-size:18px;font-weight:700;color:#1e293b}
+.psub{font-size:13px;color:#64748b;margin-bottom:1.25rem}
+.del-btn{font-size:11px;color:#ef4444;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;opacity:.6}
+.del-btn:hover{opacity:1;background:#fef2f2}
+.loading-row{text-align:center;padding:2rem;color:#94a3b8;font-size:13px}
+</style>
+</head>
+<body>
+
+<header>
+  <i class="ti ti-heart-rate-monitor" style="font-size:22px"></i>
+  <div>
+    <h1>急診教學研究個案評估暨資料庫系統</h1>
+    <p>Emergency Medicine Teaching Case Selection &amp; Registry</p>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" id="tab-eval" onclick="switchTab('eval')">
+    <i class="ti ti-clipboard-check" style="font-size:14px;margin-right:5px;vertical-align:-2px"></i>評估登錄
+  </div>
+  <div class="tab" id="tab-reg" onclick="switchTab('reg')">
+    <i class="ti ti-database" style="font-size:14px;margin-right:5px;vertical-align:-2px"></i>個案查詢
+  </div>
+
+</div>
+
+<!-- EVAL TAB -->
+<div id="pane-eval" class="content">
+  <p class="section-label">篩選評估 — 各項 0–5 分 | 門檻：總分 ≥ 16 且前三項皆 ≥ 3</p>
+  <div id="items-container"></div>
+
+  <div class="result-panel">
+    <div class="result-top">
+      <span class="big-score" id="total-score">0</span>
+      <span class="max-score">/ 25</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-bottom:4px">
+      <span>0</span><span>篩選門檻 16</span><span>25</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%;background:#cbd5e1"></div></div>
+    <div class="verdict" id="verdict">請開始評分以取得結果。</div>
+    <div class="warn-tags" id="warn-tags"></div>
+  </div>
+
+  <div class="form-panel" id="patient-form" style="display:none">
+    <div class="form-panel-title">
+      <i class="ti ti-circle-check" style="font-size:18px;color:#1D9E75"></i>個案達標，請填寫病患資料登錄
+    </div>
+    <div class="score-chips" id="score-chips"></div>
+    <div class="form-grid">
+      <div class="fld"><label>就診日期</label><input type="date" id="f-date"/></div>
+      <div class="fld"><label>病歷號</label><input type="text" id="f-mrn" placeholder="例：A123456789"/></div>
+      <div class="fld"><label>性別</label>
+        <select id="f-gender"><option value="">請選擇</option><option>男</option><option>女</option><option>其他</option></select>
+      </div>
+      <div class="fld"><label>年齡（歲）</label><input type="number" id="f-age" min="0" max="120" placeholder="65"/></div>
+      <div class="fld full"><label>主要診斷 / 個案說明</label><input type="text" id="f-diag" placeholder="例：急性心肌梗塞合併心因性休克"/></div>
+      <div class="fld full"><label>登錄者姓名</label><input type="text" id="f-sub" placeholder="例：王大明 實習醫師"/></div>
+    </div>
+    <button class="submit-btn" id="submit-btn" onclick="submitCase()">
+      <i class="ti ti-database-plus" style="font-size:16px"></i>登錄至 Google Sheets 資料庫
+    </button>
+    <p class="err-msg" id="err-msg"></p>
+  </div>
+
+  <div class="ok-msg" id="ok-msg">
+    <i class="ti ti-circle-check" style="font-size:16px;margin-right:6px;vertical-align:-2px;color:#059669"></i>
+    <strong>個案已成功登錄至 Google Sheets！</strong>請點「個案查詢」分頁或直接到試算表查看。
+  </div>
+
+  <button onclick="resetAll()" style="margin-top:12px;font-size:13px;padding:7px 14px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#475569;cursor:pointer">
+    <i class="ti ti-refresh" style="font-size:14px;margin-right:4px;vertical-align:-2px"></i>重設分數
+  </button>
+</div>
+
+<!-- REGISTRY TAB -->
+<div id="pane-reg" class="content" style="display:none">
+  <div class="phead">
+    <p class="ptitle">個案資料庫</p>
+    <span class="count-tag" id="count-tag">0 筆</span>
+  </div>
+  <p class="psub">已通過篩選評估（總分 ≥ 16，前三項 ≥ 3）的高價值教學個案</p>
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="搜尋診斷、病歷號、登錄者..." oninput="filterRender()"/>
+    <select id="f-sex" onchange="filterRender()"><option value="">所有性別</option><option>男</option><option>女</option><option>其他</option></select>
+    <select id="f-sort" onchange="filterRender()">
+      <option value="newest">最新登錄</option>
+      <option value="score">總分高→低</option>
+      <option value="oldest">最舊登錄</option>
+    </select>
+    <button class="refresh-btn" onclick="loadCases()"><i class="ti ti-refresh" style="font-size:14px"></i>重新整理</button>
+  </div>
+  <div id="list-area"><p class="empty">請先載入資料。</p></div>
+</div>
+
+<script>
+const ITEMS=[
+  {num:1,key:'ems',   label:'院前與檢傷（EMS & Triage）',            hint:'0分：自行就醫／紀錄空白｜5分：救護車處置關鍵且檢傷具教學對比價值'},
+  {num:2,key:'ed',    label:'急診急救處置（ED Resuscitation）',       hint:'0分：僅開藥離院｜5分：包含插管、CVC、大量輸血或緊急手術啟動'},
+  {num:3,key:'prog',  label:'預後追蹤可行性（Prognosis & Follow-up）',hint:'0分：自動離院／失聯｜5分：住院病歷完整，有明確治療結局可供分析'},
+  {num:4,key:'dx',    label:'病史與診斷價值（History & Diagnosis）',  hint:'0分：診斷模糊且無檢查異常｜5分：檢驗數據與影像極具臨床教育意義'},
+  {num:5,key:'ethics',label:'倫理與決策反思（Ethics & Communication）',hint:'0分：常規處置無特殊爭議｜5分：涉及高難度醫病溝通或複雜臨床倫理決策'}
+];
+const SHORT=['EMS','急救','追蹤','診斷','倫理'];
+const scores={ems:0,ed:0,prog:0,dx:0,ethics:0};
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbz_AKgGAnb48PhTnxnnkluybz7dU88IxNIwxH5uDS9JD4K4EAPJ6ehxqtbSxWDX7OWV/exec';
+let allCases=[];
+
+function getUrl(){return SCRIPT_URL;}
+function saveUrl(){
+  const v=document.getElementById('script-url-input').value.trim();
+  if(!v||!v.startsWith('https://')){document.getElementById('url-status').textContent='請輸入有效的 https:// 網址';return;}
+  localStorage.setItem(URL_KEY,v);
+  document.getElementById('url-status').style.color='#059669';
+  document.getElementById('url-status').textContent='✓ 已儲存';
+  checkUrlBanner();
+}
+function checkUrlBanner(){
+  const ok=!!getUrl();
+  const b=document.getElementById('no-url-banner');
+  if(b) b.style.display=ok?'none':'block';
+}
+function testConnection(){
+  const url=getUrl();
+  const st=document.getElementById('url-status');
+  if(!url){st.textContent='請先儲存網址';return;}
+  st.style.color='#64748b';st.textContent='測試中...';
+  fetch(url+'?action=list')
+    .then(r=>r.json())
+    .then(d=>{
+      if(d.success){st.style.color='#059669';st.textContent='✓ 連線成功，目前有 '+d.cases.length+' 筆個案';}
+      else{st.style.color='#b91c1c';st.textContent='連線失敗：'+d.error;}
+    })
+    .catch(()=>{st.style.color='#b91c1c';st.textContent='無法連線，請確認網址並重新部署';});
+}
+
+function switchTab(t){
+  ['eval','reg','setup'].forEach(p=>{
+    document.getElementById('pane-'+p).style.display=p===t?'block':'none';
+    document.getElementById('tab-'+p).className='tab'+(p===t?' active':'');
+  });
+  if(t==='reg') loadCases();
+  if(t==='setup'){
+    const u=getUrl();
+    if(u) document.getElementById('script-url-input').value=u;
+  }
+}
+
+function buildItems(){
+  const c=document.getElementById('items-container');
+  ITEMS.forEach(item=>{
+    const d=document.createElement('div');
+    d.className='item-card';
+    d.innerHTML=`<div class="item-head"><div class="num">${item.num}</div><div><div class="item-name">${item.label}</div><div class="item-hint">${item.hint}</div></div></div>
+    <div class="score-wrap"><div style="flex:1"><div class="score-ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+    <input type="range" min="0" max="5" step="1" value="0" id="sl-${item.key}" oninput="upd('${item.key}',this.value)"></div>
+    <div class="score-num" id="v-${item.key}">0</div></div>`;
+    c.appendChild(d);
+  });
+}
+
+function upd(key,val){scores[key]=parseInt(val);document.getElementById('v-'+key).textContent=val;render();}
+
+function render(){
+  const total=Object.values(scores).reduce((a,b)=>a+b,0);
+  document.getElementById('total-score').textContent=total;
+  const pct=Math.round((total/25)*100);
+  const fill=document.getElementById('prog-fill');
+  fill.style.width=pct+'%';
+  const top3=[scores.ems,scores.ed,scores.prog];
+  const top3ok=top3.every(s=>s>=3);
+  const totalok=total>=16;
+  let color,html;
+  if(total===0){fill.style.background='#cbd5e1';document.getElementById('verdict').innerHTML='請開始評分以取得結果。';document.getElementById('warn-tags').innerHTML='';document.getElementById('patient-form').style.display='none';return;}
+  if(totalok&&top3ok){color='#1D9E75';html='<strong>✓ 高價值個案</strong>　總分 '+total+' 分，前三項 '+top3.join('／')+'，符合期中報告篩選建議。';}
+  else if(totalok){color='#d97706';html='<strong>⚠ 總分達標，前三項有不足</strong>　前三項 '+top3.join('／')+' 分。';}
+  else if(top3ok){color='#d97706';html='<strong>⚠ 前三項達標，總分不足</strong>　總分 '+total+' / 25。';}
+  else{color='#ef4444';html='<strong>✗ 不符篩選門檻</strong>　總分 '+total+'，前三項 '+top3.join('／')+' 分。';}
+  fill.style.background=color;
+  document.getElementById('verdict').innerHTML=html;
+  const warns=[];
+  if(!totalok)warns.push('總分 '+total+' 未達 16');
+  if(scores.ems<3)warns.push('項目1 得 '+scores.ems+' 分');
+  if(scores.ed<3)warns.push('項目2 得 '+scores.ed+' 分');
+  if(scores.prog<3)warns.push('項目3 得 '+scores.prog+' 分');
+  document.getElementById('warn-tags').innerHTML=warns.map(w=>`<span class="wtag">${w}</span>`).join('');
+  const passed=totalok&&top3ok;
+  document.getElementById('patient-form').style.display=passed?'block':'none';
+  if(passed)buildChips(total);
+}
+
+function buildChips(total){
+  const keys=['ems','ed','prog','dx','ethics'];
+  document.getElementById('score-chips').innerHTML=
+    keys.map((k,i)=>`<div class="chip"><div class="chip-lbl">${SHORT[i]}</div><div class="chip-val">${scores[k]}</div></div>`).join('')+
+    `<div class="chip total"><div class="chip-lbl">總分</div><div class="chip-val">${total}</div></div>`;
+}
+
+async function submitCase(){
+  const date=document.getElementById('f-date').value;
+  const mrn=document.getElementById('f-mrn').value.trim();
+  const gender=document.getElementById('f-gender').value;
+  const age=document.getElementById('f-age').value;
+  const diag=document.getElementById('f-diag').value.trim();
+  const sub=document.getElementById('f-sub').value.trim();
+  const err=document.getElementById('err-msg');
+  if(!date||!mrn||!gender||!age||!diag||!sub){err.textContent='請填寫所有欄位後再登錄。';return;}
+  const url=getUrl();
+  if(!url){err.textContent='尚未設定 Apps Script 網址，請先到「設定」分頁完成設定。';return;}
+  err.textContent='';
+  const btn=document.getElementById('submit-btn');
+  btn.disabled=true;
+  btn.innerHTML='<i class="ti ti-loader" style="font-size:16px"></i>登錄中...';
+  const total=Object.values(scores).reduce((a,b)=>a+b,0);
+  const payload={action:'add',date,mrn,gender,age:parseInt(age),diagnosis:diag,submitter:sub,scores:{...scores},total};
+  try{
+    const res=await fetch(url,{method:'POST',body:JSON.stringify(payload)});
+    const data=await res.json();
+    if(data.success){
+      document.getElementById('patient-form').style.display='none';
+      document.getElementById('ok-msg').style.display='block';
+    } else {
+      err.textContent='登錄失敗：'+data.error;
+      btn.disabled=false;
+      btn.innerHTML='<i class="ti ti-database-plus" style="font-size:16px"></i>登錄至 Google Sheets 資料庫';
+    }
+  } catch(e){
+    err.textContent='網路錯誤，請確認 Apps Script 網址是否正確。';
+    btn.disabled=false;
+    btn.innerHTML='<i class="ti ti-database-plus" style="font-size:16px"></i>登錄至 Google Sheets 資料庫';
+  }
+}
+
+function resetAll(){
+  ITEMS.forEach(i=>{scores[i.key]=0;const s=document.getElementById('sl-'+i.key);if(s)s.value=0;const v=document.getElementById('v-'+i.key);if(v)v.textContent='0';});
+  document.getElementById('patient-form').style.display='none';
+  document.getElementById('ok-msg').style.display='none';
+  document.getElementById('err-msg').textContent='';
+  render();
+}
+
+async function loadCases(){
+  const url=getUrl();
+  const area=document.getElementById('list-area');
+  if(!url){area.innerHTML='<p class="empty"><i class="ti ti-settings" style="font-size:28px;display:block;margin-bottom:8px;color:#cbd5e1"></i>請先到「設定」分頁完成 Google Sheets 連線設定。</p>';return;}
+  area.innerHTML='<p class="loading-row"><i class="ti ti-loader" style="font-size:18px;margin-right:6px;vertical-align:-2px"></i>載入中...</p>';
+  try{
+    const res=await fetch(url+'?action=list');
+    const data=await res.json();
+    if(data.success){allCases=data.cases||[];filterRender();}
+    else{area.innerHTML='<p class="empty">載入失敗：'+data.error+'</p>';}
+  } catch(e){
+    area.innerHTML='<p class="empty">無法連線至 Google Sheets，請確認設定。</p>';
+  }
+}
+
+function filterRender(){
+  const q=(document.getElementById('search')||{value:''}).value.toLowerCase().trim();
+  const g=(document.getElementById('f-sex')||{value:''}).value;
+  const s=(document.getElementById('f-sort')||{value:'newest'}).value;
+  let list=allCases.filter(c=>{
+    const mq=!q||String(c.diagnosis).toLowerCase().includes(q)||String(c.mrn).toLowerCase().includes(q)||String(c.submitter).toLowerCase().includes(q);
+    const mg=!g||c.gender===g;
+    return mq&&mg;
+  });
+  if(s==='newest')list.sort((a,b)=>Number(b.id)-Number(a.id));
+  else if(s==='oldest')list.sort((a,b)=>Number(a.id)-Number(b.id));
+  else list.sort((a,b)=>Number(b.total)-Number(a.total));
+  document.getElementById('count-tag').textContent=list.length+' 筆';
+  const area=document.getElementById('list-area');
+  if(list.length===0){
+    area.innerHTML='<p class="empty">'+(allCases.length===0?'<i class="ti ti-database-off" style="font-size:28px;display:block;margin-bottom:8px;color:#cbd5e1"></i>尚無登錄個案。':'找不到符合條件的個案。')+'</p>';
+    return;
+  }
+  area.innerHTML=list.map(c=>renderCard(c)).join('');
+}
+
+function renderCard(c){
+  const dt=c.date?String(c.date).replace(/-/g,'/'):'—';
+  const sc=['ems','ed','prog','dx','ethics'].map((k,i)=>`<span class="sc">${SHORT[i]} <b>${(c.scores||{})[k]??'—'}</b></span>`).join('');
+  return `<div class="case-card">
+    <div class="case-top"><span class="case-diag">${esc(c.diagnosis||'—')}</span><span class="score-pill">${c.total} / 25</span></div>
+    <div class="case-meta">
+      <span><i class="ti ti-calendar" style="font-size:13px"></i>${dt}</span>
+      <span><i class="ti ti-id-badge" style="font-size:13px"></i>${esc(c.mrn||'—')}</span>
+      <span><i class="ti ti-user" style="font-size:13px"></i>${esc(c.gender||'—')}，${c.age??'—'} 歲</span>
+      <span><i class="ti ti-pencil" style="font-size:13px"></i>${esc(c.submitter||'—')}</span>
+      <span><i class="ti ti-clock" style="font-size:13px"></i>${esc(c.createdAt||'—')}</span>
+      <button class="del-btn" onclick="delCase('${c.id}')"><i class="ti ti-trash" style="font-size:13px;margin-right:3px;vertical-align:-2px"></i>刪除</button>
+    </div>
+    <div class="sc-row">${sc}</div>
+  </div>`;
+}
+
+async function delCase(id){
+  if(!confirm('確定刪除此筆個案？'))return;
+  const url=getUrl();
+  if(!url)return;
+  try{
+    const res=await fetch(url,{method:'POST',body:JSON.stringify({action:'delete',id})});
+    const data=await res.json();
+    if(data.success) loadCases();
+    else alert('刪除失敗：'+data.error);
+  } catch(e){alert('網路錯誤');}
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+buildItems();
+</script>
+</body>
+</html>
