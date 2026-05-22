@@ -8499,7 +8499,24 @@ function init() {
   }, 5000); // 每 5 秒檢查一次
   updateQuestPendingBadge();
   // 嘗試自動載入題庫
-  fetch('./questions.json').then(r=>r.json()).then(data=>{ questionsData=data; }).catch(()=>{});
+  fetch('./questions.json').then(r=>r.json()).then(data=>{
+    questionsData = data;
+    const subjectMap = {'數學':'math','國文':'chinese','英文':'english','自然':'science','地理':'geography'};
+    if (!state.customQ) state.customQ = {math:[],chinese:[],english:[],science:[],geography:[]};
+    state.customQ = {math:[],chinese:[],english:[],science:[],geography:[]};
+    (data.questions||[]).forEach(item=>{
+      const sub = subjectMap[item.category];
+      if (!sub) return;
+      const q = (item.question||'').trim();
+      const ans = (item.answer||'').trim();
+      const opts = (item.options||[]).filter(Boolean);
+      if (!q||!ans||opts.length<2) return;
+      if (!opts.includes(ans)) opts[0]=ans;
+      state.customQ[sub].push({q,ans,opts,...(item.image?{img:item.image}:{})});
+    });
+    _dirty=true; doSave();
+    loadQuestion();
+  }).catch(()=>{});
   setInterval(doSave, 15000);
   // ── 每日簽到 ──────────────────────────────────────
   (function doCheckin() {
