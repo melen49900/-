@@ -5325,7 +5325,10 @@ function loadFromStorage() {
     if (data.state?.skillStacks) state.skillStacks = data.state.skillStacks;
     if (data.state?.skillMilestoneClaimed) state.skillMilestoneClaimed = data.state.skillMilestoneClaimed;
     if (data.state?.battle)    Object.assign(state.battle, data.state.battle);
-    if (data.state?.clearedStages) state.clearedStages = data.state.clearedStages;
+    if (data.state?.quiz) {
+      Object.assign(state.quiz, data.state.quiz);
+      state.quiz.queue = [];
+    }
     if (data.state?.quiz)      Object.assign(state.quiz, data.state.quiz);
     if (data.state?.customQ)      state.customQ = data.state.customQ;
     if (data.state?.editedBuiltin) state.editedBuiltin = data.state.editedBuiltin;
