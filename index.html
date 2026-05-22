@@ -2905,7 +2905,7 @@ function checkAnswer(selected) {
     state.quiz.streak++;
     state.stats.maxStreak = Math.max(state.stats.maxStreak || 0, state.quiz.streak);
     updateQuestProgress('streak', state.quiz.streak);
-    const gems = Math.floor(GEM_STREAK_BONUS / 5 * state.quiz.streak) + GEM_PER_CORRECT;
+    const gems = Math.floor(GEM_STREAK_BONUS / 10 * state.quiz.streak) + GEM_PER_CORRECT;
     const exp  = Math.floor(25  + 5 *( 1 + state.hero.level / 20)* state.quiz.streak);
     const gold = Math.floor(100 + 6 *( 1 + state.hero.level / 20)* state.quiz.streak);
     state.hero.gems += gems;
