@@ -8503,7 +8503,6 @@ function init() {
     questionsData = data;
     const subjectMap = {'數學':'math','國文':'chinese','英文':'english','自然':'science','地理':'geography'};
     if (!state.customQ) state.customQ = {math:[],chinese:[],english:[],science:[],geography:[]};
-    state.customQ = {math:[],chinese:[],english:[],science:[],geography:[]};
     (data.questions||[]).forEach(item=>{
       const sub = subjectMap[item.category];
       if (!sub) return;
@@ -8512,7 +8511,9 @@ function init() {
       const opts = (item.options||[]).filter(Boolean);
       if (!q||!ans||opts.length<2) return;
       if (!opts.includes(ans)) opts[0]=ans;
-      state.customQ[sub].push({q,ans,opts,...(item.image?{img:item.image}:{})});
+      const key = q+'|'+ans;
+      const exists = (state.customQ[sub]||[]).some(x=>x.q+'|'+x.ans===key);
+      if (!exists) state.customQ[sub].push({q,ans,opts,...(item.image?{img:item.image}:{})});
     });
     _dirty=true; doSave();
     loadQuestion();
