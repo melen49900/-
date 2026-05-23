@@ -4573,7 +4573,7 @@ function showTab(tab) {
   if (tab === 'gear')    renderGearTab();
   if (tab === 'quest')   renderQuestTab();updateActiveQuestBar();
   if (tab === 'skill')   renderSkillTab();
-  if (tab === 'achieve') renderAchieveTab();
+  if (tab === 'achieve') { checkAchievements(); renderAchieveTab(); }
   if (tab === 'checkin') renderCheckinTab();
   if (tab === 'admin')  {
     // 每次切換到後台都重置為鎖定狀態
@@ -5158,7 +5158,7 @@ function doForge() {
   _forgeSlots = [null, null];
   renderForgeSlots();
   renderForgeResult();
-  renderHero(); renderShopUI(); autoSave();
+  renderHero(); renderShopUI(); autoSave(); checkAchievements();
   showToast(`⚒️ 合成成功！${newCard.name} ${'★'.repeat(newStar)}（基礎 ×${mult}）`);
 }
 
@@ -5238,7 +5238,7 @@ function doAutoForge() {
   _forgeSlots = [null, null];
   renderForgeSlots();
   renderForgeResult();
-  renderHero(); renderShopUI(); autoSave();
+  renderHero(); renderShopUI(); autoSave(); checkAchievements();
 
   if (totalForged === 0) {
     showToast('⚠️ 沒有可合成的裝備（需同名同星各 2 件）');
@@ -7336,6 +7336,119 @@ const ACHIEVEMENTS = [
     check: () => {
       const ids = new Set(state.seenEquipIds || []);
       return EQUIP_POOL.every(e => ids.has(e.id));
+    },
+  },
+  {
+    id: 'equip_star1',
+    name: '一星鑄造師',
+    desc: '將任意裝備升到 1★',
+    category: '裝備',
+    icon: '⭐',
+    reward: { gems: 50 },
+    progress: () => {
+      const all = [...state.bag, ...Object.values(state.equipped || {}).filter(Boolean)];
+      const best = Math.max(0, ...all.map(c => c.star || 0));
+      return Math.min(best, 1);
+    },
+    goal: 1,
+    check: () => {
+      const all = [...state.bag, ...Object.values(state.equipped || {}).filter(Boolean)];
+      return all.some(c => (c.star || 0) >= 1);
+    },
+  },
+  {
+    id: 'equip_star2',
+    name: '雙星鑄造師',
+    desc: '將任意裝備升到 2★',
+    category: '裝備',
+    icon: '⭐',
+    requires: 'equip_star1',
+    reward: { gems: 100 },
+    progress: () => {
+      const all = [...state.bag, ...Object.values(state.equipped || {}).filter(Boolean)];
+      const best = Math.max(0, ...all.map(c => c.star || 0));
+      return Math.min(best, 2);
+    },
+    goal: 2,
+    check: () => {
+      const all = [...state.bag, ...Object.values(state.equipped || {}).filter(Boolean)];
+      return all.some(c => (c.star || 0) >= 2);
+    },
+  },
+  {
+    id: 'equip_star3',
+    name: '三星鑄造師',
+    desc: '將任意裝備升到 3★',
+    category: '裝備',
+    icon: '🌟',
+    requires: 'equip_star2',
+    reward: { gems: 200 },
+    progress: () => {
+      const all = [...state.bag, ...Object.values(state.equipped || {}).filter(Boolean)];
+      const best = Math.max(0, ...all.map(c => c.star || 0));
+      return Math.min(best, 3);
+    },
+    goal: 3,
+    check: () => {
+      const all = [...state.bag, ...Object.values(state.equipped || {}).filter(Boolean)];
+      return all.some(c => (c.star || 0) >= 3);
+    },
+  },
+  {
+    id: 'equip_star4',
+    name: '四星鑄造師',
+    desc: '將任意裝備升到 4★',
+    category: '裝備',
+    icon: '🌟',
+    requires: 'equip_star3',
+    reward: { gems: 500 },
+    progress: () => {
+      const all = [...state.bag, ...Object.values(state.equipped || {}).filter(Boolean)];
+      const best = Math.max(0, ...all.map(c => c.star || 0));
+      return Math.min(best, 4);
+    },
+    goal: 4,
+    check: () => {
+      const all = [...state.bag, ...Object.values(state.equipped || {}).filter(Boolean)];
+      return all.some(c => (c.star || 0) >= 4);
+    },
+  },
+  {
+    id: 'equip_star5',
+    name: '五星鑄造師',
+    desc: '將任意裝備升到 5★',
+    category: '裝備',
+    icon: '💫',
+    requires: 'equip_star4',
+    reward: { gems: 1000 },
+    progress: () => {
+      const all = [...state.bag, ...Object.values(state.equipped || {}).filter(Boolean)];
+      const best = Math.max(0, ...all.map(c => c.star || 0));
+      return Math.min(best, 5);
+    },
+    goal: 5,
+    check: () => {
+      const all = [...state.bag, ...Object.values(state.equipped || {}).filter(Boolean)];
+      return all.some(c => (c.star || 0) >= 5);
+    },
+  },
+  {
+    id: 'equip_star6',
+    name: '傳說鑄造師',
+    desc: '將任意裝備升到最高 6★',
+    category: '裝備',
+    icon: '🏆',
+    requires: 'equip_star5',
+    reward: { gems: 2000 },
+    progress: () => {
+      const all = [...state.bag, ...Object.values(state.equipped || {}).filter(Boolean)];
+      const best = Math.max(0, ...all.map(c => c.star || 0));
+      return Math.min(best, 6);
+    },
+    goal: 6,
+    check: () => {
+      const all = [...state.bag, ...Object.values(state.equipped || {}).filter(Boolean)];
+      return all.some(c => (c.star || 0) >= 6);
     },
   },
   {
