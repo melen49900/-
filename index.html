@@ -8470,6 +8470,12 @@ function applyAchievementBonuses() {
 
 function init() {
   loadFromStorage();
+  if (state.clearedStages && state.clearedStages.length > 0) {
+    const maxStage = Math.max(...state.clearedStages);
+    for (let i = 1; i < maxStage; i++) {
+      if (!state.clearedStages.includes(i)) state.clearedStages.push(i);
+    }
+  }
   initQuests();
   loadMonsterImages();
   loadGameAssets();
@@ -8484,6 +8490,10 @@ function init() {
   }
   renderAutoFightUI();
   renderEnemyList();
+  setTimeout(() => {
+    const selectedCard = document.querySelector('.e-card.selected');
+    if (selectedCard) selectedCard.scrollIntoView({ behavior: 'instant', block: 'center' });
+  }, 100);
   loadQuestion();
   updateAchieveBadge();
   updateSkillBadge();
