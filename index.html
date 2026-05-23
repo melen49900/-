@@ -2401,27 +2401,60 @@ function dbDelete(key) {
 const ASSETS_KEY = 'magicAcademy_gameAssets';
 let gameAssets = { enemy:{}, thumb:{}, equip:{}, potion:{}, skill:{}, gold:{}, stone:{}, enemyScale:{}, question:{}, battleBg:{} };
 
-function loadGameAssets() {
-  const files = ['./1怪物.json','./2魔界.json','./3題目.json','./4其他.json'];
-  Promise.all(files.map(f => fetch(f).then(r => r.json()).catch(() => ({}))))
-    .then(packs => {
-      packs.forEach(pack => {
-        gameAssets = {
-          enemy:      { ...gameAssets.enemy,      ...(pack.enemy      || {}) },
-          thumb:      { ...gameAssets.thumb,      ...(pack.thumb      || {}) },
-          equip:      { ...gameAssets.equip,      ...(pack.equip      || {}) },
-          potion:     { ...gameAssets.potion,     ...(pack.potion     || {}) },
-          skill:      { ...gameAssets.skill,      ...(pack.skill      || {}) },
-          gold:       { ...gameAssets.gold,       ...(pack.gold       || {}) },
-          stone:      { ...gameAssets.stone,      ...(pack.stone      || {}) },
-          enemyScale: { ...gameAssets.enemyScale, ...(pack.enemyScale || {}) },
-          question:   { ...gameAssets.question,   ...(pack.question   || {}) },
-          battleBg:   { ...gameAssets.battleBg,   ...(pack.battleBg   || {}) },
-        };
-      });
+function loadGameAssets() {// 先從 IndexedDB 讀快取，立刻套用讓第一題圖片能顯示
+  dbGet(ASSETS_KEY).then(cached => {
+    if (cached) {
+      gameAssets = cached;
       applyGameAssets();
       renderBattleUI(); renderEnemyList();
-    });
+      renderQuestion(); // 用快取圖片重新渲染當前題目
+    }
+    const files = ['./1怪物.json','./2魔界.json','./3題目.json','./4其他.json'];// 再從 GitHub fetch 最新版，覆蓋並存回快取
+    Promise.all(files.map(f => fetch(f).then(r => r.json()).catch(() => ({}))))
+      .then(packs => {
+        packs.forEach(pack => {
+          gameAssets = {
+            enemy:      { ...gameAssets.enemy,      ...(pack.enemy      || {}) },
+            thumb:      { ...gameAssets.thumb,      ...(pack.thumb      || {}) },
+            equip:      { ...gameAssets.equip,      ...(pack.equip      || {}) },
+            potion:     { ...gameAssets.potion,     ...(pack.potion     || {}) },
+            skill:      { ...gameAssets.skill,      ...(pack.skill      || {}) },
+            gold:       { ...gameAssets.gold,       ...(pack.gold       || {}) },
+            stone:      { ...gameAssets.stone,      ...(pack.stone      || {}) },
+            enemyScale: { ...gameAssets.enemyScale, ...(pack.enemyScale || {}) },
+            question:   { ...gameAssets.question,   ...(pack.question   || {}) },
+            battleBg:   { ...gameAssets.battleBg,   ...(pack.battleBg   || {}) },
+          };
+        });
+        dbSet(ASSETS_KEY, gameAssets); // 存回快取
+        applyGameAssets();
+        renderBattleUI(); renderEnemyList();
+        renderQuestion(); // 用最新圖片重新渲染
+      });
+  }).catch(() => {// IndexedDB 失敗就直接 fetch
+    const files = ['./1怪物.json','./2魔界.json','./3題目.json','./4其他.json'];
+    Promise.all(files.map(f => fetch(f).then(r => r.json()).catch(() => ({}))))
+      .then(packs => {
+        packs.forEach(pack => {
+          gameAssets = {
+            enemy:      { ...gameAssets.enemy,      ...(pack.enemy      || {}) },
+            thumb:      { ...gameAssets.thumb,      ...(pack.thumb      || {}) },
+            equip:      { ...gameAssets.equip,      ...(pack.equip      || {}) },
+            potion:     { ...gameAssets.potion,     ...(pack.potion     || {}) },
+            skill:      { ...gameAssets.skill,      ...(pack.skill      || {}) },
+            gold:       { ...gameAssets.gold,       ...(pack.gold       || {}) },
+            stone:      { ...gameAssets.stone,      ...(pack.stone      || {}) },
+            enemyScale: { ...gameAssets.enemyScale, ...(pack.enemyScale || {}) },
+            question:   { ...gameAssets.question,   ...(pack.question   || {}) },
+            battleBg:   { ...gameAssets.battleBg,   ...(pack.battleBg   || {}) },
+          };
+        });
+        dbSet(ASSETS_KEY, gameAssets);
+        applyGameAssets();
+        renderBattleUI(); renderEnemyList();
+        renderQuestion();
+      });
+  });
 }
 
 function applyGameAssets() {
@@ -2781,9 +2814,9 @@ function generateMath() {
   return { q, ans: String(ans), opts };
 }
 
-// ── 出題紀錄（防重複）──────────────────────────────────
-// 用 "科目|題目文字|正確答案" 作為唯一鍵，避免相同題目連續出現
-const RECENT_Q_MAX = 40; // 記憶幾題
+// 防重複題目──────────────────────────────────
+// 用 "科目|題目文字|正確答案" 作為唯一鍵
+const RECENT_Q_MAX = 50; // 記憶幾題
 if (!state.quiz.recentKeys) state.quiz.recentKeys = [];
 
 function _qKey(subject, q, ans) {
@@ -2804,7 +2837,7 @@ function _pickFromPool(subject, pool) {
 
 function pickQuestion(subject) {
   if (subject === 'math') {
-    const MATH_BANK_RATIO = 0.4;// 數學題庫占比，全題庫為1
+    const MATH_BANK_RATIO = 0.37;// 數學題庫占比，全題庫為1
     const mathImported = questionsData?.questions?.filter(x => x.category === '數學') || [];
     const mathCustom   = state.customQ?.math || []; 
     const mathBuiltin  = (state.editedBuiltin?.math) || BUILTIN_Q?.math || [];
@@ -4453,15 +4486,17 @@ function speakQ() {
   if (sub === 'math') {
     // 數學：問號→多少，運算符號轉國字
     text = text
-      .replace(/[?？]\s*$/, '多少')
-      .replace(/[?？]/g, '多少')
-      .replace(/\+/g,'加').replace(/－/g,'減')
-      .replace(/×/g,'橙以').replace(/÷/g,'除以')
-      .replace(/＋/g,'加').replace(/＝/g,'等於');
+      .replace(/[?？]\s*$/, '多少').replace(/[?？]/g, '多少')
+      .replace(/\+/g,'加')
+      .replace(/－/g,'減')
+      .replace(/×/g,'橙以')
+      .replace(/÷/g,'除以')
+      .replace(/＋/g,'加')
+      .replace(/＝/g,'等於').replace(/=/g,'等於');
     _doSpeak(text, speechCfg.lang, speechCfg.volume.quiz);
   } else if (sub === 'english') {
     // 英文題：題目用中文語音讀（題目通常是中文），移除問號
-    text = text.replace(/[?？]/g, '');
+    text = text.replace(/[?？]/g, '').replace(/["""'']/g, '');
     _doSpeak(text, speechCfg.lang, speechCfg.volume.quiz);
   } else {
     // 國文、自然、地理：移除問號，符號轉國字
