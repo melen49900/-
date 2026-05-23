@@ -8472,9 +8472,14 @@ function init() {
   loadFromStorage();
   if (state.clearedStages && state.clearedStages.length > 0) {
     const maxStage = Math.max(...state.clearedStages);
+    let changed = false;
     for (let i = 1; i < maxStage; i++) {
-      if (!state.clearedStages.includes(i)) state.clearedStages.push(i);
+      if (!state.clearedStages.includes(i)) {
+        state.clearedStages.push(i);
+        changed = true;
+      }
     }
+    if (changed) { _dirty = true; doSave(); }
   }
   initQuests();
   loadMonsterImages();
