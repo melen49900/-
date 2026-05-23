@@ -5339,6 +5339,7 @@ function loadFromStorage() {
       if (state.checkin.claimedDays.some(d => typeof d === 'number')) state.checkin.claimedDays = [];
     }
     if (data.state?.achievements) state.achievements = data.state.achievements;
+    if (data.state?.clearedStages) state.clearedStages = data.state.clearedStages;
     if (data.state?.seenEquipIds)   state.seenEquipIds   = data.state.seenEquipIds;
     if (data.state?.defeatedEnemies) state.defeatedEnemies = data.state.defeatedEnemies;
     if (typeof data.state?.curseStones === 'number') state.curseStones = data.state.curseStones;
