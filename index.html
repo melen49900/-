@@ -5246,9 +5246,18 @@ function doAutoForge() {
     showToast(`⚡ 自動合成完成！共合成 ${totalForged} 次`);
   }
 }
+
 function upgradeCost(card) {
   const refine = card.refine || 0;
   return Math.min(5000, (refine + 1) * 100);
+}
+
+function upgradeCost10(card) {
+  let total = 0;
+  for (let i = 0; i < 10; i++) {
+    total += Math.min(5000, (( card.refine || 0) + i + 1) * 100);
+  }
+  return total;
 }
 
 function renderUpgradeList() {
@@ -5275,6 +5284,8 @@ function renderUpgradeList() {
     const rc = RARITY_CFG[card.rarity] || RARITY_CFG.common;
     const cost = upgradeCost(card);
     const canAfford = state.hero.gold >= cost;
+    const cost10 = upgradeCost10(card);
+    const canAfford10 = state.hero.gold >= cost10;
     const stars = '★'.repeat(card.star || 0) || '無星級';
     const isEquipped = equippedUids.has(card.uid); 
     // 若舊裝備缺 enhStat/enhPer，從 EQUIP_POOL 查同名補回
@@ -5295,7 +5306,9 @@ function renderUpgradeList() {
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div class="upgrade-cost">${cost}${getGoldIcon(14)}</div>
-        <button class="upgrade-btn" ${canAfford ? '' : 'disabled'} onclick="doUpgrade('${card.uid}')">強化</button>
+        <button class="upgrade-btn" ${canAfford ? '' : 'disabled'} onclick="doUpgrade('${card.uid}')">強化 +1</button>
+        <div class="upgrade-cost" style="margin-top:4px">${cost10}${getGoldIcon(14)}</div>
+        <button class="upgrade-btn" style="background:linear-gradient(135deg,#e67e22,#d35400)" ${canAfford10 ? '' : 'disabled'} onclick="doUpgrade10('${card.uid}')">強化 +10</button>
       </div>
     `;
     list.appendChild(div);
@@ -5330,6 +5343,23 @@ function doUpgrade(uid) {
   renderHero(); renderShopUI(); autoSave();
   showToast(`🔨 ${card.name} 精煉至 +${card.refine}（${stat} +${per}）！`);
 }
+
+function doUpgrade10(uid) {
+  for (let i = 0; i < 10; i++) {
+    const cost = upgradeCost(
+      state.bag.find(c => c.uid === uid) ||
+      Object.values(state.equipped).find(e => e?.uid === uid)
+    );
+    if (state.hero.gold < cost) {
+      showToast(`💰 金幣不足，完成了 ${i} 次強化`);
+      break;
+    }
+    doUpgrade(uid);
+  }
+  renderHero(); renderShopUI(); autoSave();
+}
+
+
 
 // ============================================================
 // 儲存 / 載入
@@ -5513,7 +5543,7 @@ function exportQuestions() {
   );
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `questions_${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `questions.json`;
   a.click();
   URL.revokeObjectURL(a.href);
   showToast(`✅ 匯出 ${questions.length} 題成功！`);
