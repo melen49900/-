@@ -1288,6 +1288,18 @@
       "image": "q_purple.jpeg"
     },
     {
+      "category": "國文",
+      "question": "「貓」的注音是？",
+      "options": [
+        "ㄇㄠ",
+        "ㄇㄠˊ",
+        "ㄇㄠˇ",
+        "ㄇㄠˋ"
+      ],
+      "answer": "ㄇㄠ",
+      "image": "q_cat.jpg"
+    },
+    {
       "category": "英文",
       "question": "what animal is this?",
       "options": [
@@ -2630,6 +2642,28 @@
         "發光的斑紋"
       ],
       "answer": "產生的黏液"
+    },
+    {
+      "category": "自然",
+      "question": "發生地震時如果在屋內要做什麼？",
+      "options": [
+        "坐電梯逃生",
+        "趴下、掩護、穩住",
+        "把大門打開",
+        "躲冰箱旁邊"
+      ],
+      "answer": "趴下、掩護、穩住"
+    },
+    {
+      "category": "自然",
+      "question": "我們吃胡蘿蔔主要是吃什麼部位？",
+      "options": [
+        "根",
+        "莖",
+        "葉",
+        "果實"
+      ],
+      "answer": "根"
     },
     {
       "category": "地理",
