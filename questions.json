@@ -2092,6 +2092,61 @@
       "image": "q_cat.jpg"
     },
     {
+      "category": "英文",
+      "question": "What’s the Chinese word for “rabbit”?",
+      "options": [
+        "兔子",
+        "狗",
+        "貓",
+        "老鼠"
+      ],
+      "answer": "兔子"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “kindergarten”?",
+      "options": [
+        "幼兒園",
+        "塑膠袋",
+        "水壺",
+        "書包"
+      ],
+      "answer": "幼兒園"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “flower”?",
+      "options": [
+        "花",
+        "花園",
+        "果實",
+        "星星"
+      ],
+      "answer": "花"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “map”?",
+      "options": [
+        "地圖",
+        "城市",
+        "抹布",
+        "媽媽"
+      ],
+      "answer": "地圖"
+    },
+    {
+      "category": "英文",
+      "question": "Which one is a fruit?",
+      "options": [
+        "banana",
+        "book",
+        "fan",
+        "paper"
+      ],
+      "answer": "banana"
+    },
+    {
       "category": "自然",
       "question": "一杯水放在室外，過一段時間水變少了，最可能的原因是？",
       "options": [
