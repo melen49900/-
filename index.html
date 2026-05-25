@@ -2814,6 +2814,38 @@ function generateMath() {
   return { q, ans: String(ans), opts };
 }
 
+function generateMathReverse() {
+  const activeOps = Object.keys(mathCfg).filter(k => mathCfg[k].enabled);
+  if (activeOps.length < 2) return generateMath(); // 只開一種運算時無法出有意義的干擾選項，退回正常題
+  const op = activeOps[Math.floor(Math.random() * activeOps.length)];
+  const c = mathCfg[op];
+  const ri = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  let a, b, ans, q;
+  if (op === 'add') {
+    a = ri(c.aMin, Math.min(c.aMax, 20)); 
+    b = ri(c.bMin, Math.min(c.bMax, 20));
+    ans = '＋'; q = `${a} ？ ${b} ＝ ${a + b}`;
+  } else if (op === 'sub') {
+    a = ri(c.aMin, Math.min(c.aMax, 20)); 
+    b = ri(c.bMin, Math.min(Math.min(c.bMax, a), 20));
+    ans = '－'; q = `${a} ？ ${b} ＝ ${a - b}`;
+  } else if (op === 'mul') {
+    a = ri(c.aMin, Math.min(c.aMax, 9)); 
+    b = ri(c.bMin, Math.min(c.bMax, 5));
+    ans = '×'; q = `${a} ？ ${b} ＝ ${a * b}`;
+  } else {
+    b = ri(c.dMin, c.dMax);
+    const aMinAdj = Math.max(c.aMin, b);
+    a = ri(aMinAdj, Math.min(Math.max(aMinAdj, c.aMax), 20));
+    if (a % b !== 0) return generateMathReverse(); // 除法只出整除的題
+    ans = '÷'; q = `${a} ？ ${b} ＝ ${a / b}`;
+  }
+  // 選項固定為四個運算符號，順序隨機
+  const allSymbols = ['＋', '－', '×', '÷'];
+  const opts = allSymbols.sort(() => Math.random() - .5);
+  return { q, ans, opts };
+}
+
 // 防重複題目──────────────────────────────────
 // 用 "科目|題目文字|正確答案" 作為唯一鍵
 const RECENT_Q_MAX = 50; // 記憶幾題
@@ -2837,7 +2869,7 @@ function _pickFromPool(subject, pool) {
 
 function pickQuestion(subject) {
   if (subject === 'math') {
-    const MATH_BANK_RATIO = 0.37;// 數學題庫占比，全題庫為1
+    const MATH_BANK_RATIO = 0.3;// 數學題庫占比，0全隨機、1全題庫
     const mathImported = questionsData?.questions?.filter(x => x.category === '數學') || [];
     const mathCustom   = state.customQ?.math || []; 
     const mathBuiltin  = (state.editedBuiltin?.math) || BUILTIN_Q?.math || [];
@@ -2846,7 +2878,7 @@ function pickQuestion(subject) {
       const p = _pickFromPool(subject, mathPool);
       if (p) { const e = { q: p.q, ans: p.ans, opts: (p.opts || []).slice().sort(() => Math.random()-.5) }; if (p.img) e.img = p.img; return e; }
     }
-    return generateMath();
+    return Math.random() < 0.3 ? generateMathReverse() : generateMath();
   }
   const imported = questionsData?.questions?.filter(x => {
     const map = { chinese:'國文', english:'英文', science:'自然', geography:'地理' };
