@@ -1300,6 +1300,52 @@
       "image": "q_cat.jpg"
     },
     {
+      "category": "國文",
+      "question": "「ㄉㄠ子」怎麼寫",
+      "options": [
+        "刀",
+        "刃",
+        "分",
+        "切"
+      ],
+      "answer": "刀"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄩㄝˋ亮」怎麼寫",
+      "options": [
+        "月",
+        "日",
+        "光",
+        "星"
+      ],
+      "answer": "月"
+    },
+    {
+      "category": "國文",
+      "question": "他是什麼職業?",
+      "options": [
+        "廚師",
+        "醫生",
+        "學生",
+        "警察"
+      ],
+      "answer": "廚師",
+      "image": "q_cook.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "他是什麼職業?",
+      "options": [
+        "消防員",
+        "澆花人員",
+        "洗地人員",
+        "抽水人員"
+      ],
+      "answer": "消防員",
+      "image": "q_firefighter.jpg"
+    },
+    {
       "category": "英文",
       "question": "what animal is this?",
       "options": [
@@ -2147,6 +2193,51 @@
       "answer": "banana"
     },
     {
+      "category": "英文",
+      "question": "What is his job?",
+      "options": [
+        "cook",
+        "police",
+        "doctor",
+        "student"
+      ],
+      "answer": "cook",
+      "image": "q_cook.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “cake”?",
+      "options": [
+        "蘿蔔",
+        "蛋糕",
+        "時鐘",
+        "相機"
+      ],
+      "answer": "蛋糕"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “carrot”?",
+      "options": [
+        "蘿蔔",
+        "蛋糕",
+        "時鐘",
+        "相機"
+      ],
+      "answer": "蘿蔔"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “clock”?",
+      "options": [
+        "蘿蔔",
+        "蛋糕",
+        "時鐘",
+        "相機"
+      ],
+      "answer": "時鐘"
+    },
+    {
       "category": "自然",
       "question": "一杯水放在室外，過一段時間水變少了，最可能的原因是？",
       "options": [
@@ -2721,6 +2812,17 @@
       "answer": "根"
     },
     {
+      "category": "自然",
+      "question": "小丑魚身上的什麼能避免被海葵攻擊?",
+      "options": [
+        "產生的黏液",
+        "鮮豔的顏色",
+        "堅硬的鱗片",
+        "發光的斑紋"
+      ],
+      "answer": "產生的黏液"
+    },
+    {
       "category": "地理",
       "question": "下面哪一個是臺灣的著名高山？",
       "options": [
@@ -2918,6 +3020,42 @@
       ],
       "answer": "花蓮",
       "image": "q_花蓮.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個縣市？",
+      "options": [
+        "台東",
+        "台南",
+        "高雄",
+        "屏東"
+      ],
+      "answer": "台東",
+      "image": "q_台東.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個縣市？",
+      "options": [
+        "宜蘭",
+        "新北",
+        "台北",
+        "基隆"
+      ],
+      "answer": "宜蘭",
+      "image": "q_宜蘭.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個縣市？",
+      "options": [
+        "南投",
+        "高雄",
+        "台南",
+        "台中"
+      ],
+      "answer": "南投",
+      "image": "q_南投.jpg"
     }
   ]
 }
