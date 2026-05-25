@@ -2007,6 +2007,12 @@ const FAMILY_MOD = {// 種族加成
   mushroom:      { hp:1.5,  atk:1,   def:1,    gold:1.3,  exp:1    },
   snake:         { hp:1,    atk:1.1, def:1,    gold:1.05, exp:1    },
   seal:          { hp:1.05, atk:1,   def:1,    gold:1.05, exp:1    },
+  crab:          { hp:1,    atk:1.2, def:1.2,  gold:1.4,  exp:1.1  },
+  DK:            { hp:1.5,  atk:1,   def:1,    gold:1.3,  exp:1.2  },
+  lich:          { hp:0.9,  atk:1.6, def:0.8,  gold:1.1,  exp:1.05 },
+  whale:         { hp:1,    atk:1,   def:1.65, gold:1.35, exp:1.1  },
+  guard:         { hp:1.2,  atk:1.2, def:1.2,  gold:1.4,  exp:1.2  },
+  kingdemon:     { hp:1.3,  atk:1.3, def:1.3,  gold:1.5,  exp:1.45 },
 };
 // 怪物資料（之後可改由 JSON 匯入）
 const ENEMIES = [
@@ -2101,6 +2107,15 @@ const ENEMIES = [
   {id:'s89',name:'影王',         emoji:'🐍',stage:89,family:'snake',          postMult:15.0},
   {id:'s90',name:'魔界高階水晶', emoji:'💎',stage:90,family:'Macrystal',      postMult:15.5},
   {id:'s91',name:'深淵海豹王',   emoji:'🦭',stage:91,family:'seal',             postMult:16.0},
+  {id:'s92',name:'藍色螃蟹',    emoji:'🦀',stage:92, family:'crab',           postMult:16.5},
+  {id:'s93',name:'黃色螃蟹',    emoji:'🦀',stage:93, family:'crab',           postMult:17.0},
+  {id:'s94',name:'綠色螃蟹',    emoji:'🦀',stage:94, family:'crab',           postMult:17.5},
+  {id:'s95',name:'紫色螃蟹',    emoji:'🦀',stage:95, family:'crab',           postMult:18.0},
+  {id:'s96',name:'死亡騎士',    emoji:'⚔️',stage:96, family:'DK',             postMult:18.4},
+  {id:'s97',name:'巫妖',        emoji:'🧙',stage:97, family:'lich',           postMult:18.8},
+  {id:'s98',name:'大鯨',        emoji:'🐳',stage:98, family:'whale',          postMult:19.2},
+  {id:'s99',name:'上古守衛',    emoji:'🛡️',stage:99, family:'guard',           postMult:19.6},
+  {id:'s100',name:'魔界帝王',   emoji:'😡',stage:100,family:'kingdemon',      postMult:20.0},
 ];
 
 function enemyStats(id) {// 怪物數值計算
@@ -2108,8 +2123,8 @@ function enemyStats(id) {// 怪物數值計算
   if (!e) return null;
   const vary  = v => Math.max(1, Math.round(v * (1 + (Math.random() * 0.06 - 0.03))));
   const scale1 = Math.pow(1.13 , e.stage - 1);// 生命成長
-  const scale2 = Math.pow(1.085, e.stage - 1);// 攻擊成長
-  const scale3 = Math.pow(1.065, e.stage - 1);// 防禦成長
+  const scale2 = Math.pow(1.086, e.stage - 1);// 攻擊成長
+  const scale3 = Math.pow(1.066, e.stage - 1);// 防禦成長
   const scale4 = Math.pow(1.064, e.stage - 1);// 金幣、經驗成長
   const mod   = FAMILY_MOD[e.family] || { hp:1, atk:1, def:1, gold:1, exp:1 };
   const baseMult   = e.postMult || 1;
@@ -8408,6 +8423,24 @@ const ACHIEVEMENTS = [
     },
   },
   {
+    id: 'kill_Mabeast_all',
+    name: '魔狼獵人',
+    desc: '擊敗所有魔狼種族敵人',
+    category: '圖鑑',
+    icon: '🐺',
+    reward: { gems: 30, statBonus: { atk: 1, def: 1, mag: 1 }},
+    _family: 'Mabeast',
+    progress: () => {
+      const ids = new Set(state.defeatedEnemies || []);
+      return ENEMIES.filter(e => e.family === 'Mabeast' && ids.has(e.id)).length;
+    },
+    get goal() { return ENEMIES.filter(e => e.family === 'Mabeast').length; },
+    check: () => {
+      const ids = new Set(state.defeatedEnemies || []);
+      return ENEMIES.filter(e => e.family === 'Mabeast').every(e => ids.has(e.id));
+    },
+  },
+  {
     id: 'kill_turtle_all',
     name: '龜族獵人',
     desc: '擊敗所有龜族種族敵人',
@@ -8477,6 +8510,24 @@ const ACHIEVEMENTS = [
     check: () => {
       const ids = new Set(state.defeatedEnemies || []);
       return ENEMIES.filter(e => e.family === 'seal').every(e => ids.has(e.id));
+    },
+  },
+  {
+    id: 'kill_crab_all',
+    name: '螃蟹獵人',
+    desc: '擊敗所有螃蟹種族敵人',
+    category: '圖鑑',
+    icon: '🦀',
+    reward: { gems: 30, statBonus: { atk: 1, def: 1, mag: 1 }},
+    _family: 'crab',
+    progress: () => {
+      const ids = new Set(state.defeatedEnemies || []);
+      return ENEMIES.filter(e => e.family === 'crab' && ids.has(e.id)).length;
+    },
+    get goal() { return ENEMIES.filter(e => e.family === 'crab').length; },
+    check: () => {
+      const ids = new Set(state.defeatedEnemies || []);
+      return ENEMIES.filter(e => e.family === 'crab').every(e => ids.has(e.id));
     },
   },
   {
@@ -9151,11 +9202,19 @@ function renderEnemyCompendium(container) {
   { key:'demon',       label:'惡魔族',   emoji:'😈', color:'#c70a0a', achId:'kill_demon_all' },
   { key:'demon_king',  label:'魔王',     emoji:'👑', color:'#460d8c', achId:'kill_demon_king_all' },
   { key:'scorpion',    label:'蠍子族',   emoji:'🦂', color:'#e67e22', achId:'kill_scorpion_all' },
+  { key:'Mabeast',     label:'狼族',     emoji:'🐺', color:'#8f746a', achId:'kill_Mabeast_all' },
   { key:'turtle',      label:'龜族',     emoji:'🐢', color:'#27ae60', achId:'kill_turtle_all' },
   { key:'snake',       label:'蛇族',     emoji:'🐍', color:'#8e44ad', achId:'kill_snake_all' },
   { key:'mushroom',    label:'菌族',     emoji:'🍄', color:'#a0522d', achId:'kill_mushroom_all' },
-  { key:'seal',        label:'海豹',     emoji:'🍄', color:'#59ded7', achId:'kill_seal_all' },
+  { key:'seal',        label:'海豹',     emoji:'🦭',  color:'#59ded7', achId:'kill_seal_all' },
+  { key:'crab',        label:'螃蟹族',   emoji:'🦀', color:'#e74c3c', achId:'kill_crab_all' },
+  { key:'DK',          label:'死亡騎士', emoji:'⚔️', color:'#2c3e50', achId:'kill_DK_all' },
+  { key:'lich',        label:'巫妖族',   emoji:'🧙', color:'#6c3483', achId:'kill_lich_all' },
+  { key:'whale',       label:'大鯨族',   emoji:'🐳', color:'#1a6b8a', achId:'kill_whale_all' },
+  { key:'guard',       label:'上古守衛', emoji:'🛡️', color:'#b7950b', achId:'kill_guard_all' },
+  { key:'kingdemon',   label:'魔帝',     emoji:'😡', color:'#7b241c', achId:'kill_kingdemon_all' },
   ];
+
   const statIcons   = { atk:'⚔️', def:'🛡️', mag:'✨', hp:'❤️', mp:'💧', crit:'🎯', critDmg:'💥' };
   const defeatedIds = new Set(state.defeatedEnemies || []);
 
