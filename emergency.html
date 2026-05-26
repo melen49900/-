@@ -87,6 +87,16 @@ input[type=range]{width:100%;accent-color:#1D9E75}
 .del-btn{font-size:11px;color:#ef4444;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;opacity:.6}
 .del-btn:hover{opacity:1;background:#fef2f2}
 .loading-row{text-align:center;padding:2rem;color:#94a3b8;font-size:13px}
+
+/* Rubric buttons */
+.rubric-grid{display:flex;flex-direction:column;gap:5px;margin-top:4px}
+.rubric-btn{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;cursor:pointer;text-align:left;transition:border-color .15s,background .15s;width:100%}
+.rubric-btn:hover{border-color:#1D9E75;background:#f0faf6}
+.rubric-btn.selected{border-color:#1D9E75;background:#d1fae5}
+.rb-score{min-width:22px;height:22px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#475569;flex-shrink:0;margin-top:1px;transition:background .15s,color .15s}
+.rubric-btn.selected .rb-score{background:#1D9E75;color:#fff}
+.rb-desc{font-size:12.5px;color:#475569;line-height:1.45}
+.rubric-btn.selected .rb-desc{color:#065f46;font-weight:500}
 </style>
 </head>
 <body>
@@ -180,13 +190,20 @@ input[type=range]{width:100%;accent-color:#1D9E75}
 
 <script>
 const ITEMS=[
-  {num:1,key:'ems',   label:'院前與檢傷（EMS & Triage）',            hint:'0分：自行就醫／紀錄空白｜5分：救護車處置關鍵且檢傷具教學對比價值'},
-  {num:2,key:'ed',    label:'急診急救處置（ED Resuscitation）',       hint:'0分：僅開藥離院｜5分：包含插管、CVC、大量輸血或緊急手術啟動'},
-  {num:3,key:'prog',  label:'預後追蹤可行性（Prognosis & Follow-up）',hint:'0分：自動離院／失聯｜5分：住院病歷完整，有明確治療結局可供分析'},
-  {num:4,key:'dx',    label:'病史與診斷價值（History & Diagnosis）',  hint:'0分：診斷模糊且無檢查異常｜5分：檢驗數據與影像極具臨床教育意義'},
-  {num:5,key:'ethics',label:'倫理與決策反思（Ethics & Communication）',hint:'0分：常規處置無特殊爭議｜5分：涉及高難度醫病溝通或複雜臨床倫理決策'}
+  {num:1,key:'ems',   label:'院前與檢傷（EMS & Triage）',            hint:''},
+  {num:2,key:'ed',    label:'急診急救處置（ED Resuscitation）',       hint:''},
+  {num:3,key:'prog',  label:'預後追蹤可行性（Prognosis & Follow-up）',hint:''},
+  {num:4,key:'dx',    label:'病史與診斷價值（History & Diagnosis）',  hint:''},
+  {num:5,key:'ethics',label:'決策反思價值（Decision Reflection）',    hint:''}
 ];
-const SHORT=['EMS','急救','追蹤','診斷','倫理'];
+const SHORT=['EMS','急救','追蹤','診斷','決策'];
+const RUBRICS={
+  ems:['自行就醫、資料空白，幾乎無到院前資訊','有基本生命徵象與主訴，但無特殊處置','有基礎救護處置（氧氣、包紮、固定等），但教育性有限','有標準流程處置，可作一般案例教學','有明確判斷與處置轉折，具檢傷或流程討論價值','救護處置關鍵影響後續結果，且檢傷具高度教學對比價值'],
+  ed: ['僅開藥離院或單純觀察','基本檢查與症狀治療','需短期觀察、靜脈輸液或常規急診處置','啟動進一步監測或中度侵入性治療','ICU 評估、重大急救流程或高風險處置','插管、CVC、大量輸血、緊急手術或重大急救啟動'],
+  prog:['自動離院、失聯或完全無後續資料','僅有急診紀錄，後續不明','有部分住院或門診追蹤資訊','病程大致完整，可了解主要治療方向','住院紀錄完整，能分析病程變化','病歷完整且有明確治療結局，可作完整案例分析'],
+  dx:  ['診斷模糊，檢查無明顯異常','有輕微異常，但臨床意義有限','有典型檢驗或影像變化，可作基礎教學','檢查結果具有診斷提示性','檢驗與影像能呈現重要病理變化','檢驗數據與影像極具臨床教育與鑑別診斷價值'],
+  ethics:['幾乎無決策點，流程單純固定','有輕微判斷需求，但爭議性低','有數個可討論決策，但影響有限','存在重要判斷點，可進行案例反思','有高風險或時間壓力下的決策價值','極具反思與教學意義，可深入討論「為何當下會這樣決定」與「替代策略」']
+};
 const scores={ems:0,ed:0,prog:0,dx:0,ethics:0};
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbz_AKgGAnb48PhTnxnnkluybz7dU88IxNIwxH5uDS9JD4K4EAPJ6ehxqtbSxWDX7OWV/exec';
 let allCases=[];
@@ -236,15 +253,26 @@ function buildItems(){
   ITEMS.forEach(item=>{
     const d=document.createElement('div');
     d.className='item-card';
-    d.innerHTML=`<div class="item-head"><div class="num">${item.num}</div><div><div class="item-name">${item.label}</div><div class="item-hint">${item.hint}</div></div></div>
-    <div class="score-wrap"><div style="flex:1"><div class="score-ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
-    <input type="range" min="0" max="5" step="1" value="0" id="sl-${item.key}" oninput="upd('${item.key}',this.value)"></div>
-    <div class="score-num" id="v-${item.key}">0</div></div>`;
+    const btns=RUBRICS[item.key].map((desc,i)=>`
+      <button class="rubric-btn" id="rb-${item.key}-${i}" onclick="upd('${item.key}',${i})">
+        <span class="rb-score">${i}</span>
+        <span class="rb-desc">${desc}</span>
+      </button>`).join('');
+    d.innerHTML=`<div class="item-head"><div class="num">${item.num}</div><div><div class="item-name">${item.label}</div></div></div>
+    <div class="rubric-grid">${btns}</div>`;
     c.appendChild(d);
   });
 }
 
-function upd(key,val){scores[key]=parseInt(val);document.getElementById('v-'+key).textContent=val;render();}
+function upd(key,val){
+  const v=parseInt(val);
+  scores[key]=v;
+  RUBRICS[key].forEach((_,i)=>{
+    const b=document.getElementById('rb-'+key+'-'+i);
+    if(b) b.classList.toggle('selected',i===v);
+  });
+  render();
+}
 
 function render(){
   const total=Object.values(scores).reduce((a,b)=>a+b,0);
@@ -317,7 +345,13 @@ async function submitCase(){
 }
 
 function resetAll(){
-  ITEMS.forEach(i=>{scores[i.key]=0;const s=document.getElementById('sl-'+i.key);if(s)s.value=0;const v=document.getElementById('v-'+i.key);if(v)v.textContent='0';});
+  ITEMS.forEach(i=>{
+    scores[i.key]=0;
+    RUBRICS[i.key].forEach((_,j)=>{
+      const b=document.getElementById('rb-'+i.key+'-'+j);
+      if(b) b.classList.toggle('selected',j===0);
+    });
+  });
   document.getElementById('patient-form').style.display='none';
   document.getElementById('ok-msg').style.display='none';
   document.getElementById('err-msg').textContent='';
@@ -392,6 +426,7 @@ async function delCase(id){
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
 buildItems();
+ITEMS.forEach(i=>upd(i.key,0));
 </script>
 </body>
 </html>
