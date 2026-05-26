@@ -413,6 +413,61 @@
       "image": "q_math_ruler_9.jpg"
     },
     {
+      "category": "數學",
+      "question": "1包10元的餅乾買6包要多少錢",
+      "options": [
+        "50",
+        "60",
+        "70",
+        "80"
+      ],
+      "answer": "60"
+    },
+    {
+      "category": "數學",
+      "question": "38元最多可以買幾包10元的餅乾",
+      "options": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "answer": "3"
+    },
+    {
+      "category": "數學",
+      "question": "50元最多可以買幾包10元的餅乾",
+      "options": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "answer": "5"
+    },
+    {
+      "category": "數學",
+      "question": "長針指到6代表什麼意思",
+      "options": [
+        "6點",
+        "30分",
+        "6分",
+        "30秒"
+      ],
+      "answer": "30分"
+    },
+    {
+      "category": "數學",
+      "question": "短針指到6代表什麼意思",
+      "options": [
+        "6點",
+        "30分",
+        "6分",
+        "30秒"
+      ],
+      "answer": "6點"
+    },
+    {
       "category": "國文",
       "question": "「ㄅㄚˋㄅㄚ˙」怎麼寫？",
       "options": [
@@ -1346,6 +1401,73 @@
       "image": "q_firefighter.jpg"
     },
     {
+      "category": "國文",
+      "question": "「ㄉㄨㄛㄕㄠˇ」怎麼寫？",
+      "options": [
+        "多少",
+        "夕少",
+        "多沙",
+        "夕沙"
+      ],
+      "answer": "多少"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄎㄨㄞˋㄇㄢˋ」怎麼寫？",
+      "options": [
+        "快慢",
+        "決慢",
+        "快曼",
+        "筷漫"
+      ],
+      "answer": "快慢"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄓˇㄧㄡˇ」怎麼寫？",
+      "options": [
+        "只有",
+        "止由",
+        "直友",
+        "止友"
+      ],
+      "answer": "只有"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄧㄝˇ是」怎麼寫？",
+      "options": [
+        "也",
+        "野",
+        "爺",
+        "耶"
+      ],
+      "answer": "也"
+    },
+    {
+      "category": "國文",
+      "question": "「長ㄐㄧㄤ」怎麼寫？",
+      "options": [
+        "江",
+        "工",
+        "紅",
+        "姜"
+      ],
+      "answer": "江"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼?",
+      "options": [
+        "公車",
+        "火車",
+        "機車",
+        "計程車"
+      ],
+      "answer": "公車",
+      "image": "q_bus.jpg"
+    },
+    {
       "category": "英文",
       "question": "what animal is this?",
       "options": [
@@ -2238,6 +2360,29 @@
       "answer": "時鐘"
     },
     {
+      "category": "英文",
+      "question": "What is this?",
+      "options": [
+        "bus",
+        "bat",
+        "bag",
+        "bed"
+      ],
+      "answer": "bus",
+      "image": "q_bus.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "Which one is a fruit?",
+      "options": [
+        "watermelon",
+        "window",
+        "map",
+        "water"
+      ],
+      "answer": "watermelon"
+    },
+    {
       "category": "自然",
       "question": "一杯水放在室外，過一段時間水變少了，最可能的原因是？",
       "options": [
@@ -2823,6 +2968,17 @@
       "answer": "產生的黏液"
     },
     {
+      "category": "自然",
+      "question": "黑鳶如果撿食農藥中毒死亡的鳥類或老鼠，最可能的結果是?",
+      "options": [
+        "累積毒素而中毒死亡",
+        "產生抗藥性而農藥無效",
+        "改吃素食避免中毒",
+        "立即將毒素排出"
+      ],
+      "answer": "累積毒素而中毒死亡"
+    },
+    {
       "category": "地理",
       "question": "下面哪一個是臺灣的著名高山？",
       "options": [
@@ -3056,6 +3212,52 @@
       ],
       "answer": "南投",
       "image": "q_南投.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "亞洲最長的河流是？",
+      "options": [
+        "印度河",
+        "黑龍江",
+        "黃河",
+        "長江"
+      ],
+      "answer": "長江"
+    },
+    {
+      "category": "地理",
+      "question": "紅色的部分是哪一洲",
+      "options": [
+        "亞洲",
+        "非洲",
+        "歐洲",
+        "南美洲"
+      ],
+      "answer": "亞洲",
+      "image": "q_亞洲.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個國家？",
+      "options": [
+        "俄羅斯",
+        "中國",
+        "日本",
+        "韓國"
+      ],
+      "answer": "俄羅斯",
+      "image": "q_map_5.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "臺灣最長的河流是？",
+      "options": [
+        "淡水河",
+        "高屏溪",
+        "濁水溪",
+        "大甲溪"
+      ],
+      "answer": "濁水溪"
     }
   ]
 }
