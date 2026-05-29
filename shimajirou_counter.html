@@ -1,59 +1,65 @@
-
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Count of Shimajirou</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap');
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body, .root { font-family: 'Syne', sans-serif; background: transparent; color: var(--color-text-primary); }
-  .app { max-width: 640px; margin: 0 auto; padding: 1.5rem 1rem 2rem; }
-  .header { text-align: center; margin-bottom: 2rem; }
-  .header h1 { font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 0.5rem; }
-  .counter-display { font-family: 'DM Mono', monospace; font-size: 80px; font-weight: 500; line-height: 1; color: var(--color-text-primary); letter-spacing: -2px; transition: transform 0.15s ease; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Syne', sans-serif; background: #fff; color: #1a1a1a; min-height: 100vh; }
+  .app { max-width: 640px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+  .header { text-align: center; margin-bottom: 2.5rem; }
+  .header h1 { font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #888; margin-bottom: 0.75rem; }
+  .counter-display { font-family: 'DM Mono', monospace; font-size: 96px; font-weight: 500; line-height: 1; color: #1a1a1a; letter-spacing: -3px; transition: transform 0.15s ease; }
   .counter-display.bump { transform: scale(1.06); }
-  .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #1D9E75; margin-right: 6px; vertical-align: middle; }
+  .status-label { font-size: 12px; color: #aaa; margin-top: 0.6rem; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #1D9E75; flex-shrink: 0; }
   .status-dot.offline { background: #E24B4A; }
-  .status-label { font-size: 12px; color: var(--color-text-tertiary); margin-top: 0.5rem; }
   .selector-row { display: flex; gap: 10px; align-items: center; margin-bottom: 1.5rem; }
-  .selector-row label { font-size: 13px; color: var(--color-text-secondary); white-space: nowrap; }
-  .selector-row select { flex: 1; font-family: 'Syne', sans-serif; }
+  .selector-row label { font-size: 13px; color: #666; white-space: nowrap; }
+  .selector-row select { flex: 1; font-family: 'Syne', sans-serif; font-size: 14px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #1a1a1a; cursor: pointer; }
   .btn-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 0.75rem; }
-  .btn-plus, .btn-minus { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; padding: 10px 4px; border-radius: var(--border-radius-md); cursor: pointer; transition: transform 0.1s, background 0.15s; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); }
+  .btn-plus, .btn-minus { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; padding: 10px 4px; border-radius: 8px; cursor: pointer; transition: transform 0.1s, background 0.15s, color 0.15s; border: 1px solid #ddd; background: #fff; color: #1a1a1a; }
   .btn-plus:hover { background: #EAF3DE; color: #3B6D11; border-color: #97C459; }
   .btn-minus:hover { background: #FCEBEB; color: #A32D2D; border-color: #F09595; }
-  .btn-plus:active, .btn-minus:active { transform: scale(0.94); }
-  .note-row { display: flex; gap: 8px; align-items: center; margin-bottom: 1.5rem; }
-  .note-row label { font-size: 13px; color: var(--color-text-secondary); white-space: nowrap; }
-  .note-row input { flex: 1; font-family: 'Syne', sans-serif; font-size: 13px; }
+  .btn-plus:active, .btn-minus:active { transform: scale(0.93); }
+  .note-row { display: flex; gap: 10px; align-items: center; margin-bottom: 1.5rem; }
+  .note-row label { font-size: 13px; color: #666; white-space: nowrap; }
+  .note-row input { flex: 1; font-family: 'Syne', sans-serif; font-size: 13px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; color: #1a1a1a; outline: none; }
+  .note-row input:focus { border-color: #aaa; }
+  .divider { border: none; border-top: 1px solid #f0f0f0; margin: 1.5rem 0; }
   .log-section { margin-top: 0.5rem; }
-  .log-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 0.75rem; }
+  .log-title { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #bbb; margin-bottom: 0.75rem; }
   .log-list { display: flex; flex-direction: column; gap: 4px; }
-  .log-item { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 8px; padding: 7px 10px; border-radius: var(--border-radius-md); background: var(--color-background-secondary); font-size: 13px; animation: fadeIn 0.3s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-  .log-name { color: var(--color-text-secondary); font-weight: 500; white-space: nowrap; }
+  .log-item { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; background: #f8f8f8; font-size: 13px; }
+  .log-name { color: #555; font-weight: 600; white-space: nowrap; }
   .log-delta-pos { color: #1D9E75; font-family: 'DM Mono', monospace; white-space: nowrap; }
   .log-delta-neg { color: #E24B4A; font-family: 'DM Mono', monospace; white-space: nowrap; }
-  .log-note { color: var(--color-text-tertiary); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .log-time { color: var(--color-text-tertiary); font-size: 11px; font-family: 'DM Mono', monospace; white-space: nowrap; }
-  .empty-log { text-align: center; color: var(--color-text-tertiary); font-size: 13px; padding: 1.5rem 0; }
-  .divider { border: none; border-top: 0.5px solid var(--color-border-tertiary); margin: 1.5rem 0; }
+  .log-note { color: #aaa; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .log-time { color: #bbb; font-size: 11px; font-family: 'DM Mono', monospace; white-space: nowrap; }
+  .empty-log { text-align: center; color: #ccc; font-size: 13px; padding: 2rem 0; }
   .admin-toggle { text-align: center; margin-top: 1rem; }
-  .admin-link { font-size: 11px; color: var(--color-text-tertiary); cursor: pointer; background: none; border: none; text-decoration: underline; font-family: 'Syne', sans-serif; }
-  .admin-panel { margin-top: 1rem; padding: 1rem; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-lg); background: var(--color-background-secondary); }
-  .admin-panel h3 { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 1rem; }
+  .admin-link { font-size: 11px; color: #ccc; cursor: pointer; background: none; border: none; text-decoration: underline; font-family: 'Syne', sans-serif; }
+  .admin-link:hover { color: #999; }
+  .admin-panel { margin-top: 1rem; padding: 1.25rem; border: 1px solid #eee; border-radius: 12px; background: #fafafa; }
+  .admin-panel h3 { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #aaa; margin-bottom: 1rem; }
   .admin-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
-  .admin-row input { flex: 1; font-family: 'Syne', sans-serif; font-size: 13px; }
-  .btn-small { font-family: 'Syne', sans-serif; font-size: 12px; padding: 6px 12px; border-radius: var(--border-radius-md); cursor: pointer; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); white-space: nowrap; }
-  .btn-small:hover { background: var(--color-background-tertiary); }
+  .admin-row input { flex: 1; font-family: 'Syne', sans-serif; font-size: 13px; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px; color: #1a1a1a; outline: none; background: #fff; }
+  .btn-small { font-family: 'Syne', sans-serif; font-size: 12px; padding: 7px 14px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #1a1a1a; white-space: nowrap; transition: background 0.15s; }
+  .btn-small:hover { background: #f5f5f5; }
   .btn-small.danger:hover { background: #FCEBEB; color: #A32D2D; border-color: #F09595; }
   .btn-small.success:hover { background: #EAF3DE; color: #3B6D11; border-color: #97C459; }
-  .name-chip { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: var(--border-radius-md); background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); font-size: 13px; margin-bottom: 6px; }
-  .name-chip input { flex: 1; font-size: 13px; font-family: 'Syne', sans-serif; border: none; background: transparent; color: var(--color-text-primary); outline: none; }
-  .msg { font-size: 12px; padding: 6px 10px; border-radius: var(--border-radius-md); margin-bottom: 8px; }
+  .name-chip { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; background: #fff; border: 1px solid #eee; font-size: 13px; margin-bottom: 6px; }
+  .name-chip input { flex: 1; font-size: 13px; font-family: 'Syne', sans-serif; border: none; background: transparent; color: #1a1a1a; outline: none; }
+  .msg { font-size: 12px; padding: 7px 12px; border-radius: 8px; margin-bottom: 8px; }
   .msg.error { background: #FCEBEB; color: #A32D2D; }
   .msg.success { background: #EAF3DE; color: #3B6D11; }
-  .pw-gate { display: flex; gap: 8px; margin-bottom: 1rem; }
+  .pw-gate { display: flex; gap: 8px; margin-bottom: 0; }
 </style>
-
-<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">計數器應用程式，支援多人即時同步與操作記錄</h2>
-
+</head>
+<body>
 <div class="app">
   <div class="header">
     <h1>Count of Shimajirou</h1>
@@ -94,10 +100,10 @@
   <div id="adminGate" style="display:none; margin-top:1rem;">
     <div class="admin-panel">
       <div class="pw-gate">
-        <input type="password" id="adminPwInput" placeholder="管理員密碼" style="flex:1; font-family:'Syne',sans-serif;">
+        <input type="password" id="adminPwInput" placeholder="管理員密碼" style="flex:1; font-family:'Syne',sans-serif; font-size:13px; padding:7px 10px; border:1px solid #ddd; border-radius:8px; outline:none;">
         <button class="btn-small success" onclick="unlockAdmin()">進入</button>
       </div>
-      <div id="adminMsg"></div>
+      <div id="adminMsg" style="margin-top:8px;"></div>
     </div>
   </div>
 
@@ -120,8 +126,8 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyBIBaL-AMxdsuLhgLY16jCyWQATuTEcrjY",
@@ -188,14 +194,40 @@ function applyDelta(delta) {
 function formatTime(ts) {
   const d = new Date(ts);
   const pad = n => String(n).padStart(2, '0');
-  return `${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return pad(d.getMonth()+1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+function renderLogs(items) {
+  const list = document.getElementById('logList');
+  if (!items.length) {
+    list.innerHTML = '<div class="empty-log">尚無紀錄</div>';
+    return;
+  }
+  list.innerHTML = '';
+  items.slice().reverse().forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'log-item';
+    const dStr = item.delta > 0 ? '+' + item.delta : String(item.delta);
+    const cls = item.delta > 0 ? 'log-delta-pos' : 'log-delta-neg';
+    row.innerHTML =
+      '<span class="log-name">' + item.name + '</span>' +
+      '<span class="' + cls + '">' + dStr + '</span>' +
+      '<span class="log-note">' + (item.note || '') + '</span>' +
+      '<span class="log-time">' + formatTime(item.time) + '</span>';
+    list.appendChild(row);
+  });
 }
 
 db.ref('.info/connected').on('value', snap => {
   const dot = document.getElementById('statusDot');
   const lbl = document.getElementById('statusLabel');
-  if (snap.val()) { dot.className = 'status-dot'; lbl.textContent = '即時同步中'; }
-  else { dot.className = 'status-dot offline'; lbl.textContent = '連線中斷'; }
+  if (snap.val()) {
+    dot.className = 'status-dot';
+    lbl.textContent = '即時同步中';
+  } else {
+    dot.className = 'status-dot offline';
+    lbl.textContent = '連線中斷';
+  }
 });
 
 db.ref('counter').on('value', snap => {
@@ -203,30 +235,23 @@ db.ref('counter').on('value', snap => {
   document.getElementById('counterDisplay').textContent = Number.isInteger(val) ? val : val.toFixed(1);
 });
 
-db.ref('logs').orderByChild('time').limitToLast(20).on('value', snap => {
+db.ref('logs').orderByChild('time').on('value', snap => {
   const items = [];
-  snap.forEach(c => items.push(c.val()));
-  const list = document.getElementById('logList');
-  if (!items.length) { list.innerHTML = '<div class="empty-log">尚無紀錄</div>'; return; }
-  list.innerHTML = '';
-  [...items].reverse().forEach(item => {
-    const row = document.createElement('div');
-    row.className = 'log-item';
-    const dStr = item.delta > 0 ? '+' + item.delta : String(item.delta);
-    const cls = item.delta > 0 ? 'log-delta-pos' : 'log-delta-neg';
-    row.innerHTML = `<span class="log-name">${item.name}</span><span class="${cls}">${dStr}</span><span class="log-note">${item.note || ''}</span><span class="log-time">${formatTime(item.time)}</span>`;
-    list.appendChild(row);
-  });
+  snap.forEach(child => items.push(child.val()));
+  const latest = items.slice(-20);
+  renderLogs(latest);
 });
 
 db.ref('config').on('value', snap => {
   const cfg = snap.val();
-  if (cfg && cfg.names) names = cfg.names;
+  if (cfg && Array.isArray(cfg.names)) names = cfg.names;
   if (cfg && cfg.adminPassword) adminPassword = cfg.adminPassword;
   buildSelect();
 });
 
-function saveConfig() { db.ref('config').set({ names, adminPassword }); }
+function saveConfig() {
+  db.ref('config').set({ names, adminPassword });
+}
 
 function toggleAdminGate() {
   const gate = document.getElementById('adminGate');
@@ -253,7 +278,9 @@ function renderChips() {
   names.forEach((n, i) => {
     const chip = document.createElement('div');
     chip.className = 'name-chip';
-    chip.innerHTML = `<input type="text" value="${n}" data-idx="${i}" onchange="editName(this)"><button class="btn-small danger" onclick="deleteName(${i})"><i class="ti ti-trash" aria-hidden="true"></i></button>`;
+    chip.innerHTML =
+      '<input type="text" value="' + n + '" data-idx="' + i + '" onchange="editName(this)">' +
+      '<button class="btn-small danger" onclick="deleteName(' + i + ')">刪除</button>';
     c.appendChild(chip);
   });
 }
@@ -275,7 +302,8 @@ function addName() {
   if (!val) return;
   if (names.includes(val)) {
     fb.innerHTML = '<div class="msg error">名字已存在</div>';
-    setTimeout(() => fb.innerHTML = '', 2000); return;
+    setTimeout(() => fb.innerHTML = '', 2000);
+    return;
   }
   names.push(val); inp.value = '';
   renderChips(); buildSelect(); saveConfig();
@@ -296,3 +324,5 @@ function changePw() {
 buildButtons();
 buildSelect();
 </script>
+</body>
+</html>
