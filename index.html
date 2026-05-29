@@ -184,6 +184,61 @@ body::before {
 .ck-stat-val { font-size:1.15em; font-weight:900; color:#667eea; }
 .ck-stat-lbl { font-size:.6em; color:#888; font-weight:700; }
 
+/* ── 記憶翻牌 ───────────────────────────────────────────── */
+.memory-ov {
+  position:fixed; inset:0; background:rgba(0,0,0,.7);
+  display:flex; align-items:center; justify-content:center;
+  z-index:999; padding:12px;
+}
+.memory-box {
+  background:white; border-radius:20px; padding:18px 16px;
+  width:100%; max-width:420px; max-height:90vh; overflow-y:auto;
+  box-shadow:0 8px 40px rgba(0,0,0,.4);
+}
+.memory-header {
+  display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;
+}
+.memory-title { font-size:1.1em; font-weight:900; color:#1a0a2e; }
+.memory-steps { font-size:.8em; font-weight:800; color:#e67e22; }
+.memory-pairs-info { font-size:.75em; font-weight:800; color:#667eea; margin-bottom:12px; }
+.memory-grid {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px;
+}
+.mem-card {
+  aspect-ratio:1; border-radius:12px; border:2.5px solid #c5cff0;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.8em; cursor:pointer; transition:all .25s;
+  user-select:none; position:relative; overflow:hidden;
+}
+.mem-card.flipped {
+  background:white; border-color:var(--gold);
+  box-shadow:0 3px 10px rgba(255,215,0,.35);
+}
+.mem-card.matched {
+  background:linear-gradient(135deg,#d4edda,#c3e6cb);
+  border-color:#2ECC71; cursor:default;
+  box-shadow:0 3px 10px rgba(46,204,113,.3);
+}
+.mem-card.flipped .card-back,
+.mem-card.matched .card-back { display:none; }
+.mem-card:not(.flipped):not(.matched) .card-front { display:none; }
+.card-back { font-size:1.3em; }
+.card-front { font-size:1.6em; }
+.memory-result {
+  background:#f0f4ff; border:2px solid #c5cff0; border-radius:13px;
+  padding:12px; text-align:center; margin-bottom:10px;
+}
+.memory-result .result-title { font-size:1em; font-weight:900; color:#1a0a2e; margin-bottom:6px; }
+.memory-result .result-rewards { font-size:.82em; font-weight:800; color:#e67e22; }
+.memory-close-btn {
+  width:100%; padding:13px; border:none; border-radius:13px;
+  background:linear-gradient(135deg,#FFD700,#FF9F1C);
+  font-family:'Nunito',sans-serif; font-size:1em; font-weight:900;
+  color:white; cursor:pointer; box-shadow:0 4px 14px rgba(255,140,0,.4);
+  margin-bottom:0;
+}
+
 /* ── 分頁列 ─────────────────────────────────────────────── */
 .tabs {
   display:flex; gap:4px; margin-bottom:8px;
@@ -289,6 +344,20 @@ body::before {
   animation:gemFloat 1.3s ease forwards;
 }
 .gem-popup .gp-text { font-size:1.5em; font-weight:900; }
+
+/* ── 小遊戲大廳 ─────────────────────────────────────────── */
+.game-hall-card {
+  display:flex; align-items:center; gap:12px;
+  background:#f0f4ff; border:2px solid #c5cff0; border-radius:13px;
+  padding:12px 14px; margin-bottom:10px; cursor:pointer; transition:all .2s;
+}
+.game-hall-card:hover { transform:translateY(-2px); box-shadow:0 4px 14px rgba(102,126,234,.25); }
+.game-hall-card.locked { opacity:.45; cursor:not-allowed; filter:grayscale(.6); }
+.game-hall-icon { font-size:2em; flex-shrink:0; }
+.game-hall-info { flex:1; }
+.game-hall-name { font-size:.92em; font-weight:900; color:#1a0a2e; }
+.game-hall-desc { font-size:.68em; color:#888; font-weight:700; margin-top:2px; }
+.game-hall-ticket { font-size:.8em; font-weight:900; color:#e67e22; flex-shrink:0; }
 
 /* ── 抽卡頁 ──────────────────────────────────────── */
 .draw-info {
@@ -1342,6 +1411,7 @@ button:active { transform:scale(.96); }
     <button class="tab-btn"        onclick="showTab('skill')"   id="skillTabBtn" style="position:relative">⚡ 技能<span id="skillBadge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:white;font-size:.55em;font-weight:900;border-radius:20px;padding:1px 5px;line-height:1.4">0</span></button>
     <button class="tab-btn"        onclick="showTab('achieve')" id="achieveTabBtn" style="position:relative">🏅 成就<span id="achieveBadge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:white;font-size:.55em;font-weight:900;border-radius:20px;padding:1px 5px;line-height:1.4">0</span></button>
     <button class="tab-btn"        onclick="showTab('checkin')" id="checkinTabBtn" style="position:relative">📅 簽到<span id="checkinBadge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:white;font-size:.55em;font-weight:900;border-radius:20px;padding:1px 5px;line-height:1.4">！</span></button>
+    <button class="tab-btn" id="tab-game" onclick="showTab('game')">🎮 遊戲</button>
     <button class="tab-btn"        onclick="showTab('admin')">  ⚙️ 後台</button>
   </div>
   <div id="activeQuestBar"><!-- 任務進度小條 -->
@@ -1646,6 +1716,22 @@ button:active { transform:scale(.96); }
       <div class="ck-stat">
         <div class="ck-stat-val" id="ckCycleDay">1/7</div>
         <div class="ck-stat-lbl">本輪進度</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 小遊戲 -->
+  <div id="tab-game" class="panel hidden">
+    <h3 style="font-size:1em;font-weight:900;margin-bottom:12px;">🎮 小遊戲大廳</h3>
+    <div id="gameHallList">
+      <!-- 遊戲卡片會放在這裡 -->
+      <div class="game-hall-card" id="gameCard-memory" onclick="openMemoryGame()">
+        <div class="game-hall-icon">🃏</div>
+        <div class="game-hall-info">
+          <div class="game-hall-name">魔法記憶翻牌</div>
+          <div class="game-hall-desc">12張牌・12步・配對越多獎勵越豐厚</div>
+        </div>
+        <div class="game-hall-ticket" id="memoryTicketCount">🎟️ x0</div>
       </div>
     </div>
   </div>
@@ -1971,6 +2057,7 @@ const EQUIP_POOL = [
   {id:'eq33',name:'鳳凰羽衣',   emoji:'👘',type:'鎧甲',rarity:'epic',     atk:0,  def:7,  mag:3,  hp:0, mp:0, price:375, enhStat:'防禦', enhPer:6},
   {id:'eq34',name:'重型裝甲',   emoji:'🦺',type:'鎧甲',rarity:'epic',     atk:0,  def:11, mag:0,  hp:0, mp:0, price:375, enhStat:'防禦', enhPer:6},
   {id:'eq35',name:'守護者鎧甲', emoji:'🛡️',type:'鎧甲',rarity:'legendary',atk:0,  def:22, mag:0,  hp:0, mp:0, price:500, enhStat:'防禦', enhPer:8, specialEffect:{type:'hpRegen', base:0.8, perStar:0.8, desc:'每回合恢復 HP'}},
+  {id:'ticket_memory', name:'入場券', emoji:'🎟️', type:'ticket', rarity:'rare', desc:'進入遊戲廳的入場券' },
 ];
 
 // 技能卡、強化
@@ -3096,21 +3183,21 @@ function renderDrawUI() {
 }
 
 function rollCard(forceLegendary, forceEpic) {
-  // 強制保底時，直接走裝備路徑
   if (forceLegendary || forceEpic) {
     const rarity = forceLegendary ? 'legendary' : 'epic';
     return rollEquip(rarity);
   }
 
-  const r = Math.random();// 抽卡機率
+  const r = Math.random();
   if      (r < 0.05)  return rollEquip('legendary');   //  5%
   else if (r < 0.08)  return rollSkill('epic');        //  3%
-  else if (r < 0.22)  return rollEquip('epic');        // 14%
-  else if (r < 0.31)  return rollSkill('rare');        //  9%
-  else if (r < 0.52)  return rollEquip('rare');        // 21%
-  else if (r < 0.67)  return rollGold();               // 15%
-  else if (r < 0.69)  return (state.clearedStages || []).includes(62) ? rollStone() : rollGold();  //  62關完成後2%抽水晶，否則給金幣
-  else                return rollEquip('common');      // 31%
+  else if (r < 0.21)  return rollEquip('epic');        // 13%
+  else if (r < 0.30)  return rollSkill('rare');        //  9%
+  else if (r < 0.51)  return rollEquip('rare');        // 21%
+  else if (r < 0.66)  return rollGold();               // 15%
+  else if (r < 0.68)  return (state.clearedStages || []).includes(62) ? rollStone() : rollGold();  // 2%
+  else if (r < 0.70)  return rollTicket();             //  2%
+  else                return rollEquip('common');      // 30%
 }
 
 function rollStone() {
@@ -3148,6 +3235,28 @@ function rollGold() {
   return { _isGold: true, amount, emoji: '💰', name: `${amount} 金幣`, rarity: 'rare' };
 }
 
+function rollTicket() {
+  state.tickets = state.tickets || {};
+  state.tickets['ticket_memory'] = (state.tickets['ticket_memory'] || 0) + 1;
+  renderGameHall();
+  return { type:'ticket', id:'ticket_memory', name:'入場券', emoji:'🎟️', rarity:'rare' };
+}
+
+function renderGameHall() {
+  const count = (state.tickets && state.tickets['ticket_memory']) || 0;
+  const el = document.getElementById('memoryTicketCount');
+  if (el) el.textContent = '🎟️ x' + count;
+
+  const card = document.getElementById('gameCard-memory');
+  if (card) {
+    if (count > 0) {
+      card.classList.remove('locked');
+    } else {
+      card.classList.add('locked');
+    }
+  }
+}
+
 function applyDrawResult(card) {
   if (card.type === 'stone') {
   } else if (card._isGold) {
@@ -3177,12 +3286,14 @@ function drawOne() {
   updateQuestProgress('draw');
 
   const area = document.getElementById('cardArea');
-  const frontClass = card._isGold ? 'cr-rare' : (card._isSkill ? 'cr-epic' : `cr-${card.rarity}`);
+  const frontClass = card._isGold ? 'cr-rare' : (card._isSkill ? 'cr-epic' : card.type === 'ticket' ? 'cr-rare': `cr-${card.rarity}`);
   const frontStat  = card._isGold ? `＋${card.amount} 金幣`
     : card.type === 'stone' ? card.desc
+    : card.type === 'ticket' ? card.desc
     : (card._isSkill ? card.desc : `⚔️${card.atk} 🛡️${card.def} ✨${card.mag}`);
   const frontType  = card._isGold ? '金幣獎勵'
     : card.type === 'stone' ? '特殊道具'
+    : card.type === 'ticket' ? '小遊戲道具'
     : (RARITY_CFG[card.rarity]?.label || '') + ' · ' + (card.type || '技能');
   (!card._isGold && !card._isSkill && card.type !== 'stone' && card.rarity === 'legendary') ? 'legendary-back' : ''
   const isLegendaryBack = (!card._isGold && !card._isSkill && card.type !== 'stone' && card.rarity === 'legendary') ? 'legendary-back' : '';
@@ -3210,6 +3321,8 @@ function drawOne() {
         speakText(`獲得金幣 ${card.amount} `);
       } else if (card._isSkill) {
         speakText(`技能，${card.name}`);
+      } else if (card.type === 'ticket') {
+        speakText(`獲得入場券！`);
       } else {
         const rarityLabel = RARITY_CFG[card.rarity]?.label || card.rarity;
         const parts = [];
@@ -3221,7 +3334,7 @@ function drawOne() {
     }, 600);
   
   }, 300);
-  if (!card._isSkill && !card._isGold && card.type !== 'stone') {
+  if (!card._isSkill && !card._isGold && card.type !== 'stone' && card.type !== 'ticket') {
     setTimeout(() => {
       const btn = document.createElement('button');
       btn.className = 'equip-drawn-btn';
@@ -3253,8 +3366,8 @@ function drawEleven() {
   area.innerHTML = (isPity ? '<div style="text-align:center;font-size:.82em;font-weight:900;color:#8e24aa;margin-bottom:6px">🎉 第55抽保底觸發！</div>' : '') +
     `<div class="multi-result-grid">${results.map((c, i) => {
       const rc = c._isGold ? { color:'#D4AF37', bg:'#FFD700' } : (RARITY_CFG[c.rarity] || RARITY_CFG.common);
-      const label = c._isGold ? '金幣' : (c._isSkill ? '技能' : (rlLabel[c.rarity] || ''));
-      const name  = c._isGold ? `${c.amount}💰` : c.name;
+      const label = c._isGold ? '金幣' : c.type === 'ticket' ? '道具': (c._isSkill ? '技能' : (rlLabel[c.rarity] || ''));
+      const name  = c._isGold ? `${c.amount}💰` : c.type === 'ticket' ? `${c.emoji} ${c.name}`: c.name;
       return `<div class="mr-cell" style="padding:0;border:none;background:transparent">
         <div class="mr-scene">
           <div class="mr-inner" id="mri${i}">
@@ -4593,7 +4706,7 @@ function playSound(type) {
 }
 
 // 分頁切換==================================
-const TABS = ['quiz','draw','battle','shop','gear','quest','skill','achieve','checkin','admin'];
+const TABS = ['quiz','draw','battle','shop','gear','quest','skill','achieve','checkin','game','admin'];
 
 function showTab(tab) {
   if (tab !== 'quest' && window._questTimer) {
@@ -9344,6 +9457,224 @@ function applyAchievementBonuses() {
   });
 }
 
+/* ══════════════════════════════════════════════
+   記憶翻牌小遊戲
+══════════════════════════════════════════════ */
+const MEMORY_STEPS = 12;
+const MEMORY_PAIRS = 6;
+
+// 獎勵表（配對數 0~6）
+const MEMORY_REWARDS = [
+  { gold:0,   exp:0,   gem:0  },  // 0對
+  { gold:20,  exp:10,  gem:0  },  // 1對
+  { gold:50,  exp:25,  gem:0  },  // 2對
+  { gold:100, exp:50,  gem:0  },  // 3對
+  { gold:180, exp:100, gem:1  },  // 4對
+  { gold:280, exp:160, gem:2  },  // 5對
+  { gold:420, exp:250, gem:3  },  // 6對（全對）
+];
+
+let memGame = {
+  cards: [],       // { id, monsterId, flipped, matched }
+  flippedIdx: [],  // 目前翻開中（最多2張）
+  steps: 0,
+  pairs: 0,
+  locked: false,   // 翻牌鎖（配對判斷中）
+  started: false,
+  finished: false,
+};
+
+function getMemoryMonsters() {
+  // 取得可用怪物清單
+  // 新玩家或打過的怪物不足6隻時，用 s1~s6
+  const fallback = ['s1','s2','s3','s4','s5','s6'];
+
+  let pool = [];
+  if (state.defeatedMonsters && state.defeatedMonsters.length >= 6) {
+    pool = [...state.defeatedMonsters];
+  } else {
+    pool = [...fallback];
+  }
+
+  // 隨機抽6隻
+  const shuffled = pool.sort(() => Math.random() - .5);
+  return shuffled.slice(0, MEMORY_PAIRS);
+}
+
+function buildMemoryCards(monsterIds) {
+  // 每隻怪出現2張，共12張，洗牌
+  let cards = [];
+  monsterIds.forEach((mid, i) => {
+    cards.push({ id: i*2,   pairId: i, monsterId: mid, flipped: false, matched: false });
+    cards.push({ id: i*2+1, pairId: i, monsterId: mid, flipped: false, matched: false });
+  });
+  return cards.sort(() => Math.random() - .5);
+}
+
+function getMonsterEmoji(monsterId) {
+  // 從現有的 MONSTER_POOL 或怪物定義找 emoji
+  if (typeof MONSTER_POOL !== 'undefined') {
+    const m = MONSTER_POOL.find(x => x.id === monsterId);
+    if (m) return m.emoji || '👾';
+  }
+  // fallback
+  const fallbackEmoji = { s1:'🐺',s2:'🐗',s3:'🦎',s4:'🦂',s5:'🐉',s6:'👻' };
+  return fallbackEmoji[monsterId] || '👾';
+}
+
+function openMemoryGame() {
+  const count = (state.tickets && state.tickets['ticket_memory']) || 0;
+  if (count <= 0) { showToast('❌ 沒有記憶翻牌券！'); return; }
+
+  // 初始化遊戲狀態
+  const monsters = getMemoryMonsters();
+  memGame = {
+    cards: buildMemoryCards(monsters),
+    flippedIdx: [],
+    steps: MEMORY_STEPS,
+    pairs: 0,
+    locked: false,
+    started: true,
+    finished: false,
+  };
+
+  renderMemoryGame();
+  document.getElementById('memoryGameOv').classList.remove('hidden');
+  document.getElementById('memCancelBtn').style.display = '';
+  document.getElementById('memCloseBtn').classList.add('hidden');
+  document.getElementById('memoryResult').classList.add('hidden');
+}
+
+function renderMemoryGame() {
+  document.getElementById('memStepsLeft').textContent = memGame.steps;
+  document.getElementById('memPairsCount').textContent = memGame.pairs;
+
+  const grid = document.getElementById('memoryGrid');
+  grid.innerHTML = '';
+
+  memGame.cards.forEach((card, idx) => {
+    const el = document.createElement('div');
+    el.className = 'mem-card';
+    if (card.flipped) el.classList.add('flipped');
+    if (card.matched) el.classList.add('matched');
+
+    const emoji = getMonsterEmoji(card.monsterId);
+    el.innerHTML = `<span class="card-back">✨</span><span class="card-front">${emoji}</span>`;
+
+    if (!card.matched && !memGame.locked) {
+      el.onclick = () => flipMemCard(idx);
+    }
+    grid.appendChild(el);
+  });
+}
+
+function flipMemCard(idx) {
+  if (memGame.locked) return;
+  if (memGame.finished) return;
+  const card = memGame.cards[idx];
+  if (card.flipped || card.matched) return;
+  if (memGame.flippedIdx.length >= 2) return;
+
+  // 翻開
+  card.flipped = true;
+  memGame.flippedIdx.push(idx);
+  renderMemoryGame();
+
+  if (memGame.flippedIdx.length === 2) {
+    memGame.steps--;
+    memGame.locked = true;
+
+    const [a, b] = memGame.flippedIdx;
+    const cardA = memGame.cards[a];
+    const cardB = memGame.cards[b];
+
+    if (cardA.pairId === cardB.pairId) {
+      // 配對成功
+      setTimeout(() => {
+        cardA.matched = true;
+        cardB.matched = true;
+        cardA.flipped = false;
+        cardB.flipped = false;
+        memGame.pairs++;
+        memGame.flippedIdx = [];
+        memGame.locked = false;
+        renderMemoryGame();
+        checkMemoryEnd();
+      }, 600);
+    } else {
+      // 配對失敗，翻回去
+      setTimeout(() => {
+        cardA.flipped = false;
+        cardB.flipped = false;
+        memGame.flippedIdx = [];
+        memGame.locked = false;
+        renderMemoryGame();
+        checkMemoryEnd();
+      }, 900);
+    }
+  }
+}
+
+function checkMemoryEnd() {
+  const allMatched = memGame.pairs === MEMORY_PAIRS;
+  const noSteps = memGame.steps <= 0;
+
+  if (allMatched || noSteps) {
+    memGame.finished = true;
+    showMemoryResult();
+  }
+}
+
+function showMemoryResult() {
+  const reward = MEMORY_REWARDS[memGame.pairs];
+  const resultEl = document.getElementById('memoryResult');
+  const cancelBtn = document.getElementById('memCancelBtn');
+
+  let msg = '';
+  if (memGame.pairs === MEMORY_PAIRS) {
+    msg = '🎉 完美配對！全部翻對了！';
+  } else if (memGame.pairs === 0) {
+    msg = '😢 很遺憾，一對都沒配到…';
+  } else {
+    msg = `✨ 配對了 ${memGame.pairs} 對！`;
+  }
+
+  let rewardText = '';
+  if (reward.gold > 0)  rewardText += `🪙 金幣 +${reward.gold}　`;
+  if (reward.exp > 0)   rewardText += `⭐ 經驗 +${reward.exp}　`;
+  if (reward.gem > 0)   rewardText += `💎 寶石 +${reward.gem}`;
+  if (!rewardText)      rewardText = '（無獎勵）';
+
+  resultEl.innerHTML = `
+    <div class="result-title">${msg}</div>
+    <div class="result-rewards">${rewardText.trim()}</div>
+  `;
+  resultEl.classList.remove('hidden');
+  document.getElementById('memCloseBtn').classList.remove('hidden');
+  cancelBtn.style.display = 'none';
+}
+
+function closeMemoryGame() {
+  if (memGame.finished) {
+    // 扣入場券
+    state.tickets['ticket_memory'] = Math.max(0, (state.tickets['ticket_memory'] || 0) - 1);
+
+    // 發放獎勵
+    const reward = MEMORY_REWARDS[memGame.pairs];
+    if (reward.gold) state.hero.gold += reward.gold;
+    if (reward.exp)  { addExp(reward.exp); }
+    if (reward.gem)  state.hero.gems += reward.gem;
+
+    autoSave();
+    renderHero();
+    renderGameHall();
+    showToast(`🎟️ 翻牌結束！獲得 🪙${reward.gold} ⭐${reward.exp}${reward.gem ? ' 💎'+reward.gem : ''}`);
+  }
+
+  document.getElementById('memoryGameOv').classList.add('hidden');
+  memGame = { ...memGame, started: false };
+}
+
 function init() {
   loadFromStorage();
   if (state.clearedStages && state.clearedStages.length > 0) {
@@ -9379,6 +9710,7 @@ function init() {
   updateAchieveBadge();
   updateSkillBadge();
   updateQuestBadge();
+  renderGameHall();
   setInterval(() => {
     const before = state.quests.map(s => s.questId).join(',');
     refreshQuestSlots();
@@ -10109,6 +10441,21 @@ init();
     <div class="char-grid" id="charGrid"></div>
     <button class="char-confirm-btn" onclick="confirmCharSelect()">✨ 確認選擇</button>
     <button onclick="closeCharSelect()" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:11px;background:#f1f5f9;color:#64748b;font-family:'Nunito',sans-serif;font-size:.88em;font-weight:800;cursor:pointer;">取消</button>
+  </div>
+</div>
+
+<!-- 記憶翻牌彈窗 -->
+<div id="memoryGameOv" class="memory-ov hidden">
+  <div class="memory-box">
+    <div class="memory-header">
+      <div class="memory-title">🃏 魔法記憶翻牌</div>
+      <div class="memory-steps">剩餘步數：<span id="memStepsLeft">12</span></div>
+    </div>
+    <div class="memory-pairs-info">已配對：<span id="memPairsCount">0</span> / 6</div>
+    <div class="memory-grid" id="memoryGrid"></div>
+    <div id="memoryResult" class="memory-result hidden"></div>
+    <button id="memCloseBtn" class="memory-close-btn hidden" onclick="closeMemoryGame()">✅ 領取獎勵並離開</button>
+    <button onclick="closeMemoryGame()" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:11px;background:#f1f5f9;color:#64748b;font-family:'Nunito',sans-serif;font-size:.88em;font-weight:800;cursor:pointer;" id="memCancelBtn">取消（不消耗入場券）</button>
   </div>
 </div>
 
