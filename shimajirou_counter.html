@@ -139,7 +139,6 @@ const db = firebase.database();
 const DELTAS = [0.5, 1, 2, 3, 4, 5];
 let names = ['孟霖', '涴琇'];
 let adminPassword = 'admin1234';
-let adminUnlocked = false;
 
 function buildButtons() {
   const grid = document.getElementById('btnGrid');
@@ -166,8 +165,7 @@ function buildSelect() {
   sel.innerHTML = '';
   names.forEach(n => {
     const opt = document.createElement('option');
-    opt.value = n;
-    opt.textContent = n;
+    opt.value = n; opt.textContent = n;
     if (n === prev) opt.selected = true;
     sel.appendChild(opt);
   });
@@ -180,16 +178,7 @@ function applyDelta(delta) {
   db.ref('counter').transaction(current => (current || 0) + delta);
   const entry = { name, delta, time: Date.now() };
   if (note) entry.note = note;
-  const logRef = db.ref('logs').push();
-  logRef.set(entry, () => {
-    db.ref('logs').orderByChild('time').once('value', snap => {
-      const items = [];
-      snap.forEach(c => items.push({ key: c.key, ...c.val() }));
-      if (items.length > 20) {
-        items.slice(0, items.length - 20).forEach(i => db.ref('logs/' + i.key).remove());
-      }
-    });
-  });
+  db.ref('logs').push(entry);
   document.getElementById('noteInput').value = '';
   const disp = document.getElementById('counterDisplay');
   disp.classList.add('bump');
@@ -214,7 +203,7 @@ db.ref('counter').on('value', snap => {
   document.getElementById('counterDisplay').textContent = Number.isInteger(val) ? val : val.toFixed(1);
 });
 
-db.ref('logs').orderByChild('time').on('value', snap => {
+db.ref('logs').orderByChild('time').limitToLast(20).on('value', snap => {
   const items = [];
   snap.forEach(c => items.push(c.val()));
   const list = document.getElementById('logList');
@@ -225,18 +214,16 @@ db.ref('logs').orderByChild('time').on('value', snap => {
     row.className = 'log-item';
     const dStr = item.delta > 0 ? '+' + item.delta : String(item.delta);
     const cls = item.delta > 0 ? 'log-delta-pos' : 'log-delta-neg';
-    const noteHtml = `<span class="log-note">${item.note || ''}</span>`;
-    row.innerHTML = `<span class="log-name">${item.name}</span><span class="${cls}">${dStr}</span>${noteHtml}<span class="log-time">${formatTime(item.time)}</span>`;
+    row.innerHTML = `<span class="log-name">${item.name}</span><span class="${cls}">${dStr}</span><span class="log-note">${item.note || ''}</span><span class="log-time">${formatTime(item.time)}</span>`;
     list.appendChild(row);
   });
 });
 
-db.ref('config').once('value', snap => {
+db.ref('config').on('value', snap => {
   const cfg = snap.val();
   if (cfg && cfg.names) names = cfg.names;
   if (cfg && cfg.adminPassword) adminPassword = cfg.adminPassword;
   buildSelect();
-  buildButtons();
 });
 
 function saveConfig() { db.ref('config').set({ names, adminPassword }); }
@@ -245,7 +232,6 @@ function toggleAdminGate() {
   const gate = document.getElementById('adminGate');
   gate.style.display = gate.style.display === 'none' ? 'block' : 'none';
   document.getElementById('adminPanel').style.display = 'none';
-  adminUnlocked = false;
 }
 
 function unlockAdmin() {
@@ -254,7 +240,6 @@ function unlockAdmin() {
   if (pw === adminPassword) {
     document.getElementById('adminGate').style.display = 'none';
     document.getElementById('adminPanel').style.display = 'block';
-    adminUnlocked = true;
     renderChips();
   } else {
     msg.innerHTML = '<div class="msg error">密碼錯誤</div>';
