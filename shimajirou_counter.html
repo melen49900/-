@@ -1,0 +1,525 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body, .root {
+    font-family: 'Syne', sans-serif;
+    background: transparent;
+    color: var(--color-text-primary);
+  }
+
+  .app {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .header h1 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.5rem;
+  }
+
+  .counter-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 80px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--color-text-primary);
+    letter-spacing: -2px;
+    transition: transform 0.15s ease, color 0.2s ease;
+  }
+
+  .counter-display.bump {
+    transform: scale(1.06);
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #1D9E75;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .status-dot.offline { background: #E24B4A; }
+
+  .status-label {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    margin-top: 0.5rem;
+  }
+
+  .selector-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .selector-row label {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+
+  .selector-row select {
+    flex: 1;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .btn-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    margin-bottom: 1.5rem;
+  }
+
+  .btn-plus, .btn-minus {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 4px;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: transform 0.1s, background 0.15s;
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+  }
+
+  .btn-plus:hover { background: #EAF3DE; color: #3B6D11; border-color: #97C459; }
+  .btn-minus:hover { background: #FCEBEB; color: #A32D2D; border-color: #F09595; }
+  .btn-plus:active, .btn-minus:active { transform: scale(0.94); }
+
+  .log-section {
+    margin-top: 0.5rem;
+  }
+
+  .log-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin-bottom: 0.75rem;
+  }
+
+  .log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .log-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 10px;
+    border-radius: var(--border-radius-md);
+    background: var(--color-background-secondary);
+    font-size: 13px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+  .log-name { color: var(--color-text-secondary); font-weight: 500; }
+  .log-delta-pos { color: #1D9E75; font-family: 'DM Mono', monospace; }
+  .log-delta-neg { color: #E24B4A; font-family: 'DM Mono', monospace; }
+  .log-time { color: var(--color-text-tertiary); font-size: 11px; font-family: 'DM Mono', monospace; }
+
+  .empty-log {
+    text-align: center;
+    color: var(--color-text-tertiary);
+    font-size: 13px;
+    padding: 1.5rem 0;
+  }
+
+  .divider {
+    border: none;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    margin: 1.5rem 0;
+  }
+
+  .admin-toggle {
+    text-align: center;
+    margin-top: 1rem;
+  }
+
+  .admin-link {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    background: none;
+    border: none;
+    text-decoration: underline;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .admin-panel {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-lg);
+    background: var(--color-background-secondary);
+  }
+
+  .admin-panel h3 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    margin-bottom: 1rem;
+  }
+
+  .admin-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+
+  .admin-row input {
+    flex: 1;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+  }
+
+  .btn-small {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+  }
+
+  .btn-small:hover { background: var(--color-background-tertiary); }
+  .btn-small.danger:hover { background: #FCEBEB; color: #A32D2D; border-color: #F09595; }
+  .btn-small.success:hover { background: #EAF3DE; color: #3B6D11; border-color: #97C459; }
+
+  .name-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: var(--border-radius-md);
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .name-chip span { flex: 1; }
+  .name-chip input { flex: 1; font-size: 13px; font-family: 'Syne', sans-serif; border: none; background: transparent; color: var(--color-text-primary); outline: none; }
+
+  .msg {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: var(--border-radius-md);
+    margin-bottom: 8px;
+  }
+  .msg.error { background: #FCEBEB; color: #A32D2D; }
+  .msg.success { background: #EAF3DE; color: #3B6D11; }
+
+  .pw-gate {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+</style>
+
+<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">計數器應用程式，支援多人即時同步與操作記錄</h2>
+
+<div class="app" id="app">
+  <div class="header">
+    <h1>Count of Shimajirou</h1>
+    <div class="counter-display" id="counterDisplay">—</div>
+    <div class="status-label">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusLabel">連線中...</span>
+    </div>
+  </div>
+
+  <div class="selector-row">
+    <label>操作者</label>
+    <select id="nameSelect"></select>
+  </div>
+
+  <div class="btn-grid" id="btnGrid"></div>
+
+  <hr class="divider">
+
+  <div class="log-section">
+    <div class="log-title">最近紀錄</div>
+    <div class="log-list" id="logList">
+      <div class="empty-log">尚無紀錄</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="admin-toggle">
+    <button class="admin-link" onclick="toggleAdminGate()">管理員設定</button>
+  </div>
+
+  <div id="adminGate" style="display:none; margin-top:1rem;">
+    <div class="admin-panel">
+      <div class="pw-gate">
+        <input type="password" id="adminPwInput" placeholder="管理員密碼" style="flex:1; font-family:'Syne',sans-serif;">
+        <button class="btn-small success" onclick="unlockAdmin()">進入</button>
+      </div>
+      <div id="adminMsg"></div>
+    </div>
+  </div>
+
+  <div id="adminPanel" style="display:none; margin-top:1rem;">
+    <div class="admin-panel">
+      <h3>名單管理</h3>
+      <div id="nameChips"></div>
+      <div class="admin-row">
+        <input type="text" id="newNameInput" placeholder="新增名字..." maxlength="20">
+        <button class="btn-small success" onclick="addName()">新增</button>
+      </div>
+      <div id="adminFeedback"></div>
+      <hr class="divider" style="margin:1rem 0 0.75rem">
+      <h3>修改管理員密碼</h3>
+      <div class="admin-row">
+        <input type="password" id="newPwInput" placeholder="新密碼（留空不更改）">
+        <button class="btn-small" onclick="changePw()">更新密碼</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBIBaL-AMxdsuLhgLY16jCyWQATuTEcrjY",
+  authDomain: "count-of-shimajirou.firebaseapp.com",
+  databaseURL: "https://count-of-shimajirou-default-rtdb.firebaseio.com",
+  projectId: "count-of-shimajirou",
+  storageBucket: "count-of-shimajirou.firebasestorage.app",
+  messagingSenderId: "162925039758",
+  appId: "1:162925039758:web:edf6173abcfe0ea21ff9df"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const DELTAS = [0.5, 1, 2, 3, 4, 5];
+let names = ['孟霖', '涴琇'];
+let adminPassword = 'admin1234';
+let adminUnlocked = false;
+
+function buildButtons() {
+  const grid = document.getElementById('btnGrid');
+  grid.innerHTML = '';
+  DELTAS.forEach(d => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-plus';
+    btn.textContent = '+' + d;
+    btn.onclick = () => applyDelta(d);
+    grid.appendChild(btn);
+  });
+  DELTAS.forEach(d => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-minus';
+    btn.textContent = '-' + d;
+    btn.onclick = () => applyDelta(-d);
+    grid.appendChild(btn);
+  });
+}
+
+function buildSelect() {
+  const sel = document.getElementById('nameSelect');
+  const prev = sel.value;
+  sel.innerHTML = '';
+  names.forEach(n => {
+    const opt = document.createElement('option');
+    opt.value = n;
+    opt.textContent = n;
+    if (n === prev) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function applyDelta(delta) {
+  const name = document.getElementById('nameSelect').value;
+  if (!name) return;
+  const ref = db.ref('counter');
+  ref.transaction(current => (current || 0) + delta);
+  const logRef = db.ref('logs').push();
+  logRef.set({
+    name,
+    delta,
+    time: Date.now()
+  }, () => {
+    db.ref('logs').orderByChild('time').once('value', snap => {
+      const items = [];
+      snap.forEach(c => items.push({ key: c.key, ...c.val() }));
+      if (items.length > 20) {
+        const toDelete = items.slice(0, items.length - 20);
+        toDelete.forEach(i => db.ref('logs/' + i.key).remove());
+      }
+    });
+  });
+  const disp = document.getElementById('counterDisplay');
+  disp.classList.add('bump');
+  setTimeout(() => disp.classList.remove('bump'), 150);
+}
+
+function formatTime(ts) {
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2,'0');
+  return `${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+db.ref('.info/connected').on('value', snap => {
+  const dot = document.getElementById('statusDot');
+  const lbl = document.getElementById('statusLabel');
+  if (snap.val()) {
+    dot.className = 'status-dot';
+    lbl.textContent = '即時同步中';
+  } else {
+    dot.className = 'status-dot offline';
+    lbl.textContent = '連線中斷';
+  }
+});
+
+db.ref('counter').on('value', snap => {
+  const val = snap.val() ?? 0;
+  document.getElementById('counterDisplay').textContent = Number.isInteger(val) ? val : val.toFixed(1);
+});
+
+db.ref('logs').orderByChild('time').on('value', snap => {
+  const items = [];
+  snap.forEach(c => items.push(c.val()));
+  const list = document.getElementById('logList');
+  if (!items.length) {
+    list.innerHTML = '<div class="empty-log">尚無紀錄</div>';
+    return;
+  }
+  list.innerHTML = '';
+  [...items].reverse().forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'log-item';
+    const dStr = item.delta > 0 ? '+' + item.delta : item.delta;
+    const cls = item.delta > 0 ? 'log-delta-pos' : 'log-delta-neg';
+    row.innerHTML = `<span class="log-name">${item.name}</span><span class="${cls}">${dStr}</span><span class="log-time">${formatTime(item.time)}</span>`;
+    list.appendChild(row);
+  });
+});
+
+db.ref('config').once('value', snap => {
+  const cfg = snap.val();
+  if (cfg && cfg.names) names = cfg.names;
+  if (cfg && cfg.adminPassword) adminPassword = cfg.adminPassword;
+  buildSelect();
+  buildButtons();
+});
+
+function saveConfig() {
+  db.ref('config').set({ names, adminPassword });
+}
+
+function toggleAdminGate() {
+  const gate = document.getElementById('adminGate');
+  gate.style.display = gate.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('adminPanel').style.display = 'none';
+  adminUnlocked = false;
+}
+
+function unlockAdmin() {
+  const pw = document.getElementById('adminPwInput').value;
+  const msg = document.getElementById('adminMsg');
+  if (pw === adminPassword) {
+    document.getElementById('adminGate').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    adminUnlocked = true;
+    renderChips();
+  } else {
+    msg.innerHTML = '<div class="msg error">密碼錯誤</div>';
+    setTimeout(() => msg.innerHTML = '', 2000);
+  }
+}
+
+function renderChips() {
+  const c = document.getElementById('nameChips');
+  c.innerHTML = '';
+  names.forEach((n, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'name-chip';
+    chip.innerHTML = `
+      <input type="text" value="${n}" data-idx="${i}" onchange="editName(this)">
+      <button class="btn-small danger" onclick="deleteName(${i})"><i class="ti ti-trash" aria-hidden="true"></i></button>
+    `;
+    c.appendChild(chip);
+  });
+}
+
+function editName(input) {
+  const idx = parseInt(input.dataset.idx);
+  names[idx] = input.value.trim();
+  buildSelect();
+  saveConfig();
+}
+
+function deleteName(idx) {
+  names.splice(idx, 1);
+  renderChips();
+  buildSelect();
+  saveConfig();
+}
+
+function addName() {
+  const inp = document.getElementById('newNameInput');
+  const val = inp.value.trim();
+  const fb = document.getElementById('adminFeedback');
+  if (!val) return;
+  if (names.includes(val)) {
+    fb.innerHTML = '<div class="msg error">名字已存在</div>';
+    setTimeout(() => fb.innerHTML = '', 2000);
+    return;
+  }
+  names.push(val);
+  inp.value = '';
+  renderChips();
+  buildSelect();
+  saveConfig();
+  fb.innerHTML = '<div class="msg success">已新增</div>';
+  setTimeout(() => fb.innerHTML = '', 2000);
+}
+
+function changePw() {
+  const newPw = document.getElementById('newPwInput').value.trim();
+  const fb = document.getElementById('adminFeedback');
+  if (!newPw) return;
+  adminPassword = newPw;
+  saveConfig();
+  document.getElementById('newPwInput').value = '';
+  fb.innerHTML = '<div class="msg success">密碼已更新</div>';
+  setTimeout(() => fb.innerHTML = '', 2000);
+}
+
+buildButtons();
+buildSelect();
+</script>
