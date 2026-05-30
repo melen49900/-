@@ -5595,6 +5595,7 @@ function loadFromStorage() {
     if (typeof data.state?.totalPlaySeconds === 'number') state.totalPlaySeconds = data.state.totalPlaySeconds;
     if (data.state?.autoUnlock) Object.assign(state.autoUnlock, data.state.autoUnlock);
     if (data.state?.autoSkillId !== undefined) state.autoSkillId = data.state.autoSkillId;
+    if (data.state?.tickets) state.tickets = data.state.tickets;
     setSaveStatus('saved'); setTimeout(() => setSaveStatus('idle'), 2000);
   } catch(e) { setSaveStatus('error'); }
 }
@@ -9457,21 +9458,19 @@ function applyAchievementBonuses() {
   });
 }
 
-/* ══════════════════════════════════════════════
-   記憶翻牌小遊戲
-══════════════════════════════════════════════ */
+/* ════════記憶翻牌小遊戲═════════════ */
 const MEMORY_STEPS = 12;
 const MEMORY_PAIRS = 6;
 
 // 獎勵表（配對數 0~6）
 const MEMORY_REWARDS = [
-  { gold:0,   exp:0,   gem:0  },  // 0對
-  { gold:20,  exp:10,  gem:0  },  // 1對
-  { gold:50,  exp:25,  gem:0  },  // 2對
-  { gold:100, exp:50,  gem:0  },  // 3對
-  { gold:180, exp:100, gem:1  },  // 4對
-  { gold:280, exp:160, gem:2  },  // 5對
-  { gold:420, exp:250, gem:3  },  // 6對（全對）
+  { gold:0,   exp:0,    gem:0  },  // 0對
+  { gold:50,  exp:100,  gem:5  },  // 1對
+  { gold:200, exp:400,  gem:10 },  // 2對
+  { gold:500, exp:800,  gem:20 },  // 3對
+  { gold:2000,exp:1200, gem:30 },  // 4對
+  { gold:3000,exp:1600, gem:50 },  // 5對
+  { gold:4500,exp:2500, gem:100},  // 6對（全對）
 ];
 
 let memGame = {
@@ -9485,13 +9484,12 @@ let memGame = {
 };
 
 function getMemoryMonsters() {
-  // 取得可用怪物清單
-  // 新玩家或打過的怪物不足6隻時，用 s1~s6
-  const fallback = ['s1','s2','s3','s4','s5','s6'];
+  // 取得可用怪物清單，新玩家或打過的怪物不足6隻時，用前6隻
+  const fallback = ['s01','s02','s03','s04','s05','s06'];
 
   let pool = [];
-  if (state.defeatedMonsters && state.defeatedMonsters.length >= 6) {
-    pool = [...state.defeatedMonsters];
+  if (state.defeatedEnemies && state.defeatedEnemies.length >= 6) {
+    pool = [...state.defeatedEnemies];
   } else {
     pool = [...fallback];
   }
@@ -9558,8 +9556,11 @@ function renderMemoryGame() {
     if (card.flipped) el.classList.add('flipped');
     if (card.matched) el.classList.add('matched');
 
-    const emoji = getMonsterEmoji(card.monsterId);
-    el.innerHTML = `<span class="card-back">✨</span><span class="card-front">${emoji}</span>`;
+    const imgSrc = monsterImages[card.monsterId];
+    const frontContent = imgSrc
+      ? `<img src="${imgSrc}" style="width:80%;height:80%;object-fit:contain;border-radius:8px;">`
+      : getMonsterEmoji(card.monsterId);
+    el.innerHTML = `<span class="card-back">✨</span><span class="card-front">${frontContent}</span>`;
 
     if (!card.matched && !memGame.locked) {
       el.onclick = () => flipMemCard(idx);
