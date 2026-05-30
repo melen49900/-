@@ -5343,7 +5343,11 @@ function doAutoForge() {
 
     // 找出背包中所有同 id 且同星級的裝備，按 (id, star) 分組
     const groups = {};
-    state.bag.forEach(card => {
+    const allForgeItems = [
+      ...state.bag,
+      ...Object.values(state.equipped).filter(Boolean)
+    ];
+    allForgeItems.forEach(card => {
       if (card._isSkill) return;
       const key = `${card.id}__${card.star || 0}`;
       if (!groups[key]) groups[key] = [];
@@ -5399,7 +5403,15 @@ function doAutoForge() {
         enhStat:  keepRefine.enhStat,
         enhPer:   keepRefine.enhPer,
       };
-      state.bag.push(newCard);
+      const equippedSlot = Object.keys(state.equipped).find(k =>
+        state.equipped[k] === null &&
+        SLOT_DEFS.find(s => s.key === k)?.types.includes(newCard.type)
+      );
+      if (equippedSlot) {
+        state.equipped[equippedSlot] = newCard;
+      } else {
+        state.bag.push(newCard);
+      }
       totalForged++;
       changed = true;
       break; // 每輪只合成一次，重新掃描（bag 已變更）
@@ -5433,10 +5445,7 @@ function upgradeCost10(card) {
 
 function renderUpgradeList() {
   const list = document.getElementById('upgradeList');
-  const allItems = [
-    ...state.bag,
-    ...Object.values(state.equipped).filter(Boolean)
-  ];
+  const allItems = Object.values(state.equipped).filter(Boolean);
   if (allItems.length === 0) {
     list.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:.82em;padding:12px">背包中沒有裝備</div>';
     return;
