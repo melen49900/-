@@ -2865,10 +2865,10 @@ function nextSubject() {
 
 // 數學題庫設定（可在後台調整）
 const mathCfg = {
-  add: { enabled:true, label:'➕ 加法', aMin:90,  aMax:190, bMin:9,  bMax:35 },
-  sub: { enabled:true, label:'➖ 減法', aMin:100, aMax:210, bMin:9,  bMax:35 },
+  add: { enabled:true, label:'➕ 加法', aMin:80,  aMax:205, bMin:8,  bMax:37 },
+  sub: { enabled:true, label:'➖ 減法', aMin:80,  aMax:205, bMin:8,  bMax:37 },
   mul: { enabled:true, label:'✖️ 乘法', aMin:2,   aMax:9,   bMin:2,  bMax:5  },
-  div: { enabled:true, label:'➗ 除法', aMin:7,   aMax:13,  dMin:2,  dMax:5  },
+  div: { enabled:true, label:'➗ 除法', aMin:6,   aMax:15,  dMin:2,  dMax:5  },
 };
 
 function generateMath() {
@@ -3239,9 +3239,6 @@ function rollGold() {
 }
 
 function rollTicket() {
-  state.tickets = state.tickets || {};
-  state.tickets['ticket_memory'] = (state.tickets['ticket_memory'] || 0) + 1;
-  renderGameHall();
   return { type:'ticket', id:'ticket_memory', name:'入場券', emoji:'🎟️', rarity:'rare' };
 }
 
@@ -3277,9 +3274,12 @@ function applyDrawResult(card) {
     if (!already) state.skills.push(card.id);
     state.skillStacks[card.id] = (state.skillStacks[card.id] || 0) + 1;
     updateSkillBadge();
+  } else if (card.type === 'ticket') {
+    state.tickets = state.tickets || {};
+    state.tickets[card.id] = (state.tickets[card.id] || 0) + 1;
+    renderGameHall();
   } else {
     state.bag.push(card);
-    // 記錄曾抽過的裝備 id（賣掉也保留）
     if (!state.seenEquipIds) state.seenEquipIds = [];
     if (card.id && !state.seenEquipIds.includes(card.id)) {
       state.seenEquipIds.push(card.id);
@@ -8787,6 +8787,7 @@ const QUEST_POOL = [
   { id:'q_streak3',  name:'3連勝',      desc:'達成 3 連勝',      type:'streak',  target:3,   difficulty:'easy',   reward:{ gold:1800, exp:900,  gems:18 } },
   { id:'q_streak5',  name:'5連勝',      desc:'達成 5 連勝',      type:'streak',  target:5,   difficulty:'normal', reward:{ gold:3000, exp:1500, gems:30 } },
   { id:'q_streak7',  name:'7連勝',      desc:'達成 7 連勝',      type:'streak',  target:7,   difficulty:'hard',   reward:{ gold:4200, exp:2100, gems:42 } },
+  { id:'q_streak9',  name:'9連勝',      desc:'達成 9 連勝',      type:'streak',  target:9,   difficulty:'hard',   reward:{ gold:5400, exp:2700, gems:54 } },
   { id:'q_draw4',    name:'抽卡高手',   desc:'抽卡 4 次',        type:'draw',    target:4,   difficulty:'easy',   reward:{ gold:2000, exp:800,  gems:24 } },
   { id:'q_draw7',    name:'抽卡達人',   desc:'抽卡 7 次',        type:'draw',    target:7,   difficulty:'normal', reward:{ gold:3500, exp:1400, gems:56 } },
   { id:'q_draw11',   name:'十一連抽',   desc:'抽卡 11 次',       type:'draw',    target:11,  difficulty:'hard',   reward:{ gold:5500, exp:2200, gems:66 } },
