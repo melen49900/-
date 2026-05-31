@@ -10489,6 +10489,17 @@ const MINE_ROWS = 4;
 let mineState = null;
 
 function openMineGame() {
+  // 如果有未完成的進度，直接繼續
+  if (mineState && !mineState.finished) {
+    document.getElementById('mineGameOv').classList.remove('hidden');
+    document.getElementById('mineResult').classList.add('hidden');
+    document.getElementById('mineCloseBtn').classList.add('hidden');
+    document.getElementById('mineCancelBtn').classList.remove('hidden');
+    renderMineGrid();
+    updateMineUI();
+    return;
+  }
+
   const count = (state.tickets && state.tickets['ticket_memory']) || 0;
   if (count <= 0) { showToast('❌ 沒有入場券！'); return; }
 
@@ -10497,23 +10508,21 @@ function openMineGame() {
   autoSave();
   renderGameHall();
 
-  // 初始化礦坑狀態
-  // grid是從第0層開始的無限礦坑，visibleTopRow是當前顯示的最上排索引
+  // 角色從第0排開始，第0排是入口（空的），角色站在上方
+  // 第1、2、3排是石頭
   mineState = {
     pickaxe: 10,
-    playerCol: 2,        // 角色在第幾欄(0-4)
-    playerRow: 0,        // 角色在可見畫面的第幾排(0-3)
-    worldRow: 0,         // 角色在世界座標的絕對排數
-    visibleTopRow: 0,    // 目前畫面最上方的世界排數
-    // 世界格子：key="row,col", value: 'rock'|'coin'|'gem'|'empty'(已挖)
+    playerCol: 2,
+    playerRow: 0,
+    worldRow: 0,
+    visibleTopRow: -1,  // 畫面最上排是world row -1（空的入口排）
     worldCells: {},
-    // 記錄本次挖掘的快照（結束時的20格）
     resultSnapshot: null,
     finished: false,
     rewards: { coin: 0, gem: 0 }
   };
 
-  // 預先生成前8排的內容
+  // 預先生成石頭（從world row 0開始才有石頭）
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < MINE_COLS; c++) {
       mineState.worldCells[`${r},${c}`] = mineGenCell(r);
@@ -10629,16 +10638,23 @@ function mineCanActV2(r, c) {
   const pc = mineState.playerCol;
   const top = mineState.visibleTopRow;
   const worldRow = top + r;
+
+  // 入口排（world row < 0）不能互動
+  if (worldRow < 0) return null;
+
   const cellVal = mineGetCell(worldRow, c);
 
   // 正下方：挖掘
   if (c === pc && r === pr + 1) {
     if (cellVal !== 'empty') return 'dig';
   }
-  // 左右：同排相鄰
+  // 左右：同排相鄰，但角色所在排若是入口排則不能左右
+  const playerWorldRow = top + pr;
+  if (playerWorldRow < 0) return null;
+
   if (r === pr && Math.abs(c - pc) === 1) {
-    if (cellVal === 'empty') return 'move'; // 空格就走過去
-    return 'dig'; // 有石頭就挖
+    if (cellVal === 'empty') return 'move';
+    return 'dig';
   }
   return null;
 }
@@ -10693,14 +10709,13 @@ function mineDig(r, c) {
     mineState.playerRow = r;
   }
 
-  // 十字鎬用完，結束
-  if (mineState.pickaxe <= 0) {
-    mineFinish();
-    return;
-  }
-
+  // 先更新畫面再判斷結束，讓最後一把結果也能顯示
   renderMineGrid();
   updateMineUI();
+
+  if (mineState.pickaxe <= 0) {
+    setTimeout(() => mineFinish(), 300);
+  }
 }
 
 function updateMineUI() {
@@ -10788,7 +10803,7 @@ function updateMineTicketCount() {
 // 覆寫renderMineGrid中的canAct，改用V2版本
 const _origOpenMine = openMineGame;
 
-// patch renderMineGrid 用 V2
+// renderMineGrid：top排若是入口（world row < 0）則顯示空的
 function renderMineGrid() {
   const grid = document.getElementById('mineGrid');
   grid.innerHTML = '';
@@ -10801,6 +10816,24 @@ function renderMineGrid() {
       cell.className = 'mine-cell';
 
       const isPlayer = (r === mineState.playerRow && c === mineState.playerCol);
+
+      // 入口排（world row < 0）：空的，只顯示角色
+      if (worldRow < 0) {
+        if (isPlayer) {
+          cell.classList.add('player');
+          const avatarSrc = gameAssets?.char?.[state.char] || null;
+          if (avatarSrc) {
+            cell.innerHTML = `<img src="${avatarSrc}" class="mine-char">`;
+          } else {
+            cell.textContent = '🧑';
+          }
+        } else {
+          cell.classList.add('empty');
+        }
+        grid.appendChild(cell);
+        continue;
+      }
+
       const cellVal = mineGetCell(worldRow, c);
 
       if (isPlayer) {
