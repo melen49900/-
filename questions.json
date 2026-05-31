@@ -2,17 +2,6 @@
   "questions": [
     {
       "category": "數學",
-      "question": "10 ? 2 = 5",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "÷"
-    },
-    {
-      "category": "數學",
       "question": "1000c.c. = 幾公升",
       "options": [
         "1",
@@ -21,28 +10,6 @@
         "1000"
       ],
       "answer": "1"
-    },
-    {
-      "category": "數學",
-      "question": "15？5＝10",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "-"
-    },
-    {
-      "category": "數學",
-      "question": "19 ? 7 = 12",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "-"
     },
     {
       "category": "數學",
@@ -79,14 +46,14 @@
     },
     {
       "category": "數學",
-      "question": "24 ? 5 = 19",
+      "question": "1包10元的餅乾買6包要多少錢",
       "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
+        "50",
+        "60",
+        "70",
+        "80"
       ],
-      "answer": "-"
+      "answer": "60"
     },
     {
       "category": "數學",
@@ -101,29 +68,7 @@
     },
     {
       "category": "數學",
-      "question": "3 ? 2 = 6",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "×"
-    },
-    {
-      "category": "數學",
-      "question": "35 ? 9  = 26",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "-"
-    },
-    {
-      "category": "數學",
-      "question": "38元最多可以買幾支10元的餅乾",
+      "question": "38元最多可以買幾包10元的餅乾",
       "options": [
         "2",
         "3",
@@ -134,40 +79,7 @@
     },
     {
       "category": "數學",
-      "question": "4 ? 4 = 16",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "×"
-    },
-    {
-      "category": "數學",
-      "question": "4？2＝8",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "×"
-    },
-    {
-      "category": "數學",
-      "question": "5 ? 2 = 10",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "×"
-    },
-    {
-      "category": "數學",
-      "question": "50元最多可以買幾支10元的餅乾",
+      "question": "50元最多可以買幾包10元的餅乾",
       "options": [
         "2",
         "3",
@@ -175,72 +87,6 @@
         "5"
       ],
       "answer": "5"
-    },
-    {
-      "category": "數學",
-      "question": "6？3＝9",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "+"
-    },
-    {
-      "category": "數學",
-      "question": "7 ? 2 = 9",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "+"
-    },
-    {
-      "category": "數學",
-      "question": "8 ? 4 = 12",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "+"
-    },
-    {
-      "category": "數學",
-      "question": "8 ? 4 = 2",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "÷"
-    },
-    {
-      "category": "數學",
-      "question": "9 ? 3 = 3",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "÷"
-    },
-    {
-      "category": "數學",
-      "question": "9 ? 7 = 16",
-      "options": [
-        "+",
-        "-",
-        "×",
-        "÷"
-      ],
-      "answer": "+"
     },
     {
       "category": "數學",
@@ -299,6 +145,17 @@
     },
     {
       "category": "數學",
+      "question": "長針指到6代表什麼意思",
+      "options": [
+        "6點",
+        "30分",
+        "6分",
+        "30秒"
+      ],
+      "answer": "30分"
+    },
+    {
+      "category": "數學",
       "question": "短針指到1代表什麼意思",
       "options": [
         "1點",
@@ -354,15 +211,14 @@
     },
     {
       "category": "數學",
-      "question": "圖中的鉛筆幾公分",
+      "question": "短針指到6代表什麼意思",
       "options": [
-        "4",
-        "5",
-        "6",
-        "7"
+        "6點",
+        "30分",
+        "6分",
+        "30秒"
       ],
-      "answer": "6",
-      "image": "q_math_ruler_6.jpg"
+      "answer": "6點"
     },
     {
       "category": "數學",
@@ -375,6 +231,18 @@
       ],
       "answer": "5",
       "image": "q_math_ruler_5.jpg"
+    },
+    {
+      "category": "數學",
+      "question": "圖中的鉛筆幾公分",
+      "options": [
+        "4",
+        "5",
+        "6",
+        "7"
+      ],
+      "answer": "6",
+      "image": "q_math_ruler_6.jpg"
     },
     {
       "category": "數學",
@@ -411,61 +279,6 @@
       ],
       "answer": "9",
       "image": "q_math_ruler_9.jpg"
-    },
-    {
-      "category": "數學",
-      "question": "1包10元的餅乾買6包要多少錢",
-      "options": [
-        "50",
-        "60",
-        "70",
-        "80"
-      ],
-      "answer": "60"
-    },
-    {
-      "category": "數學",
-      "question": "38元最多可以買幾包10元的餅乾",
-      "options": [
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
-      "answer": "3"
-    },
-    {
-      "category": "數學",
-      "question": "50元最多可以買幾包10元的餅乾",
-      "options": [
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
-      "answer": "5"
-    },
-    {
-      "category": "數學",
-      "question": "長針指到6代表什麼意思",
-      "options": [
-        "6點",
-        "30分",
-        "6分",
-        "30秒"
-      ],
-      "answer": "30分"
-    },
-    {
-      "category": "數學",
-      "question": "短針指到6代表什麼意思",
-      "options": [
-        "6點",
-        "30分",
-        "6分",
-        "30秒"
-      ],
-      "answer": "6點"
     },
     {
       "category": "國文",
@@ -543,6 +356,28 @@
         "白"
       ],
       "answer": "大"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄉㄠ子」怎麼寫",
+      "options": [
+        "刀",
+        "刃",
+        "分",
+        "切"
+      ],
+      "answer": "刀"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄉㄨㄛㄕㄠˇ」怎麼寫？",
+      "options": [
+        "多少",
+        "夕少",
+        "多沙",
+        "夕沙"
+      ],
+      "answer": "多少"
     },
     {
       "category": "國文",
@@ -631,6 +466,17 @@
         "三"
       ],
       "answer": "零"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄎㄨㄞˋㄇㄢˋ」怎麼寫？",
+      "options": [
+        "快慢",
+        "決慢",
+        "快曼",
+        "筷漫"
+      ],
+      "answer": "快慢"
     },
     {
       "category": "國文",
@@ -744,6 +590,28 @@
     },
     {
       "category": "國文",
+      "question": "「ㄓˇㄧㄡˇ」怎麼寫？",
+      "options": [
+        "只有",
+        "止由",
+        "直友",
+        "止友"
+      ],
+      "answer": "只有"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄓㄨㄥˋ量」怎麼寫",
+      "options": [
+        "重",
+        "種",
+        "湩",
+        "鍾"
+      ],
+      "answer": "重"
+    },
+    {
+      "category": "國文",
       "question": "「ㄓㄨㄥ間」怎麼寫？",
       "options": [
         "中",
@@ -788,6 +656,17 @@
     },
     {
       "category": "國文",
+      "question": "「ㄧㄝˇ是」怎麼寫？",
+      "options": [
+        "也",
+        "野",
+        "爺",
+        "耶"
+      ],
+      "answer": "也"
+    },
+    {
+      "category": "國文",
       "question": "「ㄧㄤˊ肉」怎麼寫？",
       "options": [
         "羊",
@@ -807,6 +686,28 @@
         "象"
       ],
       "answer": "魚"
+    },
+    {
+      "category": "國文",
+      "question": "「過ㄋㄧㄢˊ」怎麼寫",
+      "options": [
+        "月",
+        "日",
+        "年",
+        "星"
+      ],
+      "answer": "年"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄩㄝˋ亮」怎麼寫",
+      "options": [
+        "月",
+        "日",
+        "光",
+        "星"
+      ],
+      "answer": "月"
     },
     {
       "category": "國文",
@@ -1041,6 +942,17 @@
     },
     {
       "category": "國文",
+      "question": "「長ㄐㄧㄤ」怎麼寫？",
+      "options": [
+        "江",
+        "工",
+        "紅",
+        "姜"
+      ],
+      "answer": "江"
+    },
+    {
+      "category": "國文",
       "question": "「前ㄏㄡˋ」怎麼寫？",
       "options": [
         "前",
@@ -1086,6 +998,42 @@
     },
     {
       "category": "國文",
+      "question": "「貓」的注音是？",
+      "options": [
+        "ㄇㄠ",
+        "ㄇㄠˊ",
+        "ㄇㄠˇ",
+        "ㄇㄠˋ"
+      ],
+      "answer": "ㄇㄠ",
+      "image": "q_cat.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "他是什麼職業?",
+      "options": [
+        "廚師",
+        "醫生",
+        "學生",
+        "警察"
+      ],
+      "answer": "廚師",
+      "image": "q_cook.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "他是什麼職業?",
+      "options": [
+        "消防員",
+        "澆花人員",
+        "洗地人員",
+        "抽水人員"
+      ],
+      "answer": "消防員",
+      "image": "q_firefighter.jpg"
+    },
+    {
+      "category": "國文",
       "question": "他是什麼職業?",
       "options": [
         "老師",
@@ -1105,8 +1053,8 @@
         "學生",
         "警察"
       ],
-      "answer": "老師",
-      "image": "q_teacher.jpeg"
+      "answer": "醫生",
+      "image": "q_doctor.jpeg"
     },
     {
       "category": "國文",
@@ -1117,8 +1065,8 @@
         "學生",
         "警察"
       ],
-      "answer": "醫生",
-      "image": "q_doctor.jpeg"
+      "answer": "老師",
+      "image": "q_teacher.jpeg"
     },
     {
       "category": "國文",
@@ -1130,6 +1078,39 @@
         "們"
       ],
       "answer": "你"
+    },
+    {
+      "category": "國文",
+      "question": "哪種動物叫聲是正確的？",
+      "options": [
+        "小羊咩咩咩",
+        "小狗喵喵喵",
+        "小雞汪汪汪",
+        "小豬啾啾啾"
+      ],
+      "answer": "小羊咩咩咩"
+    },
+    {
+      "category": "國文",
+      "question": "哪種動物叫聲是正確的？",
+      "options": [
+        "小狗汪汪汪",
+        "青蛙啾啾啾",
+        "小鳥喵喵喵",
+        "小貓呱呱呱"
+      ],
+      "answer": "小狗汪汪汪"
+    },
+    {
+      "category": "國文",
+      "question": "哪種動物叫聲是正確的？",
+      "options": [
+        "小鳥啾啾啾",
+        "青蛙喵喵喵",
+        "小狗呱呱呱",
+        "小貓汪汪汪"
+      ],
+      "answer": "小鳥啾啾啾"
     },
     {
       "category": "國文",
@@ -1155,48 +1136,39 @@
     },
     {
       "category": "國文",
-      "question": "哪種動物叫聲是正確的？",
+      "question": "這是什麼?",
       "options": [
-        "小狗汪汪汪",
-        "青蛙啾啾啾",
-        "小鳥喵喵喵",
-        "小貓呱呱呱"
+        "公車",
+        "火車",
+        "機車",
+        "計程車"
       ],
-      "answer": "小狗汪汪汪"
-    },
-    {
-      "category": "國文",
-      "question": "哪種動物叫聲是正確的？",
-      "options": [
-        "小羊咩咩咩",
-        "小狗喵喵喵",
-        "小雞汪汪汪",
-        "小豬啾啾啾"
-      ],
-      "answer": "小羊咩咩咩"
-    },
-    {
-      "category": "國文",
-      "question": "哪種動物叫聲是正確的？",
-      "options": [
-        "小鳥啾啾啾",
-        "青蛙喵喵喵",
-        "小狗呱呱呱",
-        "小貓汪汪汪"
-      ],
-      "answer": "小鳥啾啾啾"
+      "answer": "公車",
+      "image": "q_bus.jpg"
     },
     {
       "category": "國文",
       "question": "這是什麼?",
       "options": [
         "車",
-        "馬",
+        "申",
         "甲",
         "東"
       ],
       "answer": "車",
       "image": "q_car.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼動物?",
+      "options": [
+        "熊",
+        "雄",
+        "能",
+        "羆"
+      ],
+      "answer": "熊",
+      "image": "q_bear.jpg"
     },
     {
       "category": "國文",
@@ -1221,90 +1193,6 @@
       ],
       "answer": "斑馬",
       "image": "q_zebra.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼動物?",
-      "options": [
-        "熊",
-        "雄",
-        "能",
-        "羆"
-      ],
-      "answer": "熊",
-      "image": "q_bear.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "白",
-        "柏",
-        "泊",
-        "伯"
-      ],
-      "answer": "白",
-      "image": "q_white.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "紅",
-        "白",
-        "粉紅",
-        "橘"
-      ],
-      "answer": "紅",
-      "image": "q_red.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "紅",
-        "白",
-        "粉紅",
-        "橘"
-      ],
-      "answer": "橘",
-      "image": "q_orange.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "紅",
-        "白",
-        "粉紅",
-        "橘"
-      ],
-      "answer": "粉紅",
-      "image": "q_pink.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "黃",
-        "綠",
-        "灰",
-        "黑"
-      ],
-      "answer": "黃",
-      "image": "q_yellow.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "綠",
-        "黃",
-        "紫",
-        "藍"
-      ],
-      "answer": "綠",
-      "image": "q_green.jpeg"
     },
     {
       "category": "國文",
@@ -1334,6 +1222,42 @@
       "category": "國文",
       "question": "這是什麼顏色?",
       "options": [
+        "綠",
+        "黃",
+        "紫",
+        "藍"
+      ],
+      "answer": "綠",
+      "image": "q_green.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "紅",
+        "白",
+        "粉紅",
+        "橘"
+      ],
+      "answer": "橘",
+      "image": "q_orange.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "紅",
+        "白",
+        "粉紅",
+        "橘"
+      ],
+      "answer": "粉紅",
+      "image": "q_pink.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
         "紫",
         "黃",
         "黑",
@@ -1344,128 +1268,51 @@
     },
     {
       "category": "國文",
-      "question": "「貓」的注音是？",
+      "question": "這是什麼顏色?",
       "options": [
-        "ㄇㄠ",
-        "ㄇㄠˊ",
-        "ㄇㄠˇ",
-        "ㄇㄠˋ"
-      ],
-      "answer": "ㄇㄠ",
-      "image": "q_cat.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄉㄠ子」怎麼寫",
-      "options": [
-        "刀",
-        "刃",
-        "分",
-        "切"
-      ],
-      "answer": "刀"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄩㄝˋ亮」怎麼寫",
-      "options": [
-        "月",
-        "日",
-        "光",
-        "星"
-      ],
-      "answer": "月"
-    },
-    {
-      "category": "國文",
-      "question": "他是什麼職業?",
-      "options": [
-        "廚師",
-        "醫生",
-        "學生",
-        "警察"
-      ],
-      "answer": "廚師",
-      "image": "q_cook.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "他是什麼職業?",
-      "options": [
-        "消防員",
-        "澆花人員",
-        "洗地人員",
-        "抽水人員"
-      ],
-      "answer": "消防員",
-      "image": "q_firefighter.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄉㄨㄛㄕㄠˇ」怎麼寫？",
-      "options": [
-        "多少",
-        "夕少",
-        "多沙",
-        "夕沙"
-      ],
-      "answer": "多少"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄎㄨㄞˋㄇㄢˋ」怎麼寫？",
-      "options": [
-        "快慢",
-        "決慢",
-        "快曼",
-        "筷漫"
-      ],
-      "answer": "快慢"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄓˇㄧㄡˇ」怎麼寫？",
-      "options": [
-        "只有",
-        "止由",
-        "直友",
-        "止友"
-      ],
-      "answer": "只有"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄧㄝˇ是」怎麼寫？",
-      "options": [
-        "也",
-        "野",
-        "爺",
-        "耶"
-      ],
-      "answer": "也"
-    },
-    {
-      "category": "國文",
-      "question": "「長ㄐㄧㄤ」怎麼寫？",
-      "options": [
-        "江",
-        "工",
         "紅",
-        "姜"
+        "白",
+        "粉紅",
+        "橘"
       ],
-      "answer": "江"
+      "answer": "紅",
+      "image": "q_red.jpeg"
     },
     {
       "category": "國文",
-      "question": "這是什麼?",
+      "question": "這是什麼顏色?",
       "options": [
-        "公車",
-        "火車",
-        "機車",
-        "計程車"
+        "白",
+        "柏",
+        "泊",
+        "伯"
       ],
-      "answer": "公車",
-      "image": "q_bus.jpg"
+      "answer": "白",
+      "image": "q_white.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "黃",
+        "綠",
+        "灰",
+        "黑"
+      ],
+      "answer": "黃",
+      "image": "q_yellow.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "What animal is this?",
+      "options": [
+        "car",
+        "card",
+        "cook",
+        "cat"
+      ],
+      "answer": "cat",
+      "image": "q_cat.jpg"
     },
     {
       "category": "英文",
@@ -1621,7 +1468,7 @@
         "blue"
       ],
       "answer": "pink",
-      "image": "q_pink.jpeg"
+      "image": "q_pink.jpg"
     },
     {
       "category": "英文",
@@ -1687,6 +1534,18 @@
       "category": "英文",
       "question": "What is his job?",
       "options": [
+        "cook",
+        "police",
+        "doctor",
+        "student"
+      ],
+      "answer": "cook",
+      "image": "q_cook.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "What is his job?",
+      "options": [
         "firefighter",
         "police",
         "doctor",
@@ -1711,6 +1570,18 @@
       "category": "英文",
       "question": "What is this?",
       "options": [
+        "bus",
+        "bat",
+        "bag",
+        "bed"
+      ],
+      "answer": "bus",
+      "image": "q_bus.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "What is this?",
+      "options": [
         "car",
         "card",
         "cook",
@@ -1718,6 +1589,39 @@
       ],
       "answer": "car",
       "image": "q_car.jpeg"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “cake”?",
+      "options": [
+        "蘿蔔",
+        "蛋糕",
+        "時鐘",
+        "相機"
+      ],
+      "answer": "蛋糕"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “carrot”?",
+      "options": [
+        "蘿蔔",
+        "蛋糕",
+        "時鐘",
+        "相機"
+      ],
+      "answer": "蘿蔔"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “clock”?",
+      "options": [
+        "蘿蔔",
+        "蛋糕",
+        "時鐘",
+        "相機"
+      ],
+      "answer": "時鐘"
     },
     {
       "category": "英文",
@@ -1765,6 +1669,17 @@
     },
     {
       "category": "英文",
+      "question": "What’s the Chinese word for “flower”?",
+      "options": [
+        "花",
+        "花園",
+        "果實",
+        "星星"
+      ],
+      "answer": "花"
+    },
+    {
+      "category": "英文",
       "question": "What’s the Chinese word for “grandma”?",
       "options": [
         "媽媽",
@@ -1787,6 +1702,28 @@
     },
     {
       "category": "英文",
+      "question": "What’s the Chinese word for “kindergarten”?",
+      "options": [
+        "幼兒園",
+        "塑膠袋",
+        "水壺",
+        "書包"
+      ],
+      "answer": "幼兒園"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “map”?",
+      "options": [
+        "地圖",
+        "城市",
+        "抹布",
+        "媽媽"
+      ],
+      "answer": "地圖"
+    },
+    {
+      "category": "英文",
       "question": "What’s the Chinese word for “mom”?",
       "options": [
         "媽媽",
@@ -1795,6 +1732,17 @@
         "奶奶"
       ],
       "answer": "媽媽"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “rabbit”?",
+      "options": [
+        "兔子",
+        "狗",
+        "貓",
+        "老鼠"
+      ],
+      "answer": "兔子"
     },
     {
       "category": "英文",
@@ -1886,6 +1834,17 @@
     },
     {
       "category": "英文",
+      "question": "What’s the Chinese word for “watermelon”?",
+      "options": [
+        "西瓜",
+        "蘋果",
+        "香蕉",
+        "葡萄"
+      ],
+      "answer": "西瓜"
+    },
+    {
+      "category": "英文",
       "question": "Which one is a fruit?",
       "options": [
         "chair",
@@ -1894,6 +1853,28 @@
         "table"
       ],
       "answer": "apple"
+    },
+    {
+      "category": "英文",
+      "question": "Which one is a fruit?",
+      "options": [
+        "banana",
+        "book",
+        "fan",
+        "paper"
+      ],
+      "answer": "banana"
+    },
+    {
+      "category": "英文",
+      "question": "Which one is a fruit?",
+      "options": [
+        "watermelon",
+        "window",
+        "map",
+        "water"
+      ],
+      "answer": "watermelon"
     },
     {
       "category": "英文",
@@ -2037,17 +2018,6 @@
         "eight"
       ],
       "answer": "five"
-    },
-    {
-      "category": "英文",
-      "question": "公車的英文是?",
-      "options": [
-        "bus",
-        "bat",
-        "bag",
-        "bed"
-      ],
-      "answer": "bus"
     },
     {
       "category": "英文",
@@ -2237,152 +2207,6 @@
       "answer": "shoes"
     },
     {
-      "category": "英文",
-      "question": "貓的英文是?",
-      "options": [
-        "cat",
-        "dog",
-        "fish",
-        "bird"
-      ],
-      "answer": "cat"
-    },
-    {
-      "category": "英文",
-      "question": "What animal is this?",
-      "options": [
-        "car",
-        "card",
-        "cook",
-        "cat"
-      ],
-      "answer": "cat",
-      "image": "q_cat.jpg"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “rabbit”?",
-      "options": [
-        "兔子",
-        "狗",
-        "貓",
-        "老鼠"
-      ],
-      "answer": "兔子"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “kindergarten”?",
-      "options": [
-        "幼兒園",
-        "塑膠袋",
-        "水壺",
-        "書包"
-      ],
-      "answer": "幼兒園"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “flower”?",
-      "options": [
-        "花",
-        "花園",
-        "果實",
-        "星星"
-      ],
-      "answer": "花"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “map”?",
-      "options": [
-        "地圖",
-        "城市",
-        "抹布",
-        "媽媽"
-      ],
-      "answer": "地圖"
-    },
-    {
-      "category": "英文",
-      "question": "Which one is a fruit?",
-      "options": [
-        "banana",
-        "book",
-        "fan",
-        "paper"
-      ],
-      "answer": "banana"
-    },
-    {
-      "category": "英文",
-      "question": "What is his job?",
-      "options": [
-        "cook",
-        "police",
-        "doctor",
-        "student"
-      ],
-      "answer": "cook",
-      "image": "q_cook.jpg"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “cake”?",
-      "options": [
-        "蘿蔔",
-        "蛋糕",
-        "時鐘",
-        "相機"
-      ],
-      "answer": "蛋糕"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “carrot”?",
-      "options": [
-        "蘿蔔",
-        "蛋糕",
-        "時鐘",
-        "相機"
-      ],
-      "answer": "蘿蔔"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “clock”?",
-      "options": [
-        "蘿蔔",
-        "蛋糕",
-        "時鐘",
-        "相機"
-      ],
-      "answer": "時鐘"
-    },
-    {
-      "category": "英文",
-      "question": "What is this?",
-      "options": [
-        "bus",
-        "bat",
-        "bag",
-        "bed"
-      ],
-      "answer": "bus",
-      "image": "q_bus.jpg"
-    },
-    {
-      "category": "英文",
-      "question": "Which one is a fruit?",
-      "options": [
-        "watermelon",
-        "window",
-        "map",
-        "water"
-      ],
-      "answer": "watermelon"
-    },
-    {
       "category": "自然",
       "question": "一杯水放在室外，過一段時間水變少了，最可能的原因是？",
       "options": [
@@ -2430,6 +2254,17 @@
       "category": "自然",
       "question": "下列哪個是哺乳動物？",
       "options": [
+        "狗",
+        "魚",
+        "青蛙",
+        "鴿子"
+      ],
+      "answer": "狗"
+    },
+    {
+      "category": "自然",
+      "question": "下列哪個是哺乳動物？",
+      "options": [
         "海豚",
         "鯊魚",
         "鮪魚",
@@ -2447,17 +2282,6 @@
         "蜥蜴"
       ],
       "answer": "鯨魚"
-    },
-    {
-      "category": "自然",
-      "question": "下列哪個是哺乳動物？",
-      "options": [
-        "狗",
-        "魚",
-        "青蛙",
-        "鴿子"
-      ],
-      "answer": "狗"
     },
     {
       "category": "自然",
@@ -2502,6 +2326,17 @@
         "塑膠會自己分解"
       ],
       "answer": "燃燒塑膠時會產生空氣汙染"
+    },
+    {
+      "category": "自然",
+      "question": "小丑魚身上的什麼能避免被海葵攻擊?",
+      "options": [
+        "產生的黏液",
+        "鮮豔的顏色",
+        "堅硬的鱗片",
+        "發光的斑紋"
+      ],
+      "answer": "產生的黏液"
     },
     {
       "category": "自然",
@@ -2623,6 +2458,17 @@
         "木星"
       ],
       "answer": "太陽"
+    },
+    {
+      "category": "自然",
+      "question": "我們吃胡蘿蔔主要是吃什麼部位？",
+      "options": [
+        "根",
+        "莖",
+        "葉",
+        "果實"
+      ],
+      "answer": "根"
     },
     {
       "category": "自然",
@@ -2891,6 +2737,28 @@
     },
     {
       "category": "自然",
+      "question": "發生地震時如果在屋內要做什麼？",
+      "options": [
+        "坐電梯逃生",
+        "趴下、掩護、穩住",
+        "把大門打開",
+        "躲冰箱旁邊"
+      ],
+      "answer": "趴下、掩護、穩住"
+    },
+    {
+      "category": "自然",
+      "question": "黑鳶如果撿食農藥中毒死亡的鳥類或老鼠，最可能的結果是?",
+      "options": [
+        "累積毒素而中毒死亡",
+        "產生抗藥性而農藥無效",
+        "改吃素食避免中毒",
+        "立即將毒素排出"
+      ],
+      "answer": "累積毒素而中毒死亡"
+    },
+    {
+      "category": "自然",
       "question": "請問蝴蝶靜止時，翅膀會怎麼樣?",
       "options": [
         "雙翅合攏在背上",
@@ -2924,61 +2792,6 @@
       "answer": "固體"
     },
     {
-      "category": "自然",
-      "question": "小丑魚身上的什麼能避免被被海葵攻擊?",
-      "options": [
-        "產生的黏液",
-        "鮮豔的顏色",
-        "堅硬的鱗片",
-        "發光的斑紋"
-      ],
-      "answer": "產生的黏液"
-    },
-    {
-      "category": "自然",
-      "question": "發生地震時如果在屋內要做什麼？",
-      "options": [
-        "坐電梯逃生",
-        "趴下、掩護、穩住",
-        "把大門打開",
-        "躲冰箱旁邊"
-      ],
-      "answer": "趴下、掩護、穩住"
-    },
-    {
-      "category": "自然",
-      "question": "我們吃胡蘿蔔主要是吃什麼部位？",
-      "options": [
-        "根",
-        "莖",
-        "葉",
-        "果實"
-      ],
-      "answer": "根"
-    },
-    {
-      "category": "自然",
-      "question": "小丑魚身上的什麼能避免被海葵攻擊?",
-      "options": [
-        "產生的黏液",
-        "鮮豔的顏色",
-        "堅硬的鱗片",
-        "發光的斑紋"
-      ],
-      "answer": "產生的黏液"
-    },
-    {
-      "category": "自然",
-      "question": "黑鳶如果撿食農藥中毒死亡的鳥類或老鼠，最可能的結果是?",
-      "options": [
-        "累積毒素而中毒死亡",
-        "產生抗藥性而農藥無效",
-        "改吃素食避免中毒",
-        "立即將毒素排出"
-      ],
-      "answer": "累積毒素而中毒死亡"
-    },
-    {
       "category": "地理",
       "question": "下面哪一個是臺灣的著名高山？",
       "options": [
@@ -2999,6 +2812,29 @@
         "平原中央"
       ],
       "answer": "地殼活動強的地方"
+    },
+    {
+      "category": "地理",
+      "question": "亞洲最長的河流是？",
+      "options": [
+        "印度河",
+        "黑龍江",
+        "黃河",
+        "長江"
+      ],
+      "answer": "長江"
+    },
+    {
+      "category": "地理",
+      "question": "紅色的部分是哪一洲",
+      "options": [
+        "亞洲",
+        "非洲",
+        "歐洲",
+        "南美洲"
+      ],
+      "answer": "亞洲",
+      "image": "q_亞洲.jpg"
     },
     {
       "category": "地理",
@@ -3050,15 +2886,27 @@
     },
     {
       "category": "地理",
+      "question": "這是哪個國家？",
+      "options": [
+        "俄羅斯",
+        "中國",
+        "日本",
+        "韓國"
+      ],
+      "answer": "俄羅斯",
+      "image": "q_map_5.jpg"
+    },
+    {
+      "category": "地理",
       "question": "這是哪個縣市？",
       "options": [
-        "屏東",
-        "高雄",
+        "台中",
+        "台北",
         "台南",
         "台東"
       ],
-      "answer": "屏東",
-      "image": "q_屏東.jpg"
+      "answer": "台中",
+      "image": "q_台中.jpg"
     },
     {
       "category": "地理",
@@ -3076,25 +2924,13 @@
       "category": "地理",
       "question": "這是哪個縣市？",
       "options": [
-        "台北",
-        "新北",
-        "基隆",
-        "桃園"
-      ],
-      "answer": "新北",
-      "image": "q_新北.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個縣市？",
-      "options": [
-        "屏東",
-        "高雄",
+        "台東",
         "台南",
-        "台東"
+        "高雄",
+        "屏東"
       ],
-      "answer": "高雄",
-      "image": "q_高雄.jpg"
+      "answer": "台東",
+      "image": "q_台東.jpg"
     },
     {
       "category": "地理",
@@ -3112,6 +2948,66 @@
       "category": "地理",
       "question": "這是哪個縣市？",
       "options": [
+        "宜蘭",
+        "新北",
+        "台北",
+        "基隆"
+      ],
+      "answer": "宜蘭",
+      "image": "q_宜蘭.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個縣市？",
+      "options": [
+        "花蓮",
+        "高雄",
+        "台南",
+        "新北"
+      ],
+      "answer": "花蓮",
+      "image": "q_花蓮.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個縣市？",
+      "options": [
+        "南投",
+        "高雄",
+        "台南",
+        "台中"
+      ],
+      "answer": "南投",
+      "image": "q_南投.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個縣市？",
+      "options": [
+        "屏東",
+        "高雄",
+        "台南",
+        "台東"
+      ],
+      "answer": "屏東",
+      "image": "q_屏東.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個縣市？",
+      "options": [
+        "屏東",
+        "高雄",
+        "台南",
+        "台東"
+      ],
+      "answer": "高雄",
+      "image": "q_高雄.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個縣市？",
+      "options": [
         "基隆",
         "台北",
         "新北",
@@ -3124,13 +3020,25 @@
       "category": "地理",
       "question": "這是哪個縣市？",
       "options": [
-        "台中",
         "台北",
-        "台南",
-        "台東"
+        "新北",
+        "基隆",
+        "桃園"
       ],
-      "answer": "台中",
-      "image": "q_台中.jpg"
+      "answer": "新北",
+      "image": "q_新北.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個縣市？",
+      "options": [
+        "台北",
+        "新北",
+        "基隆",
+        "桃園"
+      ],
+      "answer": "桃園",
+      "image": "q_桃園.jpg"
     },
     {
       "category": "地理",
@@ -3164,89 +3072,6 @@
         "火山爆發"
       ],
       "answer": "颱風"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個縣市？",
-      "options": [
-        "花蓮",
-        "高雄",
-        "台南",
-        "新北"
-      ],
-      "answer": "花蓮",
-      "image": "q_花蓮.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個縣市？",
-      "options": [
-        "台東",
-        "台南",
-        "高雄",
-        "屏東"
-      ],
-      "answer": "台東",
-      "image": "q_台東.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個縣市？",
-      "options": [
-        "宜蘭",
-        "新北",
-        "台北",
-        "基隆"
-      ],
-      "answer": "宜蘭",
-      "image": "q_宜蘭.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個縣市？",
-      "options": [
-        "南投",
-        "高雄",
-        "台南",
-        "台中"
-      ],
-      "answer": "南投",
-      "image": "q_南投.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "亞洲最長的河流是？",
-      "options": [
-        "印度河",
-        "黑龍江",
-        "黃河",
-        "長江"
-      ],
-      "answer": "長江"
-    },
-    {
-      "category": "地理",
-      "question": "紅色的部分是哪一洲",
-      "options": [
-        "亞洲",
-        "非洲",
-        "歐洲",
-        "南美洲"
-      ],
-      "answer": "亞洲",
-      "image": "q_亞洲.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個國家？",
-      "options": [
-        "俄羅斯",
-        "中國",
-        "日本",
-        "韓國"
-      ],
-      "answer": "俄羅斯",
-      "image": "q_map_5.jpg"
     },
     {
       "category": "地理",
