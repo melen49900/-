@@ -10716,8 +10716,7 @@ function mineDig(r, c) {
   renderMineGrid();
   updateMineUI();
 
-  if (mineState.pickaxe <= 0) {
-    setTimeout(() => mineFinish(), 300);
+  if (mineState.pickaxe <= 0) {mineFinish();
   }
 }
 
@@ -10730,6 +10729,7 @@ function updateMineUI() {
 }
 
 function mineFinish() {
+  if (mineState.finished) return;
   mineState.finished = true;
 
   // 截取當前畫面20格作為記錄
