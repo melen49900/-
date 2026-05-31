@@ -10747,13 +10747,17 @@ function mineFinish() {
     const lv = state.hero.level || 1;
     const depth = mineState.worldRow;
     const coinVal = (lv + depth) * (Math.floor(Math.random() * 5) + 1);
-    state.hero.gold = (state.hero.gold || 0) + mineState.rewards.coin * coinVal;
+    const totalGold = mineState.rewards.coin * coinVal;
+    mineState.rewards.coinGold = totalGold;
+    state.hero.gold = (state.hero.gold || 0) + totalGold;
   }
   if (mineState.rewards.gem > 0) {
     const depth = mineState.worldRow;
     const bonus = Math.min(Math.floor(depth / 100), 10);
     const gemVal = Math.floor(Math.random() * 10) + 1 + bonus;
-    state.hero.gems = (state.hero.gems || 0) + mineState.rewards.gem * gemVal;
+    const totalGems = mineState.rewards.gem * gemVal;
+    mineState.rewards.gemGems = totalGems;
+    state.hero.gems = (state.hero.gems || 0) + totalGems;
   }
   autoSave();
   updateHeroPanel();
@@ -10774,7 +10778,13 @@ function renderMineResult() {
   snap.forEach(val => {
     const cell = document.createElement('div');
     cell.className = 'mine-result-cell';
-    if (val === 'empty') {
+    if (val === 'empty_coin') {
+      cell.classList.add('was-dug');
+      cell.textContent = '🪙';
+    } else if (val === 'empty_gem') {
+      cell.classList.add('was-dug');
+      cell.textContent = '💎';
+    } else if (val === 'empty_rock' || val === 'empty') {
       cell.classList.add('was-dug');
       cell.textContent = '🕳️';
     } else if (val === 'coin') {
@@ -10789,8 +10799,8 @@ function renderMineResult() {
 
   const summary = document.getElementById('mineResultSummary');
   const parts = [];
-  if (mineState.rewards.coin > 0) parts.push(`🪙 金幣 ×${mineState.rewards.coin}（+${mineState.rewards.coin * 10} Gold）`);
-  if (mineState.rewards.gem > 0) parts.push(`💎 鑽石 ×${mineState.rewards.gem}（+${mineState.rewards.gem * 5} Gems）`);
+  if (mineState.rewards.coin > 0) parts.push(`🪙 金幣 ×${mineState.rewards.coin}（+${mineState.rewards.coinGold || 0} Gold）`);
+  if (mineState.rewards.gem > 0) parts.push(`💎 鑽石 ×${mineState.rewards.gem}（+${mineState.rewards.gemGems || 0} Gems）`);
   if (parts.length === 0) parts.push('這次什麼都沒挖到...');
   summary.innerHTML = parts.join('<br>');
 }
