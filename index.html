@@ -239,6 +239,61 @@ body::before {
   margin-bottom:0;
 }
 
+/* ── 挖礦遊戲 ─────────────────────────────────────────── */
+.mine-ov {
+  position:fixed; inset:0; background:rgba(0,0,0,.75);
+  display:flex; align-items:center; justify-content:center;
+  z-index:999; padding:12px;
+}
+.mine-box {
+  background:#3d1a08; border-radius:20px; padding:16px;
+  width:100%; max-width:400px; max-height:90vh; overflow-y:auto;
+  box-shadow:0 8px 40px rgba(0,0,0,.5); border:3px solid #7a3a10;
+}
+.mine-header {
+  display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;
+}
+.mine-title { font-size:1.1em; font-weight:900; color:#FFD700; }
+.mine-pickaxe { font-size:.85em; font-weight:900; color:#fff; }
+.mine-grid {
+  display:grid; grid-template-columns:repeat(5,1fr); gap:4px; margin-bottom:12px;
+}
+.mine-cell {
+  aspect-ratio:1; border-radius:8px; background:#c0641a;
+  border:2px solid #8b3a0a; cursor:pointer; transition:all .15s;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.3em; position:relative; user-select:none;
+}
+.mine-cell:hover:not(.empty):not(.player) { filter:brightness(1.2); transform:scale(1.05); }
+.mine-cell.empty { background:#1a0805; border-color:#0d0402; cursor:default; }
+.mine-cell.player { background:#c0641a; border-color:var(--gold); cursor:default; }
+.mine-cell.dug { background:#2a1005; border-color:#1a0803; cursor:default; }
+.mine-action-hint {
+  text-align:center; font-size:.75em; color:#ffcc88; font-weight:700; margin-bottom:10px;
+}
+.mine-result {
+  background:#2a1005; border:2px solid #7a3a10; border-radius:13px;
+  padding:12px; text-align:center; margin-bottom:10px;
+}
+.mine-result-title { font-size:1em; font-weight:900; color:#FFD700; margin-bottom:8px; }
+.mine-result-grid {
+  display:grid; grid-template-columns:repeat(5,1fr); gap:3px; margin-bottom:10px;
+}
+.mine-result-cell {
+  aspect-ratio:1; border-radius:6px; background:#1a0805;
+  border:1.5px solid #3a1a08;
+  display:flex; align-items:center; justify-content:center; font-size:1em;
+}
+.mine-result-cell.was-dug { background:#2d1208; border-color:#7a3a10; }
+.mine-result-summary { font-size:.82em; font-weight:800; color:#ffcc88; }
+.mine-close-btn {
+  width:100%; padding:13px; border:none; border-radius:13px;
+  background:linear-gradient(135deg,#FFD700,#FF9F1C);
+  font-family:'Nunito',sans-serif; font-size:1em; font-weight:900;
+  color:white; cursor:pointer; box-shadow:0 4px 14px rgba(255,140,0,.4);
+}
+.mine-char { width:100%; height:100%; object-fit:cover; border-radius:6px; }
+
 /* ── 分頁列 ─────────────────────────────────────────────── */
 .tabs {
   display:flex; gap:4px; margin-bottom:8px;
@@ -1735,6 +1790,14 @@ button:active { transform:scale(.96); }
         </div>
         <button onclick="event.stopPropagation(); speakText('魔法記憶翻牌，十二張牌，十二步，配對越多獎勵越豐厚')" style="background:linear-gradient(135deg,#06b6d4,#0284c7);border:none;border-radius:10px;padding:6px 10px;color:white;font-size:.8em;font-weight:900;cursor:pointer;flex-shrink:0;margin-right:6px;">🔊</button>
         <div class="game-hall-ticket" id="memoryTicketCount">🎟️ x0</div>
+      </div>
+      <div class="game-hall-card" id="gameCard-mine" onclick="openMineGame()">
+        <div class="game-hall-icon">⛏️</div>
+        <div class="game-hall-info">
+          <div class="game-hall-name">礦坑探險</div>
+          <div class="game-hall-desc">挖開礦石・發現金幣與鑽石・10次機會</div>
+        </div>
+        <div class="game-hall-ticket" id="mineTicketCount">🎟️ x0</div>
       </div>
     </div>
   </div>
@@ -3252,6 +3315,16 @@ function renderGameHall() {
     if (count > 0) card.classList.remove('locked');
     else card.classList.add('locked');
   }
+
+  // 挖礦卡片
+  const mineEl = document.getElementById('mineTicketCount');
+  if (mineEl) mineEl.textContent = '🎟️ x' + count;
+  const mineCard = document.getElementById('gameCard-mine');
+  if (mineCard) {
+    if (count > 0) mineCard.classList.remove('locked');
+    else mineCard.classList.add('locked');
+  }
+
   // 以下新增
   const badge = document.getElementById('gameBadge');
   if (badge) {
@@ -10410,6 +10483,355 @@ function renderAutoSkillSelect() {
   });
 }
 
+/* ════════ 挖礦小遊戲 ════════ */
+const MINE_COLS = 5;
+const MINE_ROWS = 4;
+let mineState = null;
+
+function openMineGame() {
+  const count = (state.tickets && state.tickets['ticket_memory']) || 0;
+  if (count <= 0) { showToast('❌ 沒有入場券！'); return; }
+
+  // 扣入場券
+  state.tickets['ticket_memory'] = count - 1;
+  autoSave();
+  renderGameHall();
+
+  // 初始化礦坑狀態
+  // grid是從第0層開始的無限礦坑，visibleTopRow是當前顯示的最上排索引
+  mineState = {
+    pickaxe: 10,
+    playerCol: 2,        // 角色在第幾欄(0-4)
+    playerRow: 0,        // 角色在可見畫面的第幾排(0-3)
+    worldRow: 0,         // 角色在世界座標的絕對排數
+    visibleTopRow: 0,    // 目前畫面最上方的世界排數
+    // 世界格子：key="row,col", value: 'rock'|'coin'|'gem'|'empty'(已挖)
+    worldCells: {},
+    // 記錄本次挖掘的快照（結束時的20格）
+    resultSnapshot: null,
+    finished: false,
+    rewards: { coin: 0, gem: 0 }
+  };
+
+  // 預先生成前8排的內容
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < MINE_COLS; c++) {
+      mineState.worldCells[`${r},${c}`] = mineGenCell(r);
+    }
+  }
+
+  document.getElementById('mineGameOv').classList.remove('hidden');
+  document.getElementById('mineResult').classList.add('hidden');
+  document.getElementById('mineCloseBtn').classList.add('hidden');
+  document.getElementById('mineCancelBtn').classList.remove('hidden');
+  renderMineGrid();
+  updateMineUI();
+}
+
+function mineGenCell(worldRow) {
+  const r = Math.random();
+  // 越深越多好東西
+  const depth = worldRow;
+  const gemChance = Math.min(0.05 + depth * 0.005, 0.2);
+  const coinChance = Math.min(0.15 + depth * 0.008, 0.35);
+  if (r < gemChance) return 'gem';
+  if (r < gemChance + coinChance) return 'coin';
+  return 'rock';
+}
+
+function mineGetCell(worldRow, col) {
+  const key = `${worldRow},${col}`;
+  if (!(key in mineState.worldCells)) {
+    mineState.worldCells[key] = mineGenCell(worldRow);
+  }
+  return mineState.worldCells[key];
+}
+
+function mineSetCell(worldRow, col, val) {
+  mineState.worldCells[`${worldRow},${col}`] = val;
+}
+
+function renderMineGrid() {
+  const grid = document.getElementById('mineGrid');
+  grid.innerHTML = '';
+  const top = mineState.visibleTopRow;
+
+  for (let r = 0; r < MINE_ROWS; r++) {
+    for (let c = 0; c < MINE_COLS; c++) {
+      const worldRow = top + r;
+      const cell = document.createElement('div');
+      cell.className = 'mine-cell';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+
+      const isPlayer = (r === mineState.playerRow && c === mineState.playerCol);
+      const cellVal = mineGetCell(worldRow, c);
+
+      if (isPlayer) {
+        cell.classList.add('player');
+        // 顯示角色圖片
+        const charImg = document.querySelector('.char-svg') || null;
+        const avatarSrc = gameAssets?.char?.[state.char] || null;
+        if (avatarSrc) {
+          cell.innerHTML = `<img src="${avatarSrc}" class="mine-char">`;
+        } else {
+          cell.textContent = '🧑';
+        }
+      } else if (cellVal === 'empty') {
+        cell.classList.add('empty');
+      } else {
+        // 可挖的格子：判斷是否可互動
+        if (!mineState.finished) {
+          const canAct = mineCanAct(r, c);
+          if (canAct === 'move') {
+            cell.onclick = () => mineMove(r, c);
+            cell.title = '移動';
+          } else if (canAct === 'dig') {
+            cell.onclick = () => mineDig(r, c);
+            cell.title = '挖掘';
+          }
+        }
+        if (cellVal === 'coin') cell.textContent = '🪨'; // 外觀都是石頭，挖了才知道
+        else if (cellVal === 'gem') cell.textContent = '🪨';
+        else cell.textContent = '🪨';
+      }
+      grid.appendChild(cell);
+    }
+  }
+}
+
+function mineCanAct(r, c) {
+  const pr = mineState.playerRow;
+  const pc = mineState.playerCol;
+  const top = mineState.visibleTopRow;
+  const worldRow = top + r;
+  const cellVal = mineGetCell(worldRow, c);
+  if (cellVal === 'empty') return null;
+
+  // 左右移動：同排、相鄰、格子是rock/coin/gem（非empty）但我們要移動到的格子必須是有地板的空格
+  // 其實移動是：角色左右移動到相鄰格，條件是目標格不是empty（有地板可站）
+  if (r === pr && Math.abs(c - pc) === 1) {
+    return 'move';
+  }
+  // 挖掘：左、右、下方相鄰
+  if (r === pr && Math.abs(c - pc) === 1) return 'dig'; // 已被上面move攔截
+  if (c === pc && r === pr + 1) return 'dig'; // 正下方
+  if (r === pr && c === pc - 1) return 'dig'; // 左
+  if (r === pr && c === pc + 1) return 'dig'; // 右
+  return null;
+}
+
+// 重新計算canAct：移動 vs 挖掘
+// 左右：如果目標格是岩石，就是挖掘；移動是走到已空的格子
+// 但依照規則，左右格子如果有內容就是挖掘，沒有內容（empty）就是移動
+function mineCanActV2(r, c) {
+  const pr = mineState.playerRow;
+  const pc = mineState.playerCol;
+  const top = mineState.visibleTopRow;
+  const worldRow = top + r;
+  const cellVal = mineGetCell(worldRow, c);
+
+  // 正下方：挖掘
+  if (c === pc && r === pr + 1) {
+    if (cellVal !== 'empty') return 'dig';
+  }
+  // 左右：同排相鄰
+  if (r === pr && Math.abs(c - pc) === 1) {
+    if (cellVal === 'empty') return 'move'; // 空格就走過去
+    return 'dig'; // 有石頭就挖
+  }
+  return null;
+}
+
+function mineMove(r, c) {
+  mineState.playerCol = c;
+  mineState.playerRow = r;
+  renderMineGrid();
+}
+
+function mineDig(r, c) {
+  if (mineState.pickaxe <= 0 || mineState.finished) return;
+
+  const top = mineState.visibleTopRow;
+  const worldRow = top + r;
+  const cellVal = mineGetCell(worldRow, c);
+
+  // 獲得獎勵
+  if (cellVal === 'coin') {
+    mineState.rewards.coin++;
+    showToast('🪙 挖到金幣！');
+  } else if (cellVal === 'gem') {
+    mineState.rewards.gem++;
+    showToast('💎 挖到鑽石！');
+  }
+
+  // 挖掉格子
+  mineSetCell(worldRow, c, 'empty');
+  mineState.pickaxe--;
+
+  // 如果挖的是正下方，角色掉下去，鏡頭跟著滾動
+  const isBelow = (c === mineState.playerCol && r === mineState.playerRow + 1);
+  if (isBelow) {
+    mineState.playerRow++;
+    mineState.worldRow++;
+
+    // 如果角色到了第3排（最底排），鏡頭往下捲
+    if (mineState.playerRow >= MINE_ROWS - 1) {
+      mineState.visibleTopRow++;
+      mineState.playerRow = MINE_ROWS - 2; // 角色維持在倒數第二排
+      // 預先生成新的底部格子
+      const newBottomRow = mineState.visibleTopRow + MINE_ROWS;
+      for (let col = 0; col < MINE_COLS; col++) {
+        if (!(`${newBottomRow},${col}` in mineState.worldCells)) {
+          mineState.worldCells[`${newBottomRow},${col}`] = mineGenCell(newBottomRow);
+        }
+      }
+    }
+  } else {
+    // 挖左右：角色移動過去
+    mineState.playerCol = c;
+    mineState.playerRow = r;
+  }
+
+  // 十字鎬用完，結束
+  if (mineState.pickaxe <= 0) {
+    mineFinish();
+    return;
+  }
+
+  renderMineGrid();
+  updateMineUI();
+}
+
+function updateMineUI() {
+  document.getElementById('minePickaxeLeft').textContent = mineState.pickaxe;
+  // 更新hint
+  const hint = mineState.finished ? '遊戲結束！' :
+    `⛏️ 點下方挖掘・點左右移動或挖掘`;
+  document.getElementById('mineHint').textContent = hint;
+}
+
+function mineFinish() {
+  mineState.finished = true;
+
+  // 截取當前畫面20格作為記錄
+  const top = mineState.visibleTopRow;
+  const snapshot = [];
+  for (let r = 0; r < MINE_ROWS; r++) {
+    for (let c = 0; c < MINE_COLS; c++) {
+      snapshot.push(mineGetCell(top + r, c));
+    }
+  }
+  mineState.resultSnapshot = snapshot;
+
+  // 給予獎勵
+  if (mineState.rewards.coin > 0) {
+    state.hero.gold = (state.hero.gold || 0) + mineState.rewards.coin * 10;
+  }
+  if (mineState.rewards.gem > 0) {
+    state.hero.gems = (state.hero.gems || 0) + mineState.rewards.gem * 5;
+  }
+  autoSave();
+  updateHeroPanel();
+
+  // 顯示結果
+  renderMineResult();
+  document.getElementById('mineResult').classList.remove('hidden');
+  document.getElementById('mineCloseBtn').classList.remove('hidden');
+  document.getElementById('mineCancelBtn').classList.add('hidden');
+  document.getElementById('mineHint').textContent = '🏁 十字鎬用完了！';
+  renderMineGrid();
+}
+
+function renderMineResult() {
+  const grid = document.getElementById('mineResultGrid');
+  grid.innerHTML = '';
+  const snap = mineState.resultSnapshot;
+  snap.forEach(val => {
+    const cell = document.createElement('div');
+    cell.className = 'mine-result-cell';
+    if (val === 'empty') {
+      cell.classList.add('was-dug');
+      cell.textContent = '🕳️';
+    } else if (val === 'coin') {
+      cell.textContent = '🪙';
+    } else if (val === 'gem') {
+      cell.textContent = '💎';
+    } else {
+      cell.textContent = '🪨';
+    }
+    grid.appendChild(cell);
+  });
+
+  const summary = document.getElementById('mineResultSummary');
+  const parts = [];
+  if (mineState.rewards.coin > 0) parts.push(`🪙 金幣 ×${mineState.rewards.coin}（+${mineState.rewards.coin * 10} Gold）`);
+  if (mineState.rewards.gem > 0) parts.push(`💎 鑽石 ×${mineState.rewards.gem}（+${mineState.rewards.gem * 5} Gems）`);
+  if (parts.length === 0) parts.push('這次什麼都沒挖到...');
+  summary.innerHTML = parts.join('<br>');
+}
+
+function closeMineGame() {
+  document.getElementById('mineGameOv').classList.add('hidden');
+  mineState = null;
+  renderGameHall();
+}
+
+function updateMineTicketCount() {
+  const el = document.getElementById('mineTicketCount');
+  if (el) {
+    const count = state.items?.find(i => i.id === 'ticket')?.count || 0;
+    el.textContent = `🎟️ x${count}`;
+  }
+}
+
+// 覆寫renderMineGrid中的canAct，改用V2版本
+const _origOpenMine = openMineGame;
+
+// patch renderMineGrid 用 V2
+function renderMineGrid() {
+  const grid = document.getElementById('mineGrid');
+  grid.innerHTML = '';
+  const top = mineState.visibleTopRow;
+
+  for (let r = 0; r < MINE_ROWS; r++) {
+    for (let c = 0; c < MINE_COLS; c++) {
+      const worldRow = top + r;
+      const cell = document.createElement('div');
+      cell.className = 'mine-cell';
+
+      const isPlayer = (r === mineState.playerRow && c === mineState.playerCol);
+      const cellVal = mineGetCell(worldRow, c);
+
+      if (isPlayer) {
+        cell.classList.add('player');
+        const avatarSrc = gameAssets?.char?.[state.char] || null;
+        if (avatarSrc) {
+          cell.innerHTML = `<img src="${avatarSrc}" class="mine-char">`;
+        } else {
+          cell.textContent = '🧑';
+        }
+      } else if (cellVal === 'empty') {
+        cell.classList.add('empty');
+        cell.textContent = '';
+      } else {
+        cell.textContent = '🪨';
+        if (!mineState.finished) {
+          const action = mineCanActV2(r, c);
+          if (action === 'move') {
+            cell.style.borderColor = '#4ade80';
+            cell.onclick = () => mineMove(r, c);
+          } else if (action === 'dig') {
+            cell.style.borderColor = '#facc15';
+            cell.onclick = () => mineDig(r, c);
+          }
+        }
+      }
+      grid.appendChild(cell);
+    }
+  }
+}
+
 init();
 </script>
 
@@ -10470,6 +10892,25 @@ init();
     <div id="memoryResult" class="memory-result hidden"></div>
     <button id="memCloseBtn" class="memory-close-btn hidden" onclick="closeMemoryGame()">✅ 領取獎勵並離開</button>
     <button onclick="closeMemoryGame()" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:11px;background:#f1f5f9;color:#64748b;font-family:'Nunito',sans-serif;font-size:.88em;font-weight:800;cursor:pointer;" id="memCancelBtn">取消（不消耗入場券）</button>
+  </div>
+</div>
+
+<!-- 挖礦彈窗 -->
+<div id="mineGameOv" class="mine-ov hidden">
+  <div class="mine-box">
+    <div class="mine-header">
+      <div class="mine-title">⛏️ 礦坑探險</div>
+      <div class="mine-pickaxe">⛏️ x<span id="minePickaxeLeft">10</span></div>
+    </div>
+    <div class="mine-action-hint" id="mineHint">點擊角色旁邊或下方的格子來挖掘！</div>
+    <div class="mine-grid" id="mineGrid"></div>
+    <div id="mineResult" class="mine-result hidden">
+      <div class="mine-result-title">🏆 本次挖掘結果</div>
+      <div class="mine-result-grid" id="mineResultGrid"></div>
+      <div class="mine-result-summary" id="mineResultSummary"></div>
+    </div>
+    <button id="mineCloseBtn" class="mine-close-btn hidden" onclick="closeMineGame()">✅ 領取獎勵並離開</button>
+    <button id="mineCancelBtn" onclick="closeMineGame()" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:11px;background:rgba(255,255,255,.1);color:#ffcc88;font-family:'Nunito',sans-serif;font-size:.88em;font-weight:800;cursor:pointer;">取消（不消耗入場券）</button>
   </div>
 </div>
 
