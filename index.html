@@ -1785,18 +1785,19 @@ button:active { transform:scale(.96); }
       <div class="game-hall-card" id="gameCard-memory" onclick="openMemoryGame()">
         <div class="game-hall-icon">🃏</div>
         <div class="game-hall-info">
-          <div class="game-hall-name">魔法記憶翻牌</div>
-          <div class="game-hall-desc">12張牌・12步・配對越多獎勵越豐厚</div>
+          <div class="game-hall-name">記憶翻牌</div>
+          <div class="game-hall-desc">找出一樣的圖案，找到越多獎勵越多</div>
         </div>
-        <button onclick="event.stopPropagation(); speakText('魔法記憶翻牌，十二張牌，十二步，配對越多獎勵越豐厚')" style="background:linear-gradient(135deg,#06b6d4,#0284c7);border:none;border-radius:10px;padding:6px 10px;color:white;font-size:.8em;font-weight:900;cursor:pointer;flex-shrink:0;margin-right:6px;">🔊</button>
+        <button onclick="event.stopPropagation(); speakText('記憶翻牌，找出一樣的圖案，找到越多獎勵越多')" style="background:linear-gradient(135deg,#06b6d4,#0284c7);border:none;border-radius:10px;padding:6px 10px;color:white;font-size:.8em;font-weight:900;cursor:pointer;flex-shrink:0;margin-right:6px;">🔊</button>
         <div class="game-hall-ticket" id="memoryTicketCount">🎟️ x0</div>
       </div>
       <div class="game-hall-card" id="gameCard-mine" onclick="openMineGame()">
         <div class="game-hall-icon">⛏️</div>
         <div class="game-hall-info">
           <div class="game-hall-name">礦坑探險</div>
-          <div class="game-hall-desc">挖開礦石・發現金幣與鑽石・10次機會</div>
+          <div class="game-hall-desc">挖開礦石，可以發現金幣與鑽石</div>
         </div>
+        <button onclick="event.stopPropagation(); speakText('礦坑探險，挖開礦石，可以發現金幣與鑽石')" style="background:linear-gradient(135deg,#06b6d4,#0284c7);border:none;border-radius:10px;padding:6px 10px;color:white;font-size:.8em;font-weight:900;cursor:pointer;flex-shrink:0;margin-right:6px;">🔊</button>
         <div class="game-hall-ticket" id="mineTicketCount">🎟️ x0</div>
       </div>
     </div>
@@ -10682,7 +10683,9 @@ function mineDig(r, c) {
   }
 
   // 挖掉格子
-  mineSetCell(worldRow, c, 'empty');
+  if (cellVal === 'coin') mineSetCell(worldRow, c, 'empty_coin');
+  else if (cellVal === 'gem') mineSetCell(worldRow, c, 'empty_gem');
+  else mineSetCell(worldRow, c, 'empty_rock');
   mineState.pickaxe--;
 
   // 如果挖的是正下方，角色掉下去，鏡頭跟著滾動
@@ -10845,6 +10848,15 @@ function renderMineGrid() {
           cell.textContent = '🧑';
         }
       } else if (cellVal === 'empty') {
+        cell.classList.add('empty');
+        cell.textContent = '';
+      } else if (cellVal === 'empty_coin') {
+        cell.classList.add('dug');
+        cell.textContent = '🪙';
+      } else if (cellVal === 'empty_gem') {
+        cell.classList.add('dug');
+        cell.textContent = '💎';
+      } else if (cellVal === 'empty_rock') {
         cell.classList.add('empty');
         cell.textContent = '';
       } else {
