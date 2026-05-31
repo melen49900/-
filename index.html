@@ -10676,7 +10676,7 @@ function mineDig(r, c) {
   // 獲得獎勵
   if (cellVal === 'coin') {
     mineState.rewards.coin++;
-    showToast('🪙 挖到金幣！');
+    showToast('💰 挖到金幣！');
   } else if (cellVal === 'gem') {
     mineState.rewards.gem++;
     showToast('💎 挖到鑽石！');
@@ -10780,7 +10780,7 @@ function renderMineResult() {
     cell.className = 'mine-result-cell';
     if (val === 'empty_coin') {
       cell.classList.add('was-dug');
-      cell.textContent = '🪙';
+      cell.textContent = '💰';
     } else if (val === 'empty_gem') {
       cell.classList.add('was-dug');
       cell.textContent = '💎';
@@ -10788,7 +10788,7 @@ function renderMineResult() {
       cell.classList.add('was-dug');
       cell.textContent = '🕳️';
     } else if (val === 'coin') {
-      cell.textContent = '🪙';
+      cell.textContent = '💰';
     } else if (val === 'gem') {
       cell.textContent = '💎';
     } else {
