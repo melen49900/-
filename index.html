@@ -4638,19 +4638,6 @@ function _doSpeak(text, lang, volume = speechCfg.volume.default) {
 function speakQ() {
   if (!speechCfg.enabled || !window.speechSynthesis) return;
   const q = state.quiz.q;
-  if (!q) return;
-  if (window._pendingQuestSpeak) {
-    const msg = window._pendingQuestSpeak;
-    window._pendingQuestSpeak = null;
-    const utter = new SpeechSynthesisUtterance(msg);
-    utter.lang = 'zh-TW';
-    utter.rate = 0.95;
-    utter.volume = 0.8;
-    utter.onend = () => speakQ();
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utter);
-    return; // 等說完再回來說題目
-  }
   const sub = state.quiz.subject;
   let text = q.q;
 
@@ -8986,6 +8973,11 @@ function refreshQuestSlots() {
 
 // ── 渲染任務頁 ──
 function renderQuestTab() {
+  if (window._pendingQuestSpeak) {
+    const msg = window._pendingQuestSpeak;
+    window._pendingQuestSpeak = null;
+    speakText(msg, 0.8);
+  }
   const list = document.getElementById('questList');
   if (!list) return;
   refreshQuestSlots();
