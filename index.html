@@ -10542,8 +10542,8 @@ function mineGenCell(worldRow) {
   const r = Math.random();
   // 越深越多好東西
   const depth = worldRow;
-  const gemChance = Math.min(0.05 + depth * 0.005, 0.2);
-  const coinChance = Math.min(0.15 + depth * 0.008, 0.35);
+  const gemChance  = Math.min(0.25 + depth * 0.001, 0.4);
+  const coinChance = Math.min(0.35 + depth * 0.001, 0.5);
   if (r < gemChance) return 'gem';
   if (r < gemChance + coinChance) return 'coin';
   return 'rock';
@@ -10744,10 +10744,16 @@ function mineFinish() {
 
   // 給予獎勵
   if (mineState.rewards.coin > 0) {
-    state.hero.gold = (state.hero.gold || 0) + mineState.rewards.coin * 10;
+    const lv = state.hero.level || 1;
+    const depth = mineState.worldRow;
+    const coinVal = (lv + depth) * (Math.floor(Math.random() * 5) + 1);
+    state.hero.gold = (state.hero.gold || 0) + mineState.rewards.coin * coinVal;
   }
   if (mineState.rewards.gem > 0) {
-    state.hero.gems = (state.hero.gems || 0) + mineState.rewards.gem * 5;
+    const depth = mineState.worldRow;
+    const bonus = Math.min(Math.floor(depth / 100), 10);
+    const gemVal = Math.floor(Math.random() * 10) + 1 + bonus;
+    state.hero.gems = (state.hero.gems || 0) + mineState.rewards.gem * gemVal;
   }
   autoSave();
   updateHeroPanel();
