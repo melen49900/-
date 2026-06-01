@@ -4133,7 +4133,7 @@ function onTurnEnd(callback) {
       b.heroHp = Math.min(getStats().maxHp, b.heroHp + regen);
       state.hero.hp = b.heroHp;
       msgs.push(`❤️HP+${regen}`);
-      spawnHitFx('hero', `💚+${def.value}`, '#23fa38');
+      spawnHitFx('hero', `💚+${regen}`, '#23fa38');
     });
     if (hpEffects.length) {
       document.getElementById('bHeroHp').style.width = Math.max(0, b.heroHp / getStats().maxHp * 100) + '%';
@@ -4145,7 +4145,7 @@ function onTurnEnd(callback) {
         b.heroMp = Math.min(getStats().maxMp, b.heroMp + regen);
         state.hero.mp = b.heroMp;
         msgs.push(`💧MP+${regen}`);
-        spawnHitFx('hero', `💧+${def.value}`, '#47b4fc');
+        spawnHitFx('hero', `💧+${regen}`, '#47b4fc');
       });
       if (mpEffects.length) {
         document.getElementById('bHeroMp').style.width = Math.max(0, b.heroMp / getStats().maxMp * 100) + '%';
