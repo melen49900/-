@@ -1951,6 +1951,13 @@ button:active { transform:scale(.96); }
         </div>
       </div>
 
+      <div class="admin-section">
+        <div class="admin-section-title">⛏️ 挖礦紀錄</div>
+        <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 16px;font-size:.88em;font-weight:800;color:#4a5568;">
+          歷史最深層數：<span id="adminMineDepth" style="color:#e67e22;font-size:1.1em;">0</span> 層
+        </div>
+      </div>
+      
       <!-- 存檔管理 -->
       <div class="admin-section" style="border:2px solid #e74c3c22;background:#fff5f5;">
         <div class="admin-section-title" style="color:#c0392b;">🔄 清除進度</div>
@@ -4124,7 +4131,7 @@ function onTurnEnd(callback) {
       b.heroHp = Math.min(getStats().maxHp, b.heroHp + regen);
       state.hero.hp = b.heroHp;
       msgs.push(`❤️HP+${regen}`);
-      spawnHitFx('hero', `💚+${regen}`, '#23fa38');
+      spawnHitFx('hero', `💚+${def.value}`, '#23fa38');
     });
     if (hpEffects.length) {
       document.getElementById('bHeroHp').style.width = Math.max(0, b.heroHp / getStats().maxHp * 100) + '%';
@@ -4136,7 +4143,7 @@ function onTurnEnd(callback) {
         b.heroMp = Math.min(getStats().maxMp, b.heroMp + regen);
         state.hero.mp = b.heroMp;
         msgs.push(`💧MP+${regen}`);
-        spawnHitFx('hero', `💧+${regen}`, '#47b4fc');
+        spawnHitFx('hero', `💧+${def.value}`, '#47b4fc');
       });
       if (mpEffects.length) {
         document.getElementById('bHeroMp').style.width = Math.max(0, b.heroMp / getStats().maxMp * 100) + '%';
@@ -4450,6 +4457,7 @@ function usePotion() {
   state.battle.heroHp = Math.min(getStats().maxHp, state.battle.heroHp + def.value);
   state.hero.hp = state.battle.heroHp;
   state.battle.log = `🧪 使用 ${def.name}！回復 ${def.value} HP！`;
+  spawnHitFx('hero', `💚+${def.value}`, '#23fa38');
   renderBattleUI(); renderHero(); autoSave();
 }
 
@@ -4461,6 +4469,7 @@ function useMpPotion() {
   state.battle.heroMp = Math.min(getStats().maxMp, state.battle.heroMp + def.value);
   state.hero.mp = state.battle.heroMp;
   state.battle.log = `💧 使用 ${def.name}！回復 ${def.value} MP！`;
+  spawnHitFx('hero', `💧+${def.value}`, '#47b4fc');
   renderBattleUI(); renderHero(); autoSave();
 }
 
@@ -10806,6 +10815,12 @@ function renderMineResult() {
 }
 
 function closeMineGame() {
+  if (mineState) {
+    const depth = mineState.worldRow || 0;
+    state.stats = state.stats || {};
+    state.stats.mineMaxDepth = Math.max(state.stats.mineMaxDepth || 0, depth);
+    autoSave();
+  }
   document.getElementById('mineGameOv').classList.add('hidden');
   mineState = null;
   renderGameHall();
