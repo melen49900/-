@@ -235,7 +235,7 @@ db.ref('counter').on('value', snap => {
   document.getElementById('counterDisplay').textContent = Number.isInteger(val) ? val : val.toFixed(1);
 });
 
-db.ref('logs').on('value', snap => {
+db.ref('logs').orderByChild('time').on('value', snap => {
   const items = [];
   snap.forEach(child => items.push(child.val()));
   renderLogs(items.slice(-20));
