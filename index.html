@@ -10523,16 +10523,17 @@ function openMineGame() {
 
   // 角色從第0排開始，第0排是入口（空的），角色站在上方
   // 第1、2、3排是石頭
-  mineState = {
-    pickaxe: 10,
-    playerCol: 2,
-    playerRow: 0,
-    worldRow: 0,
-    visibleTopRow: -1,  // 畫面最上排是world row -1（空的入口排）
-    worldCells: {},
-    resultSnapshot: null,
-    finished: false,
-    rewards: { coin: 0, gem: 0 }
+    const prev = state.mineProgress;
+    mineState = {
+      pickaxe: 10,
+      playerCol: prev ? prev.playerCol : 2,
+      playerRow: prev ? prev.playerRow : 0,
+      worldRow: prev ? prev.worldRow : 0,
+      visibleTopRow: prev ? prev.visibleTopRow : -1,
+      worldCells: prev ? prev.worldCells : {},
+      resultSnapshot: null,
+      finished: false,
+      rewards: { coin: 0, gem: 0 }
   };
 
   // 預先生成石頭（從world row 0開始才有石頭）
@@ -10743,7 +10744,15 @@ function updateMineUI() {
 function mineFinish() {
   if (mineState.finished) return;
   mineState.finished = true;
-
+  // 儲存深度進度供下次繼續
+  state.mineProgress = {
+    worldRow: mineState.worldRow,
+    visibleTopRow: mineState.visibleTopRow,
+    playerCol: mineState.playerCol,
+    playerRow: mineState.playerRow,
+    worldCells: mineState.worldCells
+  };
+  autoSave();
   // 截取當前畫面20格作為記錄
   const top = mineState.visibleTopRow;
   const snapshot = [];
