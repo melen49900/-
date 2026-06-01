@@ -268,6 +268,8 @@ body::before {
 .mine-cell.empty { background:#1a0805; border-color:#0d0402; cursor:default; }
 .mine-cell.player { background:#c0641a; border-color:var(--gold); cursor:default; }
 .mine-cell.dug { background:#2a1005; border-color:#1a0803; cursor:default; }
+.mine-cell-coin { background:#2a1005; border-color:#FFD700 !important; cursor:default; color:#FFD700; font-weight:900; font-size:1em; }
+.mine-result-cell-coin { background:#2a1208; border-color:#FFD700 !important; color:#FFD700; font-weight:900; }
 .mine-action-hint {
   text-align:center; font-size:.75em; color:#ffcc88; font-weight:700; margin-bottom:10px;
 }
@@ -10888,8 +10890,8 @@ function renderMineGrid() {
         cell.classList.add('empty');
         cell.textContent = '';
       } else if (cellVal === 'empty_coin') {
-        cell.classList.add('dug');
-        cell.textContent = '🪙';
+        cell.classList.add('mine-cell-coin');
+        cell.textContent = '💰G';
       } else if (cellVal === 'empty_gem') {
         cell.classList.add('dug');
         cell.textContent = '💎';
