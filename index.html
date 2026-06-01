@@ -1957,7 +1957,7 @@ button:active { transform:scale(.96); }
           歷史最深層數：<span id="adminMineDepth" style="color:#e67e22;font-size:1.1em;">0</span> 層
         </div>
       </div>
-      
+
       <!-- 存檔管理 -->
       <div class="admin-section" style="border:2px solid #e74c3c22;background:#fff5f5;">
         <div class="admin-section-title" style="color:#c0392b;">🔄 清除進度</div>
@@ -4997,6 +4997,7 @@ function changeAdminPw() {
 function renderAdminUI() {
   document.getElementById('gemRewardVal').textContent   = GEM_PER_CORRECT;
   document.getElementById('streakBonusVal').textContent = GEM_STREAK_BONUS;
+  document.getElementById('adminMineDepth').textContent = state.stats?.mineMaxDepth || 0;
   renderMathOpGrid();
   beditRender();
 }
@@ -10746,7 +10747,12 @@ function mineFinish() {
   const snapshot = [];
   for (let r = 0; r < MINE_ROWS; r++) {
     for (let c = 0; c < MINE_COLS; c++) {
-      snapshot.push(mineGetCell(top + r, c));
+      const wr = top + r;
+      if (wr < 0) {
+        snapshot.push('empty');
+      } else {
+        snapshot.push(mineGetCell(wr, c));
+      }
     }
   }
   mineState.resultSnapshot = snapshot;
