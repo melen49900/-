@@ -10775,7 +10775,7 @@ function mineFinish() {
     state.hero.gems = (state.hero.gems || 0) + totalGems;
   }
   autoSave();
-  updateHeroPanel();
+  renderHero();
 
   // 顯示結果
   renderMineResult();
