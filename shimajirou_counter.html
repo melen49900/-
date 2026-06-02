@@ -237,7 +237,10 @@ db.ref('counter').on('value', snap => {
 
 db.ref('logs').orderByChild('time').on('value', snap => {
   const items = [];
-  snap.forEach(child => items.push(child.val()));
+  snap.forEach(child => {
+    const val = child.val();
+    if (val && val.time) items.push(val);
+  });
   renderLogs(items.slice(-20));
 });
 
