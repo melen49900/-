@@ -295,6 +295,9 @@ body::before {
   color:white; cursor:pointer; box-shadow:0 4px 14px rgba(255,140,0,.4);
 }
 .mine-char { width:100%; height:100%; object-fit:cover; border-radius:6px; }
+.mine-live-counters {
+  display: flex; gap: 10px; font-size: .85em; font-weight: 800; color: #ffe082;
+}
 
 /* ── 分頁列 ─────────────────────────────────────────────── */
 .tabs {
@@ -10686,50 +10689,82 @@ function mineDig(r, c) {
   const worldRow = top + r;
   const cellVal = mineGetCell(worldRow, c);
 
-  // 獲得獎勵
-  if (cellVal === 'coin') {
-    mineState.rewards.coin++;
-    showToast('💰 挖到金幣！');
-  } else if (cellVal === 'gem') {
-    mineState.rewards.gem++;
-    showToast('💎 挖到鑽石！');
+  // ── 1. 先顯示挖到了什麼（飛行動畫）──────────────────────
+  const found = cellVal === 'coin' ? '💰' : cellVal === 'gem' ? '💎' : null;
+  if (found) {
+    // 找到格子的螢幕座標
+    const grid = document.getElementById('mineGrid');
+    const cells = grid.querySelectorAll('.mine-cell');
+    const cellIdx = r * MINE_COLS + c;
+    const cellEl = cells[cellIdx];
+    const targetEl = found === '💰'
+      ? document.getElementById('mineCoinCount')
+      : document.getElementById('mineGemCount');
+    if (cellEl && targetEl) {
+      const srcRect = cellEl.getBoundingClientRect();
+      const dstRect = targetEl.getBoundingClientRect();
+      const flyEl = document.createElement('div');
+      flyEl.className = 'mine-fly-icon';
+      flyEl.textContent = found;
+      const startX = srcRect.left + srcRect.width / 2 - 16;
+      const startY = srcRect.top  + srcRect.height / 2 - 16;
+      const dy = dstRect.top - startY - 60; // 目標相對偏移
+      flyEl.style.left = startX + 'px';
+      flyEl.style.top  = startY + 'px';
+      flyEl.style.setProperty('--fly-dy', dy + 'px');
+      document.body.appendChild(flyEl);
+      setTimeout(() => flyEl.remove(), 750);
+
+      // 統計數字彈跳
+      setTimeout(() => {
+        targetEl.parentElement.classList.remove('mine-counter-bump');
+        void targetEl.parentElement.offsetWidth; // reflow
+        targetEl.parentElement.classList.add('mine-counter-bump');
+      }, 500);
+    }
   }
-
-  // 挖掉格子
-  if (cellVal === 'coin') mineSetCell(worldRow, c, 'empty_coin');
-  else if (cellVal === 'gem') mineSetCell(worldRow, c, 'empty_gem');
-  else mineSetCell(worldRow, c, 'empty_rock');
-  mineState.pickaxe--;
-
-  // 如果挖的是正下方，角色掉下去，鏡頭跟著滾動
-  const isBelow = (c === mineState.playerCol && r === mineState.playerRow + 1);
-  if (isBelow) {
-    mineState.playerRow++;
-    mineState.worldRow++;
-
-    // 如果角色到了第3排（最底排），鏡頭往下捲
-    if (mineState.playerRow >= MINE_ROWS - 1) {
-      mineState.visibleTopRow++;
-      mineState.playerRow = MINE_ROWS - 2; // 角色維持在倒數第二排
-      // 預先生成新的底部格子
-      const newBottomRow = mineState.visibleTopRow + MINE_ROWS;
-      for (let col = 0; col < MINE_COLS; col++) {
-        if (!(`${newBottomRow},${col}` in mineState.worldCells)) {
-          mineState.worldCells[`${newBottomRow},${col}`] = mineGenCell(newBottomRow);
+  // ── 2. 稍微延遲後再執行「挖開＋移動」邏輯 ─────────────
+  const doMove = () => {
+    // 獲得獎勵
+    if (cellVal === 'coin') mineState.rewards.coin++;
+    else if (cellVal === 'gem') mineState.rewards.gem++;
+    // 挖掉格子
+    if (cellVal === 'coin') mineSetCell(worldRow, c, 'empty_coin');
+    else if (cellVal === 'gem') mineSetCell(worldRow, c, 'empty_gem');
+    else mineSetCell(worldRow, c, 'empty_rock');
+    mineState.pickaxe--;
+    // 更新統計顯示
+    document.getElementById('mineCoinCount').textContent = mineState.rewards.coin;
+    document.getElementById('mineGemCount').textContent  = mineState.rewards.gem;
+    // 移動角色
+    const isBelow = (c === mineState.playerCol && r === mineState.playerRow + 1);
+    if (isBelow) {
+      mineState.playerRow++;
+      mineState.worldRow++;
+      if (mineState.playerRow >= MINE_ROWS - 1) {
+        mineState.visibleTopRow++;
+        mineState.playerRow = MINE_ROWS - 2;
+        const newBottomRow = mineState.visibleTopRow + MINE_ROWS;
+        for (let col = 0; col < MINE_COLS; col++) {
+          if (!(`${newBottomRow},${col}` in mineState.worldCells)) {
+            mineState.worldCells[`${newBottomRow},${col}`] = mineGenCell(newBottomRow);
+          }
         }
       }
+    } else {
+      mineState.playerCol = c;
+      mineState.playerRow = r;
     }
+
+    renderMineGrid();
+    updateMineUI();
+    if (mineState.pickaxe <= 0) mineFinish();
+  };
+  // 挖到寶物時延遲 400ms，讓玩家看清楚；挖到空石頭立即執行
+  if (found) {
+    setTimeout(doMove, 400);
   } else {
-    // 挖左右：角色移動過去
-    mineState.playerCol = c;
-    mineState.playerRow = r;
-  }
-
-  // 先更新畫面再判斷結束，讓最後一把結果也能顯示
-  renderMineGrid();
-  updateMineUI();
-
-  if (mineState.pickaxe <= 0) {mineFinish();
+    doMove();
   }
 }
 
@@ -10825,7 +10860,7 @@ function renderMineResult() {
 
   const summary = document.getElementById('mineResultSummary');
   const parts = [];
-  if (mineState.rewards.coin > 0) parts.push(`🪙 金幣 ×${mineState.rewards.coin}（+${mineState.rewards.coinGold || 0} Gold）`);
+  if (mineState.rewards.coin > 0) parts.push(`💰 金幣 ×${mineState.rewards.coin}（+${mineState.rewards.coinGold || 0} Gold）`);
   if (mineState.rewards.gem > 0) parts.push(`💎 鑽石 ×${mineState.rewards.gem}（+${mineState.rewards.gemGems || 0} Gems）`);
   if (parts.length === 0) parts.push('這次什麼都沒挖到...');
   summary.innerHTML = parts.join('<br>');
@@ -10994,6 +11029,10 @@ init();
     <div class="mine-header">
       <div class="mine-title">⛏️ 礦坑探險</div>
       <div class="mine-pickaxe">⛏️ x<span id="minePickaxeLeft">10</span></div>
+      <div class="mine-live-counters">
+        <span id="mineLiveCoin">💰 ×<span id="mineCoinCount">0</span></span>
+        <span id="mineLiveGem">💎 ×<span id="mineGemCount">0</span></span>
+      </div>
     </div>
     <div class="mine-action-hint" id="mineHint">點擊角色旁邊或下方的格子來挖掘！</div>
     <div class="mine-grid" id="mineGrid"></div>
