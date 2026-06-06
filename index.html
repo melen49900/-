@@ -1667,7 +1667,7 @@ button:active { transform:scale(.96); }
         </div>
       </div>
     </div>
-    <!-- 🪨 封印石 -->
+    <!-- 封印石 -->
     <div class="shop-section" id="stoneSectionWrap" style="display:none">
       <div class="shop-section-title">🪨 魔力結晶（降低魔界敵人倍率）</div>
       <div style="font-size:.75em;color:#666;margin-bottom:10px;line-height:1.7;padding:0 2px">
@@ -1675,6 +1675,15 @@ button:active { transform:scale(.96); }
         目前擁有：<b id="stoneCount">0</b> 顆　│　目前倍率：<b id="stoneMultDisplay">-</b>
       </div>
       <div id="stoneShopList"></div>
+    </div>
+    <!-- 星塵 -->
+    <div class="shop-section" id="alienStoneSectionWrap" style="display:none">
+      <div class="shop-section-title">🌌 星塵（降低外星敵人倍率）</div>
+      <div style="font-size:.75em;color:#666;margin-bottom:10px;line-height:1.7;padding:0 2px">
+        每顆星塵可將外星敵人的強度倍率降低 0.1 倍（最低降至 1 倍）。<br>
+        目前擁有：<b id="alienStoneCount">0</b> 顆　│　目前倍率：<b id="alienMultDisplay">-</b>
+      </div>
+      <div id="alienStoneShopList"></div>
     </div>
     <!-- ⚒️ 裝備合成 -->
     <div class="shop-section">
@@ -2179,6 +2188,7 @@ const FAMILY_MOD = {// 種族加成
   whale:         { hp:1,    atk:1,   def:1.65, gold:1.35, exp:1.1  },
   guard:         { hp:1.2,  atk:1.2, def:1.2,  gold:1.4,  exp:1.2  },
   kingdemon:     { hp:1.3,  atk:1.3, def:1.3,  gold:1.5,  exp:1.45 },
+  octopus:       { hp:1,    atk:1.05,def:1,    gold:1.05, exp:1    },
 };
 // 怪物資料（之後可改由 JSON 匯入）
 const ENEMIES = [
@@ -2282,28 +2292,38 @@ const ENEMIES = [
   {id:'s98',name:'大鯨',        emoji:'🐳',stage:98, family:'whale',          postMult:19.2},
   {id:'s99',name:'上古守衛',    emoji:'🛡️',stage:99, family:'guard',           postMult:19.6},
   {id:'s100',name:'暴風龍',     emoji:'😡',stage:100,family:'kingdemon',      postMult:20.0},
+  {id:'s101',name:'章魚射手',   emoji:'🐙',stage:101,family:'octopus',        alienMult:1.5},
+  {id:'s102',name:'章魚戰士',   emoji:'🐙',stage:102,family:'octopus',        alienMult:2.0},
+  {id:'s103',name:'章魚機器人', emoji:'🐙',stage:103,family:'octopus',        alienMult:2.5},
+  {id:'s104',name:'章魚特戰隊', emoji:'🐙',stage:104,family:'octopus',        alienMult:3.0},
+  {id:'s105',name:'章魚將軍',   emoji:'🐙',stage:105,family:'octopus',        alienMult:3.5},
 ];
 
 function enemyStats(id) {// 怪物數值計算
   const e = ENEMIES.find(x => x.id === id);
   if (!e) return null;
   const vary  = v => Math.max(1, Math.round(v * (1 + (Math.random() * 0.06 - 0.03))));
-  const scale1 = Math.pow(1.13 , e.stage - 1);// 生命成長
-  const scale2 = Math.pow(1.086, e.stage - 1);// 攻擊成長
-  const scale3 = Math.pow(1.066, e.stage - 1);// 防禦成長
-  const scale4 = Math.pow(1.064, e.stage - 1);// 金幣、經驗成長
+  const scale1 = Math.pow(1.127, e.stage - 1);// 生命成長倍率
+  const scale2 = Math.pow(1.086, e.stage - 1);// 攻擊成長倍率
+  const scale3 = Math.pow(1.084, e.stage - 1);// 防禦成長倍率
+  const scale4 = Math.pow(1.064, e.stage - 1);// 金幣及經驗成長倍率
   const mod   = FAMILY_MOD[e.family] || { hp:1, atk:1, def:1, gold:1, exp:1 };
-  const baseMult   = e.postMult || 1;
+  const baseMult   = e.postMult || 1;//第二階段魔界
   const stones     = state?.curseStones || 0;
   const reduction  = stones * 0.1;// 減少倍率
   const finalMult  = Math.max(1, baseMult - reduction);
   const neededStones  = (baseMult - 1) / 0.1;
   const excessRatio   = neededStones > 0 ? Math.min(1, Math.max(0, stones - neededStones) / neededStones) : 0;
+  const alienBaseMult  = e.alienMult || 1;//第三階段外星
+  const alienStones    = state?.alienStones || 0;
+  const alienReduction = alienStones * 0.1;
+  const alienFinalMult = Math.max(1, alienBaseMult - alienReduction);
+  const totalMult = e.alienMult ? alienFinalMult : finalMult;
   return {
     ...e,
-    maxHp: vary(Math.round((28 * scale1 + e.stage *80)* mod.hp * finalMult)),
-    atk:   vary(Math.round((20 * scale2 + e.stage * 5)* mod.atk* finalMult)),
-    def:   vary(Math.round((23 * scale3 + e.stage *15)* mod.def* finalMult)),
+    maxHp: vary(Math.round((28 * scale1 + e.stage *80)* mod.hp * totalMult)),
+    atk:   vary(Math.round((20 * scale2 + e.stage * 5)* mod.atk* totalMult)),
+    def:   vary(Math.round((23 * scale3 + e.stage *15)* mod.def* totalMult)),
     gold:  vary(Math.round((10 * scale4 + e.stage * 1)* mod.gold)),
     exp:   vary(Math.round((20 * scale4 + e.stage * 2)* mod.exp)),
     heroAtkBoost:  1 + excessRatio,
@@ -2322,13 +2342,14 @@ const BUILTIN_Q = {
 
 // 主角等級對應能力
 function heroStatsForLevel(lv) {
+  const t = lv - 1;
   return {
-    maxHp:   200 + (lv - 1) * 15,
-    maxMp:   50  + (lv - 1) * 5,
-    baseAtk: 30  + (lv - 1) * 2,
-    baseMag: 30  + (lv - 1) * 2,
-    baseDef: 15  + (lv - 1) * 1,
-    crit:    0.05 + Math.floor((lv - 1) / 50) * 0.01,
+    maxHp:   Math.round(200  * (1.015 ** t)),  // 每級強化%數
+    maxMp:   Math.round(50   * (1.009 ** t)),
+    baseAtk: Math.round(30   * (1.014 ** t)),
+    baseMag: Math.round(30   * (1.014 ** t)),
+    baseDef: Math.round(15   * (1.014 ** t)),
+    crit:    0.05 + Math.floor((lv - 1) / 30) * 0.01,
     critDmg: 1.50 + Math.floor((lv - 1) /  5) * 0.01,
   };
 }
@@ -2590,7 +2611,7 @@ function loadGameAssets() {// 先從 IndexedDB 讀快取，立刻套用讓第一
       renderBattleUI(); renderEnemyList();
       renderQuestion(); // 用快取圖片重新渲染當前題目
     }
-    const files = ['./1怪物.json','./2魔界.json','./3題目.json','./4其他.json'];// 再從 GitHub fetch 最新版，覆蓋並存回快取
+    const files = ['./1怪物.json','./2魔界.json','./3題目.json','./4其他.json','./5外星.json'];// 再從 GitHub fetch 最新版，覆蓋並存回快取
     Promise.all(files.map(f => fetch(f).then(r => r.json()).catch(() => ({}))))
       .then(packs => {
         packs.forEach(pack => {
@@ -2613,7 +2634,7 @@ function loadGameAssets() {// 先從 IndexedDB 讀快取，立刻套用讓第一
         renderQuestion(); // 用最新圖片重新渲染
       });
   }).catch(() => {// IndexedDB 失敗就直接 fetch
-    const files = ['./1怪物.json','./2魔界.json','./3題目.json','./4其他.json'];
+    const files = ['./1怪物.json','./2魔界.json','./3題目.json','./4其他.json','./5外星.json'];
     Promise.all(files.map(f => fetch(f).then(r => r.json()).catch(() => ({}))))
       .then(packs => {
         packs.forEach(pack => {
@@ -3152,8 +3173,8 @@ function checkAnswer(selected) {
     state.stats.maxStreak = Math.max(state.stats.maxStreak || 0, state.quiz.streak);
     updateQuestProgress('streak', state.quiz.streak);
     const gems = Math.floor(GEM_STREAK_BONUS / 10 * state.quiz.streak) + GEM_PER_CORRECT;
-    const exp  = Math.floor(25  + 5 *( 1 + state.hero.level / 20)* state.quiz.streak);
-    const gold = Math.floor(100 + 6 *( 1 + state.hero.level / 20)* state.quiz.streak);
+    const exp  = Math.floor(20 + 4 *( 1 + state.hero.level / 50)* state.quiz.streak);
+    const gold = Math.floor(80 + 5 *( 1 + state.hero.level / 35)* state.quiz.streak);
     state.hero.gems += gems;
     state.stats = state.stats || {};
     state.stats.totalCorrect = (state.stats.totalCorrect || 0) + 1;
@@ -3275,18 +3296,21 @@ function rollCard(forceLegendary, forceEpic) {
   else if (r < 0.51)  return rollEquip('rare');        // 21%
   else if (r < 0.66)  return rollGold();               // 15%
   else if (r < 0.68)  return (state.clearedStages || []).includes(62) ? rollStone() : rollGold();  // 2%
-  else if (r < 0.70)  return rollTicket();             //  2%
-  else                return rollEquip('common');      // 30%
+  else if (r < 0.70)  return (state.clearedStages || []).includes(100) ? rollAlienStone() : rollGold();  // 2%
+  else if (r < 0.72)  return rollTicket();             //  2%
+  else                return rollEquip('common');      // 28%
 }
 
 function rollStone() {
+  const total = (state.curseStones || 0) + (state.boughtStones || 0);
+  if (total >= 400) return rollEquip(); // 達到400顆上限就改抽普通裝備
   state.curseStones = (state.curseStones || 0) + 1;
   autoSave();
   return {
     type:   'stone',
     name:   '封印石',
     emoji:  '🪨',
-    rarity: 'epic',   // 稀有度顏色
+    rarity: 'epic',
     desc:   `降低後魔王關卡倍率 0.1 倍（目前共 ${state.curseStones} 顆）`,
   };
 }
@@ -3951,7 +3975,9 @@ function renderBattleUI() {
   if (!e) return;
   // 依關卡切換戰鬥背景
   const scene = document.getElementById('battleScene');
-  const bgImg = e.stage >= 63
+  const bgImg = e.stage >= 101
+    ? gameAssets.battleBg?.['alien']
+    : e.stage >= 63
     ? gameAssets.battleBg?.['late']
     : gameAssets.battleBg?.['early'];
   scene.style.backgroundImage = bgImg ? `url(${bgImg})` : '';
@@ -5177,6 +5203,7 @@ function renderShopUI() {
   renderForgeResult();
   renderUpgradeList();
   renderStoneShop();
+  renderAlienStoneShop();
 }
 
 // ── 藥水定義 ──────────────────────────────────────────────
@@ -5204,7 +5231,7 @@ function buyItem(itemKey, cost) {
 
 function buyStone() {
   const bought = state.boughtStones || 0;
-  const cost = (bought + 1) * 100000; // 第N顆買的 = N × 10萬
+  const cost = (bought + 1) * 100000;
   if (state.hero.gold < cost) {
     showToast(`💰 金幣不足！需要 ${cost.toLocaleString()} 金幣`);
     return;
@@ -5265,6 +5292,64 @@ function renderStoneShop() {
           onclick="speakText('魔力水晶，降低魔界敵人強度')"
           style="background:linear-gradient(135deg,#7c3aed,#5b21b6);flex-shrink:0;width:44px;padding:0">
           🔊
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function buyAlienStone() {
+  const bought = state.boughtAlienStones || 0;
+  const cost = (bought + 1) * 200000;
+  if (state.hero.gold < cost) {
+    showToast(`💰 金幣不足！需要 ${cost.toLocaleString()} 金幣`);
+    return;
+  }
+  state.hero.gold -= cost;
+  state.boughtAlienStones = bought + 1;
+  state.alienStones = (state.alienStones || 0) + 1;
+  renderHero();
+  renderAlienStoneShop();
+  autoSave();
+  showToast(`✅ 購得第 ${bought + 1} 顆星塵！倍率 -0.1`);
+}
+
+function renderAlienStoneShop() {
+  const alienCleared = (state.clearedStages || []).includes(100); // 打過100關才顯示
+  const wrap = document.getElementById('alienStoneSectionWrap');
+  if (wrap) wrap.style.display = alienCleared ? '' : 'none';
+  const el = document.getElementById('alienStoneShopList');
+  if (!el) return;
+  const owned = state.alienStones || 0;
+  const bought = state.boughtAlienStones || 0;
+  const nextCost = (bought + 1) * 10000 + 200000;
+  const canAfford = state.hero.gold >= nextCost;
+
+  const stoneCountEl = document.getElementById('alienStoneCount');
+  if (stoneCountEl) stoneCountEl.textContent = owned;
+  const multEl = document.getElementById('alienMultDisplay');
+  if (multEl) {
+    const curEnemy = ENEMIES.find(x => x.id === state.battle?.enemyId);
+    const base = curEnemy?.alienMult;
+    if (base) {
+      const cur = Math.max(1, base - owned * 0.1).toFixed(1);
+      multEl.textContent = `${cur}×（基礎 ${base}×）`;
+    } else {
+      multEl.textContent = '目前關卡無加成';
+    }
+  }
+
+  el.innerHTML = `
+    <div class="shop-item" style="grid-column:1/-1">
+      <div class="shop-item-icon">🌌</div>
+      <div class="shop-item-name">星塵 ×1</div>
+      <div class="shop-item-desc">降低外星敵人強度 0.1 倍</div>
+      <div class="shop-item-stock">已購買：${bought} 顆（已擁有 ${owned} 顆）</div>
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <button class="shop-item-btn" ${canAfford ? '' : 'disabled'}
+          onclick="buyAlienStone()"
+          style="background:linear-gradient(135deg,#0ea5e9,#0369a1);flex:1">
+          購買 ${nextCost.toLocaleString()}💰（第 ${bought + 1} 顆）
         </button>
       </div>
     </div>
