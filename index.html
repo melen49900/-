@@ -3310,8 +3310,22 @@ function rollStone() {
     type:   'stone',
     name:   '封印石',
     emoji:  '🪨',
-    rarity: 'epic',
+    rarity: 'legendary',
     desc:   `降低後魔王關卡倍率 0.1 倍（目前共 ${state.curseStones} 顆）`,
+  };
+}
+
+function rollAlienStone() {
+  const total = (state.alienStones || 0);
+  if (total >= 500) return rollEquip();
+  state.alienStones = (state.alienStones || 0) + 1;
+  autoSave();
+  return {
+    type:   'alienstone',
+    name:   '星塵',
+    emoji:  '🌌',
+    rarity: 'legendary',
+    desc:   `降低後魔王關卡倍率 0.1 倍（目前共 ${state.alienStones} 顆）`,
   };
 }
 
@@ -5300,7 +5314,7 @@ function renderStoneShop() {
 
 function buyAlienStone() {
   const bought = state.boughtAlienStones || 0;
-  const cost = (bought + 1) * 200000;
+  const nextCost = (bought + 1) * 10000 + 190000;
   if (state.hero.gold < cost) {
     showToast(`💰 金幣不足！需要 ${cost.toLocaleString()} 金幣`);
     return;
@@ -5322,7 +5336,7 @@ function renderAlienStoneShop() {
   if (!el) return;
   const owned = state.alienStones || 0;
   const bought = state.boughtAlienStones || 0;
-  const nextCost = (bought + 1) * 10000 + 200000;
+  const nextCost = (bought + 1) * 10000 + 190000;
   const canAfford = state.hero.gold >= nextCost;
 
   const stoneCountEl = document.getElementById('alienStoneCount');
@@ -10627,7 +10641,10 @@ function openMineGame() {
   // 預先生成石頭（從world row 0開始才有石頭）
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < MINE_COLS; c++) {
-      mineState.worldCells[`${r},${c}`] = mineGenCell(r);
+      const key = `${r},${c}`;
+      if (!(key in mineState.worldCells)) {
+        mineState.worldCells[key] = mineGenCell(r);
+      }
     }
   }
 
@@ -10693,7 +10710,7 @@ function renderMineGrid() {
       } else {
         // 可挖的格子：判斷是否可互動
         if (!mineState.finished) {
-          const canAct = mineCanAct(r, c);
+          const canAct = mineCanActV2(r, c);
           if (canAct === 'move') {
             cell.onclick = () => mineMove(r, c);
             cell.title = '移動';
@@ -10752,7 +10769,6 @@ function mineCanActV2(r, c) {
   }
   // 左右：同排相鄰，但角色所在排若是入口排則不能左右
   const playerWorldRow = top + pr;
-  if (playerWorldRow < 0) return null;
 
   if (r === pr && Math.abs(c - pc) === 1) {
     if (cellVal === 'empty') return 'move';
@@ -10973,77 +10989,6 @@ function updateMineTicketCount() {
 
 // 覆寫renderMineGrid中的canAct，改用V2版本
 const _origOpenMine = openMineGame;
-
-// renderMineGrid：top排若是入口（world row < 0）則顯示空的
-function renderMineGrid() {
-  const grid = document.getElementById('mineGrid');
-  grid.innerHTML = '';
-  const top = mineState.visibleTopRow;
-
-  for (let r = 0; r < MINE_ROWS; r++) {
-    for (let c = 0; c < MINE_COLS; c++) {
-      const worldRow = top + r;
-      const cell = document.createElement('div');
-      cell.className = 'mine-cell';
-
-      const isPlayer = (r === mineState.playerRow && c === mineState.playerCol);
-
-      // 入口排（world row < 0）：空的，只顯示角色
-      if (worldRow < 0) {
-        if (isPlayer) {
-          cell.classList.add('player');
-          const avatarSrc = gameAssets?.char?.[state.char] || null;
-          if (avatarSrc) {
-            cell.innerHTML = `<img src="${avatarSrc}" class="mine-char">`;
-          } else {
-            cell.textContent = '🧑';
-          }
-        } else {
-          cell.classList.add('empty');
-        }
-        grid.appendChild(cell);
-        continue;
-      }
-
-      const cellVal = mineGetCell(worldRow, c);
-
-      if (isPlayer) {
-        cell.classList.add('player');
-        const avatarSrc = gameAssets?.char?.[state.char] || null;
-        if (avatarSrc) {
-          cell.innerHTML = `<img src="${avatarSrc}" class="mine-char">`;
-        } else {
-          cell.textContent = '🧑';
-        }
-      } else if (cellVal === 'empty') {
-        cell.classList.add('empty');
-        cell.textContent = '';
-      } else if (cellVal === 'empty_coin') {
-        cell.classList.add('mine-cell-coin');
-        cell.textContent = '💰G';
-      } else if (cellVal === 'empty_gem') {
-        cell.classList.add('dug');
-        cell.textContent = '💎';
-      } else if (cellVal === 'empty_rock') {
-        cell.classList.add('empty');
-        cell.textContent = '';
-      } else {
-        cell.textContent = '🪨';
-        if (!mineState.finished) {
-          const action = mineCanActV2(r, c);
-          if (action === 'move') {
-            cell.style.borderColor = '#4ade80';
-            cell.onclick = () => mineMove(r, c);
-          } else if (action === 'dig') {
-            cell.style.borderColor = '#facc15';
-            cell.onclick = () => mineDig(r, c);
-          }
-        }
-      }
-      grid.appendChild(cell);
-    }
-  }
-}
 
 init();
 </script>
