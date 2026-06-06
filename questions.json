@@ -1025,9 +1025,9 @@
       "question": "他是什麼職業?",
       "options": [
         "消防員",
-        "澆花人員",
-        "洗地人員",
-        "抽水人員"
+        "澆花員",
+        "洗地員",
+        "抽水員"
       ],
       "answer": "消防員",
       "image": "q_firefighter.jpg"
@@ -1043,6 +1043,18 @@
       ],
       "answer": "警察",
       "image": "q_police.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "他是什麼職業?",
+      "options": [
+        "老師",
+        "醫生",
+        "農夫",
+        "警察"
+      ],
+      "answer": "農夫",
+      "image": "q_farmer.jpg"
     },
     {
       "category": "國文",
@@ -1556,6 +1568,18 @@
     },
     {
       "category": "英文",
+      "question": "What is his job?",
+      "options": [
+        "farmer",
+        "police",
+        "cook",
+        "teacher"
+      ],
+      "answer": "farmer",
+      "image": "q_farmer.jpg"
+    },
+    {
+      "category": "英文",
       "question": "What is she doing?",
       "options": [
         "running",
@@ -1842,6 +1866,83 @@
         "葡萄"
       ],
       "answer": "西瓜"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “head”?",
+      "options": [
+        "頭",
+        "手",
+        "腳",
+        "眼"
+      ],
+      "answer": "頭"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “hand”?",
+      "options": [
+        "頭",
+        "手",
+        "腳",
+        "眼"
+      ],
+      "answer": "手"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “eye”?",
+      "options": [
+        "頭",
+        "手",
+        "腳",
+        "眼"
+      ],
+      "answer": "眼"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “ear”?",
+      "options": [
+        "鼻子",
+        "眼睛",
+        "耳朵",
+        "嘴巴"
+      ],
+      "answer": "耳朵"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “mouth”?",
+      "options": [
+        "鼻子",
+        "眼睛",
+        "耳朵",
+        "嘴巴"
+      ],
+      "answer": "嘴巴"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “nose”?",
+      "options": [
+        "鼻子",
+        "眼睛",
+        "耳朵",
+        "嘴巴"
+      ],
+      "answer": "鼻子"
+    },
+    {
+      "category": "英文",
+      "question": "Which one is a fruit?",
+      "options": [
+        "orange",
+        "octopus",
+        "sofa",
+        "towel"
+      ],
+      "answer": "orange"
     },
     {
       "category": "英文",
