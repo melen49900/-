@@ -5765,6 +5765,8 @@ function loadFromStorage() {
     if (typeof data.state?.curseStones === 'number') state.curseStones = data.state.curseStones;
     if (typeof data.state?.boughtStones === 'number') state.boughtStones = data.state.boughtStones;
     if (typeof data.state?.seenShopStoneBadge === 'boolean') state.seenShopStoneBadge = data.state.seenShopStoneBadge;
+    if (typeof data.state?.alienStones === 'number') state.alienStones = data.state.alienStones;
+    if (typeof data.state?.boughtAlienStones === 'number') state.boughtAlienStones = data.state.boughtAlienStones;
     if (data.state?.quests) {
       state.quests = data.state.quests;
       for (let i = state.quests.length; i < 4; i++) {
