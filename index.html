@@ -112,6 +112,8 @@ body::before {
 .stat-chip.gold span  { color:#e67e22; }
 .stat-chip.gem   { background:#f3e5f5; border-color:#ce93d8; }
 .stat-chip.gem span   { color:#8e24aa; }
+.stat-chip.dust  { background:#e8f4fd; border-color:#90caf9; }
+.stat-chip.dust span  { color:#1565c0; }
 /* 裝備槽快覽 */
 .eq-slots-row { display:flex; gap:5px; margin-top:8px; flex-wrap:wrap; }
 .eq-slot {
@@ -1445,6 +1447,7 @@ button:active { transform:scale(.96); }
           <div class="stat-chip">🛡️ <span id="statDef">3</span></div>
           <div class="stat-chip">✨ <span id="statMag">8</span></div>
           <div class="stat-chip" style="background:#f5f0ff;border-color:#c4b5fd;display:none" id="statStoneChipWrap"><span id="statStoneIconEl">🪨</span> <span id="statStoneChip">0</span> 顆</div>
+          <div class="stat-chip dust" id="statDustChipWrap" style="display:none">🌌 <span id="statDust">0</span> 顆</div>
           <div class="stat-chip gold" id="statGoldChip">💰 <span id="statGold">0</span></div>
           <div class="stat-chip gem">💎 <span id="statGem">0</span></div>
           <div class="stat-chip" style="background:#fff0f6;border-color:#ffb3d1;"><span style="color:#e91e8c" id="statCrit">5</span>% 暴擊</div>
@@ -2917,6 +2920,9 @@ function renderHero() {
   const goldChip = document.getElementById('statGoldChip');
   if (goldChip) goldChip.innerHTML = `${getGoldIcon(16)} <span id="statGold">${h.gold}</span>`;
   document.getElementById('statGem').textContent  = h.gems;
+  document.getElementById('statDust').textContent = state.alienStones || 0;
+  const dustChip = document.getElementById('statDustChipWrap');
+  if (dustChip) dustChip.style.display = (state.clearedStages || []).includes(100) ? '' : 'none';
   document.getElementById('statCrit').textContent    = Math.round((getStats().crit || 0.05) * 100);
   document.getElementById('statCritDmg').textContent = Math.round((getStats().critDmg || 1.5) * 100);
   document.getElementById('gemCount2').textContent = h.gems;
@@ -4032,9 +4038,9 @@ function renderBattleUI() {
   document.getElementById('bEnemyHp').style.width = Math.max(0, b.enemyHp / b.enemyMaxHp * 100) + '%';
   document.getElementById('bEnemyHpText').textContent = b.enemyHp;
   document.getElementById('bHeroHp').style.width  = Math.max(0, b.heroHp / getStats().maxHp * 100) + '%';
-  document.getElementById('bHeroHpText').textContent = Math.floor(b.heroHp) + '/' + getStats().maxHp;
+  document.getElementById('bHeroHpText').textContent = Math.floor(b.heroHp);
   document.getElementById('bHeroMp').style.width  = Math.max(0, b.heroMp / getStats().maxMp * 100) + '%';
-  document.getElementById('bHeroMpText').textContent = Math.floor(b.heroMp) + '/' + getStats().maxMp;
+  document.getElementById('bHeroMpText').textContent = Math.floor(b.heroMp);
   document.getElementById('battleLog').textContent = b.log;
   // 藥水庫存（顯示各類有庫存的總數）
   const inv = state.inventory;
@@ -4180,7 +4186,7 @@ function onTurnEnd(callback) {
     });
     if (hpEffects.length) {
       document.getElementById('bHeroHp').style.width = Math.max(0, b.heroHp / getStats().maxHp * 100) + '%';
-      document.getElementById('bHeroHpText').textContent = Math.floor(b.heroHp) + '/' + getStats().maxHp;
+      document.getElementById('bHeroHpText').textContent = Math.floor(b.heroHp);
       renderHero();
     }
     setTimeout(() => {
@@ -4192,7 +4198,7 @@ function onTurnEnd(callback) {
       });
       if (mpEffects.length) {
         document.getElementById('bHeroMp').style.width = Math.max(0, b.heroMp / getStats().maxMp * 100) + '%';
-        document.getElementById('bHeroMpText').textContent = Math.floor(b.heroMp) + '/' + getStats().maxMp;
+        document.getElementById('bHeroMpText').textContent = Math.floor(b.heroMp);
         renderHero();
       }
       if (msgs.length) b.log = (b.log ? b.log + '　' : '') + msgs.join('　');
@@ -4257,7 +4263,7 @@ function doAttack() {
         b.heroHp = Math.max(0, b.heroHp - edm.dmg);
         state.hero.hp = b.heroHp;
         document.getElementById('bHeroHp').style.width = Math.max(0, b.heroHp / getStats().maxHp * 100) + '%';
-        document.getElementById('bHeroHpText').textContent = Math.floor(b.heroHp) + '/' + getStats().maxHp;
+        document.getElementById('bHeroHpText').textContent = Math.floor(b.heroHp);
         b.log = `⚔️ 造成 ${dmg}！${stats.name} 反擊 ${edm.dmg}！`;
         if (b.heroHp <= 0) { onDefeat(stats); return; }
         onTurnEnd(() => {
@@ -4327,7 +4333,7 @@ function doSkill(sk) {
   const actualMpCost = Math.ceil(sk.mpCost * chaosMpMult);
   b.heroMp -= actualMpCost; state.hero.mp = b.heroMp;
   document.getElementById('bHeroMp').style.width = Math.max(0, b.heroMp / getStats().maxMp * 100) + '%';
-  document.getElementById('bHeroMpText').textContent = Math.floor(b.heroMp) + '/' + getStats().maxMp;
+  document.getElementById('bHeroMpText').textContent = Math.floor(b.heroMp);
   const s = getStats();
   const stats = enemyStats(b.enemyId);
   if (!stats) { _battleLock = false; return; }
@@ -4417,7 +4423,7 @@ function doSkill(sk) {
         heroSvg.classList.add('hurt-anim'); setTimeout(() => heroSvg.classList.remove('hurt-anim'), 380);
         b.heroHp = Math.max(0, b.heroHp - edm.dmg); state.hero.hp = b.heroHp;
         document.getElementById('bHeroHp').style.width = Math.max(0, b.heroHp / getStats().maxHp * 100) + '%';
-        document.getElementById('bHeroHpText').textContent = Math.floor(b.heroHp) + '/' + getStats().maxHp;
+        document.getElementById('bHeroHpText').textContent = Math.floor(b.heroHp);
         b.mp = b.heroMp;
         b.log = `${sk.name}（${hits > 1 ? hits+'連擊，' : ''}總傷 ${totalDmg}）！${stats.name} 反擊 ${edm.dmg}！`;
         if (b.heroHp <= 0) { onDefeat(stats); return; }
