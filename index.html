@@ -2606,6 +2606,27 @@ function dbDelete(key) {
 const ASSETS_KEY = 'magicAcademy_gameAssets';
 let gameAssets = { enemy:{}, thumb:{}, equip:{}, potion:{}, skill:{}, gold:{}, stone:{}, enemyScale:{}, question:{}, battleBg:{} };
 
+// 將單一資源包合併進 gameAssets（供 loadGameAssets / importGameAssets 共用）
+const ASSET_FILES = ['./1怪物.json','./2魔界.json','./3題目.json','./4其他.json','./5外星.json'];
+const ASSET_KEYS  = ['enemy','thumb','equip','potion','skill','gold','stone','enemyScale','question','battleBg'];
+
+function mergeAssetsFromPack(pack) {
+  ASSET_KEYS.forEach(k => {
+    gameAssets[k] = { ...gameAssets[k], ...(pack[k] || {}) };
+  });
+}
+
+function fetchAndApplyAssets() {// 從伺服器 fetch 最新資源包，合併後存快取並更新畫面
+  return Promise.all(ASSET_FILES.map(f => fetch(f).then(r => r.json()).catch(() => ({}))))
+    .then(packs => {
+      packs.forEach(mergeAssetsFromPack);
+      dbSet(ASSETS_KEY, gameAssets);
+      applyGameAssets();
+      renderBattleUI(); renderEnemyList();
+      renderQuestion();
+    });
+}
+
 function loadGameAssets() {// 先從 IndexedDB 讀快取，立刻套用讓第一題圖片能顯示
   dbGet(ASSETS_KEY).then(cached => {
     if (cached) {
@@ -2614,52 +2635,8 @@ function loadGameAssets() {// 先從 IndexedDB 讀快取，立刻套用讓第一
       renderBattleUI(); renderEnemyList();
       renderQuestion(); // 用快取圖片重新渲染當前題目
     }
-    const files = ['./1怪物.json','./2魔界.json','./3題目.json','./4其他.json','./5外星.json'];// 再從 GitHub fetch 最新版，覆蓋並存回快取
-    Promise.all(files.map(f => fetch(f).then(r => r.json()).catch(() => ({}))))
-      .then(packs => {
-        packs.forEach(pack => {
-          gameAssets = {
-            enemy:      { ...gameAssets.enemy,      ...(pack.enemy      || {}) },
-            thumb:      { ...gameAssets.thumb,      ...(pack.thumb      || {}) },
-            equip:      { ...gameAssets.equip,      ...(pack.equip      || {}) },
-            potion:     { ...gameAssets.potion,     ...(pack.potion     || {}) },
-            skill:      { ...gameAssets.skill,      ...(pack.skill      || {}) },
-            gold:       { ...gameAssets.gold,       ...(pack.gold       || {}) },
-            stone:      { ...gameAssets.stone,      ...(pack.stone      || {}) },
-            enemyScale: { ...gameAssets.enemyScale, ...(pack.enemyScale || {}) },
-            question:   { ...gameAssets.question,   ...(pack.question   || {}) },
-            battleBg:   { ...gameAssets.battleBg,   ...(pack.battleBg   || {}) },
-          };
-        });
-        dbSet(ASSETS_KEY, gameAssets); // 存回快取
-        applyGameAssets();
-        renderBattleUI(); renderEnemyList();
-        renderQuestion(); // 用最新圖片重新渲染
-      });
-  }).catch(() => {// IndexedDB 失敗就直接 fetch
-    const files = ['./1怪物.json','./2魔界.json','./3題目.json','./4其他.json','./5外星.json'];
-    Promise.all(files.map(f => fetch(f).then(r => r.json()).catch(() => ({}))))
-      .then(packs => {
-        packs.forEach(pack => {
-          gameAssets = {
-            enemy:      { ...gameAssets.enemy,      ...(pack.enemy      || {}) },
-            thumb:      { ...gameAssets.thumb,      ...(pack.thumb      || {}) },
-            equip:      { ...gameAssets.equip,      ...(pack.equip      || {}) },
-            potion:     { ...gameAssets.potion,     ...(pack.potion     || {}) },
-            skill:      { ...gameAssets.skill,      ...(pack.skill      || {}) },
-            gold:       { ...gameAssets.gold,       ...(pack.gold       || {}) },
-            stone:      { ...gameAssets.stone,      ...(pack.stone      || {}) },
-            enemyScale: { ...gameAssets.enemyScale, ...(pack.enemyScale || {}) },
-            question:   { ...gameAssets.question,   ...(pack.question   || {}) },
-            battleBg:   { ...gameAssets.battleBg,   ...(pack.battleBg   || {}) },
-          };
-        });
-        dbSet(ASSETS_KEY, gameAssets);
-        applyGameAssets();
-        renderBattleUI(); renderEnemyList();
-        renderQuestion();
-      });
-  });
+    fetchAndApplyAssets(); // 再從伺服器 fetch 最新版覆蓋
+  }).catch(() => fetchAndApplyAssets()); // IndexedDB 失敗就直接 fetch
 }
 
 function applyGameAssets() {
@@ -2707,18 +2684,7 @@ function importGameAssets(event) {
     try {
       const pack = JSON.parse(e.target.result);
       if (!pack.version) { showToast('❌ 格式錯誤，請使用圖片封包工具產生'); return; }
-      gameAssets = {
-        enemy:      { ...gameAssets.enemy,      ...(pack.enemy      || {}) },
-        thumb:      { ...gameAssets.thumb,      ...(pack.thumb      || {}) },
-        equip:      { ...gameAssets.equip,      ...(pack.equip      || {}) },
-        potion:     { ...gameAssets.potion,     ...(pack.potion     || {}) },
-        skill:      { ...gameAssets.skill,      ...(pack.skill      || {}) },
-        gold:       { ...gameAssets.gold,       ...(pack.gold       || {}) },
-        stone:      { ...gameAssets.stone,      ...(pack.stone      || {}) },
-        enemyScale: { ...gameAssets.enemyScale, ...(pack.enemyScale || {}) },
-        question:   { ...gameAssets.question,   ...(pack.question   || {}) },
-        battleBg:   { ...gameAssets.battleBg,   ...(pack.battleBg   || {}) },
-      };
+      mergeAssetsFromPack(pack);
       dbSet(ASSETS_KEY, gameAssets);
       applyGameAssets();
       renderBattleUI(); renderEnemyList();
@@ -3169,6 +3135,14 @@ function renderQuestion() {
   document.querySelector('.answer-grid').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+// 將所有答案按鈕鎖定，並標示出正確答案
+function lockAndReveal() {
+  document.querySelectorAll('.ans-btn').forEach(btn => {
+    btn.disabled = true;
+    if (btn.textContent === state.quiz.q.ans) btn.classList.add('correct');
+  });
+}
+
 function checkAnswer(selected) {
   if (state.quiz.answered) return;
   state.quiz.answered = true;
@@ -3240,10 +3214,7 @@ function checkAnswer(selected) {
         // 綠燈已空：直接中斷連勝
         state.quiz.streak = 0;
         state.quiz.retrying = false;
-        document.querySelectorAll('.ans-btn').forEach(btn => {
-            btn.disabled = true;
-            if (btn.textContent === state.quiz.q.ans) btn.classList.add('correct');
-        });
+        lockAndReveal();
         toast.className = 'result-toast bad';
         toast.textContent = `😢 答錯了！正確答案是「${state.quiz.q.ans}」，連勝中斷！`;
         playSound('wrong');
@@ -3253,19 +3224,11 @@ function checkAnswer(selected) {
       // 第二次（重答）也錯：中斷連勝
       state.quiz.streak = 0;
       state.quiz.retrying = false;
-      document.querySelectorAll('.ans-btn').forEach(btn => {
-          btn.disabled = true;
-          if (btn.textContent === state.quiz.q.ans) btn.classList.add('correct');
-      });
+      lockAndReveal();
       toast.className = 'result-toast bad';
       toast.textContent = `😢 第二次也答錯！正確答案是「${state.quiz.q.ans}」，連勝中斷！`;
       playSound('wrong');
       speakText(`答案是「${state.quiz.q.ans}」`, 0.9);
-      // 把正確答案也標示出來
-      document.querySelectorAll('.ans-btn').forEach(btn => {
-        btn.disabled = true;
-        if (btn.textContent === state.quiz.q.ans) btn.classList.add('correct');
-      });
     }
   }
   document.getElementById('streakCount').textContent = state.quiz.streak;
@@ -11030,9 +10993,6 @@ function updateMineTicketCount() {
     el.textContent = `🎟️ x${count}`;
   }
 }
-
-// 覆寫renderMineGrid中的canAct，改用V2版本
-const _origOpenMine = openMineGame;
 
 init();
 </script>

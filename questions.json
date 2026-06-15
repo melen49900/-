@@ -1315,6 +1315,39 @@
       "image": "q_yellow.jpg"
     },
     {
+      "category": "國文",
+      "question": "「ㄎㄨㄞˋ慢」怎麼寫？",
+      "options": [
+        "快",
+        "決",
+        "快",
+        "筷"
+      ],
+      "answer": "快"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄇㄢˋ吞吞」怎麼寫？",
+      "options": [
+        "慢",
+        "曼",
+        "漫",
+        "饅"
+      ],
+      "answer": "慢"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄊㄞˋ陽」怎麼寫？",
+      "options": [
+        "太",
+        "夫",
+        "大",
+        "天"
+      ],
+      "answer": "太"
+    },
+    {
       "category": "英文",
       "question": "What animal is this?",
       "options": [
@@ -2308,6 +2341,72 @@
       "answer": "shoes"
     },
     {
+      "category": "英文",
+      "question": "What’s the Chinese word for “feet”?",
+      "options": [
+        "頭",
+        "手",
+        "腳",
+        "眼"
+      ],
+      "answer": "腳"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “hair”?",
+      "options": [
+        "頭髮",
+        "眼睛",
+        "耳朵",
+        "嘴巴"
+      ],
+      "answer": "頭髮"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “leg”?",
+      "options": [
+        "腿",
+        "眼睛",
+        "耳朵",
+        "嘴巴"
+      ],
+      "answer": "腿"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “shoes”?",
+      "options": [
+        "鞋子",
+        "衣服",
+        "外套",
+        "襪子"
+      ],
+      "answer": "鞋子"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “socks”?",
+      "options": [
+        "鞋子",
+        "衣服",
+        "外套",
+        "襪子"
+      ],
+      "answer": "襪子"
+    },
+    {
+      "category": "英文",
+      "question": "猴子的英文是?",
+      "options": [
+        "monckey",
+        "frog",
+        "rabbit",
+        "fish"
+      ],
+      "answer": "monckey"
+    },
+    {
       "category": "自然",
       "question": "一杯水放在室外，過一段時間水變少了，最可能的原因是？",
       "options": [
@@ -2893,6 +2992,28 @@
       "answer": "固體"
     },
     {
+      "category": "自然",
+      "question": "木星是太陽系第幾顆行星？",
+      "options": [
+        "第二顆",
+        "第三顆",
+        "第四顆",
+        "第五顆"
+      ],
+      "answer": "第五顆"
+    },
+    {
+      "category": "自然",
+      "question": "火星是太陽系第幾顆行星？",
+      "options": [
+        "第三顆",
+        "第二顆",
+        "第四顆",
+        "第一顆"
+      ],
+      "answer": "第四顆"
+    },
+    {
       "category": "地理",
       "question": "下面哪一個是臺灣的著名高山？",
       "options": [
@@ -3184,6 +3305,29 @@
         "大甲溪"
       ],
       "answer": "濁水溪"
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個國家？",
+      "options": [
+        "俄羅斯",
+        "菲律賓",
+        "日本",
+        "韓國"
+      ],
+      "answer": "菲律賓",
+      "image": "q_map_6.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "臺灣的在地球的哪一洲？",
+      "options": [
+        "亞洲",
+        "非洲",
+        "歐洲",
+        "南美洲"
+      ],
+      "answer": "亞洲"
     }
   ]
 }
