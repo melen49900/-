@@ -4004,6 +4004,15 @@ function selectEnemy(id) {
   state.battle.cooldown = false;
   renderBattleUI(); renderEnemyList();
   _doSpeak(`${stats.name}出現了`, speechCfg.lang, speechCfg.volume.battle);
+  // BGM 依敵人類型自動切換
+  const enemy = ENEMIES.find(x => x.id === id);
+  if (enemy) {
+    if (enemy.family === 'demon_king') bgmPlay('boss');
+    else if (enemy.family === 'kingdemon') bgmPlay('kingdemon');
+    else if (enemy.alienMult)          bgmPlay('alien');
+    else if (enemy.postMult)           bgmPlay('demon');
+    else                               bgmPlay('battle');
+  }
 }
 
 function renderBattleUI() {
@@ -4879,6 +4888,18 @@ function showTab(tab) {
       autoSave();
     }
     bgmPlay('shop');
+  } else if (tab === 'battle') {
+    // 戰鬥分頁：依目前選擇的敵人決定 BGM
+    const curEnemy = ENEMIES.find(x => x.id === state.battle?.enemyId);
+    if (curEnemy) {
+      if (curEnemy.family === 'demon_king') bgmPlay('boss');
+      else if (curEnemy.family === 'kingdemon') bgmPlay('kingdemon');
+      else if (curEnemy.alienMult)          bgmPlay('alien');
+      else if (curEnemy.postMult)           bgmPlay('demon');
+      else                                  bgmPlay('battle');
+    } else {
+      bgmPlay('battle');
+    }
   } else {
     bgmStop();
   }
@@ -11036,10 +11057,12 @@ init();
 
 // ── BGM 系統 ──────────────────────────────────────────────
 const BGM_TRACKS = {
-  shop: 'audio/BGM-shop.mp3',
-  // 之後可以繼續加：
-  // battle: 'audio/BGM-battle.mp3',
-  // explore: 'audio/BGM-explore.mp3',
+  shop:      'audio/BGM-shop.mp3',
+  battle:    'audio/BGM-battle.mp3',    // 普通戰鬥（stage 1~61）
+  boss:      'audio/BGM-boss.mp3',      // 魔王（stage 62）
+  demon:     'audio/BGM-demon.mp3',     // 魔界（stage 63~99）
+  kingdemon: 'audio/BGM-kingdemon.mp3', // 暴風龍（stage 100）
+  alien:     'audio/BGM-alien.mp3',     // 外星（stage 101+）
 };
 
 const bgmState = {
