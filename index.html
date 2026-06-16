@@ -29,6 +29,33 @@ body {
   color: #1a0a2e;
   overflow-x: hidden;
 }
+/* ── 音量控制列 ───────────────────────────────────────── */
+#bgm-bar {
+  position: fixed; top: 10px; right: 10px; z-index: 9999;
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(20, 10, 50, 0.82); backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255,215,0,.25); border-radius: 20px;
+  padding: 5px 10px; box-shadow: 0 2px 12px rgba(0,0,0,.4);
+}
+#bgm-mute-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 1.1em; line-height: 1; padding: 0;
+}
+#bgm-volume-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 70px; height: 4px;
+  background: rgba(255,255,255,.25); border-radius: 4px; outline: none; cursor: pointer;
+}
+#bgm-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--gold); cursor: pointer; box-shadow: 0 0 4px rgba(255,215,0,.6);
+}
+#bgm-label {
+  font-size: .6em; font-weight: 800; color: rgba(255,215,0,.7);
+  white-space: nowrap; min-width: 32px; text-align: right;
+}
+
 /* 星星背景 */
 body::before {
   content:'';
@@ -1405,6 +1432,14 @@ button:active { transform:scale(.96); }
 </style>
 </head>
 <body>
+<!-- BGM 音量控制列 -->
+<div id="bgm-bar">
+  <button id="bgm-mute-btn" onclick="bgmToggleMute()" title="靜音切換">🔊</button>
+  <input id="bgm-volume-slider" type="range" min="0" max="100" value="50"
+    oninput="bgmSetVolume(this.value)" title="音量">
+  <span id="bgm-label">50%</span>
+</div>
+
 <div id="app">
 
   <!-- 頁首 -->
@@ -3037,7 +3072,7 @@ function generateMathReverse() {//自動數學題
 
 // 防重複題目──────────────────────────────────
 // 用 "科目|題目文字|正確答案" 作為唯一鍵
-const RECENT_Q_MAX = 55; // 記憶幾題
+const RECENT_Q_MAX = 60; // 記憶幾題
 if (!state.quiz.recentKeys) state.quiz.recentKeys = [];
 
 function _qKey(subject, q, ans) {
@@ -4843,6 +4878,9 @@ function showTab(tab) {
       state.seenShopStoneBadge = true;
       autoSave();
     }
+    bgmPlay('shop');
+  } else {
+    bgmStop();
   }
   if (tab === 'gear')    renderGearTab();
   if (tab === 'quest')   renderQuestTab();updateActiveQuestBar();
@@ -10995,6 +11033,73 @@ function updateMineTicketCount() {
 }
 
 init();
+
+// ── BGM 系統 ──────────────────────────────────────────────
+const BGM_TRACKS = {
+  shop: 'audio/BGM-shop.mp3',
+  // 之後可以繼續加：
+  // battle: 'audio/BGM-battle.mp3',
+  // explore: 'audio/BGM-explore.mp3',
+};
+
+const bgmState = {
+  current: null,    // 目前播放的 key
+  audio: null,      // Audio 物件
+  volume: 0.5,      // 音量 0~1
+  muted: false,     // 是否靜音
+};
+
+function bgmPlay(key) {
+  const src = BGM_TRACKS[key];
+  if (!src) return;
+  // 同一首不重播
+  if (bgmState.current === key && bgmState.audio && !bgmState.audio.paused) return;
+  // 停掉舊的
+  bgmStop();
+  const a = new Audio(src);
+  a.loop = true;
+  a.volume = bgmState.muted ? 0 : bgmState.volume;
+  a.play().catch(() => {
+    // 瀏覽器自動播放限制：等使用者互動後再播
+    const resume = () => { a.play(); document.removeEventListener('click', resume); };
+    document.addEventListener('click', resume);
+  });
+  bgmState.audio = a;
+  bgmState.current = key;
+}
+
+function bgmStop() {
+  if (bgmState.audio) {
+    bgmState.audio.pause();
+    bgmState.audio.currentTime = 0;
+    bgmState.audio = null;
+    bgmState.current = null;
+  }
+}
+
+function bgmSetVolume(val) {
+  bgmState.volume = val / 100;
+  bgmState.muted = (val == 0);
+  if (bgmState.audio) bgmState.audio.volume = bgmState.volume;
+  document.getElementById('bgm-mute-btn').textContent = bgmState.muted ? '🔇' : '🔊';
+  document.getElementById('bgm-label').textContent = val + '%';
+}
+
+function bgmToggleMute() {
+  bgmState.muted = !bgmState.muted;
+  if (bgmState.audio) bgmState.audio.volume = bgmState.muted ? 0 : bgmState.volume;
+  const slider = document.getElementById('bgm-volume-slider');
+  const btn = document.getElementById('bgm-mute-btn');
+  if (bgmState.muted) {
+    slider.value = 0;
+    document.getElementById('bgm-label').textContent = '0%';
+    btn.textContent = '🔇';
+  } else {
+    slider.value = Math.round(bgmState.volume * 100);
+    document.getElementById('bgm-label').textContent = Math.round(bgmState.volume * 100) + '%';
+    btn.textContent = '🔊';
+  }
+}
 </script>
 
 <!-- 預設題目編輯彈窗 -->
