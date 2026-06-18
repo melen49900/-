@@ -2195,6 +2195,7 @@ const SKILL_POOL = [
   {id:'sk5',name:'冰錐術', emoji:'❄️', rarity:'rare', restrict:'法杖', mpCost:16, baseDmg:16, stackBase:6, atkMult:0,   magMult:1.3, stackAtk:0,    stackMag:0.05, hits:1, freeze:0.3, desc:'魔攻 1.3 倍，30%冰凍'},
   {id:'sk6',name:'暴風術', emoji:'🌪️', rarity:'epic', restrict:'法杖', mpCost:24, baseDmg:8,  stackBase:6, atkMult:0,   magMult:1.0, stackAtk:0,    stackMag:0.1,  hits:3, defPen:0.2, desc:'魔攻 1.0 倍 × 3，無視 20% 防禦'},
 ];
+
 const FAMILY_MOD = {// 種族加成
   goblin:        { hp:1,    atk:1,   def:1,    gold:1,    exp:1    },
   Magoblin:      { hp:1,    atk:1,   def:1.05, gold:1,    exp:1    },
@@ -2227,8 +2228,9 @@ const FAMILY_MOD = {// 種族加成
   guard:         { hp:1.2,  atk:1.2, def:1.2,  gold:1.4,  exp:1.2  },
   kingdemon:     { hp:1.3,  atk:1.3, def:1.3,  gold:1.5,  exp:1.45 },
   octopus:       { hp:1,    atk:1.05,def:1,    gold:1.05, exp:1    },
+  sloth:         { hp:1.05, atk:1,   def:1.05, gold:1.1,  exp:1    },
 };
-// 怪物資料（之後可改由 JSON 匯入）
+
 const ENEMIES = [
   {id:'s01',name:'哥布林',       emoji:'👺',stage:1, family:'goblin'},
   {id:'s02',name:'花妖',         emoji:'🌸',stage:2, family:'flower_demon'},
@@ -2301,40 +2303,45 @@ const ENEMIES = [
   {id:'s69',name:'暗影',         emoji:'🐍',stage:69,family:'snake',          postMult:5.0},
   {id:'s70',name:'魔界基本水晶', emoji:'💎',stage:70,family:'Macrystal',      postMult:5.5},
   {id:'s71',name:'魔界蠍子隊長', emoji:'🦂',stage:71,family:'scorpion',       postMult:6.0},
-  {id:'s72',name:'深淵海豹戰士', emoji:'🦭',stage:72,family:'seal',             postMult:6.5},
+  {id:'s72',name:'深淵海豹戰士', emoji:'🦭',stage:72,family:'seal',            postMult:6.5},
   {id:'s73',name:'魔界狼隊長',   emoji:'🐺',stage:73,family:'Mabeast',        postMult:7.0},
   {id:'s74',name:'魔界龜迫擊砲', emoji:'🐢',stage:74,family:'turtle',         postMult:7.5},
   {id:'s75',name:'毒孢菇',       emoji:'🍄',stage:75,family:'mushroom',       postMult:8.0},
   {id:'s76',name:'夜行者',       emoji:'🐍',stage:76,family:'snake',          postMult:8.5},
-  {id:'s77',name:'深淵海豹隊長', emoji:'🦭',stage:77,family:'seal',             postMult:9.0},
+  {id:'s77',name:'深淵海豹隊長', emoji:'🦭',stage:77,family:'seal',            postMult:9.0},
   {id:'s78',name:'魔界劇毒蠍子', emoji:'🦂',stage:78,family:'scorpion',       postMult:9.5},
   {id:'s79',name:'魔界狼軍官',   emoji:'🐺',stage:79,family:'Mabeast',        postMult:10.0},
   {id:'s80',name:'魔界進階水晶', emoji:'💎',stage:80,family:'Macrystal',      postMult:10.5},
   {id:'s81',name:'魔界龜榴彈砲', emoji:'🐢',stage:81,family:'turtle',         postMult:11.0},
   {id:'s82',name:'腐敗菇',       emoji:'🍄',stage:82,family:'mushroom',       postMult:11.5},
   {id:'s83',name:'幽刃',         emoji:'🐍',stage:83,family:'snake',          postMult:12.0},
-  {id:'s84',name:'深淵海豹將軍', emoji:'🦭',stage:84,family:'seal',             postMult:12.5},
+  {id:'s84',name:'深淵海豹將軍', emoji:'🦭',stage:84,family:'seal',            postMult:12.5},
   {id:'s85',name:'魔界蠍子將軍', emoji:'🦂',stage:85,family:'scorpion',       postMult:13.0},
   {id:'s86',name:'魔界狼將軍',   emoji:'🐺',stage:86,family:'Mabeast',        postMult:13.5},
   {id:'s87',name:'魔界龜加農砲', emoji:'🐢',stage:87,family:'turtle',         postMult:14.0},
   {id:'s88',name:'菌王',         emoji:'🍄',stage:88,family:'mushroom',       postMult:14.5},
   {id:'s89',name:'影王',         emoji:'🐍',stage:89,family:'snake',          postMult:15.0},
   {id:'s90',name:'魔界高階水晶', emoji:'💎',stage:90,family:'Macrystal',      postMult:15.5},
-  {id:'s91',name:'深淵海豹王',   emoji:'🦭',stage:91,family:'seal',             postMult:16.0},
-  {id:'s92',name:'藍色螃蟹',    emoji:'🦀',stage:92, family:'crab',           postMult:16.5},
-  {id:'s93',name:'黃色螃蟹',    emoji:'🦀',stage:93, family:'crab',           postMult:17.0},
-  {id:'s94',name:'綠色螃蟹',    emoji:'🦀',stage:94, family:'crab',           postMult:17.5},
-  {id:'s95',name:'紫色螃蟹',    emoji:'🦀',stage:95, family:'crab',           postMult:18.0},
-  {id:'s96',name:'死亡騎士',    emoji:'⚔️',stage:96, family:'DK',             postMult:18.4},
-  {id:'s97',name:'巫妖',        emoji:'🧙',stage:97, family:'lich',           postMult:18.8},
-  {id:'s98',name:'大鯨',        emoji:'🐳',stage:98, family:'whale',          postMult:19.2},
-  {id:'s99',name:'上古守衛',    emoji:'🛡️',stage:99, family:'guard',           postMult:19.6},
-  {id:'s100',name:'暴風龍',     emoji:'😡',stage:100,family:'kingdemon',      postMult:20.0},
-  {id:'s101',name:'章魚射手',   emoji:'🐙',stage:101,family:'octopus',        alienMult:1.5},
-  {id:'s102',name:'章魚戰士',   emoji:'🐙',stage:102,family:'octopus',        alienMult:2.0},
-  {id:'s103',name:'章魚機器人', emoji:'🐙',stage:103,family:'octopus',        alienMult:2.5},
-  {id:'s104',name:'章魚特戰隊', emoji:'🐙',stage:104,family:'octopus',        alienMult:3.0},
-  {id:'s105',name:'章魚將軍',   emoji:'🐙',stage:105,family:'octopus',        alienMult:3.5},
+  {id:'s91',name:'深淵海豹王',   emoji:'🦭',stage:91,family:'seal',            postMult:16.0},
+  {id:'s92',name:'藍色螃蟹',     emoji:'🦀',stage:92,family:'crab',           postMult:16.5},
+  {id:'s93',name:'黃色螃蟹',     emoji:'🦀',stage:93,family:'crab',           postMult:17.0},
+  {id:'s94',name:'綠色螃蟹',     emoji:'🦀',stage:94,family:'crab',           postMult:17.5},
+  {id:'s95',name:'紫色螃蟹',     emoji:'🦀',stage:95,family:'crab',           postMult:18.0},
+  {id:'s96',name:'死亡騎士',     emoji:'⚔️',stage:96,family:'DK',             postMult:18.4},
+  {id:'s97',name:'巫妖',         emoji:'🧙',stage:97,family:'lich',           postMult:18.8},
+  {id:'s98',name:'大鯨',         emoji:'🐳',stage:98,family:'whale',          postMult:19.2},
+  {id:'s99',name:'上古守衛',     emoji:'🛡️',stage:99,family:'guard',          postMult:19.6},
+  {id:'s100',name:'暴風龍',      emoji:'😡',stage:100,family:'kingdemon',     postMult:20.0},
+  {id:'s101',name:'章魚射手',    emoji:'🐙',stage:101,family:'octopus',       alienMult:1.5},
+  {id:'s102',name:'章魚戰士',    emoji:'🐙',stage:102,family:'octopus',       alienMult:2.0},
+  {id:'s103',name:'章魚機器人',  emoji:'🐙',stage:103,family:'octopus',       alienMult:2.5},
+  {id:'s104',name:'章魚特戰隊',  emoji:'🐙',stage:104,family:'octopus',       alienMult:3.0},
+  {id:'s105',name:'章魚將軍',    emoji:'🐙',stage:105,family:'octopus',       alienMult:3.5},
+  {id:'s106',name:'綠爪戰士',    emoji:'🦥',stage:106,family:'sloth',         alienMult:4.0},
+  {id:'s107',name:'藍爪戰士',    emoji:'🦥',stage:107,family:'sloth',         alienMult:4.5},
+  {id:'s108',name:'紅爪戰士',    emoji:'🦥',stage:108,family:'sloth',         alienMult:5.0},
+  {id:'s109',name:'紫爪戰士',    emoji:'🦥',stage:109,family:'sloth',         alienMult:5.5},
+  {id:'s110',name:'金爪戰士',    emoji:'🦥',stage:110,family:'sloth',         alienMult:6.0},
 ];
 
 function enemyStats(id) {// 怪物數值計算
@@ -2509,7 +2516,7 @@ const CHARS = {
     <circle cx="70" cy="32" r="8"  fill="#7B5533"/>`
   },
   panda: {
-    label:'🐼 熊貓',
+    label:'🐼 貓熊',
     body:'#EEEEEE',
     face:'#F8F8F8',
     acc:'#FF9F9F',
@@ -4489,18 +4496,6 @@ function onVictory(stats) {
   renderHero();
   autoSave();
   updateQuestProgress('kill');
-  
-  setTimeout(() => {
-    if (enEl) enEl.classList.remove('fall-anim');
-    onTurnEnd(() => {
-      if (state.battle._victoryPending === false) return;
-      _battleLock = false; b.cooldown = false;
-      b.enemyHp = stats.maxHp; b.enemyMaxHp = stats.maxHp;
-      b.log = `${stats.name} 再次出現！`;
-      renderEnemyList(); renderBattleUI();
-      _doSpeak(`${stats.name}再次出現`, speechCfg.lang, speechCfg.volume.battle);
-    });
-  }, 2500);
 }
 
 function onDefeat(stats) {
@@ -8791,7 +8786,7 @@ const ACHIEVEMENTS = [
     desc: '擊敗所有魔狼種族敵人',
     category: '圖鑑',
     icon: '🐺',
-    reward: { gems: 30, statBonus: { atk: 1, def: 1, mag: 1 }},
+    reward: { gems: 500, statBonus: { atk: 3, def: 3, mag: 3 }},
     _family: 'Mabeast',
     progress: () => {
       const ids = new Set(state.defeatedEnemies || []);
@@ -8881,7 +8876,7 @@ const ACHIEVEMENTS = [
     desc: '擊敗所有螃蟹種族敵人',
     category: '圖鑑',
     icon: '🦀',
-    reward: { gems: 30, statBonus: { atk: 1, def: 1, mag: 1 }},
+    reward: { gems: 500, statBonus: { atk: 3, def: 3, mag: 3 }},
     _family: 'crab',
     progress: () => {
       const ids = new Set(state.defeatedEnemies || []);
@@ -8891,6 +8886,83 @@ const ACHIEVEMENTS = [
     check: () => {
       const ids = new Set(state.defeatedEnemies || []);
       return ENEMIES.filter(e => e.family === 'crab').every(e => ids.has(e.id));
+    },
+  },
+    {
+    id: 'kill_four_kings',
+    name: '四天王終結者',
+    desc: '擊敗死亡騎士、巫妖、大鯨、上古守衛',
+    category: '圖鑑',
+    icon: '👁️',
+    reward: { gems: 500, statBonus: { atk: 3, def: 3, mag: 3 }},
+    progress: () => {
+      const ids = new Set(state.defeatedEnemies || []);
+      const families = ['DK', 'lich', 'whale', 'guard'];
+      return families.filter(f =>
+        ENEMIES.filter(e => e.family === f).every(e => ids.has(e.id))
+      ).length;
+    },
+    get goal() { return 4; },
+    check: () => {
+      const ids = new Set(state.defeatedEnemies || []);
+      const families = ['DK', 'lich', 'whale', 'guard'];
+      return families.every(f =>
+        ENEMIES.filter(e => e.family === f).every(e => ids.has(e.id))
+      );
+    },
+  },
+  {
+    id: 'kill_kingdemon_all',
+    name: '暴風龍獵人',
+    desc: '擊敗暴風龍',
+    category: '圖鑑',
+    icon: '😡',
+    reward: { gems: 1000, statBonus: { atk: 5, def: 5, mag: 5 }},
+    _family: 'kingdemon',
+    progress: () => {
+      const ids = new Set(state.defeatedEnemies || []);
+      return ENEMIES.filter(e => e.family === 'kingdemon' && ids.has(e.id)).length;
+    },
+    get goal() { return ENEMIES.filter(e => e.family === 'kingdemon').length; },
+    check: () => {
+      const ids = new Set(state.defeatedEnemies || []);
+      return ENEMIES.filter(e => e.family === 'kingdemon').every(e => ids.has(e.id));
+    },
+  },
+  {
+    id: 'kill_octopus_all',
+    name: '章魚獵人',
+    desc: '擊敗所有章魚種族敵人',
+    category: '圖鑑',
+    icon: '🐙',
+    reward: { gems: 1000, statBonus: { atk: 5, def: 5, mag: 5 }},
+    _family: 'octopus',
+    progress: () => {
+      const ids = new Set(state.defeatedEnemies || []);
+      return ENEMIES.filter(e => e.family === 'octopus' && ids.has(e.id)).length;
+    },
+    get goal() { return ENEMIES.filter(e => e.family === 'octopus').length; },
+    check: () => {
+      const ids = new Set(state.defeatedEnemies || []);
+      return ENEMIES.filter(e => e.family === 'octopus').every(e => ids.has(e.id));
+    },
+  },
+  {
+    id: 'kill_sloth_all',
+    name: '樹懶獵人',
+    desc: '擊敗所有樹懶種族敵人',
+    category: '圖鑑',
+    icon: '🦥',
+    reward: { gems: 1000, statBonus: { atk: 5, def: 5, mag: 5 }},
+    _family: 'sloth',
+    progress: () => {
+      const ids = new Set(state.defeatedEnemies || []);
+      return ENEMIES.filter(e => e.family === 'sloth' && ids.has(e.id)).length;
+    },
+    get goal() { return ENEMIES.filter(e => e.family === 'sloth').length; },
+    check: () => {
+      const ids = new Set(state.defeatedEnemies || []);
+      return ENEMIES.filter(e => e.family === 'sloth').every(e => ids.has(e.id));
     },
   },
   {
