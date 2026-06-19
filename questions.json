@@ -1348,6 +1348,90 @@
       "answer": "太"
     },
     {
+      "category": "國文",
+      "question": "「蝴蝶」的注音是？",
+      "options": [
+        "ㄏㄨˊ ㄉㄧㄝˊ",
+        "ㄏㄜˊ ㄊㄨㄣˊ",
+        "ㄓ  ㄓㄨ",
+        "ㄆㄤˊ ㄒㄧㄝˋ"
+      ],
+      "answer": "ㄏㄨˊ ㄉㄧㄝˊ",
+      "image": "q_動物-蝴蝶.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼?",
+      "options": [
+        "麵",
+        "飯",
+        "薯條",
+        "麵包"
+      ],
+      "answer": "麵",
+      "image": "q_noodle.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼?",
+      "options": [
+        "炒飯",
+        "炒麵",
+        "白飯",
+        "麵包"
+      ],
+      "answer": "炒飯",
+      "image": "q_炒飯.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼天氣?",
+      "options": [
+        "下雨",
+        "晴天",
+        "下雪",
+        "陰天"
+      ],
+      "answer": "下雨",
+      "image": "q_天氣-雨"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼動物?",
+      "options": [
+        "熊",
+        "雄",
+        "能",
+        "羆"
+      ],
+      "answer": "熊",
+      "image": "q_動物-熊.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼動物?",
+      "options": [
+        "象",
+        "魚",
+        "羊",
+        "牛"
+      ],
+      "answer": "象",
+      "image": "q_動物-大象.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼動物?",
+      "options": [
+        "斑馬",
+        "搬馬",
+        "班馬",
+        "般馬"
+      ],
+      "answer": "斑馬",
+      "image": "q_動物-斑馬.jpeg"
+    },
+    {
       "category": "英文",
       "question": "What animal is this?",
       "options": [
@@ -2407,6 +2491,90 @@
       "answer": "monckey"
     },
     {
+      "category": "英文",
+      "question": "How's the weather?",
+      "options": [
+        "It’s cloudy",
+        "It’s rainy",
+        "It’s sunny",
+        "It’s windy"
+      ],
+      "answer": "It’s rainy",
+      "image": "q_天氣-雨"
+    },
+    {
+      "category": "英文",
+      "question": "what animal is this?",
+      "options": [
+        "elephant",
+        "excellent",
+        "exercise",
+        "entrance"
+      ],
+      "answer": "elephant",
+      "image": "q_動物-大象.jpeg"
+    },
+    {
+      "category": "英文",
+      "question": "what animal is this?",
+      "options": [
+        "butterfly",
+        "beautiful",
+        "banana",
+        "baseball"
+      ],
+      "answer": "butterfly",
+      "image": "q_動物-蝴蝶.jpeg"
+    },
+    {
+      "category": "英文",
+      "question": "what animal is this?",
+      "options": [
+        "bear",
+        "ball",
+        "break",
+        "baby"
+      ],
+      "answer": "bear",
+      "image": "q_動物-熊.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "what animal is this?",
+      "options": [
+        "zebra",
+        "zero",
+        "zoo",
+        "zip"
+      ],
+      "answer": "zebra",
+      "image": "q_動物-斑馬.jpeg"
+    },
+    {
+      "category": "英文",
+      "question": "What is this?",
+      "options": [
+        "noodle",
+        "number",
+        "night",
+        "noon"
+      ],
+      "answer": "noodle",
+      "image": "q_noodle.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "What is this?",
+      "options": [
+        "fried rice",
+        "fried chicken",
+        "fried egg",
+        "fried fish"
+      ],
+      "answer": "fried rice",
+      "image": "q_炒飯.jpg"
+    },
+    {
       "category": "自然",
       "question": "一杯水放在室外，過一段時間水變少了，最可能的原因是？",
       "options": [
@@ -3014,6 +3182,18 @@
       "answer": "第四顆"
     },
     {
+      "category": "自然",
+      "question": "下雨最主要的原因是什麼?",
+      "options": [
+        "雲裡的水滴變大掉下來",
+        "地上的水跳上去",
+        "風把水吹下來",
+        "天上有一個洞漏水"
+      ],
+      "answer": "雲裡的水滴變大掉下來",
+      "image": "q_天氣-雨.jpg"
+    },
+    {
       "category": "地理",
       "question": "下面哪一個是臺灣的著名高山？",
       "options": [
@@ -3328,6 +3508,198 @@
         "南美洲"
       ],
       "answer": "亞洲"
+    },
+    {
+      "category": "地理",
+      "question": "紅色的部分是哪一洲？",
+      "options": [
+        "亞洲",
+        "非洲",
+        "歐洲",
+        "南美洲"
+      ],
+      "answer": "亞洲",
+      "image": "q_七大洲亞洲.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "紅色的部分是哪一洲？",
+      "options": [
+        "亞洲",
+        "非洲",
+        "歐洲",
+        "南美洲"
+      ],
+      "answer": "歐洲",
+      "image": "q_七大洲歐洲.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "台中",
+        "台北",
+        "台南",
+        "台東"
+      ],
+      "answer": "台中",
+      "image": "q_台中.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "台北",
+        "新北",
+        "基隆",
+        "桃園"
+      ],
+      "answer": "台北",
+      "image": "q_台北.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "台東",
+        "台南",
+        "高雄",
+        "屏東"
+      ],
+      "answer": "台東",
+      "image": "q_台東.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "屏東",
+        "高雄",
+        "台南",
+        "台東"
+      ],
+      "answer": "台南",
+      "image": "q_台南.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "宜蘭",
+        "新北",
+        "台北",
+        "基隆"
+      ],
+      "answer": "宜蘭",
+      "image": "q_宜蘭.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "花蓮",
+        "高雄",
+        "台南",
+        "新北"
+      ],
+      "answer": "花蓮",
+      "image": "q_花蓮.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "南投",
+        "高雄",
+        "台南",
+        "台中"
+      ],
+      "answer": "南投",
+      "image": "q_南投.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "屏東",
+        "高雄",
+        "台南",
+        "台東"
+      ],
+      "answer": "屏東",
+      "image": "q_屏東.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "屏東",
+        "苗栗",
+        "新北",
+        "基隆"
+      ],
+      "answer": "屏東",
+      "image": "q_苗栗.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "台北",
+        "新北",
+        "基隆",
+        "桃園"
+      ],
+      "answer": "桃園",
+      "image": "q_桃園.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "屏東",
+        "高雄",
+        "台南",
+        "台東"
+      ],
+      "answer": "高雄",
+      "image": "q_高雄.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "基隆",
+        "台北",
+        "新北",
+        "桃園"
+      ],
+      "answer": "基隆",
+      "image": "q_基隆.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "台北",
+        "新北",
+        "基隆",
+        "桃園"
+      ],
+      "answer": "新北",
+      "image": "q_新北.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "彰化",
+        "屏東",
+        "高雄",
+        "花蓮"
+      ],
+      "answer": "彰化",
+      "image": "q_彰化.jpg"
     }
   ]
 }
