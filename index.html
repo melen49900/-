@@ -295,7 +295,7 @@ body::before {
 }
 .mine-cell:hover:not(.empty):not(.player) { filter:brightness(1.2); transform:scale(1.05); }
 .mine-cell.empty { background:#1a0805; border-color:#0d0402; cursor:default; }
-.mine-cell.player { background:#c0641a; border-color:var(--gold); cursor:default; }
+.mine-cell.player { background:#1a0805; border-color:var(--gold); cursor:default; }
 .mine-cell.dug { background:#2a1005; border-color:#1a0803; cursor:default; }
 .mine-cell-coin { background:#2a1005; border-color:#FFD700 !important; cursor:default; color:#FFD700; font-weight:900; font-size:1em; }
 .mine-result-cell-coin { background:#2a1208; border-color:#FFD700 !important; color:#FFD700; font-weight:900; }
@@ -10859,7 +10859,7 @@ function renderMineGrid() {
         } else {
           cell.textContent = '🧑';
         }
-      } else if (cellVal === 'empty') {
+      } else if (cellVal === 'empty' || cellVal.startsWith('empty_')) {
         cell.classList.add('empty');
       } else {
         // 可挖的格子：判斷是否可互動
