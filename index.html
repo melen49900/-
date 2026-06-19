@@ -4496,6 +4496,17 @@ function onVictory(stats) {
   renderHero();
   autoSave();
   updateQuestProgress('kill');
+  
+  setTimeout(() => {
+    if (enEl) enEl.classList.remove('fall-anim');
+    onTurnEnd(() => {
+      if (state.battle._victoryPending === false) return;
+      _battleLock = false; b.cooldown = false;
+      b.enemyHp = stats.maxHp; b.enemyMaxHp = stats.maxHp;
+      b.log = `${stats.name} 再次出現！`;
+      renderEnemyList(); renderBattleUI();
+    });
+  }, 2500);
 }
 
 function onDefeat(stats) {
