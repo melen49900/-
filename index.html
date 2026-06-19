@@ -5851,6 +5851,7 @@ function loadFromStorage() {
     if (data.state?.autoUnlock) Object.assign(state.autoUnlock, data.state.autoUnlock);
     if (data.state?.autoSkillId !== undefined) state.autoSkillId = data.state.autoSkillId;
     if (data.state?.tickets) state.tickets = data.state.tickets;
+    if (data.state?.mineProgress) state.mineProgress = data.state.mineProgress;
     setSaveStatus('saved'); setTimeout(() => setSaveStatus('idle'), 2000);
   } catch(e) { setSaveStatus('error'); }
 }
