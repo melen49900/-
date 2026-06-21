@@ -10828,10 +10828,10 @@ function openMineGame() {
 
 function mineGenCell(worldRow) {
   const r = Math.random();
-  // 越深越多好東西
+  // 挖礦機率
   const depth = worldRow;
-  const gemChance  = Math.min(0.25 + depth * 0.005, 0.41);
-  const coinChance = Math.min(0.35 + depth * 0.005, 0.51);
+  const gemChance  = Math.min(0.15 + depth * 0.0005, 0.31);
+  const coinChance = Math.min(0.15 + depth * 0.0005, 0.31);
   if (r < gemChance) return 'gem';
   if (r < gemChance + coinChance) return 'coin';
   return 'rock';
@@ -10853,7 +10853,6 @@ function renderMineGrid() {
   const grid = document.getElementById('mineGrid');
   grid.innerHTML = '';
   const top = mineState.visibleTopRow;
-
   for (let r = 0; r < MINE_ROWS; r++) {
     for (let c = 0; c < MINE_COLS; c++) {
       const worldRow = top + r;
@@ -10861,10 +10860,8 @@ function renderMineGrid() {
       cell.className = 'mine-cell';
       cell.dataset.r = r;
       cell.dataset.c = c;
-
       const isPlayer = (r === mineState.playerRow && c === mineState.playerCol);
       const cellVal = mineGetCell(worldRow, c);
-
       if (isPlayer) {
         cell.classList.add('player');
         // 顯示角色圖片
@@ -10905,7 +10902,6 @@ function mineCanAct(r, c) {
   const worldRow = top + r;
   const cellVal = mineGetCell(worldRow, c);
   if (cellVal === 'empty') return null;
-
   // 左右移動：同排、相鄰、格子是rock/coin/gem（非empty）但我們要移動到的格子必須是有地板的空格
   // 其實移動是：角色左右移動到相鄰格，條件是目標格不是empty（有地板可站）
   if (r === pr && Math.abs(c - pc) === 1) {
@@ -10918,7 +10914,6 @@ function mineCanAct(r, c) {
   if (r === pr && c === pc + 1) return 'dig'; // 右
   return null;
 }
-
 // 重新計算canAct：移動 vs 挖掘
 // 左右：如果目標格是岩石，就是挖掘；移動是走到已空的格子
 // 但依照規則，左右格子如果有內容就是挖掘，沒有內容（empty）就是移動
@@ -10927,19 +10922,15 @@ function mineCanActV2(r, c) {
   const pc = mineState.playerCol;
   const top = mineState.visibleTopRow;
   const worldRow = top + r;
-
   // 入口排（world row < 0）不能互動
   if (worldRow < 0) return null;
-
   const cellVal = mineGetCell(worldRow, c);
-
   // 正下方：挖掘
   if (c === pc && r === pr + 1) {
     if (cellVal !== 'empty') return 'dig';
   }
   // 左右：同排相鄰，但角色所在排若是入口排則不能左右
   const playerWorldRow = top + pr;
-
   if (r === pr && Math.abs(c - pc) === 1) {
     if (cellVal === 'empty') return 'move';
     return 'dig';
@@ -10953,19 +10944,18 @@ function mineMove(r, c) {
   renderMineGrid();
 }
 
-function mineCalcReward(type, depth) {
+function mineCalcReward(type, depth) {//挖礦獎勵計算
   const lv = state.hero.level || 1;
   if (type === 'coin') {
-    return (lv + depth) * (Math.floor(Math.random() * 5) + 1);
+    return (lv * 3 + depth * 2) * (Math.floor(Math.random() * 4) + 1);
   } else {
-    const bonus = Math.min(Math.floor(depth / 100), 10);
+    const bonus = Math.min(Math.floor(depth / 80), 50);
     return Math.floor(Math.random() * 10) + 1 + bonus;
   }
 }
 
 function mineDig(r, c) {
   if (mineState.pickaxe <= 0 || mineState.finished) return;
-
   const top = mineState.visibleTopRow;
   const worldRow = top + r;
   const cellVal = mineGetCell(worldRow, c);
