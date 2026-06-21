@@ -327,6 +327,21 @@ body::before {
 .mine-live-counters {
   display: flex; gap: 10px; font-size: .85em; font-weight: 800; color: #ffe082;
 }
+.mine-counter-pop {
+  position: absolute;
+  margin-left: 4px;
+  color: #4caf50;
+  font-weight: 900;
+  font-size: 0.9em;
+  animation: mineCounterPopFade 0.6s ease-out forwards;
+}
+@keyframes mineCounterPopFade {
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-12px); }
+}
+.mine-live-counters span {
+  position: relative;
+}
 
 /* ── 分頁列 ─────────────────────────────────────────────── */
 .tabs {
@@ -4913,6 +4928,7 @@ function showTab(tab) {
   else if (tab === 'achieve')   { bgmPlay('achieve'); }
   else if (tab === 'checkin')   { bgmPlay('checkin'); }
   else if (tab === 'quiz')      { bgmPlay('quiz'); }
+  else if (tab === 'game')      { bgmPlay('game'); }
   else { bgmStop(); }
   if (tab === 'gear')    renderGearTab();
   if (tab === 'quest')   renderQuestTab();updateActiveQuestBar();
@@ -10938,6 +10954,16 @@ function mineMove(r, c) {
   renderMineGrid();
 }
 
+function mineCalcReward(type, depth) {
+  const lv = state.hero.level || 1;
+  if (type === 'coin') {
+    return (lv + depth) * (Math.floor(Math.random() * 5) + 1);
+  } else {
+    const bonus = Math.min(Math.floor(depth / 100), 10);
+    return Math.floor(Math.random() * 10) + 1 + bonus;
+  }
+}
+
 function mineDig(r, c) {
   if (mineState.pickaxe <= 0 || mineState.finished) return;
 
@@ -10945,18 +10971,18 @@ function mineDig(r, c) {
   const worldRow = top + r;
   const cellVal = mineGetCell(worldRow, c);
   const found = cellVal === 'coin' ? '💰' : cellVal === 'gem' ? '💎' : null;
-
+  let earnedValue = 0;
+  if (cellVal === 'coin') earnedValue = mineCalcReward('coin', mineState.worldRow);
+  else if (cellVal === 'gem') earnedValue = mineCalcReward('gem', mineState.worldRow);
   // ── 1. 先把格子換成獎勵 emoji（或挖空）──────────────────
   const grid = document.getElementById('mineGrid');
   const cellEl = grid.querySelectorAll('.mine-cell')[r * MINE_COLS + c];
-
   if (found) {
     // 顯示寶物，暫時不移動角色
     cellEl.textContent = found;
     cellEl.style.fontSize = '1.6rem';
     cellEl.onclick = null; // 防止重複點擊
   }
-
   // ── 2. 飛行動畫（維持原本邏輯）──────────────────────────
   if (found) {
     const targetEl = found === '💰'
@@ -10975,7 +11001,6 @@ function mineDig(r, c) {
       flyEl.style.setProperty('--fly-dy', (dstRect.top - startY - 60) + 'px');
       document.body.appendChild(flyEl);
       setTimeout(() => flyEl.remove(), 750);
-
       setTimeout(() => {
         targetEl.parentElement.classList.remove('mine-counter-bump');
         void targetEl.parentElement.offsetWidth;
@@ -10983,21 +11008,22 @@ function mineDig(r, c) {
       }, 500);
     }
   }
-
   // ── 3. 1秒後執行獎勵結算 + 角色移動 ─────────────────────
   const delay = found ? 1000 : 0; // 有寶物等1秒，空石頭立即
   setTimeout(() => {
-    if (cellVal === 'coin') mineState.rewards.coin++;
-    else if (cellVal === 'gem') mineState.rewards.gem++;
-
+    if (cellVal === 'coin') {
+      mineState.rewards.coin++;
+      mineState.rewards.coinGold = (mineState.rewards.coinGold || 0) + earnedValue;
+    } else if (cellVal === 'gem') {
+      mineState.rewards.gem++;
+      mineState.rewards.gemGems = (mineState.rewards.gemGems || 0) + earnedValue;
+    }
     if (cellVal === 'coin') mineSetCell(worldRow, c, 'empty_coin');
     else if (cellVal === 'gem') mineSetCell(worldRow, c, 'empty_gem');
     else mineSetCell(worldRow, c, 'empty_rock');
-
     mineState.pickaxe--;
-    document.getElementById('mineCoinCount').textContent = mineState.rewards.coin;
-    document.getElementById('mineGemCount').textContent  = mineState.rewards.gem;
-
+    if (cellVal === 'coin') mineBumpCounter('mineCoinCount', mineState.rewards.coinGold, earnedValue);
+    else if (cellVal === 'gem') mineBumpCounter('mineGemCount', mineState.rewards.gemGems, earnedValue);
     const isBelow = (c === mineState.playerCol && r === mineState.playerRow + 1);
     if (isBelow) {
       mineState.playerRow++;
@@ -11016,11 +11042,27 @@ function mineDig(r, c) {
       mineState.playerCol = c;
       mineState.playerRow = r;
     }
-
     renderMineGrid();
     updateMineUI();
     if (mineState.pickaxe <= 0) mineFinish();
   }, delay);
+}
+
+function mineBumpCounter(elId, newTotal, delta) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const oldTotal = newTotal - delta;
+  // 顯示舊數字 + 短暫的 +delta 提示
+  el.textContent = oldTotal;
+  const popEl = document.createElement('span');
+  popEl.className = 'mine-counter-pop';
+  popEl.textContent = `+${delta}`;
+  el.parentElement.appendChild(popEl);
+  // 短暫停留後，數字跳到新總額，並移除增量提示
+  setTimeout(() => {
+    el.textContent = newTotal;
+    popEl.remove();
+  }, 600);
 }
 
 function updateMineUI() {
@@ -11057,27 +11099,15 @@ function mineFinish() {
     }
   }
   mineState.resultSnapshot = snapshot;
-
   // 給予獎勵
   if (mineState.rewards.coin > 0) {
-    const lv = state.hero.level || 1;
-    const depth = mineState.worldRow;
-    const coinVal = (lv + depth) * (Math.floor(Math.random() * 5) + 1);
-    const totalGold = mineState.rewards.coin * coinVal;
-    mineState.rewards.coinGold = totalGold;
-    state.hero.gold = (state.hero.gold || 0) + totalGold;
+    state.hero.gold = (state.hero.gold || 0) + (mineState.rewards.coinGold || 0);
   }
   if (mineState.rewards.gem > 0) {
-    const depth = mineState.worldRow;
-    const bonus = Math.min(Math.floor(depth / 100), 10);
-    const gemVal = Math.floor(Math.random() * 10) + 1 + bonus;
-    const totalGems = mineState.rewards.gem * gemVal;
-    mineState.rewards.gemGems = totalGems;
-    state.hero.gems = (state.hero.gems || 0) + totalGems;
+    state.hero.gems = (state.hero.gems || 0) + (mineState.rewards.gemGems || 0);
   }
   autoSave();
   renderHero();
-
   // 顯示結果
   renderMineResult();
   document.getElementById('mineResult').classList.remove('hidden');
@@ -11089,30 +11119,7 @@ function mineFinish() {
 
 function renderMineResult() {
   const grid = document.getElementById('mineResultGrid');
-  grid.innerHTML = '';
-  const snap = mineState.resultSnapshot;
-  snap.forEach(val => {
-    const cell = document.createElement('div');
-    cell.className = 'mine-result-cell';
-    if (val === 'empty_coin') {
-      cell.classList.add('was-dug');
-      cell.textContent = '💰';
-    } else if (val === 'empty_gem') {
-      cell.classList.add('was-dug');
-      cell.textContent = '💎';
-    } else if (val === 'empty_rock' || val === 'empty') {
-      cell.classList.add('was-dug');
-      cell.textContent = '🕳️';
-    } else if (val === 'coin') {
-      cell.textContent = '💰';
-    } else if (val === 'gem') {
-      cell.textContent = '💎';
-    } else {
-      cell.textContent = '🪨';
-    }
-    grid.appendChild(cell);
-  });
-
+  if (grid) grid.innerHTML = '';
   const summary = document.getElementById('mineResultSummary');
   const parts = [];
   if (mineState.rewards.coin > 0) parts.push(`💰 金幣 ×${mineState.rewards.coin}（+${mineState.rewards.coinGold || 0} Gold）`);
@@ -11158,6 +11165,7 @@ const BGM_TRACKS = {
   achieve:   'audio/BGM-achieve.mp3',   // 成就
   checkin:   'audio/BGM-checkin.mp3',   // 簽到
   quiz:      'audio/BGM-quiz.mp3',      // 答題
+  game:      'audio/BGM-game.mp3',      // 遊戲
 };
 
 const bgmState = {
