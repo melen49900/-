@@ -10781,19 +10781,18 @@ function openMineGame() {
     document.getElementById('mineResult').classList.add('hidden');
     document.getElementById('mineCloseBtn').classList.add('hidden');
     document.getElementById('mineCancelBtn').classList.remove('hidden');
+    document.getElementById('mineCoinCount').textContent = mineState.rewards.coinGold || 0;
+    document.getElementById('mineGemCount').textContent  = mineState.rewards.gemGems || 0;
     renderMineGrid();
     updateMineUI();
     return;
   }
-
   const count = (state.tickets && state.tickets['ticket_memory']) || 0;
   if (count <= 0) { showToast('❌ 沒有入場券！'); return; }
-
   // 扣入場券
   state.tickets['ticket_memory'] = count - 1;
   autoSave();
   renderGameHall();
-
   // 角色從第0排開始，第0排是入口（空的），角色站在上方
   // 第1、2、3排是石頭
     const prev = state.mineProgress;
@@ -10806,9 +10805,8 @@ function openMineGame() {
       worldCells: prev ? prev.worldCells : {},
       resultSnapshot: null,
       finished: false,
-      rewards: { coin: 0, gem: 0 }
+      rewards: { coin: 0, gem: 0, coinGold: 0, gemGems: 0 }
   };
-
   // 預先生成石頭（從world row 0開始才有石頭）
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < MINE_COLS; c++) {
@@ -10818,11 +10816,12 @@ function openMineGame() {
       }
     }
   }
-
   document.getElementById('mineGameOv').classList.remove('hidden');
   document.getElementById('mineResult').classList.add('hidden');
   document.getElementById('mineCloseBtn').classList.add('hidden');
   document.getElementById('mineCancelBtn').classList.remove('hidden');
+  document.getElementById('mineCoinCount').textContent = 0;
+  document.getElementById('mineGemCount').textContent  = 0;
   renderMineGrid();
   updateMineUI();
 }
