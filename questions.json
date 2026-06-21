@@ -337,6 +337,17 @@
     },
     {
       "category": "國文",
+      "question": "「ㄇㄢˋ吞吞」怎麼寫？",
+      "options": [
+        "慢",
+        "曼",
+        "漫",
+        "饅"
+      ],
+      "answer": "慢"
+    },
+    {
+      "category": "國文",
       "question": "「ㄇㄧㄥˊ天」怎麼寫",
       "options": [
         "明",
@@ -414,6 +425,17 @@
     },
     {
       "category": "國文",
+      "question": "「ㄊㄞˋ陽」怎麼寫？",
+      "options": [
+        "太",
+        "夫",
+        "大",
+        "天"
+      ],
+      "answer": "太"
+    },
+    {
+      "category": "國文",
       "question": "「ㄋㄞˇㄋㄞ˙」怎麼寫？",
       "options": [
         "爸",
@@ -469,14 +491,14 @@
     },
     {
       "category": "國文",
-      "question": "「ㄎㄨㄞˋㄇㄢˋ」怎麼寫？",
+      "question": "「ㄎㄨㄞˋ慢」怎麼寫？",
       "options": [
-        "快慢",
-        "決慢",
-        "快曼",
-        "筷漫"
+        "快",
+        "決",
+        "快",
+        "筷"
       ],
-      "answer": "快慢"
+      "answer": "快"
     },
     {
       "category": "國文",
@@ -689,17 +711,6 @@
     },
     {
       "category": "國文",
-      "question": "「過ㄋㄧㄢˊ」怎麼寫",
-      "options": [
-        "月",
-        "日",
-        "年",
-        "星"
-      ],
-      "answer": "年"
-    },
-    {
-      "category": "國文",
       "question": "「ㄩㄝˋ亮」怎麼寫",
       "options": [
         "月",
@@ -898,17 +909,6 @@
     },
     {
       "category": "國文",
-      "question": "「左右」的注音是？",
-      "options": [
-        "ㄗㄨㄛˇㄧㄡˋ",
-        "ㄕㄤˋㄒㄧㄚˋ",
-        "ㄗㄨㄛˊㄧㄡˋ",
-        "ㄧㄡˋㄗㄨㄛˇ"
-      ],
-      "answer": "ㄗㄨㄛˇㄧㄡˋ"
-    },
-    {
-      "category": "國文",
       "question": "「你ㄇㄣ˙」怎麼寫？",
       "options": [
         "你",
@@ -935,8 +935,8 @@
       "options": [
         "友",
         "有",
-        "由",
-        "攸"
+        "黝",
+        "油"
       ],
       "answer": "友"
     },
@@ -946,7 +946,7 @@
       "options": [
         "江",
         "工",
-        "紅",
+        "漿",
         "姜"
       ],
       "answer": "江"
@@ -986,6 +986,17 @@
     },
     {
       "category": "國文",
+      "question": "「過ㄋㄧㄢˊ」怎麼寫",
+      "options": [
+        "月",
+        "日",
+        "年",
+        "星"
+      ],
+      "answer": "年"
+    },
+    {
+      "category": "國文",
       "question": "「蝴蝶」的注音是？",
       "options": [
         "ㄏㄨˊ ㄉㄧㄝˊ",
@@ -994,7 +1005,7 @@
         "ㄆㄤˊ ㄒㄧㄝˋ"
       ],
       "answer": "ㄏㄨˊ ㄉㄧㄝˊ",
-      "image": "q_butterfly.jpeg"
+      "image": "q_動物蝴蝶.jpeg"
     },
     {
       "category": "國文",
@@ -1006,7 +1017,7 @@
         "ㄇㄠˋ"
       ],
       "answer": "ㄇㄠ",
-      "image": "q_cat.jpg"
+      "image": "q_動物貓.jpg"
     },
     {
       "category": "國文",
@@ -1018,31 +1029,7 @@
         "警察"
       ],
       "answer": "廚師",
-      "image": "q_cook.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "他是什麼職業?",
-      "options": [
-        "消防員",
-        "澆花員",
-        "洗地員",
-        "抽水員"
-      ],
-      "answer": "消防員",
-      "image": "q_firefighter.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "他是什麼職業?",
-      "options": [
-        "老師",
-        "醫生",
-        "學生",
-        "警察"
-      ],
-      "answer": "警察",
-      "image": "q_police.jpeg"
+      "image": "q_職業廚師.jpg"
     },
     {
       "category": "國文",
@@ -1054,7 +1041,31 @@
         "警察"
       ],
       "answer": "農夫",
-      "image": "q_farmer.jpg"
+      "image": "q_職業農夫.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "他是什麼職業?",
+      "options": [
+        "消防員",
+        "澆花員",
+        "洗地員",
+        "抽水員"
+      ],
+      "answer": "消防員",
+      "image": "q_職業消防員.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "他是什麼職業?",
+      "options": [
+        "老師",
+        "醫生",
+        "學生",
+        "警察"
+      ],
+      "answer": "警察",
+      "image": "q_職業警察.jpeg"
     },
     {
       "category": "國文",
@@ -1066,7 +1077,7 @@
         "警察"
       ],
       "answer": "醫生",
-      "image": "q_doctor.jpeg"
+      "image": "q_職業醫生.jpeg"
     },
     {
       "category": "國文",
@@ -1078,7 +1089,7 @@
         "警察"
       ],
       "answer": "老師",
-      "image": "q_teacher.jpeg"
+      "image": "q_職業老師.jpeg"
     },
     {
       "category": "國文",
@@ -1156,7 +1167,7 @@
         "計程車"
       ],
       "answer": "公車",
-      "image": "q_bus.jpg"
+      "image": "q_物品巴士.jpg"
     },
     {
       "category": "國文",
@@ -1168,196 +1179,7 @@
         "東"
       ],
       "answer": "車",
-      "image": "q_car.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼動物?",
-      "options": [
-        "熊",
-        "雄",
-        "能",
-        "羆"
-      ],
-      "answer": "熊",
-      "image": "q_bear.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼動物?",
-      "options": [
-        "象",
-        "魚",
-        "羊",
-        "牛"
-      ],
-      "answer": "象",
-      "image": "q_elephant.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼動物?",
-      "options": [
-        "斑馬",
-        "搬馬",
-        "班馬",
-        "般馬"
-      ],
-      "answer": "斑馬",
-      "image": "q_zebra.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "藍",
-        "黑",
-        "灰",
-        "綠"
-      ],
-      "answer": "藍",
-      "image": "q_blue.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "灰",
-        "綠",
-        "紫",
-        "黃"
-      ],
-      "answer": "灰",
-      "image": "q_gray.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "綠",
-        "黃",
-        "紫",
-        "藍"
-      ],
-      "answer": "綠",
-      "image": "q_green.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "紅",
-        "白",
-        "粉紅",
-        "橘"
-      ],
-      "answer": "橘",
-      "image": "q_orange.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "紅",
-        "白",
-        "粉紅",
-        "橘"
-      ],
-      "answer": "粉紅",
-      "image": "q_pink.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "紫",
-        "黃",
-        "黑",
-        "藍"
-      ],
-      "answer": "紫",
-      "image": "q_purple.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "紅",
-        "白",
-        "粉紅",
-        "橘"
-      ],
-      "answer": "紅",
-      "image": "q_red.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "白",
-        "柏",
-        "泊",
-        "伯"
-      ],
-      "answer": "白",
-      "image": "q_white.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "黃",
-        "綠",
-        "灰",
-        "黑"
-      ],
-      "answer": "黃",
-      "image": "q_yellow.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄎㄨㄞˋ慢」怎麼寫？",
-      "options": [
-        "快",
-        "決",
-        "快",
-        "筷"
-      ],
-      "answer": "快"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄇㄢˋ吞吞」怎麼寫？",
-      "options": [
-        "慢",
-        "曼",
-        "漫",
-        "饅"
-      ],
-      "answer": "慢"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄊㄞˋ陽」怎麼寫？",
-      "options": [
-        "太",
-        "夫",
-        "大",
-        "天"
-      ],
-      "answer": "太"
-    },
-    {
-      "category": "國文",
-      "question": "「蝴蝶」的注音是？",
-      "options": [
-        "ㄏㄨˊ ㄉㄧㄝˊ",
-        "ㄏㄜˊ ㄊㄨㄣˊ",
-        "ㄓ  ㄓㄨ",
-        "ㄆㄤˊ ㄒㄧㄝˋ"
-      ],
-      "answer": "ㄏㄨˊ ㄉㄧㄝˊ",
-      "image": "q_動物-蝴蝶.jpeg"
+      "image": "q_物品車.jpeg"
     },
     {
       "category": "國文",
@@ -1369,7 +1191,7 @@
         "麵包"
       ],
       "answer": "麵",
-      "image": "q_noodle.jpg"
+      "image": "q_食物麵.jpg"
     },
     {
       "category": "國文",
@@ -1381,7 +1203,7 @@
         "麵包"
       ],
       "answer": "炒飯",
-      "image": "q_炒飯.jpg"
+      "image": "q_食物炒飯.jpg"
     },
     {
       "category": "國文",
@@ -1393,7 +1215,7 @@
         "陰天"
       ],
       "answer": "下雨",
-      "image": "q_天氣-雨"
+      "image": "q_天氣雨"
     },
     {
       "category": "國文",
@@ -1405,7 +1227,7 @@
         "羆"
       ],
       "answer": "熊",
-      "image": "q_動物-熊.jpg"
+      "image": "q_動物熊.jpg"
     },
     {
       "category": "國文",
@@ -1417,7 +1239,7 @@
         "牛"
       ],
       "answer": "象",
-      "image": "q_動物-大象.jpeg"
+      "image": "q_動物大象.jpeg"
     },
     {
       "category": "國文",
@@ -1429,7 +1251,127 @@
         "般馬"
       ],
       "answer": "斑馬",
-      "image": "q_動物-斑馬.jpeg"
+      "image": "q_動物斑馬.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "藍",
+        "黑",
+        "灰",
+        "綠"
+      ],
+      "answer": "藍",
+      "image": "q_顏色藍.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "灰",
+        "綠",
+        "紫",
+        "黃"
+      ],
+      "answer": "灰",
+      "image": "q_顏色灰.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "綠",
+        "黃",
+        "紫",
+        "藍"
+      ],
+      "answer": "綠",
+      "image": "q_顏色綠.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "紅",
+        "白",
+        "粉紅",
+        "橘"
+      ],
+      "answer": "橘",
+      "image": "q_顏色橘.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "紅",
+        "白",
+        "粉紅",
+        "橘"
+      ],
+      "answer": "粉紅",
+      "image": "q_顏色粉紅.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "紫",
+        "黃",
+        "黑",
+        "藍"
+      ],
+      "answer": "紫",
+      "image": "q_顏色紫.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "紅",
+        "白",
+        "粉紅",
+        "橘"
+      ],
+      "answer": "紅",
+      "image": "q_顏色紅.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "白",
+        "柏",
+        "泊",
+        "伯"
+      ],
+      "answer": "白",
+      "image": "q_顏色白.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "黃",
+        "綠",
+        "灰",
+        "黑"
+      ],
+      "answer": "黃",
+      "image": "q_顏色黃.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "How's the weather?",
+      "options": [
+        "It’s cloudy",
+        "It’s rainy",
+        "It’s sunny",
+        "It’s windy"
+      ],
+      "answer": "It’s rainy",
+      "image": "q_天氣雨"
     },
     {
       "category": "英文",
@@ -1441,7 +1383,7 @@
         "cat"
       ],
       "answer": "cat",
-      "image": "q_cat.jpg"
+      "image": "q_動物貓.jpeg"
     },
     {
       "category": "英文",
@@ -1453,7 +1395,7 @@
         "entrance"
       ],
       "answer": "elephant",
-      "image": "q_elephant.jpeg"
+      "image": "q_動物大象.jpeg"
     },
     {
       "category": "英文",
@@ -1465,7 +1407,7 @@
         "face"
       ],
       "answer": "frog",
-      "image": "q_frog.jpg"
+      "image": "q_動物青蛙.jpeg"
     },
     {
       "category": "英文",
@@ -1477,7 +1419,7 @@
         "baseball"
       ],
       "answer": "butterfly",
-      "image": "q_butterfly.jpeg"
+      "image": "q_動物蝴蝶.jpeg"
     },
     {
       "category": "英文",
@@ -1489,7 +1431,7 @@
         "girl"
       ],
       "answer": "giraffe",
-      "image": "q_giraffe.jpeg"
+      "image": "q_動物長頸鹿.jpeg"
     },
     {
       "category": "英文",
@@ -1501,7 +1443,7 @@
         "baby"
       ],
       "answer": "bear",
-      "image": "q_bear.jpg"
+      "image": "q_動物熊.jpg"
     },
     {
       "category": "英文",
@@ -1513,7 +1455,7 @@
         "zip"
       ],
       "answer": "zebra",
-      "image": "q_zebra.jpeg"
+      "image": "q_動物斑馬.jpeg"
     },
     {
       "category": "英文",
@@ -1525,7 +1467,7 @@
         "white"
       ],
       "answer": "red",
-      "image": "q_red.jpeg"
+      "image": "q_顏色紅.jpeg"
     },
     {
       "category": "英文",
@@ -1537,7 +1479,7 @@
         "white"
       ],
       "answer": "orange",
-      "image": "q_orange.jpeg"
+      "image": "q_顏色橘.jpeg"
     },
     {
       "category": "英文",
@@ -1549,7 +1491,7 @@
         "red"
       ],
       "answer": "purple",
-      "image": "q_purple.jpeg"
+      "image": "q_顏色紫.jpeg"
     },
     {
       "category": "英文",
@@ -1561,7 +1503,7 @@
         "black"
       ],
       "answer": "white",
-      "image": "q_white.jpg"
+      "image": "q_顏色白.jpg"
     },
     {
       "category": "英文",
@@ -1573,7 +1515,7 @@
         "brown"
       ],
       "answer": "gray",
-      "image": "q_gray.jpeg"
+      "image": "q_顏色灰.jpeg"
     },
     {
       "category": "英文",
@@ -1585,7 +1527,7 @@
         "blue"
       ],
       "answer": "blue",
-      "image": "q_blue.jpeg"
+      "image": "q_顏色藍.jpeg"
     },
     {
       "category": "英文",
@@ -1597,7 +1539,7 @@
         "blue"
       ],
       "answer": "pink",
-      "image": "q_pink.jpg"
+      "image": "q_顏色粉紅.jpg"
     },
     {
       "category": "英文",
@@ -1609,7 +1551,7 @@
         "blue"
       ],
       "answer": "yellow",
-      "image": "q_yellow.jpg"
+      "image": "q_顏色黃.jpg"
     },
     {
       "category": "英文",
@@ -1621,7 +1563,7 @@
         "blue"
       ],
       "answer": "green",
-      "image": "q_green.jpeg"
+      "image": "q_顏色綠.jpeg"
     },
     {
       "category": "英文",
@@ -1633,7 +1575,7 @@
         "police"
       ],
       "answer": "teacher",
-      "image": "q_teacher.jpeg"
+      "image": "q_職業老師.jpeg"
     },
     {
       "category": "英文",
@@ -1645,7 +1587,7 @@
         "police"
       ],
       "answer": "doctor",
-      "image": "q_doctor.jpeg"
+      "image": "q_職業醫生.jpeg"
     },
     {
       "category": "英文",
@@ -1657,7 +1599,7 @@
         "police"
       ],
       "answer": "police",
-      "image": "q_police.jpeg"
+      "image": "q_職業警察.jpeg"
     },
     {
       "category": "英文",
@@ -1669,19 +1611,7 @@
         "student"
       ],
       "answer": "cook",
-      "image": "q_cook.jpg"
-    },
-    {
-      "category": "英文",
-      "question": "What is his job?",
-      "options": [
-        "firefighter",
-        "police",
-        "doctor",
-        "teacher"
-      ],
-      "answer": "firefighter",
-      "image": "q_firefighter.jpg"
+      "image": "q_職業廚師.jpg"
     },
     {
       "category": "英文",
@@ -1693,7 +1623,19 @@
         "teacher"
       ],
       "answer": "farmer",
-      "image": "q_farmer.jpg"
+      "image": "q_職業農夫.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "What is his job?",
+      "options": [
+        "firefighter",
+        "police",
+        "doctor",
+        "teacher"
+      ],
+      "answer": "firefighter",
+      "image": "q_職業消防員.jpg"
     },
     {
       "category": "英文",
@@ -1705,7 +1647,7 @@
         "walking"
       ],
       "answer": "running",
-      "image": "q_run.JPG"
+      "image": "q_動作跑.JPG"
     },
     {
       "category": "英文",
@@ -1717,7 +1659,7 @@
         "bed"
       ],
       "answer": "bus",
-      "image": "q_bus.jpg"
+      "image": "q_物品巴士.jpg"
     },
     {
       "category": "英文",
@@ -1729,7 +1671,31 @@
         "cat"
       ],
       "answer": "car",
-      "image": "q_car.jpeg"
+      "image": "q_物品車.jpeg"
+    },
+    {
+      "category": "英文",
+      "question": "What is this?",
+      "options": [
+        "noodle",
+        "number",
+        "night",
+        "noon"
+      ],
+      "answer": "noodle",
+      "image": "q_食物麵.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "What is this?",
+      "options": [
+        "fried rice",
+        "fried chicken",
+        "fried egg",
+        "fried fish"
+      ],
+      "answer": "fried rice",
+      "image": "q_食物炒飯.jpg"
     },
     {
       "category": "英文",
@@ -1788,6 +1754,17 @@
     },
     {
       "category": "英文",
+      "question": "What’s the Chinese word for “ear”?",
+      "options": [
+        "鼻子",
+        "眼睛",
+        "耳朵",
+        "嘴巴"
+      ],
+      "answer": "耳朵"
+    },
+    {
+      "category": "英文",
       "question": "What’s the Chinese word for “eat”?",
       "options": [
         "吃",
@@ -1807,6 +1784,28 @@
         "十八"
       ],
       "answer": "十八"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “eye”?",
+      "options": [
+        "頭",
+        "手",
+        "腳",
+        "眼"
+      ],
+      "answer": "眼"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “feet”?",
+      "options": [
+        "頭",
+        "手",
+        "腳",
+        "眼"
+      ],
+      "answer": "腳"
     },
     {
       "category": "英文",
@@ -1843,6 +1842,39 @@
     },
     {
       "category": "英文",
+      "question": "What’s the Chinese word for “hair”?",
+      "options": [
+        "頭髮",
+        "眼睛",
+        "耳朵",
+        "嘴巴"
+      ],
+      "answer": "頭髮"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “hand”?",
+      "options": [
+        "頭",
+        "手",
+        "腳",
+        "眼"
+      ],
+      "answer": "手"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “head”?",
+      "options": [
+        "頭",
+        "手",
+        "腳",
+        "眼"
+      ],
+      "answer": "頭"
+    },
+    {
+      "category": "英文",
       "question": "What’s the Chinese word for “kindergarten”?",
       "options": [
         "幼兒園",
@@ -1851,6 +1883,17 @@
         "書包"
       ],
       "answer": "幼兒園"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “leg”?",
+      "options": [
+        "腿",
+        "眼睛",
+        "耳朵",
+        "嘴巴"
+      ],
+      "answer": "腿"
     },
     {
       "category": "英文",
@@ -1873,6 +1916,28 @@
         "奶奶"
       ],
       "answer": "媽媽"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “mouth”?",
+      "options": [
+        "鼻子",
+        "眼睛",
+        "耳朵",
+        "嘴巴"
+      ],
+      "answer": "嘴巴"
+    },
+    {
+      "category": "英文",
+      "question": "What’s the Chinese word for “nose”?",
+      "options": [
+        "鼻子",
+        "眼睛",
+        "耳朵",
+        "嘴巴"
+      ],
+      "answer": "鼻子"
     },
     {
       "category": "英文",
@@ -1931,6 +1996,17 @@
     },
     {
       "category": "英文",
+      "question": "What’s the Chinese word for “shoes”?",
+      "options": [
+        "鞋子",
+        "衣服",
+        "外套",
+        "襪子"
+      ],
+      "answer": "鞋子"
+    },
+    {
+      "category": "英文",
       "question": "What’s the Chinese word for “sing”?",
       "options": [
         "唱",
@@ -1953,6 +2029,17 @@
     },
     {
       "category": "英文",
+      "question": "What’s the Chinese word for “socks”?",
+      "options": [
+        "鞋子",
+        "衣服",
+        "外套",
+        "襪子"
+      ],
+      "answer": "襪子"
+    },
+    {
+      "category": "英文",
       "question": "What’s the Chinese word for “sun”?",
       "options": [
         "月亮",
@@ -1961,17 +2048,6 @@
         "雨水"
       ],
       "answer": "太陽"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “zero”?",
-      "options": [
-        "零",
-        "一",
-        "二",
-        "三"
-      ],
-      "answer": "零"
     },
     {
       "category": "英文",
@@ -1986,69 +2062,14 @@
     },
     {
       "category": "英文",
-      "question": "What’s the Chinese word for “head”?",
+      "question": "What’s the Chinese word for “zero”?",
       "options": [
-        "頭",
-        "手",
-        "腳",
-        "眼"
+        "零",
+        "一",
+        "二",
+        "三"
       ],
-      "answer": "頭"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “hand”?",
-      "options": [
-        "頭",
-        "手",
-        "腳",
-        "眼"
-      ],
-      "answer": "手"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “eye”?",
-      "options": [
-        "頭",
-        "手",
-        "腳",
-        "眼"
-      ],
-      "answer": "眼"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “ear”?",
-      "options": [
-        "鼻子",
-        "眼睛",
-        "耳朵",
-        "嘴巴"
-      ],
-      "answer": "耳朵"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “mouth”?",
-      "options": [
-        "鼻子",
-        "眼睛",
-        "耳朵",
-        "嘴巴"
-      ],
-      "answer": "嘴巴"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “nose”?",
-      "options": [
-        "鼻子",
-        "眼睛",
-        "耳朵",
-        "嘴巴"
-      ],
-      "answer": "鼻子"
+      "answer": "零"
     },
     {
       "category": "英文",
@@ -2382,6 +2403,17 @@
     },
     {
       "category": "英文",
+      "question": "猴子的英文是?",
+      "options": [
+        "monckey",
+        "frog",
+        "rabbit",
+        "fish"
+      ],
+      "answer": "monckey"
+    },
+    {
+      "category": "英文",
       "question": "黑色的英文是?",
       "options": [
         "blue",
@@ -2423,156 +2455,6 @@
         "shine"
       ],
       "answer": "shoes"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “feet”?",
-      "options": [
-        "頭",
-        "手",
-        "腳",
-        "眼"
-      ],
-      "answer": "腳"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “hair”?",
-      "options": [
-        "頭髮",
-        "眼睛",
-        "耳朵",
-        "嘴巴"
-      ],
-      "answer": "頭髮"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “leg”?",
-      "options": [
-        "腿",
-        "眼睛",
-        "耳朵",
-        "嘴巴"
-      ],
-      "answer": "腿"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “shoes”?",
-      "options": [
-        "鞋子",
-        "衣服",
-        "外套",
-        "襪子"
-      ],
-      "answer": "鞋子"
-    },
-    {
-      "category": "英文",
-      "question": "What’s the Chinese word for “socks”?",
-      "options": [
-        "鞋子",
-        "衣服",
-        "外套",
-        "襪子"
-      ],
-      "answer": "襪子"
-    },
-    {
-      "category": "英文",
-      "question": "猴子的英文是?",
-      "options": [
-        "monckey",
-        "frog",
-        "rabbit",
-        "fish"
-      ],
-      "answer": "monckey"
-    },
-    {
-      "category": "英文",
-      "question": "How's the weather?",
-      "options": [
-        "It’s cloudy",
-        "It’s rainy",
-        "It’s sunny",
-        "It’s windy"
-      ],
-      "answer": "It’s rainy",
-      "image": "q_天氣-雨"
-    },
-    {
-      "category": "英文",
-      "question": "what animal is this?",
-      "options": [
-        "elephant",
-        "excellent",
-        "exercise",
-        "entrance"
-      ],
-      "answer": "elephant",
-      "image": "q_動物-大象.jpeg"
-    },
-    {
-      "category": "英文",
-      "question": "what animal is this?",
-      "options": [
-        "butterfly",
-        "beautiful",
-        "banana",
-        "baseball"
-      ],
-      "answer": "butterfly",
-      "image": "q_動物-蝴蝶.jpeg"
-    },
-    {
-      "category": "英文",
-      "question": "what animal is this?",
-      "options": [
-        "bear",
-        "ball",
-        "break",
-        "baby"
-      ],
-      "answer": "bear",
-      "image": "q_動物-熊.jpg"
-    },
-    {
-      "category": "英文",
-      "question": "what animal is this?",
-      "options": [
-        "zebra",
-        "zero",
-        "zoo",
-        "zip"
-      ],
-      "answer": "zebra",
-      "image": "q_動物-斑馬.jpeg"
-    },
-    {
-      "category": "英文",
-      "question": "What is this?",
-      "options": [
-        "noodle",
-        "number",
-        "night",
-        "noon"
-      ],
-      "answer": "noodle",
-      "image": "q_noodle.jpg"
-    },
-    {
-      "category": "英文",
-      "question": "What is this?",
-      "options": [
-        "fried rice",
-        "fried chicken",
-        "fried egg",
-        "fried fish"
-      ],
-      "answer": "fried rice",
-      "image": "q_炒飯.jpg"
     },
     {
       "category": "自然",
@@ -2682,7 +2564,8 @@
         "風把水吹下來",
         "天上有一個洞漏水"
       ],
-      "answer": "雲裡的水滴變大掉下來"
+      "answer": "雲裡的水滴變大掉下來",
+      "image": "q_天氣雨.jpg"
     },
     {
       "category": "自然",
@@ -2727,6 +2610,17 @@
         "只在滿月時發光"
       ],
       "answer": "不會，反射太陽光"
+    },
+    {
+      "category": "自然",
+      "question": "木星是太陽系第幾顆行星？",
+      "options": [
+        "第二顆",
+        "第三顆",
+        "第四顆",
+        "第五顆"
+      ],
+      "answer": "第五顆"
     },
     {
       "category": "自然",
@@ -2782,6 +2676,17 @@
         "泥巴"
       ],
       "answer": "岩漿"
+    },
+    {
+      "category": "自然",
+      "question": "火星是太陽系第幾顆行星？",
+      "options": [
+        "第三顆",
+        "第二顆",
+        "第四顆",
+        "第一顆"
+      ],
+      "answer": "第四顆"
     },
     {
       "category": "自然",
@@ -3024,7 +2929,7 @@
         "黃色疣點旁的短毛"
       ],
       "answer": "黃色疣點旁的短毛",
-      "image": "q_Chrysaeglia_magnifica.jpg"
+      "image": "q_動物閃光苔蛾.jpg"
     },
     {
       "category": "自然",
@@ -3135,7 +3040,7 @@
         "隨便放"
       ],
       "answer": "雙翅合攏在背上",
-      "image": "q_butterfly.jpeg"
+      "image": "q_動物蝴蝶.jpeg"
     },
     {
       "category": "自然",
@@ -3158,40 +3063,6 @@
         "真空"
       ],
       "answer": "固體"
-    },
-    {
-      "category": "自然",
-      "question": "木星是太陽系第幾顆行星？",
-      "options": [
-        "第二顆",
-        "第三顆",
-        "第四顆",
-        "第五顆"
-      ],
-      "answer": "第五顆"
-    },
-    {
-      "category": "自然",
-      "question": "火星是太陽系第幾顆行星？",
-      "options": [
-        "第三顆",
-        "第二顆",
-        "第四顆",
-        "第一顆"
-      ],
-      "answer": "第四顆"
-    },
-    {
-      "category": "自然",
-      "question": "下雨最主要的原因是什麼?",
-      "options": [
-        "雲裡的水滴變大掉下來",
-        "地上的水跳上去",
-        "風把水吹下來",
-        "天上有一個洞漏水"
-      ],
-      "answer": "雲裡的水滴變大掉下來",
-      "image": "q_天氣-雨.jpg"
     },
     {
       "category": "地理",
@@ -3228,7 +3099,7 @@
     },
     {
       "category": "地理",
-      "question": "紅色的部分是哪一洲",
+      "question": "紅色的部分是哪一洲？",
       "options": [
         "亞洲",
         "非洲",
@@ -3236,7 +3107,19 @@
         "南美洲"
       ],
       "answer": "亞洲",
-      "image": "q_亞洲.jpg"
+      "image": "q_七大洲亞洲.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "紅色的部分是哪一洲？",
+      "options": [
+        "亞洲",
+        "非洲",
+        "歐洲",
+        "南美洲"
+      ],
+      "answer": "歐洲",
+      "image": "q_七大洲歐洲.jpg"
     },
     {
       "category": "地理",
@@ -3248,7 +3131,7 @@
         "韓國"
       ],
       "answer": "臺灣",
-      "image": "q_map_1.jpg"
+      "image": "q_國家臺灣.jpg"
     },
     {
       "category": "地理",
@@ -3260,7 +3143,7 @@
         "韓國"
       ],
       "answer": "日本",
-      "image": "q_map_2.jpg"
+      "image": "q_國家日本.jpg"
     },
     {
       "category": "地理",
@@ -3272,7 +3155,7 @@
         "韓國"
       ],
       "answer": "韓國",
-      "image": "q_map_3.jpg"
+      "image": "q_國家韓國.jpg"
     },
     {
       "category": "地理",
@@ -3284,7 +3167,7 @@
         "韓國"
       ],
       "answer": "中國",
-      "image": "q_map_4.jpg"
+      "image": "q_國家中國.jpg"
     },
     {
       "category": "地理",
@@ -3296,11 +3179,23 @@
         "韓國"
       ],
       "answer": "俄羅斯",
-      "image": "q_map_5.jpg"
+      "image": "q_國家俄羅斯.jpg"
     },
     {
       "category": "地理",
-      "question": "這是哪個縣市？",
+      "question": "這是哪個國家？",
+      "options": [
+        "俄羅斯",
+        "菲律賓",
+        "日本",
+        "韓國"
+      ],
+      "answer": "菲律賓",
+      "image": "q_國家菲律賓.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
       "options": [
         "台中",
         "台北",
@@ -3308,11 +3203,11 @@
         "台東"
       ],
       "answer": "台中",
-      "image": "q_台中.jpg"
+      "image": "q_縣市台中.jpg"
     },
     {
       "category": "地理",
-      "question": "這是哪個縣市？",
+      "question": "這是臺灣哪個縣市？",
       "options": [
         "台北",
         "新北",
@@ -3320,11 +3215,11 @@
         "桃園"
       ],
       "answer": "台北",
-      "image": "q_台北.jpg"
+      "image": "q_縣市台北.jpg"
     },
     {
       "category": "地理",
-      "question": "這是哪個縣市？",
+      "question": "這是臺灣哪個縣市？",
       "options": [
         "台東",
         "台南",
@@ -3332,11 +3227,11 @@
         "屏東"
       ],
       "answer": "台東",
-      "image": "q_台東.jpg"
+      "image": "q_縣市台東.jpg"
     },
     {
       "category": "地理",
-      "question": "這是哪個縣市？",
+      "question": "這是臺灣哪個縣市？",
       "options": [
         "屏東",
         "高雄",
@@ -3344,11 +3239,11 @@
         "台東"
       ],
       "answer": "台南",
-      "image": "q_台南.jpg"
+      "image": "q_縣市台南.jpg"
     },
     {
       "category": "地理",
-      "question": "這是哪個縣市？",
+      "question": "這是臺灣哪個縣市？",
       "options": [
         "宜蘭",
         "新北",
@@ -3356,11 +3251,11 @@
         "基隆"
       ],
       "answer": "宜蘭",
-      "image": "q_宜蘭.jpg"
+      "image": "q_縣市宜蘭.jpg"
     },
     {
       "category": "地理",
-      "question": "這是哪個縣市？",
+      "question": "這是臺灣哪個縣市？",
       "options": [
         "花蓮",
         "高雄",
@@ -3368,11 +3263,11 @@
         "新北"
       ],
       "answer": "花蓮",
-      "image": "q_花蓮.jpg"
+      "image": "q_縣市花蓮.jpg"
     },
     {
       "category": "地理",
-      "question": "這是哪個縣市？",
+      "question": "這是臺灣哪個縣市？",
       "options": [
         "南投",
         "高雄",
@@ -3380,11 +3275,11 @@
         "台中"
       ],
       "answer": "南投",
-      "image": "q_南投.jpg"
+      "image": "q_縣市南投.jpg"
     },
     {
       "category": "地理",
-      "question": "這是哪個縣市？",
+      "question": "這是臺灣哪個縣市？",
       "options": [
         "屏東",
         "高雄",
@@ -3392,47 +3287,23 @@
         "台東"
       ],
       "answer": "屏東",
-      "image": "q_屏東.jpg"
+      "image": "q_縣市屏東.jpg"
     },
     {
       "category": "地理",
-      "question": "這是哪個縣市？",
+      "question": "這是臺灣哪個縣市？",
       "options": [
         "屏東",
-        "高雄",
-        "台南",
-        "台東"
-      ],
-      "answer": "高雄",
-      "image": "q_高雄.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個縣市？",
-      "options": [
-        "基隆",
-        "台北",
+        "苗栗",
         "新北",
-        "桃園"
+        "基隆"
       ],
-      "answer": "基隆",
-      "image": "q_基隆.jpg"
+      "answer": "屏東",
+      "image": "q_縣市苗栗.jpg"
     },
     {
       "category": "地理",
-      "question": "這是哪個縣市？",
-      "options": [
-        "台北",
-        "新北",
-        "基隆",
-        "桃園"
-      ],
-      "answer": "新北",
-      "image": "q_新北.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個縣市？",
+      "question": "這是臺灣哪個縣市？",
       "options": [
         "台北",
         "新北",
@@ -3440,7 +3311,55 @@
         "桃園"
       ],
       "answer": "桃園",
-      "image": "q_桃園.jpg"
+      "image": "q_縣市桃園.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "屏東",
+        "高雄",
+        "台南",
+        "台東"
+      ],
+      "answer": "高雄",
+      "image": "q_縣市高雄.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "基隆",
+        "台北",
+        "新北",
+        "桃園"
+      ],
+      "answer": "基隆",
+      "image": "q_縣市基隆.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "台北",
+        "新北",
+        "基隆",
+        "桃園"
+      ],
+      "answer": "新北",
+      "image": "q_縣市新北.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "彰化",
+        "屏東",
+        "高雄",
+        "花蓮"
+      ],
+      "answer": "彰化",
+      "image": "q_縣市彰化.jpg"
     },
     {
       "category": "地理",
@@ -3452,6 +3371,17 @@
         "冰山"
       ],
       "answer": "海洋"
+    },
+    {
+      "category": "地理",
+      "question": "臺灣的在地球的哪一洲？",
+      "options": [
+        "亞洲",
+        "非洲",
+        "歐洲",
+        "南美洲"
+      ],
+      "answer": "亞洲"
     },
     {
       "category": "地理",
@@ -3485,221 +3415,6 @@
         "大甲溪"
       ],
       "answer": "濁水溪"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個國家？",
-      "options": [
-        "俄羅斯",
-        "菲律賓",
-        "日本",
-        "韓國"
-      ],
-      "answer": "菲律賓",
-      "image": "q_map_6.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "臺灣的在地球的哪一洲？",
-      "options": [
-        "亞洲",
-        "非洲",
-        "歐洲",
-        "南美洲"
-      ],
-      "answer": "亞洲"
-    },
-    {
-      "category": "地理",
-      "question": "紅色的部分是哪一洲？",
-      "options": [
-        "亞洲",
-        "非洲",
-        "歐洲",
-        "南美洲"
-      ],
-      "answer": "亞洲",
-      "image": "q_七大洲亞洲.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "紅色的部分是哪一洲？",
-      "options": [
-        "亞洲",
-        "非洲",
-        "歐洲",
-        "南美洲"
-      ],
-      "answer": "歐洲",
-      "image": "q_七大洲歐洲.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "台中",
-        "台北",
-        "台南",
-        "台東"
-      ],
-      "answer": "台中",
-      "image": "q_台中.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "台北",
-        "新北",
-        "基隆",
-        "桃園"
-      ],
-      "answer": "台北",
-      "image": "q_台北.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "台東",
-        "台南",
-        "高雄",
-        "屏東"
-      ],
-      "answer": "台東",
-      "image": "q_台東.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "屏東",
-        "高雄",
-        "台南",
-        "台東"
-      ],
-      "answer": "台南",
-      "image": "q_台南.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "宜蘭",
-        "新北",
-        "台北",
-        "基隆"
-      ],
-      "answer": "宜蘭",
-      "image": "q_宜蘭.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "花蓮",
-        "高雄",
-        "台南",
-        "新北"
-      ],
-      "answer": "花蓮",
-      "image": "q_花蓮.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "南投",
-        "高雄",
-        "台南",
-        "台中"
-      ],
-      "answer": "南投",
-      "image": "q_南投.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "屏東",
-        "高雄",
-        "台南",
-        "台東"
-      ],
-      "answer": "屏東",
-      "image": "q_屏東.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "屏東",
-        "苗栗",
-        "新北",
-        "基隆"
-      ],
-      "answer": "屏東",
-      "image": "q_苗栗.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "台北",
-        "新北",
-        "基隆",
-        "桃園"
-      ],
-      "answer": "桃園",
-      "image": "q_桃園.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "屏東",
-        "高雄",
-        "台南",
-        "台東"
-      ],
-      "answer": "高雄",
-      "image": "q_高雄.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "基隆",
-        "台北",
-        "新北",
-        "桃園"
-      ],
-      "answer": "基隆",
-      "image": "q_基隆.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "台北",
-        "新北",
-        "基隆",
-        "桃園"
-      ],
-      "answer": "新北",
-      "image": "q_新北.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "彰化",
-        "屏東",
-        "高雄",
-        "花蓮"
-      ],
-      "answer": "彰化",
-      "image": "q_彰化.jpg"
     }
   ]
 }
