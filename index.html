@@ -11162,6 +11162,7 @@ const bgmState = {
   audio: null,      // Audio 物件
   volume: 0.5,      // 音量 0~1
   muted: false,     // 是否靜音
+  gen: 0,           // 世代序號：每次 bgmPlay 都會 +1，用來辨識「這個播放請求是不是已經過期」
 };
 
 function bgmPlay(key) {
@@ -11169,21 +11170,36 @@ function bgmPlay(key) {
   if (!src) return;
   // 同一首不重播
   if (bgmState.current === key && bgmState.audio && !bgmState.audio.paused) return;
+  // 先把世代序號往前推一格，代表「之前所有還在等待的播放請求都過期了」
+  bgmState.gen++;
+  const myGen = bgmState.gen;
   // 停掉舊的
   bgmStop();
   const a = new Audio(src);
   a.loop = true;
   a.volume = bgmState.muted ? 0 : bgmState.volume;
-  a.play().catch(() => {
-    // 瀏覽器自動播放限制：等使用者互動後再播
-    const resume = () => { a.play(); document.removeEventListener('click', resume); };
-    document.addEventListener('click', resume);
-  });
+  const tryPlay = () => {
+    // 如果在等待播放的這段時間裡，使用者已經切到別的音樂了，就放棄，不要播
+    if (bgmState.gen !== myGen) return;
+    a.play().catch(() => {
+      // 瀏覽器自動播放限制：等使用者互動後再播
+      const resume = () => {
+        document.removeEventListener('click', resume);
+        // 觸發時也要再檢查一次世代序號，避免點擊時播放到過期的音樂
+        if (bgmState.gen !== myGen) return;
+        a.play().catch(() => {});
+      };
+      document.addEventListener('click', resume);
+    });
+  };
+  tryPlay();
   bgmState.audio = a;
   bgmState.current = key;
 }
 
 function bgmStop() {
+  // 推進世代序號，讓所有舊的、還在等待播放/等待點擊的請求全部失效
+  bgmState.gen++;
   if (bgmState.audio) {
     bgmState.audio.pause();
     bgmState.audio.currentTime = 0;
