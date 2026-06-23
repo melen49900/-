@@ -11161,20 +11161,20 @@ const bgmState = {
   current: null,    // 目前播放的 key
   audio: null,      // Audio 物件
   volume: 0.5,      // 音量 0~1
-  muted: false,     // 是否靜音
+  muted: false,     // 靜音
   gen: 0,           // 世代序號：每次 bgmPlay 都會 +1，用來辨識「這個播放請求是不是已經過期」
 };
 
-function bgmPlay(key) {
+function bgmPlay(key) {//背景音樂
   const src = BGM_TRACKS[key];
   if (!src) return;
   // 同一首不重播
   if (bgmState.current === key && bgmState.audio && !bgmState.audio.paused) return;
-  // 先把世代序號往前推一格，代表「之前所有還在等待的播放請求都過期了」
+  // 先停掉舊的（這裡面會把 gen +1，讓舊的等待中請求失效）
+  bgmStop();
+  // 再拿一個新的世代序號，代表「這就是現在最新的播放請求」
   bgmState.gen++;
   const myGen = bgmState.gen;
-  // 停掉舊的
-  bgmStop();
   const a = new Audio(src);
   a.loop = true;
   a.volume = bgmState.muted ? 0 : bgmState.volume;
