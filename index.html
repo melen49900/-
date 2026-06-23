@@ -6172,6 +6172,7 @@ function showRestAlert() {
   let remain = 30;
   const cdEl = document.getElementById('restCountdown');
   cdEl.textContent = remain;
+  bgmDuck();
   _doSpeak('請休息三十秒，記得要喝水', speechCfg.lang, speechCfg.volume.quiz);
   _restInterval = setInterval(() => {
     remain--;
@@ -6191,6 +6192,7 @@ function dismissTimer() {
   if (_restInterval) { clearInterval(_restInterval); _restInterval = null; }
   document.getElementById('timerAlert').classList.add('hidden');
   _timerStart = Date.now(); _timerFired = false;
+  bgmUnduck();
 }
 setInterval(updateTimer, 1000);
 
@@ -8916,7 +8918,7 @@ const ACHIEVEMENTS = [
       return ENEMIES.filter(e => e.family === 'crab').every(e => ids.has(e.id));
     },
   },
-    {
+  {
     id: 'kill_four_kings',
     name: '四天王終結者',
     desc: '擊敗死亡騎士、巫妖、大鯨、上古守衛',
@@ -8999,7 +9001,7 @@ const ACHIEVEMENTS = [
     desc: '擊敗所有敵人',
     category: '圖鑑',
     icon: '🏆',
-    reward: { gems: 200, statBonus: { atk: 3, def: 3, mag: 3 }},
+    reward: { gems: 800, statBonus: { atk: 4, def: 4, mag: 4 }},
     _family: 'all',
     progress: () => {
       const ids = new Set(state.defeatedEnemies || []);
@@ -9010,6 +9012,43 @@ const ACHIEVEMENTS = [
       const ids = new Set(state.defeatedEnemies || []);
       return ENEMIES.every(e => ids.has(e.id));
     },
+  },
+  {
+    id: 'gamePlay5',
+    name: '小遊戲愛好者1',
+    desc: '累積遊玩小遊戲 5 次',
+    category: '遊戲',
+    icon: '🎮',
+    reward: { gems: 10 , statBonus: {hp: 5}},
+    progress: () => Math.min(state.stats?.totalGamePlays || 0, 5),
+    goal: 5,
+    check: () => (state.stats?.totalGamePlays || 0) >= 5,
+  },
+  {
+    id: 'gamePlay10',
+    name: '小遊戲愛好者2',
+    desc: '累積遊玩小遊戲 10 次',
+    category: '遊戲',
+    icon: '🎮',
+    requires: 'gamePlay5',
+    reward: { gems: 20 , statBonus: {hp: 10}},
+    progress: () => Math.min(Math.max((state.stats?.totalGamePlays || 0) - 5, 0), 5),
+    displayProgress: () => `${Math.min(state.stats?.totalGamePlays || 0, 10)} / 10`,
+    goal: 5,
+    check: () => (state.stats?.totalGamePlays || 0) >= 10,
+  },
+  {
+    id: 'gamePlay20',
+    name: '小遊戲愛好者3',
+    desc: '累積遊玩小遊戲 20 次',
+    category: '遊戲',
+    icon: '🎮',
+    requires: 'gamePlay10',
+    reward: { gems: 40 , statBonus: {hp: 20}},
+    progress: () => Math.min(Math.max((state.stats?.totalGamePlays || 0) - 10, 0), 10),
+    displayProgress: () => `${Math.min(state.stats?.totalGamePlays || 0, 20)} / 20`,
+    goal: 10,
+    check: () => (state.stats?.totalGamePlays || 0) >= 20,
   },
 ];
 
@@ -9677,17 +9716,16 @@ function renderEnemyCompendium(container) {
   { key:'mushroom',    label:'菌族',     emoji:'🍄', color:'#a0522d', achId:'kill_mushroom_all' },
   { key:'seal',        label:'海豹',     emoji:'🦭',  color:'#59ded7', achId:'kill_seal_all' },
   { key:'crab',        label:'螃蟹族',   emoji:'🦀', color:'#e74c3c', achId:'kill_crab_all' },
-  { key:'DK',          label:'死亡騎士', emoji:'⚔️', color:'#2c3e50', achId:'kill_DK_all' },
-  { key:'lich',        label:'巫妖族',   emoji:'🧙', color:'#6c3483', achId:'kill_lich_all' },
-  { key:'whale',       label:'大鯨族',   emoji:'🐳', color:'#1a6b8a', achId:'kill_whale_all' },
-  { key:'guard',       label:'上古守衛', emoji:'🛡️', color:'#b7950b', achId:'kill_guard_all' },
+  { keys:['DK','lich','whale','guard'], 
+                       label:'四天王',   emoji:'👁️', color:'#2c3e50', achId:'kill_four_kings' },
   { key:'kingdemon',   label:'魔帝',     emoji:'😡', color:'#7b241c', achId:'kill_kingdemon_all' },
+  { key:'octopus',     label:'章魚族',   emoji:'🐙', color:'#0e7490', achId:'kill_octopus_all' },
+  { key:'sloth',       label:'樹懶族',   emoji:'🦥', color:'#8b5e34', achId:'kill_sloth_all' },
   ];
-
   const statIcons   = { atk:'⚔️', def:'🛡️', mag:'✨', hp:'❤️', mp:'💧', crit:'🎯', critDmg:'💥' };
   const defeatedIds = new Set(state.defeatedEnemies || []);
-
-  familyGroups.forEach(({ key, label, emoji, color, achId }) => {
+  familyGroups.forEach(({ key, keys, label, emoji, color, achId }) => {
+    const familyKeys = keys || [key];
     const items = ENEMIES.filter(e => e.family === key)
                          .sort((a, b) => a.stage - b.stage);
     const have  = items.filter(e => defeatedIds.has(e.id)).length;
@@ -10025,7 +10063,9 @@ function showMemoryResult() {
 function closeMemoryGame() {
   if (memGame.finished) {
     state.tickets['ticket_memory'] = Math.max(0, (state.tickets['ticket_memory'] || 0) - 1);
-
+    state.stats = state.stats || {};
+    state.stats.totalGamePlays = (state.stats.totalGamePlays || 0) + 1;
+    checkAchievements();
     const baseReward = MEMORY_REWARDS[memGame.pairs];
     const multiplier = memGame.steps + 1;
     const reward = {
@@ -10033,17 +10073,14 @@ function closeMemoryGame() {
       exp:  baseReward.exp  * multiplier,
       gem:  baseReward.gem  * multiplier,
     };
-
     if (reward.gold) state.hero.gold += reward.gold;
     if (reward.exp)  addExp(reward.exp);
     if (reward.gem)  state.hero.gems += reward.gem;
-
     autoSave();
     renderHero();
     renderGameHall();
     showToast(`🎟️ 翻牌結束！獲得 💰${reward.gold} ⭐${reward.exp}${reward.gem ? ' 💎'+reward.gem : ''}`);
   }
-
   document.getElementById('memoryGameOv').classList.add('hidden');
   memGame = { ...memGame, started: false };
 }
@@ -10791,6 +10828,9 @@ function openMineGame() {
   if (count <= 0) { showToast('❌ 沒有入場券！'); return; }
   // 扣入場券
   state.tickets['ticket_memory'] = count - 1;
+  state.stats = state.stats || {};
+  state.stats.totalGamePlays = (state.stats.totalGamePlays || 0) + 1;
+  checkAchievements();
   autoSave();
   renderGameHall();
   // 角色從第0排開始，第0排是入口（空的），角色站在上方
@@ -10947,10 +10987,10 @@ function mineMove(r, c) {
 function mineCalcReward(type, depth) {//挖礦獎勵計算
   const lv = state.hero.level || 1;
   if (type === 'coin') {
-    return (lv * 3 + depth * 2) * (Math.floor(Math.random() * 4) + 1);
+    return (lv * 3 + depth * 3) * (Math.floor(Math.random() * 4) + 1);
   } else {
-    const bonus = Math.min(Math.floor(depth / 80), 50);
-    return Math.floor(Math.random() * 10) + 1 + bonus;
+    const base = Math.ceil(lv / 100) + Math.ceil(depth / 100);
+    return base * (Math.floor(Math.random() * 3) + 1);
   }
 }
 
@@ -10998,7 +11038,7 @@ function mineDig(r, c) {
     }
   }
   // ── 3. 1秒後執行獎勵結算 + 角色移動 ─────────────────────
-  const delay = found ? 1000 : 0; // 有寶物等1秒，空石頭立即
+  const delay = found ? 500 : 0; // 有寶物等0.5秒，空石頭立即
   setTimeout(() => {
     if (cellVal === 'coin') {
       mineState.rewards.coin++;
@@ -11157,12 +11197,14 @@ const BGM_TRACKS = {
   game:      'audio/BGM-game.mp3',      // 遊戲
 };
 
+const BGM_REST_DUCK_RATIO = 0.2; // 休息時 BGM 音量20%
 const bgmState = {
   current: null,    // 目前播放的 key
   audio: null,      // Audio 物件
   volume: 0.5,      // 音量 0~1
   muted: false,     // 靜音
   gen: 0,           // 世代序號：每次 bgmPlay 都會 +1，用來辨識「這個播放請求是不是已經過期」
+  ducked: false,    // 是否處於休息狀態
 };
 
 function bgmPlay(key) {//背景音樂
@@ -11208,17 +11250,35 @@ function bgmStop() {
   }
 }
 
+function bgmDuck() {
+  bgmState.ducked = true;
+  if (bgmState.audio && !bgmState.muted) {
+    bgmState.audio.volume = bgmState.volume * BGM_REST_DUCK_RATIO;
+  }
+}
+
+function bgmUnduck() {
+  bgmState.ducked = false;
+  if (bgmState.audio) {
+    bgmState.audio.volume = bgmState.muted ? 0 : bgmState.volume;
+  }
+}
+
 function bgmSetVolume(val) {
   bgmState.volume = val / 100;
   bgmState.muted = (val == 0);
-  if (bgmState.audio) bgmState.audio.volume = bgmState.volume;
+  if (bgmState.audio) {
+    bgmState.audio.volume = bgmState.muted ? 0 : (bgmState.ducked ? bgmState.volume * BGM_REST_DUCK_RATIO : bgmState.volume);
+  }
   document.getElementById('bgm-mute-btn').textContent = bgmState.muted ? '🔇' : '🔊';
   document.getElementById('bgm-label').textContent = val + '%';
 }
 
 function bgmToggleMute() {
   bgmState.muted = !bgmState.muted;
-  if (bgmState.audio) bgmState.audio.volume = bgmState.muted ? 0 : bgmState.volume;
+  if (bgmState.audio) {
+    bgmState.audio.volume = bgmState.muted ? 0 : (bgmState.ducked ? bgmState.volume * BGM_REST_DUCK_RATIO : bgmState.volume);
+  }
   const slider = document.getElementById('bgm-volume-slider');
   const btn = document.getElementById('bgm-mute-btn');
   if (bgmState.muted) {
