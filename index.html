@@ -9726,7 +9726,7 @@ function renderEnemyCompendium(container) {
   const defeatedIds = new Set(state.defeatedEnemies || []);
   familyGroups.forEach(({ key, keys, label, emoji, color, achId }) => {
     const familyKeys = keys || [key];
-    const items = ENEMIES.filter(e => e.family === key)
+    const items = ENEMIES.filter(e => familyKeys.includes(e.family))
                          .sort((a, b) => a.stage - b.stage);
     const have  = items.filter(e => defeatedIds.has(e.id)).length;
     // 標題
