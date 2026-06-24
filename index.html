@@ -9068,6 +9068,97 @@ const ACHIEVEMENTS = [
     goal: 10,
     check: () => (state.stats?.totalGamePlays || 0) >= 20,
   },
+  {
+    id: 'gamePlay30',
+    name: '小遊戲愛好者4',
+    desc: '累積遊玩小遊戲 30 次',
+    category: '遊戲',
+    icon: '🎮',
+    requires: 'gamePlay20',
+    reward: { gems: 60, statBonus: {hp: 30}},
+    progress: () => Math.min(Math.max((state.stats?.totalGamePlays || 0) - 20, 0), 10),
+    displayProgress: () => `${Math.min(state.stats?.totalGamePlays || 0, 30)} / 30`,
+    goal: 10,
+    check: () => (state.stats?.totalGamePlays || 0) >= 30,
+  },
+  {
+    id: 'gamePlay40',
+    name: '小遊戲愛好者5',
+    desc: '累積遊玩小遊戲 40 次',
+    category: '遊戲',
+    icon: '🎮',
+    requires: 'gamePlay30',
+    reward: { gems: 80, statBonus: {hp: 40}},
+    progress: () => Math.min(Math.max((state.stats?.totalGamePlays || 0) - 30, 0), 10),
+    displayProgress: () => `${Math.min(state.stats?.totalGamePlays || 0, 40)} / 40`,
+    goal: 10,
+    check: () => (state.stats?.totalGamePlays || 0) >= 40,
+  },
+  {
+    id: 'gamePlay50',
+    name: '小遊戲愛好者6',
+    desc: '累積遊玩小遊戲 50 次',
+    category: '遊戲',
+    icon: '🎮',
+    requires: 'gamePlay40',
+    reward: { gems: 100, statBonus: {hp: 50}},
+    progress: () => Math.min(Math.max((state.stats?.totalGamePlays || 0) - 40, 0), 10),
+    displayProgress: () => `${Math.min(state.stats?.totalGamePlays || 0, 50)} / 50`,
+    goal: 10,
+    check: () => (state.stats?.totalGamePlays || 0) >= 50,
+  },
+  {
+    id: 'gamePlay60',
+    name: '小遊戲愛好者7',
+    desc: '累積遊玩小遊戲 60 次',
+    category: '遊戲',
+    icon: '🎮',
+    requires: 'gamePlay50',
+    reward: { gems: 120, statBonus: {hp: 60}},
+    progress: () => Math.min(Math.max((state.stats?.totalGamePlays || 0) - 50, 0), 10),
+    displayProgress: () => `${Math.min(state.stats?.totalGamePlays || 0, 60)} / 60`,
+    goal: 10,
+    check: () => (state.stats?.totalGamePlays || 0) >= 60,
+  },
+  {
+    id: 'gamePlay70',
+    name: '小遊戲愛好者8',
+    desc: '累積遊玩小遊戲 70 次',
+    category: '遊戲',
+    icon: '🎮',
+    requires: 'gamePlay60',
+    reward: { gems: 140, statBonus: {hp: 70}},
+    progress: () => Math.min(Math.max((state.stats?.totalGamePlays || 0) - 60, 0), 10),
+    displayProgress: () => `${Math.min(state.stats?.totalGamePlays || 0, 70)} / 70`,
+    goal: 10,
+    check: () => (state.stats?.totalGamePlays || 0) >= 70,
+  },
+  {
+    id: 'gamePlay80',
+    name: '小遊戲愛好者9',
+    desc: '累積遊玩小遊戲 80 次',
+    category: '遊戲',
+    icon: '🎮',
+    requires: 'gamePlay70',
+    reward: { gems: 160, statBonus: {hp: 80}},
+    progress: () => Math.min(Math.max((state.stats?.totalGamePlays || 0) - 70, 0), 10),
+    displayProgress: () => `${Math.min(state.stats?.totalGamePlays || 0, 80)} / 80`,
+    goal: 10,
+    check: () => (state.stats?.totalGamePlays || 0) >= 80,
+  },
+  {
+    id: 'gamePlay90',
+    name: '小遊戲愛好者10',
+    desc: '累積遊玩小遊戲 90 次',
+    category: '遊戲',
+    icon: '🎮',
+    requires: 'gamePlay80',
+    reward: { gems: 180, statBonus: {hp: 90}},
+    progress: () => Math.min(Math.max((state.stats?.totalGamePlays || 0) - 80, 0), 10),
+    displayProgress: () => `${Math.min(state.stats?.totalGamePlays || 0, 90)} / 90`,
+    goal: 10,
+    check: () => (state.stats?.totalGamePlays || 0) >= 90,
+  },
 ];
 
 function checkAchievements() {
@@ -9186,6 +9277,9 @@ const QUEST_POOL = [
   { id:'q_draw4',    name:'抽卡高手',   desc:'抽卡 4 次',        type:'draw',    target:4,   difficulty:'easy',   reward:{ gold:2000, exp:800,  gems:24 } },
   { id:'q_draw7',    name:'抽卡達人',   desc:'抽卡 7 次',        type:'draw',    target:7,   difficulty:'normal', reward:{ gold:3500, exp:1400, gems:56 } },
   { id:'q_draw11',   name:'十一連抽',   desc:'抽卡 11 次',       type:'draw',    target:11,  difficulty:'hard',   reward:{ gold:5500, exp:2200, gems:66 } },
+  { id:'q_game1',    name:'小遊戲新手', desc:'遊玩小遊戲 1 次',  type:'gamePlay', target:1,  difficulty:'easy',    reward:{ gold:2000, exp:1000, gems:15 } },
+  { id:'q_game2',    name:'小遊戲玩家', desc:'遊玩小遊戲 2 次',  type:'gamePlay', target:2,  difficulty:'normal',  reward:{ gold:4000, exp:2000, gems:30 } },
+  { id:'q_game3',    name:'小遊戲達人', desc:'遊玩小遊戲 3 次',  type:'gamePlay', target:3,  difficulty:'hard',    reward:{ gold:6000, exp:3000, gems:45 } },
 ];
 // 難度設定（顏色、標籤）
 const QUEST_DIFFICULTY = {
@@ -10083,6 +10177,7 @@ function closeMemoryGame() {
     state.tickets['ticket_memory'] = Math.max(0, (state.tickets['ticket_memory'] || 0) - 1);
     state.stats = state.stats || {};
     state.stats.totalGamePlays = (state.stats.totalGamePlays || 0) + 1;
+    updateQuestProgress('gamePlay');
     checkAchievements();
     const baseReward = MEMORY_REWARDS[memGame.pairs];
     const multiplier = memGame.steps + 1;
@@ -10848,6 +10943,7 @@ function openMineGame() {
   state.tickets['ticket_memory'] = count - 1;
   state.stats = state.stats || {};
   state.stats.totalGamePlays = (state.stats.totalGamePlays || 0) + 1;
+  updateQuestProgress('gamePlay');
   checkAchievements();
   autoSave();
   renderGameHall();
@@ -10944,7 +11040,7 @@ function renderMineGrid() {
             cell.title = '挖掘';
           }
         }
-        if (cellVal === 'coin') cell.textContent = '🪨'; // 外觀都是石頭，挖了才知道
+        if (cellVal === 'coin') cell.textContent = '🪨'; // 外觀石頭，挖了才知道
         else if (cellVal === 'gem') cell.textContent = '🪨';
         else cell.textContent = '🪨';
       }
@@ -11030,7 +11126,7 @@ function mineDig(r, c) {
     cellEl.style.fontSize = '1.6rem';
     cellEl.onclick = null; // 防止重複點擊
   }
-  // ── 2. 飛行動畫（維持原本邏輯）──────────────────────────
+  // ── 2. 飛行動畫──────────────────────────
   if (found) {
     const targetEl = found === '💰'
       ? document.getElementById('mineCoinCount')
@@ -11055,7 +11151,7 @@ function mineDig(r, c) {
       }, 500);
     }
   }
-  // ── 3. 1秒後執行獎勵結算 + 角色移動 ─────────────────────
+  // ── 3. 延後結算獎勵 + 角色移動 ─────────────────────
   const delay = found ? 500 : 0; // 有寶物等0.5秒，空石頭立即
   setTimeout(() => {
     if (cellVal === 'coin') {
