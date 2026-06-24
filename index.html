@@ -2701,6 +2701,9 @@ function applyGameAssets() {
   updateAssetsStatus();
   updateGoldIcons();
   renderBattleUI();
+  renderGameHall();
+  if (typeof renderShopUI === 'function') renderShopUI();
+  if (typeof renderAlienStoneShop === 'function') renderAlienStoneShop();
 }
 
 function updateGoldIcons() {
@@ -4943,7 +4946,7 @@ function showTab(tab) {
   else if (tab === 'achieve')   { bgmPlay('achieve'); }
   else if (tab === 'checkin')   { bgmPlay('checkin'); }
   else if (tab === 'quiz')      { bgmPlay('quiz'); }
-  else if (tab === 'game')      { bgmPlay('game'); }
+  else if (tab === 'game')      { bgmPlay('game'); renderGameHall(); }
   else { bgmStop(); }
   if (tab === 'gear')    renderGearTab();
   if (tab === 'quest')   renderQuestTab();updateActiveQuestBar();
@@ -5444,7 +5447,7 @@ function renderAlienStoneShop() {
 
   el.innerHTML = `
     <div class="shop-item" style="grid-column:1/-1">
-      <div class="shop-item-icon">🌌</div>
+      <div class="shop-item-icon">${gameAssets.alienstone?.['alienstone'] ? `<img src="${gameAssets.alienstone['alienstone']}" style="width:48px;height:48px;object-fit:contain;">` : '🌌'}</div>
       <div class="shop-item-name">星塵 ×1</div>
       <div class="shop-item-desc">降低外星敵人強度 0.1 倍</div>
       <div class="shop-item-stock">已購買：${bought} 顆（已擁有 ${owned} 顆）</div>
