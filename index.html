@@ -2661,11 +2661,11 @@ function dbDelete(key) {
 
 // 圖片資源包（gameAssets.json）==========================
 const ASSETS_KEY = 'magicAcademy_gameAssets';
-let gameAssets = { enemy:{}, thumb:{}, equip:{}, potion:{}, skill:{}, gold:{}, stone:{}, enemyScale:{}, question:{}, battleBg:{} };
+let gameAssets = { enemy:{}, thumb:{}, equip:{}, potion:{}, skill:{}, gold:{}, stone:{}, enemyScale:{}, question:{}, battleBg:{}, ticket:{}, alienstone:{} };
 
 // 將單一資源包合併進 gameAssets（供 loadGameAssets / importGameAssets 共用）
 const ASSET_FILES = ['./1怪物.json','./2魔界.json','./3題目.json','./4其他.json','./5外星.json'];
-const ASSET_KEYS  = ['enemy','thumb','equip','potion','skill','gold','stone','enemyScale','question','battleBg'];
+const ASSET_KEYS  = ['enemy','thumb','equip','potion','skill','gold','stone','enemyScale','question','battleBg','ticket','alienstone'];
 
 function mergeAssetsFromPack(pack) {
   ASSET_KEYS.forEach(k => {
@@ -2754,7 +2754,7 @@ function importGameAssets(event) {
 }
 
 function clearGameAssets() {
-  gameAssets = { enemy:{}, thumb:{}, equip:{}, potion:{}, skill:{}, gold:{}, stone:{}, enemyScale:{}, question:{}, battleBg:{} };
+  gameAssets = { enemy:{}, thumb:{}, equip:{}, potion:{}, skill:{}, gold:{}, stone:{}, enemyScale:{}, question:{}, battleBg:{}, ticket:{}, alienstone:{} };
   dbDelete(ASSETS_KEY);
   // 清除已套用到 monsterImages 的部分（保留手動上傳的）
   const manualImgs = JSON.parse(localStorage.getItem(MONSTER_IMG_KEY) || '{}');
@@ -3367,6 +3367,7 @@ function rollAlienStone() {
   autoSave();
   return {
     type:   'alienstone',
+    id:     'alienstone',
     name:   '星塵',
     emoji:  '🌌',
     rarity: 'legendary',
@@ -3742,6 +3743,14 @@ function getCardIcon(card, size = 36) {
     const stoneImg = gameAssets.stone?.['_stone'] || gameAssets.stone?.['stone'];
     if (stoneImg) return `<img src="${stoneImg}" style="width:${size}px;height:${size}px;object-fit:contain;border-radius:6px;">`;
     return card.emoji;
+  }
+  if (card.type === 'ticket') {
+    const ticketImg = gameAssets.ticket?.[card.id] || gameAssets.ticket?.[card.name];
+    return ticketImg ? `<img src="${ticketImg}" style="width:${size}px;height:${size}px;object-fit:contain;border-radius:6px;">` : card.emoji;
+  }
+  if (card.type === 'alienstone') {
+    const dustImg = gameAssets.alienstone?.[card.id] || gameAssets.alienstone?.[card.name];
+    return dustImg ? `<img src="${dustImg}" style="width:${size}px;height:${size}px;object-fit:contain;border-radius:6px;">` : card.emoji;
   }
   if (card._isGold) {
     // 金幣卡：用 gold 分類，key 為 'gold'
