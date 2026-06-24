@@ -1497,7 +1497,7 @@ button:active { transform:scale(.96); }
           <div class="stat-chip">🛡️ <span id="statDef">3</span></div>
           <div class="stat-chip">✨ <span id="statMag">8</span></div>
           <div class="stat-chip" style="background:#f5f0ff;border-color:#c4b5fd;display:none" id="statStoneChipWrap"><span id="statStoneIconEl">🪨</span> <span id="statStoneChip">0</span> 顆</div>
-          <div class="stat-chip dust" id="statDustChipWrap" style="display:none">🌌 <span id="statDust">0</span> 顆</div>
+          <div class="stat-chip dust" id="statDustChipWrap" style="display:none"><span id="statDustIconEl">🌌</span> <span id="statDust">0</span> 顆</div>
           <div class="stat-chip gold" id="statGoldChip">💰 <span id="statGold">0</span></div>
           <div class="stat-chip gem">💎 <span id="statGem">0</span></div>
           <div class="stat-chip" style="background:#fff0f6;border-color:#ffb3d1;"><span style="color:#e91e8c" id="statCrit">5</span>% 暴擊</div>
@@ -2946,6 +2946,8 @@ function renderHero() {
   document.getElementById('statDust').textContent = state.alienStones || 0;
   const dustChip = document.getElementById('statDustChipWrap');
   if (dustChip) dustChip.style.display = (state.clearedStages || []).includes(100) ? '' : 'none';
+  const dustIconEl = document.getElementById('statDustIconEl');
+  if (dustIconEl) dustIconEl.innerHTML = gameAssets.alienstone?.['alienstone'] ? `<img src="${gameAssets.alienstone['alienstone']}" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;">` : '🌌';
   document.getElementById('statCrit').textContent    = Math.round((getStats().crit || 0.05) * 100);
   document.getElementById('statCritDmg').textContent = Math.round((getStats().critDmg || 1.5) * 100);
   document.getElementById('gemCount2').textContent = h.gems;
@@ -3404,8 +3406,12 @@ function rollTicket() {
 
 function renderGameHall() {
   const count = (state.tickets && state.tickets['ticket_memory']) || 0;
+  const ticketImg = gameAssets.ticket?.['ticket_memory'] || gameAssets.ticket?.['入場券'];
+  const ticketIconHtml = ticketImg
+    ? `<img src="${ticketImg}" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;">`
+    : '🎟️';
   const el = document.getElementById('memoryTicketCount');
-  if (el) el.textContent = '🎟️ x' + count;
+  if (el) el.innerHTML = ticketIconHtml + ' x' + count;
 
   const card = document.getElementById('gameCard-memory');
   if (card) {
@@ -3415,7 +3421,7 @@ function renderGameHall() {
 
   // 挖礦卡片
   const mineEl = document.getElementById('mineTicketCount');
-  if (mineEl) mineEl.textContent = '🎟️ x' + count;
+  if (mineEl) mineEl.innerHTML = ticketIconHtml + ' x' + count;
   const mineCard = document.getElementById('gameCard-mine');
   if (mineCard) {
     if (count > 0) mineCard.classList.remove('locked');
