@@ -2198,7 +2198,6 @@ const EQUIP_POOL = [
   {id:'eq33',name:'鳳凰羽衣',   emoji:'👘',type:'鎧甲',rarity:'epic',     atk:0,  def:7,  mag:3,  hp:0, mp:0, price:375, enhStat:'防禦', enhPer:6},
   {id:'eq34',name:'重型裝甲',   emoji:'🦺',type:'鎧甲',rarity:'epic',     atk:0,  def:11, mag:0,  hp:0, mp:0, price:375, enhStat:'防禦', enhPer:6},
   {id:'eq35',name:'守護者鎧甲', emoji:'🛡️',type:'鎧甲',rarity:'legendary',atk:0,  def:22, mag:0,  hp:0, mp:0, price:500, enhStat:'防禦', enhPer:8, specialEffect:{type:'hpRegen', base:0.8, perStar:0.8, desc:'每回合恢復 HP'}},
-  {id:'ticket_memory', name:'入場券', emoji:'🎟️', type:'ticket', rarity:'rare', desc:'進入遊戲廳的入場券' },
 ];
 
 // 技能卡、強化
@@ -3339,16 +3338,16 @@ function rollCard(forceLegendary, forceEpic) {
   }
 
   const r = Math.random();
-  if      (r < 0.05)  return rollEquip('legendary');   //  5%
-  else if (r < 0.08)  return rollSkill('epic');        //  3%
-  else if (r < 0.21)  return rollEquip('epic');        // 13%
-  else if (r < 0.30)  return rollSkill('rare');        //  9%
-  else if (r < 0.51)  return rollEquip('rare');        // 21%
-  else if (r < 0.66)  return rollGold();               // 15%
-  else if (r < 0.68)  return (state.clearedStages || []).includes(62) ? rollStone() : rollGold();  // 2%
-  else if (r < 0.70)  return (state.clearedStages || []).includes(100) ? rollAlienStone() : rollGold();  // 2%
-  else if (r < 0.72)  return rollTicket();             //  2%
-  else                return rollEquip('common');      // 28%
+  if      (r < 0.05)  return rollEquip('legendary');   //   5%
+  else if (r < 0.08)  return rollSkill('epic');        //   3%
+  else if (r < 0.21)  return rollEquip('epic');        //  13%
+  else if (r < 0.30)  return rollSkill('rare');        //   9%
+  else if (r < 0.51)  return rollEquip('rare');        //  21%
+  else if (r < 0.65)  return rollGold();               //  14%
+  else if (r < 0.67)  return (state.clearedStages || []).includes(62) ? rollStone() : rollGold();  // 2%
+  else if (r < 0.69)  return (state.clearedStages || []).includes(100) ? rollAlienStone() : rollGold();  // 2%
+  else if (r < 0.72)  return rollTicket();             //   3%
+  else                return rollEquip('common');      //  28%
 }
 
 function rollStone() {
@@ -10984,8 +10983,8 @@ function mineGenCell(worldRow) {
   const r = Math.random();
   // 挖礦機率
   const depth = worldRow;
-  const gemChance  = Math.min(0.15 + depth * 0.0005, 0.31);
-  const coinChance = Math.min(0.15 + depth * 0.0005, 0.31);
+  const gemChance  = Math.min(0.12 + depth * 0.0005, 0.45);
+  const coinChance = Math.min(0.12 + depth * 0.0005, 0.45);
   if (r < gemChance) return 'gem';
   if (r < gemChance + coinChance) return 'coin';
   return 'rock';
