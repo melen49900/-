@@ -3352,7 +3352,7 @@ function rollCard(forceLegendary, forceEpic) {
 
 function rollStone() {
   const total = (state.curseStones || 0) + (state.boughtStones || 0);
-  if (total >= 400) return rollEquip(); // 達到400顆上限就改抽普通裝備
+  if (total >= 400) return rollEquip('common');; // 達到400顆上限就改抽普通裝備
   state.curseStones = (state.curseStones || 0) + 1;
   autoSave();
   return {
@@ -3366,7 +3366,7 @@ function rollStone() {
 
 function rollAlienStone() {
   const total = (state.alienStones || 0);
-  if (total >= 500) return rollEquip();
+  if (total >= 500) return rollEquip('common');;
   state.alienStones = (state.alienStones || 0) + 1;
   autoSave();
   return {
@@ -3420,7 +3420,6 @@ function renderGameHall() {
     if (count > 0) card.classList.remove('locked');
     else card.classList.add('locked');
   }
-
   // 挖礦卡片
   const mineEl = document.getElementById('mineTicketCount');
   if (mineEl) mineEl.innerHTML = ticketIconHtml + ' x' + count;
@@ -3429,7 +3428,6 @@ function renderGameHall() {
     if (count > 0) mineCard.classList.remove('locked');
     else mineCard.classList.add('locked');
   }
-
   // 以下新增
   const badge = document.getElementById('gameBadge');
   if (badge) {
@@ -3473,7 +3471,6 @@ function drawOne() {
   applyDrawResult(card);
   renderDrawUI(); renderHero();
   updateQuestProgress('draw');
-
   const area = document.getElementById('cardArea');
   const frontClass = card._isGold ? 'cr-rare' : (card._isSkill ? 'cr-epic' : card.type === 'ticket' ? 'cr-rare': `cr-${card.rarity}`);
   const frontStat  = card._isGold ? `＋${card.amount} 金幣`
@@ -3484,7 +3481,6 @@ function drawOne() {
     : card.type === 'stone' ? '特殊道具'
     : card.type === 'ticket' ? '小遊戲道具'
     : (RARITY_CFG[card.rarity]?.label || '') + ' · ' + (card.type || '技能');
-  (!card._isGold && !card._isSkill && card.type !== 'stone' && card.rarity === 'legendary') ? 'legendary-back' : ''
   const isLegendaryBack = (!card._isGold && !card._isSkill && card.type !== 'stone' && card.rarity === 'legendary') ? 'legendary-back' : '';
   const starStr = card.rarity ? (RARITY_CFG[card.rarity]?.stars || '') : '';
   area.innerHTML = `
@@ -3521,7 +3517,6 @@ function drawOne() {
         speakText(`${rarityLabel}，${card.name}，${parts.join('，')}`);
       }
     }, 600);
-  
   }, 300);
   if (!card._isSkill && !card._isGold && card.type !== 'stone' && card.type !== 'ticket') {
     setTimeout(() => {
@@ -3547,10 +3542,8 @@ function drawEleven() {
   results.forEach(applyDrawResult);
   renderDrawUI(); renderHero();
   updateQuestProgress('draw', 11);
-
   const area = document.getElementById('cardArea');
   const rlLabel = { common:'普通', rare:'稀有', epic:'史詩', legendary:'傳說' };
-
   // 建立網格，每張先顯示卡背
   area.innerHTML = (isPity ? '<div style="text-align:center;font-size:.82em;font-weight:900;color:#8e24aa;margin-bottom:6px">🎉 第55抽保底觸發！</div>' : '') +
     `<div class="multi-result-grid">${results.map((c, i) => {
@@ -3608,20 +3601,16 @@ function autoEquipBest() {
     if (slotKey === 'weapon') return (card.atk || 0) + (card.mag || 0);
     return (card.def || 0);
   };
-
   SLOT_DEFS.forEach(slot => {
     // 找出背包裡符合這個槽位的裝備
     const candidates = state.bag.filter(c => slot.types.includes(c.type));
     if (candidates.length === 0) return;
-
     const current = state.equipped[slot.key];
     const currentVal = current ? getValue(current, slot.key) : -1;
-
     // 找背包裡數值最高的
     const best = candidates.reduce((a, b) =>
       getValue(a, slot.key) >= getValue(b, slot.key) ? a : b
     );
-
     if (getValue(best, slot.key) > currentVal) {
       // 把目前裝備退回背包
       if (current) state.bag.push(current);
@@ -3630,7 +3619,6 @@ function autoEquipBest() {
       state.bag = state.bag.filter(c => c.uid !== best.uid);
     }
   });
-
   renderHero();
   renderGearTab();
   autoSave();
@@ -3683,7 +3671,6 @@ function renderBagPane() {
       slotFilterEl.appendChild(btn);
     });
   }
-
   // 列表
   const list = document.getElementById('bagList');
   const equippedCards = Object.values(state.equipped).filter(Boolean);
@@ -3941,32 +3928,26 @@ let _battleLock = false;
 function renderEnemyList() {
   const area = document.getElementById('enemyListArea');
   area.innerHTML = '';
-
   const sorted = [...ENEMIES].sort((a, b) => a.stage - b.stage);
   const unlockedList = sorted.filter(e => e.stage === 1 || state.clearedStages.includes(e.stage - 1));
   const curId = state.battle.enemyId;
   const curIdx = unlockedList.findIndex(e => e.id === curId);
   const safeCurIdx = curIdx === -1 ? 0 : curIdx;
   const cur = unlockedList[safeCurIdx];
-
   // ── 精簡選擇器 ──
   const wrapper = document.createElement('div');
   wrapper.style.cssText = 'display:flex;align-items:center;gap:8px;margin:6px 0;';
-
   const btnStyle = 'flex-shrink:0;width:36px;height:36px;border:none;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:1.1em;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;';
-
   const prevBtn = document.createElement('button');
   prevBtn.innerHTML = '◀';
   prevBtn.style.cssText = btnStyle + (safeCurIdx === 0 ? 'opacity:.3;cursor:not-allowed;' : '');
   prevBtn.disabled = safeCurIdx === 0;
   prevBtn.onclick = () => selectEnemy(unlockedList[safeCurIdx - 1].id);
-
   const nextBtn = document.createElement('button');
   nextBtn.innerHTML = '▶';
   nextBtn.style.cssText = btnStyle + (safeCurIdx >= unlockedList.length - 1 ? 'opacity:.3;cursor:not-allowed;' : '');
   nextBtn.disabled = safeCurIdx >= unlockedList.length - 1;
   nextBtn.onclick = () => selectEnemy(unlockedList[safeCurIdx + 1].id);
-
   const isPostCompact = !!cur.postMult;
   const info = document.createElement('div');
   info.style.cssText = `flex:1;text-align:center;background:${isPostCompact ? '#1a0a2e' : '#ffeaea'};border:2.5px solid ${isPostCompact ? '#6C3082' : '#e74c3c'};border-radius:13px;padding:7px 6px;`;
@@ -3988,12 +3969,10 @@ function renderEnemyList() {
   const progress = document.createElement('div');
   progress.style.cssText = 'font-size:.62em;color:#aaa;font-weight:800;text-align:center;margin-top:3px;';
   progress.textContent = `${safeCurIdx + 1} / ${unlockedList.length}`;
-
   const col = document.createElement('div');
   col.style.cssText = 'flex:1;display:flex;flex-direction:column;';
   col.appendChild(info);
   col.appendChild(progress);
-
   wrapper.appendChild(prevBtn);
   wrapper.appendChild(col);
   wrapper.appendChild(nextBtn);
@@ -4115,7 +4094,6 @@ function renderBattleUI() {
   document.getElementById('bMp1Stock').textContent = mpTotal;
   document.getElementById('potBtn').disabled  = hpTotal === 0;
   document.getElementById('mpotBtn').disabled = mpTotal === 0;
-
   // 技能按鈕：依當前武器槽自動篩選
   const skArea = document.getElementById('skillBtns');
   skArea.innerHTML = '';
@@ -4123,7 +4101,6 @@ function renderBattleUI() {
   const currentRestrict = weaponSlot
     ? (weaponSlot.type === '武器' ? '武器' : weaponSlot.type === '法杖' ? '法杖' : null)
     : null;
-
   const weaponOrder = { 武器: ['sk1','sk2','sk3'], 法杖: ['sk4','sk5','sk6'] };
   const orderList = weaponOrder[currentRestrict] || [];
   orderList.forEach(sid => {
@@ -4222,7 +4199,6 @@ function onTurnEnd(callback) {
   const msgs = [];
   const hpEffects = [];
   const mpEffects = [];
-
   Object.values(state.equipped).forEach(card => {
     if (!card) return;
     const base = EQUIP_POOL.find(e => e.id === card.id || e.name === card.name);
@@ -4237,11 +4213,9 @@ function onTurnEnd(callback) {
       mpEffects.push({ card, regen });
     }
   });
-
   if (hpEffects.length === 0 && mpEffects.length === 0) {
     if (callback) callback(); return;
   }
-
   setTimeout(() => {
     hpEffects.forEach(({ card, regen }) => {
       b.heroHp = Math.min(getStats().maxHp, b.heroHp + regen);
@@ -4284,7 +4258,6 @@ function doAttack() {
   const enSvg   = getEnemyEl();
   const weaponSlot = state.equipped?.weapon;
   const isMagic = weaponSlot?.type === '法杖';
-
   if (!isMagic) {// 衝刺
     heroSvg.classList.add('atk-anim');
     setTimeout(() => heroSvg.classList.remove('atk-anim'), 600);// 到達敵人才揮劍
@@ -4302,9 +4275,7 @@ function doAttack() {
     b.enemyHp = Math.max(0, b.enemyHp - dmg);
     document.getElementById('bEnemyHp').style.width = Math.max(0, b.enemyHp / b.enemyMaxHp * 100) + '%';
     document.getElementById('bEnemyHpText').textContent = b.enemyHp;
-
     if (b.enemyHp <= 0) { onVictory(stats); return; }
-
     if (state.battle.isFrozen) {
       setEnemyFrozen(false);
       b.log = `⚔️ 造成 ${dmg}！${stats.name} 被冰凍，跳過反擊！`;
@@ -4314,7 +4285,6 @@ function doAttack() {
       });
       return;
     }
-
     // 敵人反擊
     setTimeout(() => {
       enSvg.classList.add('atk-anim');
@@ -4411,14 +4381,12 @@ function doSkill(sk) {
     setTimeout(() => heroSvg.classList.remove('atk-anim'), 450);
     setTimeout(() => triggerSwordSwing(), 180);
   }
-
   const stacks   = state.skillStacks[sk.id] || 0;
   const atkMult  = (sk.atkMult || 0) + stacks * (sk.stackAtk || 0);
   const magMult  = (sk.magMult || 0) + stacks * (sk.stackMag || 0);
   const hits     = sk.hits || 1;
   const orbDelay = isOrbSkill ? 400 : 290;
   let totalDmg   = 0;
-
   for (let i = 0; i < hits; i++) {
     const atkDmg = atkMult > 0 ? Math.round(s.atk * atkMult) : 0;
     const magDmg = magMult > 0 ? Math.round(s.mag * magMult) : 0;
@@ -4437,7 +4405,6 @@ function doSkill(sk) {
     const raw = Math.max(1, boostedDmg - effDef + Math.floor(Math.random() * 4));
     const { dmg, isCrit } = calcDmg(raw);
     totalDmg += dmg;
-
     setTimeout(() => {
       spawnHitFx('enemy', `${sk.emoji}-${dmg}${isCrit?' 💥':''}`, isCrit ? '#FF0000' : '#FF8800');
       enSvg.classList.add('hurt-anim'); setTimeout(() => enSvg.classList.remove('hurt-anim'), 350);
@@ -4466,7 +4433,6 @@ function doSkill(sk) {
 
   setTimeout(() => {
     if (b.enemyHp <= 0) { onVictory(stats); return; }
-
     if (frozen) {
       setEnemyFrozen(true);
       b.log = `${sk.name}（${hits > 1 ? hits+'連擊，' : ''}總傷 ${totalDmg}）❄️ 冰凍！敵人跳過反擊！`;
@@ -4476,7 +4442,6 @@ function doSkill(sk) {
       });
       return;
     }
-
     setTimeout(() => {
       setEnemyFrozen(false);
       enSvg.classList.add('atk-anim');
@@ -4512,17 +4477,14 @@ function onVictory(stats) {
   }
   checkAchievements();
   if (stats.stage && !state.clearedStages.includes(stats.stage)) state.clearedStages.push(stats.stage);
-
   // 先抓住目前的敵人元素再播動畫，不要立刻 renderBattleUI（否則元素會被替換掉）
   const enEl = getEnemyEl();
   if (enEl) enEl.classList.add('fall-anim');
-
   // 勝利橫幅
   const scene = document.getElementById('battleScene');
   const vb = document.createElement('div'); vb.className = 'victory-banner';
   vb.innerHTML = `<span class="vb-icon">🏆</span><div class="vb-text">勝利！</div><div style="color:white;font-size:.85em;font-weight:800;margin-top:4px">+💰${stats.gold} +⭐${stats.exp}</div>`;
   scene.appendChild(vb); setTimeout(() => vb.remove(), 2200);
-
   // 經驗和英雄數值可以先更新，但不要 renderBattleUI
   addExp(stats.exp);
   renderHero();
@@ -4638,22 +4600,18 @@ function spawnArcTrailFx(color1 = '#1ABC9C', color2 = '#A9DFBF', glowColor = '#1
   const er = enemy.getBoundingClientRect();
   const baseCx = er.left - sr.left + er.width  * 0.5;
   const baseCy = er.top  - sr.top  + er.height * 1;
-
   const configs = [
     { offsetX: -40, offsetY: -90, radius: 80, startAngle:  20, endAngle:  70,  sweep: 1 , largeArc: 0 , strokeWidth: 5, duration: 900 },
     { offsetX:   5, offsetY:-180, radius:140, startAngle:  70, endAngle: 110,  sweep: 1 , largeArc: 0 , strokeWidth: 6, duration: 600 },
     { offsetX: 105, offsetY: -70, radius:110, startAngle:-160, endAngle: 130,  sweep: 0 , largeArc: 0 , strokeWidth: 7, duration: 300 },
   ];
-
   const cfg = configs[arcIndex] ?? configs[0];
   const radius     = cfg.radius;
   const startAngle = cfg.startAngle;
   const endAngle   = cfg.endAngle;
-
   const svg  = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   const size = radius * 2 + 20;
   const fadeOutDelay = (cfg.duration ?? 700) ;
-
   svg.style.cssText = `
     position:absolute;
     left:${baseCx - size/2}px; top:${baseCy - size/2}px;
@@ -4663,16 +4621,13 @@ function spawnArcTrailFx(color1 = '#1ABC9C', color2 = '#A9DFBF', glowColor = '#1
     opacity:0;z-index: 9999;
     animation: arcFadeIn 0.18s ease forwards, arcFadeOut 0.28s ease ${fadeOutDelay}ms forwards;
   `;
-
   const localCx = size/2 + cfg.offsetX;
   const localCy = size/2 + cfg.offsetY;
-
   const toRad = a => a * Math.PI / 180;
   const x1 = localCx + radius * Math.cos(toRad(startAngle));
   const y1 = localCy + radius * Math.sin(toRad(startAngle));
   const x2 = localCx + radius * Math.cos(toRad(endAngle));
   const y2 = localCy + radius * Math.sin(toRad(endAngle));
-
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   const largeArc = cfg.largeArc ?? (Math.abs(endAngle - startAngle) > 180 ? 1 : 0);
   path.setAttribute('d', `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} ${cfg.sweep} ${x2} ${y2}`);
@@ -4680,24 +4635,20 @@ function spawnArcTrailFx(color1 = '#1ABC9C', color2 = '#A9DFBF', glowColor = '#1
   path.setAttribute('stroke', `url(#arcGrad${arcIndex})`);
   path.setAttribute('stroke-width', cfg.strokeWidth ?? 5);
   path.setAttribute('stroke-linecap', 'round');
-
   const defs  = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
   const grad  = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
   grad.setAttribute('id', `arcGrad${arcIndex}`);
   grad.setAttribute('gradientUnits', 'userSpaceOnUse');
   grad.setAttribute('x1', x1); grad.setAttribute('y1', y1);
   grad.setAttribute('x2', x2); grad.setAttribute('y2', y2);
-
   const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
   stop1.setAttribute('offset', '0%');
   stop1.setAttribute('stop-color', color1);
   stop1.setAttribute('stop-opacity', '1');
-
   const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
   stop2.setAttribute('offset', '100%');
   stop2.setAttribute('stop-color', color2);
   stop2.setAttribute('stop-opacity', '0.5');
-
   grad.append(stop1, stop2);
   defs.appendChild(grad);
   svg.append(defs, path);
@@ -4716,7 +4667,6 @@ function spawnOrbFx(innerColor = '#D7BDE2', outerColor = '#9B59B6', glowColor = 
   const hero   = document.getElementById('bHeroSvg');
   const enemy  = getEnemyEl();
   if (!hero || !enemy) return;
-
   const sr = scene.getBoundingClientRect();
   const hr = hero.getBoundingClientRect();
   const er = enemy.getBoundingClientRect();
@@ -4729,7 +4679,6 @@ function spawnOrbFx(innerColor = '#D7BDE2', outerColor = '#9B59B6', glowColor = 
   // 飛行距離
   const dx = endX - startX;
   const dy = endY - startY;
-
   const el = document.createElement('div');
   el.className = 'orb-fx';
   el.innerHTML = `
@@ -4800,7 +4749,7 @@ function addExp(amount) {
 const speechCfg = { //音量調整
   rate:0.95, lang:'zh-TW', enabled:true,
   volume: {
-    battle:  0.65,  // 冒險頁
+    battle:  0.7,   // 冒險頁
     quiz:    1.0,   // 答題頁
     achieve: 0.8,   // 成就頁
     quest:   0.8,   // 任務頁
@@ -4962,7 +4911,7 @@ function showTab(tab) {
 }
 
 // 技能頁==========================
-const SK_MILESTONE = 10; // 每幾疊加獎勵一次
+const SK_MILESTONE = 10; // 每幾層疊加獎勵一次
 
 function renderSkillTab() {
   const list = document.getElementById('skillTabList');
@@ -4971,12 +4920,10 @@ function renderSkillTab() {
     list.innerHTML = '<div class="sk-empty">🎴 還沒有技能<br>去抽卡獲得技能吧！</div>';
     return;
   }
-
   // 判斷當前武器槽
   const weaponSlot = state.equipped['weapon'];
   const hasWeapon  = weaponSlot && weaponSlot.type === '武器';
   const hasMagic   = weaponSlot && weaponSlot.type === '法杖';
-
   list.innerHTML = '';
   [...state.skills]
   .sort((a, b) => {
@@ -4992,24 +4939,19 @@ function renderSkillTab() {
     const milestone = Math.floor(stacks / SK_MILESTONE); // 應得里程碑次數
     const canClaim  = milestone > claimed;
     const progress  = stacks % SK_MILESTONE;
-
     // 裝備限制
     let restricted = false;
     if (sk.restrict === '武器' && !hasWeapon) restricted = true;
     if (sk.restrict === '法杖' && !hasMagic)  restricted = true;
-
     // 倍率計算（含疊加）
     const atkMult = (sk.atkMult || 0) + stacks * (sk.stackAtk || 0);
     const magMult = (sk.magMult || 0) + stacks * (sk.stackMag || 0);
-
     const div = document.createElement('div');
     div.className = 'sk-card';
-
     // 限制標籤
     const restrictHTML = sk.restrict
       ? `<div class="sk-card-restrict-badge${restricted ? ' warn' : ''}">${restricted ? '⚠️ 當前武器不適用' : sk.restrict+'專用'}</div>`
       : '';
-
     // 倍率 chips
     let statHTML = '';
     if (atkMult > 0) {
@@ -5024,12 +4966,10 @@ function renderSkillTab() {
     }
     if (sk.freeze) statHTML += `<div class="sk-stat-chip">❄️ 冰凍機率：<span class="sk-val">${Math.round(sk.freeze*100)}%</span></div>`;
     if (sk.hits > 1) statHTML += `<div class="sk-stat-chip">🔁 連擊：<span class="sk-val">×${sk.hits}</span></div>`;
-
     // 里程碑按鈕
     const milestoneBtn = canClaim
       ? `<button onclick="claimSkillMilestone('${sid}')" style="font-size:.68em;padding:4px 12px;border-radius:8px;border:none;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:white;font-family:'Nunito',sans-serif;font-weight:900;cursor:pointer;margin-top:6px;">🎁 領取里程碑獎勵 ×${milestone - claimed}</button>`
       : '';
-
     div.innerHTML = `
       ${restrictHTML}
       <div class="sk-card-header">
@@ -5364,7 +5304,6 @@ function renderStoneShop() {
   const bought = state.boughtStones || 0;
   const nextCost = (bought + 1) * 5000 + 95000 ;
   const canAfford = state.hero.gold >= nextCost;
-
   // 更新目前擁有數與倍率顯示
   const stoneCountEl = document.getElementById('stoneCount');
   if (stoneCountEl) stoneCountEl.textContent = owned;
@@ -5606,7 +5545,6 @@ function doAutoForge() {
   // 反覆合成，直到沒有任何可合成的配對為止
   while (changed) {
     changed = false;
-
     // 找出背包中所有同 id 且同星級的裝備，按 (id, star) 分組
     const groups = {};
     const allForgeItems = [
@@ -5619,16 +5557,13 @@ function doAutoForge() {
       if (!groups[key]) groups[key] = [];
       groups[key].push(card);
     });
-
     for (const key of Object.keys(groups)) {
       const group = groups[key];
       if (group.length < 2) continue;
-
       // 取前兩件合成
       const [a, b] = group;
       const currentStar = a.star || 0;
       if (currentStar >= 6) continue; // 已滿星，跳過
-
       // 移除兩件（背包 + 裝備槽）
       [a, b].forEach(card => {
         state.bag = state.bag.filter(c => c.uid !== card.uid);
@@ -5636,7 +5571,6 @@ function doAutoForge() {
           if (state.equipped[k]?.uid === card.uid) state.equipped[k] = null;
         });
       });
-
       // 建立合成後裝備，精煉保留兩件中較高的
       const newStar = currentStar + 1;
       const mult = newStar + 1;
@@ -5683,12 +5617,10 @@ function doAutoForge() {
       break; // 每輪只合成一次，重新掃描（bag 已變更）
     }
   }
-
   _forgeSlots = [null, null];
   renderForgeSlots();
   renderForgeResult();
   renderHero(); renderShopUI(); autoSave(); checkAchievements();
-
   if (totalForged === 0) {
     showToast('⚠️ 沒有可合成的裝備（需同名同星各 2 件）');
   } else {
@@ -5805,10 +5737,7 @@ function doUpgrade10(uid) {
   renderHero(); renderShopUI(); autoSave();
 }
 
-
-
-// ============================================================
-// 儲存 / 載入
+// 儲存 / 載入----------------
 let _dirty = false;
 function autoSave() { _dirty = true; }
 
@@ -6437,7 +6366,7 @@ const ACHIEVEMENTS = [
   },
   {
     id: 'correct1000',
-    name: '學霸',
+    name: '學者9',
     desc: '累積答對 1000 道題目',
     category:'學習',
     icon: '📚',
@@ -6447,6 +6376,71 @@ const ACHIEVEMENTS = [
     displayProgress: () => `${Math.min(state.stats?.totalCorrect || 0, 1000)} / 1000`,
     goal: 100,
     check: () => (state.stats?.totalCorrect || 0) >= 1000,
+  },
+  {
+    id: 'correct1100',
+    name: '學者10',
+    desc: '累積答對 1100 道題目',
+    category:'學習',
+    icon: '📚',
+    requires: 'correct1000',
+    reward: { gems: 550 , statBonus: {hp: 110}},
+    progress: () => Math.min(Math.max((state.stats?.totalCorrect || 0) - 1000, 0), 100),
+    displayProgress: () => `${Math.min(state.stats?.totalCorrect || 0, 1100)} / 1100`,
+    goal: 100,
+    check: () => (state.stats?.totalCorrect || 0) >= 1100,
+  },
+  {
+    id: 'correct1200',
+    name: '學者11',
+    desc: '累積答對 1200 道題目',
+    category:'學習',
+    icon: '📚',
+    requires: 'correct1100',
+    reward: { gems: 600 , statBonus: {hp: 120}},
+    progress: () => Math.min(Math.max((state.stats?.totalCorrect || 0) - 1100, 0), 100),
+    displayProgress: () => `${Math.min(state.stats?.totalCorrect || 0, 1200)} / 1200`,
+    goal: 100,
+    check: () => (state.stats?.totalCorrect || 0) >= 1200,
+  },
+  {
+    id: 'correct1300',
+    name: '學者12',
+    desc: '累積答對 1300 道題目',
+    category:'學習',
+    icon: '📚',
+    requires: 'correct1200',
+    reward: { gems: 650 , statBonus: {hp: 130}},
+    progress: () => Math.min(Math.max((state.stats?.totalCorrect || 0) - 1200, 0), 100),
+    displayProgress: () => `${Math.min(state.stats?.totalCorrect || 0, 1300)} / 1300`,
+    goal: 100,
+    check: () => (state.stats?.totalCorrect || 0) >= 1300,
+  },
+  {
+    id: 'correct1400',
+    name: '學者13',
+    desc: '累積答對 1400 道題目',
+    category:'學習',
+    icon: '📚',
+    requires: 'correct1300',
+    reward: { gems: 700 , statBonus: {hp: 140}},
+    progress: () => Math.min(Math.max((state.stats?.totalCorrect || 0) - 1300, 0), 100),
+    displayProgress: () => `${Math.min(state.stats?.totalCorrect || 0, 1400)} / 1400`,
+    goal: 100,
+    check: () => (state.stats?.totalCorrect || 0) >= 1400,
+  },
+  {
+    id: 'correct1500',
+    name: '學者14',
+    desc: '累積答對 1500 道題目',
+    category:'學習',
+    icon: '📚',
+    requires: 'correct1400',
+    reward: { gems: 750 , statBonus: {hp: 150}},
+    progress: () => Math.min(Math.max((state.stats?.totalCorrect || 0) - 1400, 0), 100),
+    displayProgress: () => `${Math.min(state.stats?.totalCorrect || 0, 1500)} / 1500`,
+    goal: 100,
+    check: () => (state.stats?.totalCorrect || 0) >= 1500,
   },
   {
     id: 'math10',
@@ -7757,6 +7751,18 @@ const ACHIEVEMENTS = [
     progress: () => Math.min(state.stats?.maxStreak || 0, 400),
     goal: 400,
     check: () => (state.stats?.maxStreak || 0) >= 400,
+  },
+  {
+    id: 'streak500',
+    name: '連勝王4',
+    desc: '最高連勝達到 500 題',
+    category:'學習',
+    icon: '🔥',
+    requires: 'streak400',
+    reward: { gems: 1750 , statBonus: { atk: 11 ,mag: 11 ,hp: 300 }},
+    progress: () => Math.min(state.stats?.maxStreak || 0, 500),
+    goal: 500,
+    check: () => (state.stats?.maxStreak || 0) >= 500,
   },
   {
     id: 'login_7',//累積登入天數成就
@@ -9169,7 +9175,7 @@ function checkAchievements() {
     if (!ach.check()) return;                              // 未達成跳過
     state.achievements[ach.id] = 'unlocked';
     showToast(`🏅 成就達成：${ach.name}！進入成就頁領取獎勵`);
-    speakText(`成就已達成，快去領獎勵！`, 0.8);
+    speakText(`成就已達成！`, 0.8);
     anyNew = true;
   });
   if (anyNew) { updateAchieveBadge(); autoSave(); }
@@ -9276,9 +9282,9 @@ const QUEST_POOL = [
   { id:'q_draw4',    name:'抽卡高手',   desc:'抽卡 4 次',        type:'draw',    target:4,   difficulty:'easy',   reward:{ gold:2000, exp:800,  gems:24 } },
   { id:'q_draw7',    name:'抽卡達人',   desc:'抽卡 7 次',        type:'draw',    target:7,   difficulty:'normal', reward:{ gold:3500, exp:1400, gems:56 } },
   { id:'q_draw11',   name:'十一連抽',   desc:'抽卡 11 次',       type:'draw',    target:11,  difficulty:'hard',   reward:{ gold:5500, exp:2200, gems:66 } },
-  { id:'q_game1',    name:'小遊戲新手', desc:'遊玩小遊戲 1 次',  type:'gamePlay', target:1,  difficulty:'easy',    reward:{ gold:2000, exp:1000, gems:15 } },
-  { id:'q_game2',    name:'小遊戲玩家', desc:'遊玩小遊戲 2 次',  type:'gamePlay', target:2,  difficulty:'normal',  reward:{ gold:4000, exp:2000, gems:30 } },
-  { id:'q_game3',    name:'小遊戲達人', desc:'遊玩小遊戲 3 次',  type:'gamePlay', target:3,  difficulty:'hard',    reward:{ gold:6000, exp:3000, gems:45 } },
+  { id:'q_game1',    name:'小遊戲玩家', desc:'玩小遊戲 1 次',    type:'gamePlay', target:1,  difficulty:'easy',    reward:{ gold:2000, exp:1000, gems:15 } },
+  { id:'q_game2',    name:'小遊戲高手', desc:'玩小遊戲 2 次',    type:'gamePlay', target:2,  difficulty:'normal',  reward:{ gold:4000, exp:2000, gems:30 } },
+  { id:'q_game3',    name:'小遊戲達人', desc:'玩小遊戲 3 次',    type:'gamePlay', target:3,  difficulty:'hard',    reward:{ gold:6000, exp:3000, gems:45 } },
 ];
 // 難度設定（顏色、標籤）
 const QUEST_DIFFICULTY = {
