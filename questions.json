@@ -513,17 +513,6 @@
     },
     {
       "category": "國文",
-      "question": "「ㄏㄟ色」怎麼寫？",
-      "options": [
-        "黑",
-        "灰",
-        "藍",
-        "黃"
-      ],
-      "answer": "黑"
-    },
-    {
-      "category": "國文",
       "question": "「ㄏㄨㄛˇ山」怎麼寫",
       "options": [
         "火",
@@ -1023,13 +1012,13 @@
       "category": "國文",
       "question": "他是什麼職業?",
       "options": [
-        "廚師",
-        "醫生",
-        "學生",
-        "警察"
+        "消防員",
+        "澆花員",
+        "洗地員",
+        "抽水員"
       ],
-      "answer": "廚師",
-      "image": "q_職業廚師.jpg"
+      "answer": "消防員",
+      "image": "q_職業消防員.jpg"
     },
     {
       "category": "國文",
@@ -1047,13 +1036,13 @@
       "category": "國文",
       "question": "他是什麼職業?",
       "options": [
-        "消防員",
-        "澆花員",
-        "洗地員",
-        "抽水員"
+        "廚師",
+        "醫生",
+        "學生",
+        "警察"
       ],
-      "answer": "消防員",
-      "image": "q_職業消防員.jpg"
+      "answer": "廚師",
+      "image": "q_職業廚師.jpg"
     },
     {
       "category": "國文",
@@ -1076,8 +1065,8 @@
         "學生",
         "警察"
       ],
-      "answer": "醫生",
-      "image": "q_職業醫生.jpeg"
+      "answer": "老師",
+      "image": "q_職業老師.jpeg"
     },
     {
       "category": "國文",
@@ -1088,8 +1077,8 @@
         "學生",
         "警察"
       ],
-      "answer": "老師",
-      "image": "q_職業老師.jpeg"
+      "answer": "醫生",
+      "image": "q_職業醫生.jpeg"
     },
     {
       "category": "國文",
@@ -1185,18 +1174,6 @@
       "category": "國文",
       "question": "這是什麼?",
       "options": [
-        "麵",
-        "飯",
-        "薯條",
-        "麵包"
-      ],
-      "answer": "麵",
-      "image": "q_食物麵.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼?",
-      "options": [
         "炒飯",
         "炒麵",
         "白飯",
@@ -1204,6 +1181,18 @@
       ],
       "answer": "炒飯",
       "image": "q_食物炒飯.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼?",
+      "options": [
+        "麵",
+        "飯",
+        "薯條",
+        "麵包"
+      ],
+      "answer": "麵",
+      "image": "q_食物麵.jpg"
     },
     {
       "category": "國文",
@@ -1215,19 +1204,19 @@
         "陰天"
       ],
       "answer": "下雨",
-      "image": "q_天氣雨"
+      "image": "q_天氣雨.jpg"
     },
     {
       "category": "國文",
-      "question": "這是什麼動物?",
+      "question": "這是什麼天氣?",
       "options": [
-        "熊",
-        "雄",
-        "能",
-        "羆"
+        "下雨",
+        "晴天",
+        "下雪",
+        "陰天"
       ],
-      "answer": "熊",
-      "image": "q_動物熊.jpg"
+      "answer": "晴天",
+      "image": "q_天氣晴.jpg"
     },
     {
       "category": "國文",
@@ -1255,15 +1244,27 @@
     },
     {
       "category": "國文",
+      "question": "這是什麼動物?",
+      "options": [
+        "熊",
+        "雄",
+        "能",
+        "羆"
+      ],
+      "answer": "熊",
+      "image": "q_動物熊.jpg"
+    },
+    {
+      "category": "國文",
       "question": "這是什麼顏色?",
       "options": [
-        "藍",
-        "黑",
-        "灰",
-        "綠"
+        "白",
+        "柏",
+        "泊",
+        "伯"
       ],
-      "answer": "藍",
-      "image": "q_顏色藍.jpeg"
+      "answer": "白",
+      "image": "q_顏色白.jpg"
     },
     {
       "category": "國文",
@@ -1281,25 +1282,13 @@
       "category": "國文",
       "question": "這是什麼顏色?",
       "options": [
-        "綠",
-        "黃",
-        "紫",
-        "藍"
-      ],
-      "answer": "綠",
-      "image": "q_顏色綠.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
         "紅",
         "白",
         "粉紅",
         "橘"
       ],
-      "answer": "橘",
-      "image": "q_顏色橘.jpeg"
+      "answer": "紅",
+      "image": "q_顏色紅.jpeg"
     },
     {
       "category": "國文",
@@ -1329,30 +1318,6 @@
       "category": "國文",
       "question": "這是什麼顏色?",
       "options": [
-        "紅",
-        "白",
-        "粉紅",
-        "橘"
-      ],
-      "answer": "紅",
-      "image": "q_顏色紅.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
-        "白",
-        "柏",
-        "泊",
-        "伯"
-      ],
-      "answer": "白",
-      "image": "q_顏色白.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼顏色?",
-      "options": [
         "黃",
         "綠",
         "灰",
@@ -1360,6 +1325,54 @@
       ],
       "answer": "黃",
       "image": "q_顏色黃.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "黑",
+        "灰",
+        "藍",
+        "黃"
+      ],
+      "answer": "黑",
+      "image": "q_顏色黑.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "綠",
+        "黃",
+        "紫",
+        "藍"
+      ],
+      "answer": "綠",
+      "image": "q_顏色綠.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "紅",
+        "白",
+        "粉紅",
+        "橘"
+      ],
+      "answer": "橘",
+      "image": "q_顏色橘.jpeg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼顏色?",
+      "options": [
+        "藍",
+        "黑",
+        "灰",
+        "綠"
+      ],
+      "answer": "藍",
+      "image": "q_顏色藍.jpeg"
     },
     {
       "category": "英文",
@@ -1371,7 +1384,19 @@
         "It’s windy"
       ],
       "answer": "It’s rainy",
-      "image": "q_天氣雨"
+      "image": "q_天氣雨.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "How's the weather?",
+      "options": [
+        "It’s cloudy",
+        "It’s rainy",
+        "It’s sunny",
+        "It’s windy"
+      ],
+      "answer": "It’s sunny",
+      "image": "q_天氣晴.jpg"
     },
     {
       "category": "英文",
@@ -1557,6 +1582,18 @@
       "category": "英文",
       "question": "What color is this?",
       "options": [
+        "blue",
+        "black",
+        "white",
+        "red"
+      ],
+      "answer": "black",
+      "image": "q_顏色黑.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "What color is this?",
+      "options": [
         "green",
         "black",
         "white",
@@ -1564,6 +1601,18 @@
       ],
       "answer": "green",
       "image": "q_顏色綠.jpeg"
+    },
+    {
+      "category": "英文",
+      "question": "What color is this?",
+      "options": [
+        "blue",
+        "white",
+        "red",
+        "brown"
+      ],
+      "answer": "brown",
+      "image": "q_顏色褐.jpg"
     },
     {
       "category": "英文",
@@ -1605,13 +1654,13 @@
       "category": "英文",
       "question": "What is his job?",
       "options": [
-        "cook",
+        "firefighter",
         "police",
         "doctor",
-        "student"
+        "teacher"
       ],
-      "answer": "cook",
-      "image": "q_職業廚師.jpg"
+      "answer": "firefighter",
+      "image": "q_職業消防員.jpg"
     },
     {
       "category": "英文",
@@ -1629,13 +1678,13 @@
       "category": "英文",
       "question": "What is his job?",
       "options": [
-        "firefighter",
+        "cook",
         "police",
         "doctor",
-        "teacher"
+        "student"
       ],
-      "answer": "firefighter",
-      "image": "q_職業消防員.jpg"
+      "answer": "cook",
+      "image": "q_職業廚師.jpg"
     },
     {
       "category": "英文",
@@ -1677,18 +1726,6 @@
       "category": "英文",
       "question": "What is this?",
       "options": [
-        "noodle",
-        "number",
-        "night",
-        "noon"
-      ],
-      "answer": "noodle",
-      "image": "q_食物麵.jpg"
-    },
-    {
-      "category": "英文",
-      "question": "What is this?",
-      "options": [
         "fried rice",
         "fried chicken",
         "fried egg",
@@ -1696,6 +1733,18 @@
       ],
       "answer": "fried rice",
       "image": "q_食物炒飯.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "What is this?",
+      "options": [
+        "noodle",
+        "number",
+        "night",
+        "noon"
+      ],
+      "answer": "noodle",
+      "image": "q_食物麵.jpg"
     },
     {
       "category": "英文",
@@ -2414,17 +2463,6 @@
     },
     {
       "category": "英文",
-      "question": "黑色的英文是?",
-      "options": [
-        "blue",
-        "black",
-        "white",
-        "red"
-      ],
-      "answer": "black"
-    },
-    {
-      "category": "英文",
       "question": "跳舞的英文是?",
       "options": [
         "dance",
@@ -2433,17 +2471,6 @@
         "dune"
       ],
       "answer": "dance"
-    },
-    {
-      "category": "英文",
-      "question": "褐色的英文是?",
-      "options": [
-        "blue",
-        "white",
-        "red",
-        "brown"
-      ],
-      "answer": "brown"
     },
     {
       "category": "英文",
@@ -2990,12 +3017,12 @@
       "category": "自然",
       "question": "植物的葉子通常是綠色的，主要是因為什麼？",
       "options": [
-        "吸收陽光製造養分",
+        "裡面有葉綠素吸收陽光製造養分",
         "吸收水變成綠色",
-        "被風吹成綠色",
+        "被風吹久了變成綠色",
         "自然變色"
       ],
-      "answer": "吸收陽光製造養分"
+      "answer": "裡面有葉綠素吸收陽光製造養分"
     },
     {
       "category": "自然",
@@ -3032,7 +3059,19 @@
     },
     {
       "category": "自然",
-      "question": "請問蝴蝶靜止時，翅膀會怎麼樣?",
+      "question": "蛾靜止時，翅膀會怎麼樣?",
+      "options": [
+        "雙翅合攏在背上",
+        "張開平放",
+        "有時張開、有時閉合",
+        "隨便放"
+      ],
+      "answer": "張開平放",
+      "image": "q_動物蛾.jpg"
+    },
+    {
+      "category": "自然",
+      "question": "蝴蝶靜止時，翅膀會怎麼樣?",
       "options": [
         "雙翅合攏在背上",
         "張開平放",
@@ -3088,6 +3127,17 @@
     },
     {
       "category": "地理",
+      "question": "地球上的陸地分成幾大洲?",
+      "options": [
+        "4",
+        "5",
+        "6",
+        "7"
+      ],
+      "answer": "7"
+    },
+    {
+      "category": "地理",
       "question": "亞洲最長的河流是？",
       "options": [
         "印度河",
@@ -3130,8 +3180,8 @@
         "日本",
         "韓國"
       ],
-      "answer": "臺灣",
-      "image": "q_國家臺灣.jpg"
+      "answer": "中國",
+      "image": "q_國家中國.jpg"
     },
     {
       "category": "地理",
@@ -3144,30 +3194,6 @@
       ],
       "answer": "日本",
       "image": "q_國家日本.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個國家？",
-      "options": [
-        "臺灣",
-        "中國",
-        "日本",
-        "韓國"
-      ],
-      "answer": "韓國",
-      "image": "q_國家韓國.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個國家？",
-      "options": [
-        "臺灣",
-        "中國",
-        "日本",
-        "韓國"
-      ],
-      "answer": "中國",
-      "image": "q_國家中國.jpg"
     },
     {
       "category": "地理",
@@ -3192,6 +3218,30 @@
       ],
       "answer": "菲律賓",
       "image": "q_國家菲律賓.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個國家？",
+      "options": [
+        "臺灣",
+        "中國",
+        "日本",
+        "韓國"
+      ],
+      "answer": "臺灣",
+      "image": "q_國家臺灣.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個國家？",
+      "options": [
+        "臺灣",
+        "中國",
+        "日本",
+        "韓國"
+      ],
+      "answer": "韓國",
+      "image": "q_國家韓國.jpg"
     },
     {
       "category": "地理",
