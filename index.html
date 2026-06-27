@@ -2377,7 +2377,10 @@ function enemyStats(id) {// 怪物數值計算
   const alienStones    = state?.alienStones || 0;
   const alienReduction = alienStones * 0.1;
   const alienFinalMult = Math.max(1, alienBaseMult - alienReduction);
+  const alienNeededStones = (alienBaseMult - 1) / 0.1;
+  const alienExcessRatio  = alienNeededStones > 0 ? Math.min(1, Math.max(0, alienStones - alienNeededStones) / alienNeededStones) : 0;
   const totalMult = e.alienMult ? alienFinalMult : finalMult;
+  const finalExcessRatio = e.alienMult ? alienExcessRatio : excessRatio;
   return {
     ...e,
     maxHp: vary(Math.round((28 * scale1 + e.stage *80)* mod.hp * totalMult)),
@@ -2385,8 +2388,8 @@ function enemyStats(id) {// 怪物數值計算
     def:   vary(Math.round((23 * scale3 + e.stage *15)* mod.def* totalMult)),
     gold:  vary(Math.round((10 * scale4 + e.stage * 1)* mod.gold)),
     exp:   vary(Math.round((20 * scale4 + e.stage * 2)* mod.exp)),
-    heroAtkBoost:  1 + excessRatio,
-    heroDmgReduce: 1 / (1 + excessRatio),
+    heroAtkBoost:  1 + finalExcessRatio,
+    heroDmgReduce: 1 / (1 + finalExcessRatio),
   };
 }
 
