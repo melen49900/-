@@ -10111,8 +10111,8 @@ function mineGenCell(worldRow) {
   const r = Math.random();
   // 挖礦機率
   const depth = worldRow;
-  const gemChance  = Math.min(0.12 + depth * 0.0005, 0.45);
-  const coinChance = Math.min(0.12 + depth * 0.0005, 0.45);
+  const gemChance  = Math.min(0.2 + depth * 0.0002, 0.45);
+  const coinChance = Math.min(0.2 + depth * 0.0002, 0.45);
   if (r < gemChance) return 'gem';
   if (r < gemChance + coinChance) return 'coin';
   return 'rock';
@@ -10292,8 +10292,7 @@ function mineDig(r, c) {
     else if (cellVal === 'gem') mineSetCell(worldRow, c, 'empty_gem');
     else mineSetCell(worldRow, c, 'empty_rock');
     mineState.pickaxe--;
-    // 神器碎片機率：0.1% + 層數*0.0005%，上限2%
-    const shardChance = Math.min(0.001 + worldRow * 0.000005, 0.02);
+    const shardChance = Math.min(0.001 + worldRow * 0.00004, 0.07);// 神器碎片機率：
     if (Math.random() < shardChance) grantArtifactShards(1, `挖礦第${worldRow}層`);
     if (cellVal === 'coin') mineBumpCounter('mineCoinCount', mineState.rewards.coinGold, earnedValue);
     else if (cellVal === 'gem') mineBumpCounter('mineGemCount', mineState.rewards.gemGems, earnedValue);
