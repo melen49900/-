@@ -2201,14 +2201,16 @@ const SLOT_DEFS = [
   { key:'accessory', label:'副手',   types:['盾牌','道具'],  icon:'🛡️' },
 ];
 
-// 神器定義：固定四種，等級＝加成百分比
+// 神器定義：等級＝加成百分比
 const ARTIFACT_DEFS = [
   { key:'atk', label:'攻擊神器', icon:'⚔️', desc:'攻擊力' },
   { key:'mag', label:'魔法神器', icon:'🔮', desc:'魔法力' },
   { key:'hp',  label:'生命神器', icon:'❤️', desc:'生命值' },
   { key:'def', label:'防禦神器', icon:'🛡️', desc:'防禦力' },
+  { key:'crit', label:'暴擊神器', icon:'🎯', desc:'爆擊率' },
+  { key:'chaos', label:'混沌神器', icon:'🌀', desc:'技能傷害↑／耗魔↑' },
 ];
-const ARTIFACT_SHARD_COST = 5; // 每次強化消耗神器碎片數
+const ARTIFACT_SHARD_COST = 1; // 每次強化消耗神器碎片數
 
 const RARITY_CFG = {
   common:    { label:'普通', color:'#9fbdae', bg:'#f1f5f9' },
@@ -2489,7 +2491,7 @@ let state = {
     gold:0, gems:0,
   },
   equipped:   { weapon:null, armor:null, helmet:null, cloak:null, accessory:null },
-  artifacts:  { atk:1, mag:1, hp:1, def:1 }, // 神器等級＝加成百分比，預設每項 +1%
+  artifacts: { atk:1, mag:1, hp:1, def:1, crit:1 }, // 神器等級＝加成百分比，預設 +1%
   artifactShards: 0, // 神器碎片
   bag:        [],
   inventory:  { hp1:0, hp2:0, hp3:0, hp4:0, mp1:0, mp2:0, mp3:0, mp4:0, exp1:0, exp2:0, exp3:0 },
@@ -2913,7 +2915,6 @@ function getEnemyVisual(id, cssClass) {
   return null; 
 }
 
-
 // 取得神器碎片，reason 會顯示在提示中
 function grantArtifactShards(n, reason) {
   if (!n) return;
@@ -2936,6 +2937,12 @@ function upgradeArtifact(key) {
   renderHero();
   const def = ARTIFACT_DEFS.find(d => d.key === key);
   showToast(`✨ ${def?.label || '神器'}強化成功！目前 +${state.artifacts[key]}%`);
+}
+
+// 神器版混沌：等級 = 技能傷害% 與 耗魔% 的同步增幅
+function getArtifactChaosBonus() {
+  const lv = (state.artifacts && state.artifacts.chaos) || 0;
+  return { dmgBonus: (lv - 1) / 20, mpMult: (lv - 1) / 20 };
 }
 
 function getStats() {
@@ -2978,22 +2985,23 @@ function getStats() {
   magAmpBonus += (eqEff.base + star * eqEff.perStar) / 100;
   });
   mag = Math.round(mag * (1 + magAmpBonus));
-
   // 神器加成（攻擊/魔法/生命/防禦 各自百分比疊加）
   const art = state.artifacts || { atk:1, mag:1, hp:1, def:1 };
   atk = Math.round(atk * (1 + (art.atk || 0) / 100));
   def = Math.round(def * (1 + (art.def || 0) / 100));
   mag = Math.round(mag * (1 + (art.mag || 0) / 100));
+  const critBonus = (art.crit || 0) / 100;
   const maxHpBase = (state.hero.maxHp || 100) + bonusHp;
   const maxHp = Math.round(maxHpBase * (1 + (art.hp || 0) / 100));
 
 return { atk, def, mag, bonusHp, bonusMp,
     maxHp,
     maxMp: (state.hero.maxMp || 50)  + bonusMp,
-    crit: (state.hero.crit || 0.05) + bonusCrit,
+    crit: (state.hero.crit || 0.05) + bonusCrit + critBonus,
     critDmg: (state.hero.critDmg || 1.5) + bonusCritDmg
   };
 }
+
 function renameHero() {//改名
   const current = state.hero.name || '勇士';
   const newName = prompt('請輸入新名字：', current);
@@ -3438,16 +3446,16 @@ function rollCard(forceLegendary, forceEpic) {
   }
 
   const r = Math.random();//抽卡機率
-  if      (r < 0.05)  return rollEquip('legendary');   //   5  %
-  else if (r < 0.08)  return rollSkill('epic');        //   3  %
-  else if (r < 0.21)  return rollEquip('epic');        //  13  %
-  else if (r < 0.30)  return rollSkill('rare');        //   9  %
-  else if (r < 0.51)  return rollEquip('rare');        //  21  %
-  else if (r < 0.65)  return rollGold();               //  14  %
+  if      (r < 0.05)  return rollEquip('legendary');   //   5 %
+  else if (r < 0.08)  return rollSkill('epic');        //   3 %
+  else if (r < 0.21)  return rollEquip('epic');        //  13 %
+  else if (r < 0.30)  return rollSkill('rare');        //   9 %
+  else if (r < 0.51)  return rollEquip('rare');        //  21 %
+  else if (r < 0.65)  return rollGold();               //  14 %
   else if (r < 0.67)  return (state.clearedStages || []).includes(62) ? rollStone() : rollGold();  // 2%
   else if (r < 0.69)  return (state.clearedStages || []).includes(100) ? rollAlienStone() : rollGold();  // 2%
-  else if (r < 0.705) return rollTicket();             //   1.5%
-  else                return rollEquip('common');      //  29.5%
+  else if (r < 0.71)  return rollTicket();             //   2 %
+  else                return rollEquip('common');      //  29 %
 }
 
 function rollStone() {
@@ -4249,6 +4257,7 @@ function renderBattleUI() {
       const star = card.star || 0;
       chaosMpMult += (eqEff.mpBase + star * eqEff.mpPerStar) / 100;
     });
+    chaosMpMult += getArtifactChaosBonus().mpMult; 
     const displayMpCost = Math.ceil(sk.mpCost * chaosMpMult);
     const canUse = b.heroMp >= displayMpCost && !b.cooldown;
     const btn = document.createElement('button');
@@ -4458,6 +4467,7 @@ function doSkill(sk) {
     const star = card.star || 0;
    _chaosMpMult += (eqEff.mpBase + star * eqEff.mpPerStar) / 100;
   });
+  _chaosMpMult += getArtifactChaosBonus().mpMult;
   if (b.heroMp < Math.ceil(sk.mpCost * _chaosMpMult)) { showToast('MP 不足！'); return; }
   // 限制檢查：武器/法杖專用
   if (sk.restrict) {
@@ -4498,6 +4508,7 @@ function doSkill(sk) {
     const star = card.star || 0;
     chaosMpMult += (eqEff.mpBase + star * eqEff.mpPerStar) / 100;
   });
+  chaosMpMult += getArtifactChaosBonus().mpMult;
   const actualMpCost = Math.ceil(sk.mpCost * chaosMpMult);
   b.heroMp -= actualMpCost; state.hero.mp = b.heroMp;
   document.getElementById('bHeroMp').style.width = Math.max(0, b.heroMp / getStats().maxMp * 100) + '%';
@@ -4534,6 +4545,7 @@ function doSkill(sk) {
       const star = card.star || 0;
       chaosDmgBonus += (eqEff.dmgBase + star * eqEff.dmgPerStar) / 100;
     });
+    chaosDmgBonus += getArtifactChaosBonus().dmgBonus;
     const boostedDmg = Math.round((atkDmg + magDmg + baseDmg) * (1 + chaosDmgBonus));
     const raw = Math.max(1, boostedDmg - effDef + Math.floor(Math.random() * 4));
     const { dmg, isCrit } = calcDmg(raw);
@@ -5880,7 +5892,7 @@ function loadFromStorage() {
     const data = JSON.parse(raw);
     if (data.state?.hero) Object.assign(state.hero, data.state.hero);
     if (data.state?.equipped) Object.assign(state.equipped, { weapon:null,armor:null,helmet:null,cloak:null,accessory:null }, data.state.equipped);
-    if (data.state?.artifacts) Object.assign(state.artifacts, { atk:1, mag:1, hp:1, def:1 }, data.state.artifacts);
+    if (data.state?.artifacts) Object.assign(state.artifacts, { atk:1, mag:1, hp:1, def:1, crit:1 }, data.state.artifacts);
     if (typeof data.state?.artifactShards === 'number') state.artifactShards = data.state.artifactShards;
     if (data.state?.bag)    state.bag    = data.state.bag;
     if (data.state?.inventory) state.inventory = data.state.inventory;
@@ -10405,6 +10417,7 @@ function renderMineResult() {
   const parts = [];
   if (mineState.rewards.coin > 0) parts.push(`💰 金幣 ×${mineState.rewards.coin}（+${mineState.rewards.coinGold || 0} Gold）`);
   if (mineState.rewards.gem > 0) parts.push(`💎 鑽石 ×${mineState.rewards.gem}（+${mineState.rewards.gemGems || 0} Gems）`);
+  if (mineState.rewards.shard > 0) parts.push(`🔹 神器碎片 ×${mineState.rewards.shard}`);
   if (parts.length === 0) parts.push('這次什麼都沒挖到...');
   summary.innerHTML = parts.join('<br>');
 }
