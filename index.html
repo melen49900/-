@@ -10086,7 +10086,7 @@ function openMineGame() {
       worldCells: prev ? prev.worldCells : {},
       resultSnapshot: null,
       finished: false,
-      rewards: { coin: 0, gem: 0, coinGold: 0, gemGems: 0 }
+      rewards: { coin: 0, gem: 0, coinGold: 0, gemGems: 0, shard: 0 }
   };
   // 預先生成石頭（從world row 0開始才有石頭）
   for (let r = 0; r < 8; r++) {
@@ -10109,12 +10109,14 @@ function openMineGame() {
 
 function mineGenCell(worldRow) {
   const r = Math.random();
-  // 挖礦機率
+  // 挖礦機率：鑽石 → 金幣 → 神器碎片 → 空
   const depth = worldRow;
-  const gemChance  = Math.min(0.2 + depth * 0.0002, 0.45);
-  const coinChance = Math.min(0.2 + depth * 0.0002, 0.45);
+  const gemChance   = Math.min(0.2 + depth * 0.0002, 0.45);
+  const coinChance  = Math.min(0.2 + depth * 0.0002, 0.45);
+  const shardChance = Math.min(0.001 + depth * 0.000036, 0.07);
   if (r < gemChance) return 'gem';
   if (r < gemChance + coinChance) return 'coin';
+  if (r < gemChance + coinChance + shardChance) return 'shard';
   return 'rock';
 }
 
@@ -10240,7 +10242,7 @@ function mineDig(r, c) {
   const top = mineState.visibleTopRow;
   const worldRow = top + r;
   const cellVal = mineGetCell(worldRow, c);
-  const found = cellVal === 'coin' ? '💰' : cellVal === 'gem' ? '💎' : null;
+  const found = cellVal === 'coin' ? '💰' : cellVal === 'gem' ? '💎' : cellVal === 'shard' ? '🔹' : null;
   let earnedValue = 0;
   if (cellVal === 'coin') earnedValue = mineCalcReward('coin', mineState.worldRow);
   else if (cellVal === 'gem') earnedValue = mineCalcReward('gem', mineState.worldRow);
@@ -10257,7 +10259,11 @@ function mineDig(r, c) {
   if (found) {
     const targetEl = found === '💰'
       ? document.getElementById('mineCoinCount')
-      : document.getElementById('mineGemCount');
+      : found === '💎'
+      ? document.getElementById('mineGemCount')
+      : found === '🔹'
+      ? document.getElementById('mineShardCount')
+      : null;
     if (cellEl && targetEl) {
       const srcRect = cellEl.getBoundingClientRect();
       const dstRect = targetEl.getBoundingClientRect();
@@ -10287,15 +10293,18 @@ function mineDig(r, c) {
     } else if (cellVal === 'gem') {
       mineState.rewards.gem++;
       mineState.rewards.gemGems = (mineState.rewards.gemGems || 0) + earnedValue;
+    } else if (cellVal === 'shard') {
+      mineState.rewards.shard = (mineState.rewards.shard || 0) + 1;
+      grantArtifactShards(1, `挖礦第${worldRow}層`);
     }
     if (cellVal === 'coin') mineSetCell(worldRow, c, 'empty_coin');
     else if (cellVal === 'gem') mineSetCell(worldRow, c, 'empty_gem');
+    else if (cellVal === 'shard') mineSetCell(worldRow, c, 'empty_shard');
     else mineSetCell(worldRow, c, 'empty_rock');
     mineState.pickaxe--;
-    const shardChance = Math.min(0.001 + worldRow * 0.00004, 0.07);// 神器碎片機率：
-    if (Math.random() < shardChance) grantArtifactShards(1, `挖礦第${worldRow}層`);
     if (cellVal === 'coin') mineBumpCounter('mineCoinCount', mineState.rewards.coinGold, earnedValue);
     else if (cellVal === 'gem') mineBumpCounter('mineGemCount', mineState.rewards.gemGems, earnedValue);
+    else if (cellVal === 'shard') mineBumpCounter('mineShardCount', mineState.rewards.shard, 1);
     const isBelow = (c === mineState.playerCol && r === mineState.playerRow + 1);
     if (isBelow) {
       mineState.playerRow++;
@@ -10605,6 +10614,7 @@ function bgmToggleMute() {
       <div class="mine-live-counters">
         <span id="mineLiveCoin">💰 ×<span id="mineCoinCount">0</span></span>
         <span id="mineLiveGem">💎 ×<span id="mineGemCount">0</span></span>
+        <span id="mineLiveShard">🔹 ×<span id="mineShardCount">0</span></span>
       </div>
     </div>
     <div class="mine-action-hint" id="mineHint">點擊角色旁邊或下方的格子來挖掘！</div>
