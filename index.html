@@ -681,6 +681,39 @@ body::before {
 .bag-tab.active { color:var(--dark); border-bottom-color:var(--gold); }
 
 /* 已裝備格 */
+/* 裝備頁子分頁：已裝備 / 神器 */
+.gear-subtabs { display:flex; gap:8px; margin-bottom:12px; }
+.gear-subtab-btn {
+  flex:1; padding:8px 6px; border:1.5px solid #e0e0e0; border-radius:11px;
+  background:#f8f9fa; color:#94A3B8; font-family:'Nunito',sans-serif;
+  font-size:.78em; font-weight:800; cursor:pointer; transition:all .2s;
+}
+.gear-subtab-btn.active {
+  background:linear-gradient(135deg,var(--gold),var(--gold2)); color:white; border-color:transparent;
+  box-shadow:0 2px 8px rgba(255,159,28,.35);
+}
+/* 神器 */
+.artifact-shard-info {
+  text-align:center; font-size:.8em; font-weight:800; color:#4a5568;
+  background:#f3e5f5; border:1.5px solid #ce93d8; border-radius:11px;
+  padding:8px; margin-bottom:4px;
+}
+.artifact-shard-info b { color:#8e24aa; }
+.artifact-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.artifact-card {
+  background:var(--card-bg); border:1.5px solid rgba(255,215,0,.25); border-radius:14px;
+  padding:12px 8px; text-align:center; box-shadow:0 3px 12px rgba(0,0,0,.12);
+}
+.artifact-icon { font-size:1.8em; margin-bottom:2px; }
+.artifact-name { font-size:.78em; font-weight:800; color:#4a5568; }
+.artifact-lv { font-size:.72em; font-weight:800; color:#e67e22; margin:4px 0 8px; }
+.artifact-upg-btn {
+  width:100%; padding:6px 4px; border:none; border-radius:9px;
+  background:linear-gradient(135deg,#8b5cf6,#6366f1); color:white;
+  font-family:'Nunito',sans-serif; font-size:.7em; font-weight:800; cursor:pointer;
+}
+.artifact-upg-btn:disabled { background:linear-gradient(135deg,#bdc3c7,#95a5a6); cursor:not-allowed; }
+
 .eq-slots-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:6px; }
 .eq-slot-card {
   aspect-ratio:1; border-radius:14px; border:2px dashed #D1D5DB;
@@ -1776,31 +1809,45 @@ button:active { transform:scale(.96); }
   </div><!-- /tab-shop -->
   <!-- 裝備頁 -->
   <div id="tab-gear" class="panel hidden">
-    <!-- 已裝備格 -->
-    <div style="font-size:.72em;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">⚔️ 已裝備</div>
-    <div class="eq-slots-grid" id="eqSlotsGrid"></div>
-    <div style="font-size:.65em;color:#CBD5E1;text-align:center;margin:6px 0 14px">點擊裝備格可查看數值或卸除</div>
-    <div style="text-align:center;margin-bottom:14px;">
-      <button onclick="autoEquipBest()" style="font-size:.72em;padding:6px 18px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;font-family:'Nunito',sans-serif;font-weight:800;cursor:pointer;">⚡ 自動穿上最強裝備</button>
-      <button onclick="speakText('自動穿上最強裝備')" style="font-size:.72em;padding:6px 14px;border-radius:10px;border:none;background:linear-gradient(135deg,#06b6d4,#0284c7);color:white;font-family:'Nunito',sans-serif;font-weight:800;cursor:pointer;">🔊 </button>
+    <!-- 裝備子分頁：已裝備 / 神器 -->
+    <div class="gear-subtabs">
+      <button class="gear-subtab-btn active" id="gearSubBtn-equip" onclick="switchGearSub('equip')">⚔️ 已裝備</button>
+      <button class="gear-subtab-btn" id="gearSubBtn-artifact" onclick="switchGearSub('artifact')">🔮 神器</button>
     </div>
-    <!-- 背包 -->
-    <div style="margin-bottom:8px;">
-      <div style="font-size:.72em;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:.6px;">🎴 背包 <span id="bagCount">0</span> 件</div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <div style="display:flex;align-items:center;gap:4px">
-          <select id="sellRaritySelect" style="font-size:.66em;padding:4px 6px;border-radius:8px;border:1.5px solid #e0e0e0;font-family:'Nunito',sans-serif;font-weight:800;background:white;color:#4a5568;cursor:pointer;">
-            <option value="common">普通以下</option>
-            <option value="rare">稀有以下</option>
-            <option value="epic">史詩以下</option>
-            <option value="legendary">全部販售</option>
-          </select>
-          <button onclick="sellAllCards(document.getElementById('sellRaritySelect').value)" style="font-size:.66em;padding:4px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;font-family:'Nunito',sans-serif;font-weight:800;cursor:pointer;" id="sellAllBtn">💰 一鍵販售</button>
-        </div>
-        <div class="bag-filter" id="slotFilter" style="margin-bottom:6px"></div>
+    <div id="gearSub-equip">
+      <!-- 已裝備格 -->
+      <div style="font-size:.72em;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">⚔️ 已裝備</div>
+      <div class="eq-slots-grid" id="eqSlotsGrid"></div>
+      <div style="font-size:.65em;color:#CBD5E1;text-align:center;margin:6px 0 14px">點擊裝備格可查看數值或卸除</div>
+      <div style="text-align:center;margin-bottom:14px;">
+        <button onclick="autoEquipBest()" style="font-size:.72em;padding:6px 18px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;font-family:'Nunito',sans-serif;font-weight:800;cursor:pointer;">⚡ 自動穿上最強裝備</button>
+        <button onclick="speakText('自動穿上最強裝備')" style="font-size:.72em;padding:6px 14px;border-radius:10px;border:none;background:linear-gradient(135deg,#06b6d4,#0284c7);color:white;font-family:'Nunito',sans-serif;font-weight:800;cursor:pointer;">🔊 </button>
       </div>
+      <!-- 背包 -->
+      <div style="margin-bottom:8px;">
+        <div style="font-size:.72em;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:.6px;">🎴 背包 <span id="bagCount">0</span> 件</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <div style="display:flex;align-items:center;gap:4px">
+            <select id="sellRaritySelect" style="font-size:.66em;padding:4px 6px;border-radius:8px;border:1.5px solid #e0e0e0;font-family:'Nunito',sans-serif;font-weight:800;background:white;color:#4a5568;cursor:pointer;">
+              <option value="common">普通以下</option>
+              <option value="rare">稀有以下</option>
+              <option value="epic">史詩以下</option>
+              <option value="legendary">全部販售</option>
+            </select>
+            <button onclick="sellAllCards(document.getElementById('sellRaritySelect').value)" style="font-size:.66em;padding:4px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;font-family:'Nunito',sans-serif;font-weight:800;cursor:pointer;" id="sellAllBtn">💰 一鍵販售</button>
+          </div>
+          <div class="bag-filter" id="slotFilter" style="margin-bottom:6px"></div>
+        </div>
+      </div>
+      <div class="bag-list" id="bagList"></div>
     </div>
-    <div class="bag-list" id="bagList"></div>
+    <!-- 神器面板 -->
+    <div id="gearSub-artifact" class="hidden">
+      <div style="font-size:.72em;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">🔮 神器</div>
+      <div id="artifactShardInfo" class="artifact-shard-info">🔹 神器碎片：<b>0</b> 個</div>
+      <div style="font-size:.65em;color:#CBD5E1;text-align:center;margin:6px 0 14px">連勝、簽到、挖礦、翻牌都有機會獲得神器碎片，每 5 個可任選一項神器強化 +1%</div>
+      <div class="artifact-grid" id="artifactGrid"></div>
+    </div>
   </div>
   <!-- 任務頁 -->
   <div id="tab-quest" class="panel hidden">
@@ -2154,6 +2201,15 @@ const SLOT_DEFS = [
   { key:'accessory', label:'副手',   types:['盾牌','道具'],  icon:'🛡️' },
 ];
 
+// 神器定義：固定四種，等級＝加成百分比
+const ARTIFACT_DEFS = [
+  { key:'atk', label:'攻擊神器', icon:'⚔️', desc:'攻擊力' },
+  { key:'mag', label:'魔法神器', icon:'🔮', desc:'魔法力' },
+  { key:'hp',  label:'生命神器', icon:'❤️', desc:'生命值' },
+  { key:'def', label:'防禦神器', icon:'🛡️', desc:'防禦力' },
+];
+const ARTIFACT_SHARD_COST = 5; // 每次強化消耗神器碎片數
+
 const RARITY_CFG = {
   common:    { label:'普通', color:'#9fbdae', bg:'#f1f5f9' },
   rare:      { label:'稀有', color:'#0984e3', bg:'#eff6ff' },
@@ -2433,6 +2489,8 @@ let state = {
     gold:0, gems:0,
   },
   equipped:   { weapon:null, armor:null, helmet:null, cloak:null, accessory:null },
+  artifacts:  { atk:1, mag:1, hp:1, def:1 }, // 神器等級＝加成百分比，預設每項 +1%
+  artifactShards: 0, // 神器碎片
   bag:        [],
   inventory:  { hp1:0, hp2:0, hp3:0, hp4:0, mp1:0, mp2:0, mp3:0, mp4:0, exp1:0, exp2:0, exp3:0 },
   skills:     [],
@@ -2856,6 +2914,30 @@ function getEnemyVisual(id, cssClass) {
 }
 
 
+// 取得神器碎片，reason 會顯示在提示中
+function grantArtifactShards(n, reason) {
+  if (!n) return;
+  state.artifactShards = (state.artifactShards || 0) + n;
+  showToast(`🔹 獲得神器碎片 x${n}！（${reason}）`);
+  _dirty = true; doSave();
+  const infoEl = document.getElementById('artifactShardInfo');
+  if (infoEl) renderArtifacts();
+}
+
+// 強化指定神器：每次消耗 ARTIFACT_SHARD_COST 個碎片，該神器 +1%
+function upgradeArtifact(key) {
+  state.artifacts = state.artifacts || { atk:1, mag:1, hp:1, def:1 };
+  const shards = state.artifactShards || 0;
+  if (shards < ARTIFACT_SHARD_COST) { showToast('❌ 神器碎片不足！'); return; }
+  state.artifactShards = shards - ARTIFACT_SHARD_COST;
+  state.artifacts[key] = (state.artifacts[key] || 1) + 1;
+  _dirty = true; doSave();
+  renderArtifacts();
+  renderHero();
+  const def = ARTIFACT_DEFS.find(d => d.key === key);
+  showToast(`✨ ${def?.label || '神器'}強化成功！目前 +${state.artifacts[key]}%`);
+}
+
 function getStats() {
   const h = state.hero;
   let atk = h.baseAtk, def = h.baseDef, mag = h.baseMag;
@@ -2897,10 +2979,16 @@ function getStats() {
   });
   mag = Math.round(mag * (1 + magAmpBonus));
 
+  // 神器加成（攻擊/魔法/生命/防禦 各自百分比疊加）
+  const art = state.artifacts || { atk:1, mag:1, hp:1, def:1 };
+  atk = Math.round(atk * (1 + (art.atk || 0) / 100));
+  def = Math.round(def * (1 + (art.def || 0) / 100));
+  mag = Math.round(mag * (1 + (art.mag || 0) / 100));
+  const maxHpBase = (state.hero.maxHp || 100) + bonusHp;
+  const maxHp = Math.round(maxHpBase * (1 + (art.hp || 0) / 100));
 
-  
 return { atk, def, mag, bonusHp, bonusMp,
-    maxHp: (state.hero.maxHp || 100) + bonusHp,
+    maxHp,
     maxMp: (state.hero.maxMp || 50)  + bonusMp,
     crit: (state.hero.crit || 0.05) + bonusCrit,
     critDmg: (state.hero.critDmg || 1.5) + bonusCritDmg
@@ -3240,6 +3328,9 @@ function checkAnswer(selected) {
     state.quiz.retrying = false;
     state.quiz.streak++;
     state.stats.maxStreak = Math.max(state.stats.maxStreak || 0, state.quiz.streak);
+    if (state.quiz.streak > 0 && state.quiz.streak % 100 === 0) {
+      grantArtifactShards(1, `連勝${state.quiz.streak}`);
+    }
     updateQuestProgress('streak', state.quiz.streak);
     const gems = Math.floor(GEM_STREAK_BONUS / 20 * state.quiz.streak) + GEM_PER_CORRECT;
     const exp  = Math.floor(20 + 4 *( 1 + state.hero.level / 50)* state.quiz.streak);
@@ -3637,6 +3728,39 @@ function renderGearTab() {
   renderEquippedPane();
   renderBagPane();
   document.getElementById('bagCount').textContent = state.bag.length;
+  renderArtifacts();
+}
+
+// 裝備分頁的子分頁切換：已裝備 / 神器
+function switchGearSub(sub) {
+  document.getElementById('gearSubBtn-equip')?.classList.toggle('active', sub === 'equip');
+  document.getElementById('gearSubBtn-artifact')?.classList.toggle('active', sub === 'artifact');
+  document.getElementById('gearSub-equip')?.classList.toggle('hidden', sub !== 'equip');
+  document.getElementById('gearSub-artifact')?.classList.toggle('hidden', sub !== 'artifact');
+  if (sub === 'artifact') renderArtifacts();
+}
+
+function renderArtifacts() {
+  state.artifacts = state.artifacts || { atk:1, mag:1, hp:1, def:1 };
+  const shards = state.artifactShards || 0;
+  const info = document.getElementById('artifactShardInfo');
+  if (info) info.innerHTML = `🔹 神器碎片：<b>${shards}</b> 個　（每次強化消耗 ${ARTIFACT_SHARD_COST} 個）`;
+  const grid = document.getElementById('artifactGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  ARTIFACT_DEFS.forEach(def => {
+    const lv = state.artifacts[def.key] || 1;
+    const canUpgrade = shards >= ARTIFACT_SHARD_COST;
+    const div = document.createElement('div');
+    div.className = 'artifact-card';
+    div.innerHTML = `
+      <div class="artifact-icon">${def.icon}</div>
+      <div class="artifact-name">${def.label}</div>
+      <div class="artifact-lv">+${lv}% ${def.desc}</div>
+      <button class="artifact-upg-btn" ${canUpgrade ? '' : 'disabled'} onclick="upgradeArtifact('${def.key}')">✨ 強化（-${ARTIFACT_SHARD_COST}）</button>
+    `;
+    grid.appendChild(div);
+  });
 }
 
 // 保留 openBag/closeBag/renderBag 相容性（抽卡後立即裝備用）
@@ -4034,11 +4158,11 @@ function selectEnemy(id) {
   // BGM 依敵人類型自動切換
   const enemy = ENEMIES.find(x => x.id === id);
   if (enemy) {
-    if (enemy.family === 'demon_king') bgmPlay('boss');
+    if (enemy.family === 'demon_king')     bgmPlay('boss');
     else if (enemy.family === 'kingdemon') bgmPlay('kingdemon');
-    else if (enemy.alienMult)          bgmPlay('alien');
-    else if (enemy.postMult)           bgmPlay('demon');
-    else                               bgmPlay('battle');
+    else if (enemy.alienMult)              bgmPlay('alien');
+    else if (enemy.postMult)               bgmPlay('demon');
+    else                                   bgmPlay('battle');
   }
 }
 
@@ -4159,9 +4283,12 @@ function calcDmg(base, critBonus = 0) {
   return { dmg: Math.max(1, crit ? Math.round(base * critMult) : base), isCrit: crit };
 }
 
-// 我方對敵人：攻擊 - 敵方防禦 + 隨機
-function calcAtkDmg(myAtk, enemyDef, rand = 4) {
-  return Math.max(1, myAtk - enemyDef + Math.floor(Math.random() * rand));
+// 我方對敵人:攻擊 - 敵方防禦,並 ±2%
+function calcAtkDmg(myAtk, enemyDef, variance = 0.02) {
+  const baseDmg = myAtk - enemyDef;
+  const randomFactor = 1 + (Math.random() * 2 - 1) * variance;
+  const dmg = baseDmg * randomFactor;
+  return Math.max(1, Math.round(dmg));
 }
 
 // 敵方對我方：傷害 = (敵攻 × 敵攻/(敵攻+防禦) - 0.25×防禦) × (1-減免%)，最低1
@@ -4316,7 +4443,6 @@ function doAttack() {
         });
       }, 420);
     }, 520);
-
   }, hitDelay);
 }
 
@@ -4341,7 +4467,6 @@ function doSkill(sk) {
     if (sk.restrict === '武器' && !hasWeapon) { showToast(`⚠️ ${sk.name} 需裝備武器！`); return; }
     if (sk.restrict === '法杖' && !hasMagic)  { showToast(`⚠️ ${sk.name} 需裝備法杖！`); return; }
   }
-
   const orb = ORB_COLORS[sk.id];
   if (orb) {
     spawnOrbFx(orb.inner, orb.outer, orb.glow);
@@ -4363,7 +4488,6 @@ function doSkill(sk) {
     ['#96f294', '#96f294', '#2fad39'],
     ['#ffffff', '#ffffff', '#2fad39'],
   ];
-
   _battleLock = true;
   let chaosMpMult = 1;
   Object.values(state.equipped).forEach(card => {
@@ -4426,7 +4550,6 @@ function doSkill(sk) {
       }
     }, i * 280 + orbDelay);
   }
-
   // 冰凍效果，計算裝備加成的冰凍機率
   let equipFreezeBonus = 0;
   Object.values(state.equipped).forEach(card => {
@@ -4439,7 +4562,6 @@ function doSkill(sk) {
   });
   const freezeChance = sk.freeze ? sk.freeze + equipFreezeBonus : 0;
   const frozen = freezeChance > 0 && Math.random() < freezeChance;
-
   setTimeout(() => {
     if (b.enemyHp <= 0) { onVictory(stats); return; }
     if (frozen) {
@@ -4499,7 +4621,6 @@ function onVictory(stats) {
   renderHero();
   autoSave();
   updateQuestProgress('kill');
-  
   setTimeout(() => {
     if (enEl) enEl.classList.remove('fall-anim');
     onTurnEnd(() => {
@@ -4796,7 +4917,6 @@ function speakQ() {
   const q = state.quiz.q;
   const sub = state.quiz.subject;
   let text = q.q;
-
   if (sub === 'math') {
     // 數學：問號→多少，運算符號轉國字
     text = text
@@ -5066,11 +5186,9 @@ function changeAdminPw() {
   const oldPw = document.getElementById('pwOld').value;
   const new1  = document.getElementById('pwNew1').value;
   const new2  = document.getElementById('pwNew2').value;
-
   if (oldPw !== getAdminPw()) { showToast('❌ 目前密碼錯誤'); return; }
   if (new1.length < 4)        { showToast('⚠️ 新密碼至少需要 4 個字元'); return; }
   if (new1 !== new2)          { showToast('⚠️ 兩次輸入的新密碼不一致'); return; }
-
   localStorage.setItem(ADMIN_PW_KEY, new1);
   document.getElementById('pwOld').value  = '';
   document.getElementById('pwNew1').value = '';
@@ -5230,7 +5348,6 @@ function renderPotionSlot(type) {
   const useBtn = type === 'exp'
     ? `<button class="shop-item-btn" onclick="useExpPotion('${key}')" style="background:linear-gradient(135deg,#22c55e,#16a34a);margin-top:4px">使用</button>`
     : '';
-
   const slot = document.getElementById(`potionSlot_${type}`);
   if (slot) slot.innerHTML = `<div class="shop-item" style="margin:0;padding:7px 5px;text-align:center;height:235px;overflow:hidden;">
     <div class="shop-item-icon" id="shopIcon_${key}" data-emoji="${cfg.emoji}" style="font-size:1.5em;margin-bottom:3px;">${iconHtml}</div>
@@ -5240,7 +5357,6 @@ function renderPotionSlot(type) {
     <button class="shop-item-btn" ${canAfford?'':'disabled'} onclick="buyItem('${key}',${cost})" style="background:${cfg.color};font-size:.68em;padding:4px 2px;">💰 ${cost}</button>
     ${useBtn}
   </div>`;
-
   const max = cfg.keys.length - 1;
   const prevBtn = document.getElementById(`${type}PrevBtn`);
   const nextBtn = document.getElementById(`${type}NextBtn`);
@@ -5328,7 +5444,6 @@ function renderStoneShop() {
       multEl.textContent = '目前關卡無加成';
     }
   }
-
   el.innerHTML = `
     <div class="shop-item" style="grid-column:1/-1">
       <div class="shop-item-icon">${gameAssets.stone?.['stone'] ? `<img src="${gameAssets.stone['stone']}" style="width:48px;height:48px;object-fit:contain;">` : '🪨'}</div>
@@ -5377,7 +5492,6 @@ function renderAlienStoneShop() {
   const bought = state.boughtAlienStones || 0;
   const nextCost = (bought + 1) * 10000 + 190000;
   const canAfford = state.hero.gold >= nextCost;
-
   const stoneCountEl = document.getElementById('alienStoneCount');
   if (stoneCountEl) stoneCountEl.textContent = owned;
   const multEl = document.getElementById('alienMultDisplay');
@@ -5391,7 +5505,6 @@ function renderAlienStoneShop() {
       multEl.textContent = '目前關卡無加成';
     }
   }
-
   el.innerHTML = `
     <div class="shop-item" style="grid-column:1/-1">
       <div class="shop-item-icon">${gameAssets.alienstone?.['alienstone'] ? `<img src="${gameAssets.alienstone['alienstone']}" style="width:48px;height:48px;object-fit:contain;">` : '🌌'}</div>
@@ -5418,7 +5531,6 @@ function useExpPotion(key) {
   renderHero(); renderShopUI(); autoSave();
   showToast(`⭐ 使用 ${def.name}！增加經驗${def.value} ！`);
 }
-
 // ── 裝備合成 ──────────────────────────────────────────────
 let _forgeSlots = [null, null]; // 選中的裝備 uid
 let _bagPickTarget = 0; // 正在選哪個槽
@@ -5768,6 +5880,8 @@ function loadFromStorage() {
     const data = JSON.parse(raw);
     if (data.state?.hero) Object.assign(state.hero, data.state.hero);
     if (data.state?.equipped) Object.assign(state.equipped, { weapon:null,armor:null,helmet:null,cloak:null,accessory:null }, data.state.equipped);
+    if (data.state?.artifacts) Object.assign(state.artifacts, { atk:1, mag:1, hp:1, def:1 }, data.state.artifacts);
+    if (typeof data.state?.artifactShards === 'number') state.artifactShards = data.state.artifactShards;
     if (data.state?.bag)    state.bag    = data.state.bag;
     if (data.state?.inventory) state.inventory = data.state.inventory;
     if (data.state?.skills)    state.skills    = data.state.skills;
@@ -5850,6 +5964,8 @@ function resetProgress() {
     };
     // 清空裝備、背包、技能、關卡
     state.equipped   = { weapon:null, armor:null, helmet:null, cloak:null, accessory:null };
+    state.artifacts  = { atk:1, mag:1, hp:1, def:1 };
+    state.artifactShards = 0;
     state.bag        = [];
     state.inventory  = { hp1:0, hp2:0, hp3:0, hp4:0, mp1:0, mp2:0, mp3:0, mp4:0, exp1:0, exp2:0, exp3:0 };
     state.skills     = [];
@@ -5900,13 +6016,11 @@ function importSave(event) {
 function exportQuestions() {
   const subjectMap = { math:'數學', chinese:'國文', english:'英文', science:'自然', geography:'地理' };
   const questions = [];
-
   ['math','chinese','english','science','geography'].forEach(sub => {
     // 合併 customQ 和 editedBuiltin
     const custom  = state.customQ?.[sub] || [];
     const builtin = state.editedBuiltin?.[sub] || [];
     const all = [...custom, ...builtin];
-
     all.forEach(item => {
       const entry = {
         category: subjectMap[sub],
@@ -5918,12 +6032,10 @@ function exportQuestions() {
       questions.push(entry);
     });
   });
-
   if (questions.length === 0) {
     showToast('⚠️ 目前沒有可匯出的自訂題目');
     return;
   }
-
   const output = { questions };
   const blob = new Blob(
     [JSON.stringify(output, null, 2)],
@@ -7229,7 +7341,7 @@ const ACHIEVEMENTS = [
   displayProgress: () => `${Math.min(state.checkin.totalDays || 0, 100)} / 100`,
   check: () => (state.checkin.totalDays || 0) >= 100,
 },
-  {
+{
   id: 'skill_lv5', name: '強化技能1', desc: '任意一個技能疊加達到 5 次', category: '技能', icon: '⭐', goal: 5,
   reward: { gems: 50, statBonus: { atk: 1, mag: 1 } },
   progress: () => {
@@ -9184,6 +9296,9 @@ function showMemoryResult() {
 
 function closeMemoryGame() {
   if (memGame.finished) {
+    if (memGame.pairs === MEMORY_PAIRS && memGame.steps >= 2) {
+      grantArtifactShards(1, '翻牌全配對且剩餘步數≥2');
+    }
     state.tickets['ticket_memory'] = Math.max(0, (state.tickets['ticket_memory'] || 0) - 1);
     state.stats = state.stats || {};
     state.stats.totalGamePlays = (state.stats.totalGamePlays || 0) + 1;
@@ -9235,6 +9350,7 @@ function init() {
   }
   renderAutoFightUI();
   renderEnemyList();
+  renderArtifacts();
   setTimeout(() => {
     const selectedCard = document.querySelector('.e-card.selected');
     if (selectedCard) selectedCard.scrollIntoView({ behavior: 'instant', block: 'center' });
@@ -9426,6 +9542,7 @@ function claimCheckin() {
 
   // 第 7 天領完 → 下一輪重置（保留連續天數累計）
   if (todayIdx === 6) {
+    grantArtifactShards(1, '連續簽到第7天');
     setTimeout(() => {
       c.claimedDays = [];
       c.cycleStart  = new Date(Date.now() + 86400000).toLocaleDateString('sv'); // 明天開始新輪
@@ -10175,6 +10292,9 @@ function mineDig(r, c) {
     else if (cellVal === 'gem') mineSetCell(worldRow, c, 'empty_gem');
     else mineSetCell(worldRow, c, 'empty_rock');
     mineState.pickaxe--;
+    // 神器碎片機率：0.1% + 層數*0.0005%，上限2%
+    const shardChance = Math.min(0.001 + worldRow * 0.000005, 0.02);
+    if (Math.random() < shardChance) grantArtifactShards(1, `挖礦第${worldRow}層`);
     if (cellVal === 'coin') mineBumpCounter('mineCoinCount', mineState.rewards.coinGold, earnedValue);
     else if (cellVal === 'gem') mineBumpCounter('mineGemCount', mineState.rewards.gemGems, earnedValue);
     const isBelow = (c === mineState.playerCol && r === mineState.playerRow + 1);
