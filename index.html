@@ -1845,7 +1845,7 @@ button:active { transform:scale(.96); }
     <div id="gearSub-artifact" class="hidden">
       <div style="font-size:.72em;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">🔮 神器</div>
       <div id="artifactShardInfo" class="artifact-shard-info">🔹 神器碎片：<b>0</b> 個</div>
-      <div style="font-size:.65em;color:#CBD5E1;text-align:center;margin:6px 0 14px">連勝、簽到、挖礦、翻牌都有機會獲得神器碎片，每個可任選一項神器強化1次</div>
+      <div style="font-size:.65em;color:#CBD5E1;text-align:center;margin:6px 0 14px">連勝、簽到、挖礦、翻牌都有機會獲得神器碎片，每 5 個可任選一項神器強化 +1%</div>
       <div class="artifact-grid" id="artifactGrid"></div>
     </div>
   </div>
@@ -8749,6 +8749,52 @@ function renderQuestTab() {
   });
 }
 
+// 怪物族群 → 成就ID 對照表（共用於「全部」分頁圖示與「圖鑑」分頁）
+const ACHIEVEMENT_FAMILY_GROUPS = [
+  { key:'goblin',      label:'哥布林族',  emoji:'👺', color:'#29c46b', achId:'kill_goblin_all' },
+  { key:'flower_demon',label:'花妖族',    emoji:'🌸', color:'#f02ecf', achId:'kill_flower_demon_all' },
+  { key:'treant',      label:'樹妖族',    emoji:'🌳', color:'#85621d', achId:'kill_treant_all' },
+  { key:'beast',       label:'狼族',      emoji:'🐺', color:'#8f746a', achId:'kill_beast_all' },
+  { key:'skeleton',    label:'骷髏族',    emoji:'💀', color:'#91b0bf', achId:'kill_skeleton_all' },
+  { key:'undead',      label:'惡靈族',    emoji:'👻', color:'#327cc2', achId:'kill_undead_all' },
+  { key:'orc',         label:'半獸人族',  emoji:'👹', color:'#67bf15', achId:'kill_orc_all' },
+  { key:'element',     label:'元素族',    emoji:'🌍', color:'#e32929', achId:'kill_element_all' },
+  { key:'spider',      label:'蜘蛛族',    emoji:'🕷️', color:'#361163', achId:'kill_spider_all' },
+  { key:'crystal',     label:'水晶族',    emoji:'🔴', color:'#fcf644', achId:'kill_crystal_all' },
+  { key:'frog',        label:'蛙怪族',    emoji:'🐸', color:'#70ba3c', achId:'kill_frog_all' },
+  { key:'capybara',    label:'水豚',      emoji:'🦝', color:'#ab8138', achId:'kill_capybara_all' },
+  { key:'dragon',      label:'龍族',      emoji:'🐲', color:'#e37617', achId:'kill_dragon_all' },
+  { key:'demon',       label:'惡魔族',    emoji:'😈', color:'#c70a0a', achId:'kill_demon_all' },
+  { key:'demon_king',  label:'魔王',      emoji:'👑', color:'#460d8c', achId:'kill_demon_king_all' },
+  { key:'scorpion',    label:'蠍子族',    emoji:'🦂', color:'#e67e22', achId:'kill_scorpion_all' },
+  { key:'Mabeast',     label:'狼族',      emoji:'🐺', color:'#8f746a', achId:'kill_Mabeast_all' },
+  { key:'turtle',      label:'龜族',      emoji:'🐢', color:'#27ae60', achId:'kill_turtle_all' },
+  { key:'snake',       label:'蛇族',      emoji:'🐍', color:'#8e44ad', achId:'kill_snake_all' },
+  { key:'mushroom',    label:'菌族',      emoji:'🍄', color:'#a0522d', achId:'kill_mushroom_all' },
+  { key:'seal',        label:'海豹',      emoji:'🦭',  color:'#59ded7', achId:'kill_seal_all' },
+  { key:'crab',        label:'螃蟹族',    emoji:'🦀', color:'#e74c3c', achId:'kill_crab_all' },
+  { keys:['DK','lich','whale','guard'],
+                       label:'四天王',    emoji:'👁️', color:'#2c3e50', achId:'kill_four_kings' },
+  { key:'kingdemon',   label:'魔帝',      emoji:'😡', color:'#7b241c', achId:'kill_kingdemon_all' },
+  { key:'octopus',     label:'章魚族',    emoji:'🐙', color:'#0e7490', achId:'kill_octopus_all' },
+  { key:'sloth',       label:'樹懶族',    emoji:'🦥', color:'#8b5e34', achId:'kill_sloth_all' },
+  { key:'hercules',    label:'長戟大兜蟲',emoji:'🪲',   color:'#313775', achId:'kill_hercules_all' },
+];
+
+// 取得成就卡片圖示：怪物類成就優先讀取圖鑑縮圖，讀不到才 fallback 成 emoji
+function getAchievementIconHtml(ach) {
+  const group = ACHIEVEMENT_FAMILY_GROUPS.find(g => g.achId === ach.id);
+  if (group) {
+    const familyKeys = group.keys || [group.key];
+    const items = ENEMIES.filter(e => familyKeys.includes(e.family)).sort((a, b) => a.stage - b.stage);
+    const thumbEnemy = items.find(e => gameAssets.thumb?.[e.id]);
+    if (thumbEnemy) {
+      return `<img src="${gameAssets.thumb[thumbEnemy.id]}" style="width:36px;height:36px;object-fit:contain;border-radius:8px;">`;
+    }
+  }
+  return ach.icon;
+}
+
 function renderAchieveTab(){
   const list = document.getElementById('achieveList');
   if (!list) return;
@@ -8813,7 +8859,7 @@ function renderAchieveTab(){
       background:${done ? '#fffbe6' : unlocked ? '#f0fdf4' : '#f8fafc'};
       border:2px solid ${done ? '#f59e0b' : unlocked ? '#22c55e' : '#e2e8f0'};
     `;
-    const iconEl    = done ? ach.icon : unlocked ? ach.icon : '🔒';
+    const iconEl    = done ? getAchievementIconHtml(ach) : unlocked ? getAchievementIconHtml(ach) : '🔒';
     const nameColor = done ? '#b45309' : unlocked ? '#15803d' : '#64748b';
     const statusEl  = (done ? '<div style="font-size:1.4em">✅</div>'
       : unlocked ? '<button onclick="claimAchievement(\'' + ach.id + '\')" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;border-radius:10px;padding:6px 12px;font-weight:900;font-size:.78em;cursor:pointer">領取！</button>'
@@ -8973,36 +9019,7 @@ function renderEquipCompendium(container) {
 }
 
 function renderEnemyCompendium(container) {
-  const familyGroups = [
-  { key:'goblin',      label:'哥布林族',  emoji:'👺', color:'#29c46b', achId:'kill_goblin_all' },
-  { key:'flower_demon',label:'花妖族',    emoji:'🌸', color:'#f02ecf', achId:'kill_flower_demon_all' },
-  { key:'treant',      label:'樹妖族',    emoji:'🌳', color:'#85621d', achId:'kill_treant_all' },
-  { key:'beast',       label:'狼族',      emoji:'🐺', color:'#8f746a', achId:'kill_beast_all' },
-  { key:'skeleton',    label:'骷髏族',    emoji:'💀', color:'#91b0bf', achId:'kill_skeleton_all' },
-  { key:'undead',      label:'惡靈族',    emoji:'👻', color:'#327cc2', achId:'kill_undead_all' },
-  { key:'orc',         label:'半獸人族',  emoji:'👹', color:'#67bf15', achId:'kill_orc_all' },
-  { key:'element',     label:'元素族',    emoji:'🌍', color:'#e32929', achId:'kill_element_all' },
-  { key:'spider',      label:'蜘蛛族',    emoji:'🕷️', color:'#361163', achId:'kill_spider_all' },
-  { key:'crystal',     label:'水晶族',    emoji:'🔴', color:'#fcf644', achId:'kill_crystal_all' },
-  { key:'frog',        label:'蛙怪族',    emoji:'🐸', color:'#70ba3c', achId:'kill_frog_all' },
-  { key:'capybara',    label:'水豚',      emoji:'🦝', color:'#ab8138', achId:'kill_capybara_all' },
-  { key:'dragon',      label:'龍族',      emoji:'🐲', color:'#e37617', achId:'kill_dragon_all' },
-  { key:'demon',       label:'惡魔族',    emoji:'😈', color:'#c70a0a', achId:'kill_demon_all' },
-  { key:'demon_king',  label:'魔王',      emoji:'👑', color:'#460d8c', achId:'kill_demon_king_all' },
-  { key:'scorpion',    label:'蠍子族',    emoji:'🦂', color:'#e67e22', achId:'kill_scorpion_all' },
-  { key:'Mabeast',     label:'狼族',      emoji:'🐺', color:'#8f746a', achId:'kill_Mabeast_all' },
-  { key:'turtle',      label:'龜族',      emoji:'🐢', color:'#27ae60', achId:'kill_turtle_all' },
-  { key:'snake',       label:'蛇族',      emoji:'🐍', color:'#8e44ad', achId:'kill_snake_all' },
-  { key:'mushroom',    label:'菌族',      emoji:'🍄', color:'#a0522d', achId:'kill_mushroom_all' },
-  { key:'seal',        label:'海豹',      emoji:'🦭',  color:'#59ded7', achId:'kill_seal_all' },
-  { key:'crab',        label:'螃蟹族',    emoji:'🦀', color:'#e74c3c', achId:'kill_crab_all' },
-  { keys:['DK','lich','whale','guard'], 
-                       label:'四天王',    emoji:'👁️', color:'#2c3e50', achId:'kill_four_kings' },
-  { key:'kingdemon',   label:'魔帝',      emoji:'😡', color:'#7b241c', achId:'kill_kingdemon_all' },
-  { key:'octopus',     label:'章魚族',    emoji:'🐙', color:'#0e7490', achId:'kill_octopus_all' },
-  { key:'sloth',       label:'樹懶族',    emoji:'🦥', color:'#8b5e34', achId:'kill_sloth_all' },
-  { key:'hercules',    label:'長戟大兜蟲',emoji:'🪲',   color:'#313775', achId:'kill_hercules_all' },
-  ];
+  const familyGroups = ACHIEVEMENT_FAMILY_GROUPS;
   const statIcons   = { atk:'⚔️', def:'🛡️', mag:'✨', hp:'❤️', mp:'💧', crit:'🎯', critDmg:'💥' };
   const defeatedIds = new Set(state.defeatedEnemies || []);
   familyGroups.forEach(({ key, keys, label, emoji, color, achId }) => {
@@ -10140,9 +10157,9 @@ function mineGenCell(worldRow) {
   const r = Math.random();
   // 挖礦機率：鑽石 → 金幣 → 神器碎片 → 空
   const depth = worldRow;
-  const gemChance   = Math.min(0.2 + depth * 0.00011, 0.42);
-  const coinChance  = Math.min(0.2 + depth * 0.00011, 0.42);
-  const shardChance = Math.min(0.001 + depth * 0.0001, 0.11);
+  const gemChance   = Math.min(0.2 + depth * 0.00011, 0.40);
+  const coinChance  = Math.min(0.2 + depth * 0.00011, 0.40);
+  const shardChance = Math.min(0.001 + depth * 0.00008, 0.12);
   if (r < gemChance) return 'gem';
   if (r < gemChance + coinChance) return 'coin';
   if (r < gemChance + coinChance + shardChance) return 'shard';
@@ -10259,7 +10276,7 @@ function mineMove(r, c) {
 function mineCalcReward(type, depth) {//挖礦獎勵計算
   const lv = state.hero.level || 1;
   if (type === 'coin') {
-    return (lv * 3 + depth * 3.2) * (Math.floor(Math.random() * 3) + 2);
+    return (lv * 3 + depth * 4) * (Math.floor(Math.random() * 3) + 2);
   } else {
     const base = Math.ceil(lv / 100) + Math.ceil(depth / 100);
     return base * (Math.floor(Math.random() * 3) + 1);
