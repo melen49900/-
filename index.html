@@ -1549,7 +1549,7 @@ button:active { transform:scale(.96); }
     <button class="tab-btn" id="shopTabBtn" onclick="showTab('shop')" style="position:relative">🏪 商店
       <span id="shopBadge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:white;font-size:.55em;font-weight:900;border-radius:50%;width:10px;height:10px;line-height:1"></span>
     </button>
-    <button class="tab-btn"        onclick="showTab('gear')">   🎒 裝備</button>
+    <button class="tab-btn" id="gearTabBtn" onclick="showTab('gear')" style="position:relative">   🎒 裝備<span id="gearBadge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:white;font-size:.55em;font-weight:900;border-radius:20px;padding:1px 5px;line-height:1.4">0</span></button>
     <button class="tab-btn"        onclick="showTab('quest')"   id="questTabBtn" style="position:relative">  ❗ 任務
       <span id="questBadge"        style="display:none;position:absolute;top:4px;right:4px;background:#3498db;color:white;font-size:.55em;font-weight:900;border-radius:20px;padding:1px 5px;line-height:1.4">0</span>
       <span id="questPendingBadge" style="display:none;position:absolute;top:4px;left:4px ;background:#ef4444;color:white;font-size:.55em;font-weight:900;border-radius:20px;padding:1px 5px;line-height:1.4">0</span>
@@ -1812,7 +1812,7 @@ button:active { transform:scale(.96); }
     <!-- 裝備子分頁：已裝備 / 神器 -->
     <div class="gear-subtabs">
       <button class="gear-subtab-btn active" id="gearSubBtn-equip" onclick="switchGearSub('equip')">⚔️ 已裝備</button>
-      <button class="gear-subtab-btn" id="gearSubBtn-artifact" onclick="switchGearSub('artifact')">🔮 神器</button>
+      <button class="gear-subtab-btn" id="gearSubBtn-artifact" onclick="switchGearSub('artifact')" style="position:relative">🔮 神器<span id="artifactSubBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ef4444;color:white;font-size:.55em;font-weight:900;border-radius:20px;padding:1px 5px;line-height:1.4">0</span></button>
     </div>
     <div id="gearSub-equip">
       <!-- 已裝備格 -->
@@ -1845,7 +1845,7 @@ button:active { transform:scale(.96); }
     <div id="gearSub-artifact" class="hidden">
       <div style="font-size:.72em;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">🔮 神器</div>
       <div id="artifactShardInfo" class="artifact-shard-info">🔹 神器碎片：<b>0</b> 個</div>
-      <div style="font-size:.65em;color:#CBD5E1;text-align:center;margin:6px 0 14px">連勝、簽到、挖礦、翻牌都有機會獲得神器碎片，每 5 個可任選一項神器強化 +1%</div>
+      <div style="font-size:.65em;color:#CBD5E1;text-align:center;margin:6px 0 14px">連勝、簽到、挖礦、翻牌都有機會獲得神器碎片，每個可任選一項神器強化1次</div>
       <div class="artifact-grid" id="artifactGrid"></div>
     </div>
   </div>
@@ -3748,27 +3748,44 @@ function switchGearSub(sub) {
   if (sub === 'artifact') renderArtifacts();
 }
 
+function updateArtifactBadge() {
+  const shards = state.artifactShards || 0;
+  const canUpgradeCount = ARTIFACT_SHARD_COST > 0 ? Math.floor(shards / ARTIFACT_SHARD_COST) : 0;
+  const gearBadge = document.getElementById('gearBadge');
+  if (gearBadge) {
+    if (canUpgradeCount > 0) { gearBadge.textContent = canUpgradeCount; gearBadge.style.display = ''; }
+    else gearBadge.style.display = 'none';
+  }
+  const subBadge = document.getElementById('artifactSubBadge');
+  if (subBadge) {
+    if (canUpgradeCount > 0) { subBadge.textContent = canUpgradeCount; subBadge.style.display = ''; }
+    else subBadge.style.display = 'none';
+  }
+}
+
 function renderArtifacts() {
   state.artifacts = state.artifacts || { atk:1, mag:1, hp:1, def:1 };
   const shards = state.artifactShards || 0;
   const info = document.getElementById('artifactShardInfo');
   if (info) info.innerHTML = `🔹 神器碎片：<b>${shards}</b> 個　（每次強化消耗 ${ARTIFACT_SHARD_COST} 個）`;
+  updateArtifactBadge();
   const grid = document.getElementById('artifactGrid');
   if (!grid) return;
   grid.innerHTML = '';
   ARTIFACT_DEFS.forEach(def => {
-    const lv = state.artifacts[def.key] || 1;
-    const canUpgrade = shards >= ARTIFACT_SHARD_COST;
-    const div = document.createElement('div');
-    div.className = 'artifact-card';
-    div.innerHTML = `
-      <div class="artifact-icon">${def.icon}</div>
-      <div class="artifact-name">${def.label}</div>
-      <div class="artifact-lv">+${lv}% ${def.desc}</div>
-      <button class="artifact-upg-btn" ${canUpgrade ? '' : 'disabled'} onclick="upgradeArtifact('${def.key}')">✨ 強化（-${ARTIFACT_SHARD_COST}）</button>
-    `;
-    grid.appendChild(div);
-  });
+  const lv = state.artifacts[def.key] || 1;
+  const canUpgrade = shards >= ARTIFACT_SHARD_COST;
+  const pct = def.key === 'chaos' ? (lv - 1) * 5 : lv;// 混沌神器公式不同
+  const div = document.createElement('div');
+  div.className = 'artifact-card';
+  div.innerHTML = `
+    <div class="artifact-icon">${def.icon}</div>
+    <div class="artifact-name">${def.label}</div>
+    <div class="artifact-lv">+${pct}% ${def.desc}</div>
+    <button class="artifact-upg-btn" ${canUpgrade ? '' : 'disabled'} onclick="upgradeArtifact('${def.key}')">✨ 強化（-${ARTIFACT_SHARD_COST}）</button>
+  `;
+  grid.appendChild(div);
+});
 }
 
 // 保留 openBag/closeBag/renderBag 相容性（抽卡後立即裝備用）
@@ -4300,10 +4317,10 @@ function calcAtkDmg(myAtk, enemyDef, variance = 0.02) {
   return Math.max(1, Math.round(dmg));
 }
 
-// 敵方對我方：傷害 = (敵攻 × 敵攻/(敵攻+防禦) - 0.25×防禦) × (1-減免%)，最低1
+// 敵方對我方：傷害 = (敵攻 × 敵攻/(敵攻+0.7防禦) - 0.4×防禦) × (1-減免%)，最低1
 function calcIncomingDmg(enemyAtk, myDef) {
   const reduce = getDmgReduce();
-  const raw = enemyAtk * (enemyAtk / (enemyAtk + myDef)) - 0.25 * myDef;
+  const raw = enemyAtk * (enemyAtk / (enemyAtk + 0.7 * myDef)) - 0.4 * myDef;
   const afterReduce = Math.round(raw * (1 - reduce / 100));
   return Math.max(1, afterReduce);
 }
@@ -4891,7 +4908,7 @@ function addExp(amount) {
 const speechCfg = { //音量調整
   rate:0.95, lang:'zh-TW', enabled:true,
   volume: {
-    battle:  0.7,   // 冒險頁
+    battle:  0.8,   // 冒險頁
     quiz:    1.0,   // 答題頁
     achieve: 0.8,   // 成就頁
     quest:   0.8,   // 任務頁
@@ -4969,7 +4986,7 @@ function speakOpt(opt) {
   _doSpeak(text, isEnglish ? 'en-US' : speechCfg.lang, speechCfg.volume.quiz);
 }
 
-// 音效（Web Audio）=====================================
+// 音效（Web Audio）===========================
 function playSound(type) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -4991,7 +5008,7 @@ function playSound(type) {
   } catch(e){}
 }
 
-// 分頁切換==================================
+// 分頁切換================================
 const TABS = ['quiz','draw','battle','shop','gear','quest','skill','achieve','checkin','game','admin'];
 
 function showTab(tab) {
@@ -5208,7 +5225,7 @@ function changeAdminPw() {
   showToast('✅ 密碼已成功更改！');
 }
 
-// 後台==============================================
+// 後台=============================
 function renderAdminUI() {
   document.getElementById('gemRewardVal').textContent   = GEM_PER_CORRECT;
   document.getElementById('streakBonusVal').textContent = GEM_STREAK_BONUS;
@@ -10123,9 +10140,9 @@ function mineGenCell(worldRow) {
   const r = Math.random();
   // 挖礦機率：鑽石 → 金幣 → 神器碎片 → 空
   const depth = worldRow;
-  const gemChance   = Math.min(0.2 + depth * 0.0002, 0.45);
-  const coinChance  = Math.min(0.2 + depth * 0.0002, 0.45);
-  const shardChance = Math.min(0.001 + depth * 0.000036, 0.07);
+  const gemChance   = Math.min(0.2 + depth * 0.00011, 0.42);
+  const coinChance  = Math.min(0.2 + depth * 0.00011, 0.42);
+  const shardChance = Math.min(0.001 + depth * 0.0001, 0.11);
   if (r < gemChance) return 'gem';
   if (r < gemChance + coinChance) return 'coin';
   if (r < gemChance + coinChance + shardChance) return 'shard';
@@ -10242,7 +10259,7 @@ function mineMove(r, c) {
 function mineCalcReward(type, depth) {//挖礦獎勵計算
   const lv = state.hero.level || 1;
   if (type === 'coin') {
-    return (lv * 3 + depth * 3) * (Math.floor(Math.random() * 4) + 1);
+    return (lv * 3 + depth * 3.2) * (Math.floor(Math.random() * 3) + 2);
   } else {
     const base = Math.ceil(lv / 100) + Math.ceil(depth / 100);
     return base * (Math.floor(Math.random() * 3) + 1);
