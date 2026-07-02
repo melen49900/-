@@ -2302,6 +2302,7 @@ const FAMILY_MOD = {// 種族加成
   octopus:       { hp:1,    atk:1.05, def:1,    gold:1.05, exp:1    },
   sloth:         { hp:1.05, atk:1,    def:1.05, gold:1.1,  exp:1    },
   Hercules:      { hp:1,    atk:1,    def:2,    gold:1.2,  exp:1    },
+  anglerfish:    { hp:1.1,  atk:1.1,  def:1,    gold:1.2,  exp:1    },
 };
 
 const ENEMIES = [
@@ -2420,6 +2421,11 @@ const ENEMIES = [
   {id:'s113',name:'星核紅兜蟲',  emoji:'🪲',stage:113,family:'hercules',       alienMult:7.5},
   {id:'s114',name:'星核紫兜蟲',  emoji:'🪲',stage:114,family:'hercules',       alienMult:8.0},
   {id:'s115',name:'星核金兜蟲',  emoji:'🪲',stage:115,family:'hercules',       alienMult:8.5},
+  {id:'s116',name:'綠紋鮟鱇',    emoji:'🐟',stage:116,family:'anglerfish',   alienMult:9.0},
+  {id:'s117',name:'藍紋鮟鱇',    emoji:'🐟',stage:117,family:'anglerfish',   alienMult:9.5},
+  {id:'s118',name:'紅紋鮟鱇',    emoji:'🐟',stage:118,family:'anglerfish',   alienMult:10.0},
+  {id:'s119',name:'紫紋鮟鱇',    emoji:'🐟',stage:119,family:'anglerfish',   alienMult:10.5},
+  {id:'s120',name:'金紋鮟鱇',    emoji:'🐟',stage:120,family:'anglerfish',   alienMult:11.0},
 ];
 
 function enemyStats(id) {// 怪物數值計算
@@ -6322,7 +6328,7 @@ function resolveConfirm(val) {
   if (_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
 }
 
-// 初始化==============================
+// 初始化============================
 const ENEMY_SIZE_KEY = 'magicAcademy_enemySize';
 let _enemyScale = 100; // 百分比，預設 100%
 
@@ -6583,6 +6589,13 @@ const ACHIEVEMENTS = [
   progress: () => Math.min(Math.max((state.stats?.totalCorrect || 0) - 2900, 0), 100),
   displayProgress: () => `${Math.min(state.stats?.totalCorrect || 0, 3000)} / 3000`,
   check: () => (state.stats?.totalCorrect || 0) >= 3000,
+},
+{
+  id: 'correct3100', name: '大學者12', desc: '累積答對 3100 道題目', category: '學習', icon: '📚', requires: 'correct3000', goal: 100,
+  reward: { gems: 1500, statBonus: { hp: 310 } },
+  progress: () => Math.min(Math.max((state.stats?.totalCorrect || 0) - 3000, 0), 100),
+  displayProgress: () => `${Math.min(state.stats?.totalCorrect || 0, 3100)} / 3100`,
+  check: () => (state.stats?.totalCorrect || 0) >= 3100,
 },
 {
   id: 'math10', name: '數學小能手1', desc: '數學題答對 10 題', category: '學習', icon: '🔢', goal: 10,
@@ -7295,6 +7308,12 @@ const ACHIEVEMENTS = [
   check: () => (state.stats?.maxStreak || 0) >= 600,
 },
 {
+  id: 'streak700', name: '連勝王6', desc: '最高連勝達到 700 題', category: '學習', icon: '🔥', requires: 'streak500', goal: 700,
+  reward: { gems: 2250, statBonus: { atk: 15, mag: 15, hp: 500 } },
+  progress: () => Math.min(state.stats?.maxStreak || 0, 700),
+  check: () => (state.stats?.maxStreak || 0) >= 700,
+},
+{
   id: 'login_7', name: '登入7天', desc: '累積登入 7 天', category: '簽到', icon: '📅', goal: 7,
   reward: { gems: 100 },
   progress: () => state.checkin.totalDays || 0,
@@ -7468,6 +7487,15 @@ const ACHIEVEMENTS = [
     return Math.min(max, 100);
   },
   check: () => Object.values(state.skillStacks || {}).some(s => s >= 100),
+},
+{
+  id: 'skill_lv200', name: '技能大師1', desc: '任意一個技能疊加達到 200 次', category: '技能', icon: '🌟', requires: 'skill_lv100', goal: 200,
+  reward: { gems: 500, statBonus: { atk: 12, mag: 12 } },
+  progress: () => {
+    const max = Math.max(0, ...Object.values(state.skillStacks || {}));
+    return Math.min(max, 200);
+  },
+  check: () => Object.values(state.skillStacks || {}).some(s => s >= 200),
 },
 {
   id: 'all_sword_skills', name: '劍士入門', desc: '集齊所有劍技（重斬、火焰斬、三連斬）', category:'技能', icon: '⚔️', goal: 3,
@@ -8105,6 +8133,19 @@ const ACHIEVEMENTS = [
   check: () => {
     const ids = new Set(state.defeatedEnemies || []);
     return ENEMIES.filter(e => e.family === 'hercules').every(e => ids.has(e.id));
+  },
+},
+{
+  id: 'kill_anglerfish_all', name: '鮟鱇獵人', desc: '擊敗所有鮟鱇', category: '圖鑑', icon: '🐟', _family: 'anglerfish',
+  reward: { gems: 1000, statBonus: { atk: 5, def: 5, mag: 5 }},
+  progress: () => {
+    const ids = new Set(state.defeatedEnemies || []);
+    return ENEMIES.filter(e => e.family === 'anglerfish' && ids.has(e.id)).length;
+  },
+  get goal() { return ENEMIES.filter(e => e.family === 'anglerfish').length; },
+  check: () => {
+    const ids = new Set(state.defeatedEnemies || []);
+    return ENEMIES.filter(e => e.family === 'anglerfish').every(e => ids.has(e.id));
   },
 },
 {
@@ -10276,10 +10317,10 @@ function mineMove(r, c) {
 function mineCalcReward(type, depth) {//挖礦獎勵計算
   const lv = state.hero.level || 1;
   if (type === 'coin') {
-    return (lv * 3 + depth * 4) * (Math.floor(Math.random() * 3) + 2);
+    return Math.round((lv * 3 + depth * 3.3) * (Math.floor(Math.random() * 3) + 2));
   } else {
     const base = Math.ceil(lv / 100) + Math.ceil(depth / 100);
-    return base * (Math.floor(Math.random() * 3) + 1);
+    return Math.round(base * (Math.floor(Math.random() * 3) + 1));
   }
 }
 
