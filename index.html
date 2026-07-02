@@ -2303,6 +2303,7 @@ const FAMILY_MOD = {// 種族加成
   sloth:         { hp:1.05, atk:1,    def:1.05, gold:1.1,  exp:1    },
   Hercules:      { hp:1,    atk:1,    def:2,    gold:1.2,  exp:1    },
   anglerfish:    { hp:1.1,  atk:1.1,  def:1,    gold:1.2,  exp:1    },
+  wild_boar:     { hp:1,    atk:1,    def:1,    gold:1,    exp:1    },
 };
 
 const ENEMIES = [
@@ -2426,6 +2427,11 @@ const ENEMIES = [
   {id:'s118',name:'紅紋鮟鱇',    emoji:'🐟',stage:118,family:'anglerfish',   alienMult:10.0},
   {id:'s119',name:'紫紋鮟鱇',    emoji:'🐟',stage:119,family:'anglerfish',   alienMult:10.5},
   {id:'s120',name:'金紋鮟鱇',    emoji:'🐟',stage:120,family:'anglerfish',   alienMult:11.0},
+  {id:'s121',name:'綠紋野豬',    emoji:'🐗',stage:121,family:'wild_boar',    alienMult:11.5},
+  {id:'s122',name:'藍紋野豬',    emoji:'🐗',stage:122,family:'wild_boar',    alienMult:12.0},
+  {id:'s123',name:'紅紋野豬',    emoji:'🐗',stage:123,family:'wild_boar',    alienMult:12.5},
+  {id:'s124',name:'紫紋野豬',    emoji:'🐗',stage:124,family:'wild_boar',    alienMult:13.0},
+  {id:'s125',name:'金紋野豬',    emoji:'🐗',stage:125,family:'wild_boar',    alienMult:13.5},
 ];
 
 function enemyStats(id) {// 怪物數值計算
@@ -8149,6 +8155,19 @@ const ACHIEVEMENTS = [
   },
 },
 {
+  id: 'kill_wild_boar_all', name: '野豬獵人', desc: '擊敗所有野豬', category: '圖鑑', icon: '🐗', _family: 'wild_boar',
+  reward: { gems: 1000, statBonus: { atk: 5, def: 5, mag: 5 }},
+  progress: () => {
+    const ids = new Set(state.defeatedEnemies || []);
+    return ENEMIES.filter(e => e.family === 'wild_boar' && ids.has(e.id)).length;
+  },
+  get goal() { return ENEMIES.filter(e => e.family === 'wild_boar').length; },
+  check: () => {
+    const ids = new Set(state.defeatedEnemies || []);
+    return ENEMIES.filter(e => e.family === 'wild_boar').every(e => ids.has(e.id));
+  },
+},
+{
   id: 'kill_all_enemy', name: '獵人大師', desc: '擊敗所有敵人', category: '圖鑑', icon: '🏆', _family: 'all',
   reward: { gems: 800, statBonus: { atk: 4, def: 4, mag: 4 }},
   progress: () => {
@@ -9072,7 +9091,7 @@ function renderEnemyCompendium(container) {
     const header = document.createElement('div');
     header.style.cssText = `display:flex;align-items:center;justify-content:space-between;margin:12px 0 6px;padding-bottom:4px;border-bottom:2px solid ${color}33;`;
     header.innerHTML = `
-      <span style="font-size:.78em;font-weight:900;color:${color}">${emoji} ${label}</span>
+      <span style="font-size:.78em;font-weight:900;color:${color}">${label}</span>
       <span style="font-size:.72em;font-weight:800;color:${color}">${have}/${items.length}</span>
     `;
     container.appendChild(header);
