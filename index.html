@@ -2957,6 +2957,23 @@ function getArtifactChaosBonus() {
   return { dmgBonus: (lv - 1) / 20, mpMult: (lv - 1) / 20 };
 }
 
+// 統一計算技能實際消耗的魔力（含混沌套裝加成 + 技能疊加加成，取四捨五入整數）
+function getSkillMpCost(sk) {
+  let chaosMpMult = 1;
+  Object.values(state.equipped).forEach(card => {
+    if (!card) return;
+    const eqBase = EQUIP_POOL.find(e => e.id === card.id || e.name === card.name);
+    const eqEff = card.specialEffect || eqBase?.specialEffect;
+    if (!eqEff || eqEff.type !== 'chaosBuff') return;
+    const star = card.star || 0;
+    chaosMpMult += (eqEff.mpBase + star * eqEff.mpPerStar) / 100;
+  });
+  chaosMpMult += getArtifactChaosBonus().mpMult;
+  const stacks = (state.skillStacks && state.skillStacks[sk.id]) || 0;
+  const stackMult = 1 + stacks * 0.01; // 每疊加1層 +1% 魔力消耗
+  return Math.round(sk.mpCost * chaosMpMult * stackMult);
+}
+
 function getStats() {
   const h = state.hero;
   let atk = h.baseAtk, def = h.baseDef, mag = h.baseMag;
@@ -4277,17 +4294,7 @@ function renderBattleUI() {
     if (!(state.skills || []).includes(sid)) return;
     const sk = SKILL_POOL.find(x => x.id === sid);
     if (!sk) return;
-    let chaosMpMult = 1;
-    Object.values(state.equipped).forEach(card => {
-      if (!card) return;
-      const eqBase = EQUIP_POOL.find(e => e.id === card.id || e.name === card.name);
-      const eqEff = card.specialEffect || eqBase?.specialEffect;
-      if (!eqEff || eqEff.type !== 'chaosBuff') return;
-      const star = card.star || 0;
-      chaosMpMult += (eqEff.mpBase + star * eqEff.mpPerStar) / 100;
-    });
-    chaosMpMult += getArtifactChaosBonus().mpMult; 
-    const displayMpCost = Math.ceil(sk.mpCost * chaosMpMult);
+    const displayMpCost = getSkillMpCost(sk);
     const canUse = b.heroMp >= displayMpCost && !b.cooldown;
     const btn = document.createElement('button');
     btn.className = 'sk-btn';
@@ -4487,17 +4494,7 @@ function doAttack() {
 function doSkill(sk) {
   if (_battleLock) return;
   const b = state.battle;
-  let _chaosMpMult = 1;
-  Object.values(state.equipped).forEach(card => {
-    if (!card) return;
-    const eqBase = EQUIP_POOL.find(e => e.id === card.id || e.name === card.name);
-    const eqEff = card.specialEffect || eqBase?.specialEffect;
-    if (!eqEff || eqEff.type !== 'chaosBuff') return;
-    const star = card.star || 0;
-   _chaosMpMult += (eqEff.mpBase + star * eqEff.mpPerStar) / 100;
-  });
-  _chaosMpMult += getArtifactChaosBonus().mpMult;
-  if (b.heroMp < Math.ceil(sk.mpCost * _chaosMpMult)) { showToast('MP 不足！'); return; }
+  if (b.heroMp < getSkillMpCost(sk)) { showToast('MP 不足！'); return; }
   // 限制檢查：武器/法杖專用
   if (sk.restrict) {
     const weaponSlot = state.equipped['weapon'];
@@ -4528,17 +4525,7 @@ function doSkill(sk) {
     ['#ffffff', '#ffffff', '#2fad39'],
   ];
   _battleLock = true;
-  let chaosMpMult = 1;
-  Object.values(state.equipped).forEach(card => {
-    if (!card) return;
-    const eqBase = EQUIP_POOL.find(e => e.id === card.id || e.name === card.name);
-    const eqEff = card.specialEffect || eqBase?.specialEffect;
-    if (!eqEff || eqEff.type !== 'chaosBuff') return;
-    const star = card.star || 0;
-    chaosMpMult += (eqEff.mpBase + star * eqEff.mpPerStar) / 100;
-  });
-  chaosMpMult += getArtifactChaosBonus().mpMult;
-  const actualMpCost = Math.ceil(sk.mpCost * chaosMpMult);
+  const actualMpCost = getSkillMpCost(sk);
   b.heroMp -= actualMpCost; state.hero.mp = b.heroMp;
   document.getElementById('bHeroMp').style.width = Math.max(0, b.heroMp / getStats().maxMp * 100) + '%';
   document.getElementById('bHeroMpText').textContent = Math.floor(b.heroMp);
@@ -5148,7 +5135,7 @@ function renderSkillTab() {
           : sk.emoji}</div>
         <div>
           <div class="sk-card-title">${sk.name}</div>
-          <div class="sk-card-sub">${sk.restrict ? sk.restrict+'專用 · ' : ''}消耗 ${sk.mpCost} MP · ★ 疊加×${stacks}</div>
+          <div class="sk-card-sub">${sk.restrict ? sk.restrict+'專用 · ' : ''}消耗 ${getSkillMpCost(sk)} MP · ★ 疊加×${stacks}</div>
         </div>
       </div>
       <div class="sk-stat-row">${statHTML}</div>
@@ -9931,7 +9918,7 @@ const autoFight = {
     // Lv3：自動技能
     if (state.autoUnlock.skill && state.autoSkillId) {
       const sk = SKILL_POOL.find(x => x.id === state.autoSkillId);
-      if (sk && b.heroMp >= sk.mpCost && state.skills?.includes(sk.id)) {
+      if (sk && b.heroMp >= getSkillMpCost(sk) && state.skills?.includes(sk.id)) {
         // 限制檢查
         const weaponSlot = state.equipped['weapon'];
         const okRestrict = !sk.restrict
