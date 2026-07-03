@@ -2260,12 +2260,12 @@ const EQUIP_POOL = [
 
 // 技能卡、強化
 const SKILL_POOL = [
-  {id:'sk1',name:'重斬',   emoji:'⚡', rarity:'rare', restrict:'武器', mpCost:8,  baseDmg:8,  stackBase:4, atkMult:1.6, magMult:0,   stackAtk:0.08, stackMag:0,    hits:1, desc:'攻擊 1.6 倍'},
-  {id:'sk2',name:'火焰斬', emoji:'🔥', rarity:'rare', restrict:'武器', mpCost:15, baseDmg:15, stackBase:7, atkMult:1.6, magMult:0.6, stackAtk:0.08, stackMag:0.02, hits:1, desc:'攻擊 1.6＋魔法 0.6 倍'},
-  {id:'sk3',name:'三連斬', emoji:'⚔️', rarity:'epic', restrict:'武器', mpCost:21, baseDmg:7,  stackBase:4, atkMult:1.0, magMult:0,   stackAtk:0.1 , stackMag:0,    hits:3, defPen:0.2, desc:'攻擊 1.0 倍 × 3，無視 20% 防禦'},
+  {id:'sk1',name:'重斬',   emoji:'⚡', rarity:'rare', restrict:'武器', mpCost:7,  baseDmg:8,  stackBase:4, atkMult:1.6, magMult:0,   stackAtk:0.08, stackMag:0,    hits:1, desc:'攻擊 1.6 倍'},
+  {id:'sk2',name:'火焰斬', emoji:'🔥', rarity:'rare', restrict:'武器', mpCost:13, baseDmg:15, stackBase:7, atkMult:1.6, magMult:0.6, stackAtk:0.08, stackMag:0.02, hits:1, desc:'攻擊 1.6＋魔法 0.6 倍'},
+  {id:'sk3',name:'三連斬', emoji:'⚔️', rarity:'epic', restrict:'武器', mpCost:27, baseDmg:7,  stackBase:4, atkMult:1.0, magMult:0,   stackAtk:0.1 , stackMag:0,    hits:3, defPen:0.2, desc:'攻擊 1.0 倍 × 3，無視 20% 防禦'},
   {id:'sk4',name:'火球術', emoji:'🔮', rarity:'rare', restrict:'法杖', mpCost:15, baseDmg:15, stackBase:7, atkMult:0,   magMult:1.8, stackAtk:0,    stackMag:0.1,  hits:1, desc:'魔攻 1.8 倍'},
-  {id:'sk5',name:'冰錐術', emoji:'❄️', rarity:'rare', restrict:'法杖', mpCost:16, baseDmg:16, stackBase:6, atkMult:0,   magMult:1.3, stackAtk:0,    stackMag:0.05, hits:1, freeze:0.3, desc:'魔攻 1.3 倍，30%冰凍'},
-  {id:'sk6',name:'暴風術', emoji:'🌪️', rarity:'epic', restrict:'法杖', mpCost:24, baseDmg:8,  stackBase:6, atkMult:0,   magMult:1.0, stackAtk:0,    stackMag:0.1,  hits:3, defPen:0.2, desc:'魔攻 1.0 倍 × 3，無視 20% 防禦'},
+  {id:'sk5',name:'冰錐術', emoji:'❄️', rarity:'rare', restrict:'法杖', mpCost:15, baseDmg:16, stackBase:6, atkMult:0,   magMult:1.3, stackAtk:0,    stackMag:0.05, hits:1, freeze:0.3, desc:'魔攻 1.3 倍，30%冰凍'},
+  {id:'sk6',name:'暴風術', emoji:'🌪️', rarity:'epic', restrict:'法杖', mpCost:30, baseDmg:8,  stackBase:6, atkMult:0,   magMult:1.0, stackAtk:0,    stackMag:0.1,  hits:3, defPen:0.2, desc:'魔攻 1.0 倍 × 3，無視 20% 防禦'},
 ];
 
 const FAMILY_MOD = {// 種族加成
@@ -2629,7 +2629,6 @@ function buildCharSVG(charId, weaponType = null) {
   const eyePatchR    = (charId === 'panda')   ? `<ellipse cx="57" cy="60" rx="9" ry="8" fill="#222" opacity=".85"/>` : '';
   const bellyOverlay = '';
   const beakOverlay  = '';
-
   // 根據武器類型決定要畫什麼
   let weaponSVG = '';
   if (weaponType === '武器') {// 長劍：右手側伸出去，斜放一把劍
@@ -2650,7 +2649,6 @@ function buildCharSVG(charId, weaponType = null) {
       <ellipse cx="72" cy="88" rx="8" ry="10" fill="${c.body}" transform="rotate(14,72,88)"/>
     `;
   }
-
   return `
     ${c.ears}
     <ellipse cx="45" cy="95" rx="26" ry="16" fill="${c.body}"/>
@@ -2809,7 +2807,6 @@ function updateAssetsStatus() {
   const sc   = Object.keys(gameAssets.skill    || {}).length;
   const gc   = Object.keys(gameAssets.gold     || {}).length;
   const imgc = Object.keys(gameAssets.question || {}).length;
-
   if (ec + tc + qc + pc + sc + gc + imgc === 0) {
     el.textContent = '尚未匯入圖片資源包';
   } else {
@@ -3129,10 +3126,10 @@ function nextSubject() {
 
 // 數學題庫設定（可在後台調整）
 const mathCfg = {
-  add: { enabled:true, label:'➕ 加法', aMin:70,  aMax:210, bMin:18, bMax:41 },
-  sub: { enabled:true, label:'➖ 減法', aMin:70,  aMax:210, bMin:18, bMax:41 },
-  mul: { enabled:true, label:'✖️ 乘法', aMin:2,   aMax:9,   bMin:2,  bMax:5  },
-  div: { enabled:true, label:'➗ 除法', aMin:6,   aMax:16,  dMin:2,  dMax:5  },
+  add: { enabled:true, label:'➕ 加法', aMin:60,  aMax:280, bMin:17, bMax:60 },
+  sub: { enabled:true, label:'➖ 減法', aMin:60,  aMax:280, bMin:17, bMax:60 },
+  mul: { enabled:true, label:'✖️ 乘法', aMin:2,   aMax:10,  bMin:2,  bMax:6  },
+  div: { enabled:true, label:'➗ 除法', aMin:6,   aMax:17,  dMin:2,  dMax:5  },
 };
 
 function generateMath() {
@@ -3529,13 +3526,16 @@ function rollEquip(rarity) {
 
 function rollSkill(rarity) {
   const pool = SKILL_POOL.filter(s => s.rarity === rarity);
-  if (!pool.length) return rollEquip(rarity); // fallback
+  if (!pool.length) return rollEquip(rarity);
   const s = pool[Math.floor(Math.random() * pool.length)];
   return { ...s, _isSkill: true };
 }
 
 function rollGold() {
-  const amount = Math.floor(Math.random() * 99) + 401;
+  const lv = state.hero.level || 1;
+  const base = 500 * (1 + lv / 100);
+  const variance = 1 + (Math.random() * 0.2 - 0.1); // ±10%
+  const amount = Math.floor(base * variance);
   return { _isGold: true, amount, emoji: '💰', name: `${amount} 金幣`, rarity: 'rare' };
 }
 
@@ -3700,14 +3700,12 @@ function drawEleven() {
         </div>
       </div>`;
     }).join('')}</div>`;
-
   // 一張一張依序翻出來，每張間隔 180ms
   results.forEach((c, i) => {
     setTimeout(() => {
       document.getElementById('mri' + i)?.classList.add('flipped');
     }, 300 + i * 180);
   });
-
   autoSave();
 }
 
@@ -4007,7 +4005,6 @@ function showEqDetail(card, slotKey, source) {
   const slot = SLOT_DEFS.find(s => s.key === slotKey) || SLOT_DEFS.find(s => s.types.includes(card.type));
   const currentlyEquipped = slotKey ? state.equipped[slotKey] : null;
   const s = getStats();
-
   document.getElementById('edcEmoji').innerHTML = getEquipIcon(card, 48) === card.emoji
     ? card.emoji
     : getEquipIcon(card, 48);
@@ -4018,7 +4015,6 @@ function showEqDetail(card, slotKey, source) {
   rb.style.background = rc.bg;
   rb.style.color = rc.color;
   rb.style.border = `1.5px solid ${rc.color}44`;
-
   // 數值列（含與當前裝備比較）
   const statsEl = document.getElementById('edcStats');
   statsEl.innerHTML = '';
@@ -4041,7 +4037,6 @@ function showEqDetail(card, slotKey, source) {
     cell.innerHTML = `<div class="edc-stat-icon">${sd.icon}</div><div class="edc-stat-label">${sd.label}</div><div class="edc-stat-val">${val}${diffStr}</div>`;
     statsEl.appendChild(cell);
   });
-
   // 特殊效果
   const base = EQUIP_POOL.find(e => e.id === card.id || e.name === card.name);
   const eff = card.specialEffect || base?.specialEffect;
