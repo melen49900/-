@@ -3362,7 +3362,7 @@ function checkAnswer(selected) {
     state.quiz.retrying = false;
     state.quiz.streak++;
     state.stats.maxStreak = Math.max(state.stats.maxStreak || 0, state.quiz.streak);
-    if (state.quiz.streak > 0 && state.quiz.streak % 100 === 0) {
+    if (state.quiz.streak > 0 && state.quiz.streak % 20 === 0) {//連勝神器碎片
       grantArtifactShards(1, `連勝${state.quiz.streak}`);
     }
     updateQuestProgress('streak', state.quiz.streak);
@@ -9484,13 +9484,10 @@ function init() {
     const today = new Date().toLocaleDateString('sv');
     const c = state.checkin;
 
-    // 第一次或連續中斷 → 重置本輪
+    // 第一次 → 初始化（累計制：中斷不再重置本輪進度）
     const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('sv');
     if (!c.lastDate) {
       // 全新玩家：初始化
-      c.streak = 0; c.claimedDays = []; c.cycleStart = today;
-    } else if (c.lastDate !== yesterday && c.lastDate !== today) {
-      // 中斷了：新的一輪從今天開始
       c.streak = 0; c.claimedDays = []; c.cycleStart = today;
     }
     if (!c.cycleStart) c.cycleStart = today;
@@ -9523,16 +9520,14 @@ const CHECKIN_REWARDS = [// 獎勵定義
   { icon:'🎁', label:'金+石',  gold:2000,  gems:20 },
   { icon:'🎁', label:'金+石',  gold:2500,  gems:25  },
   { icon:'🎁', label:'金+石',  gold:3000,  gems:30  },
-  { icon:'👑', label:'大獎',   gold:0,     gems:100 },
+  { icon:'👑', label:'大獎',   gold:0,     gems:100, shard:1 },
 ];
 
 function getTodayCheckinDayIdx() {
   const c = state.checkin;
-  if (!c.cycleStart) return 0;// 計算今天是本輪第幾天（0~6），滿 7 天重置
-  const msPerDay = 86400000;
-  const today = new Date().toLocaleDateString('sv');  // ← 用今天，不是 lastDate
-  const diff = Math.floor((new Date(today) - new Date(c.cycleStart)) / msPerDay);
-  return Math.min(diff % 7, 6);
+  // 累計制：本輪第幾天＝本輪目前已領取的天數（0~6），跟日曆是否連續無關
+  if (!Array.isArray(c.claimedDays)) return 0;
+  return Math.min(c.claimedDays.length, 6);
 }
 
 function updateCheckinBadge() {
@@ -9572,8 +9567,7 @@ function renderCheckinTab() {
   const grid = document.getElementById('checkinGrid');
   grid.innerHTML = '';
   CHECKIN_REWARDS.forEach((r, i) => {
-    const dayDate = new Date(new Date(c.cycleStart).getTime() + i * 86400000).toLocaleDateString('sv');
-    const isClaimed = c.claimedDays.includes(dayDate);
+    const isClaimed = i < c.claimedDays.length;
     const isToday   = (i === todayIdx) && todaySigned;
     const isFuture  = !isClaimed && !isToday && (i > todayIdx || !todaySigned);
 
@@ -9586,6 +9580,7 @@ function renderCheckinTab() {
     const parts = [];
     if (r.gold) parts.push(`${r.gold}💰`);
     if (r.gems) parts.push(`${r.gems}💎`);
+    if (r.shard) parts.push(`${r.shard}🔹`);
 
     grid.innerHTML += `
       <div class="${cls}">
@@ -9610,6 +9605,7 @@ function renderCheckinTab() {
     const parts = [];
     if (r.gold) parts.push(`${r.gold}💰`);
     if (r.gems) parts.push(`${r.gems}💎`);
+    if (r.shard) parts.push(`${r.shard}🔹`);
     btn.textContent = `🎁 領取 Day ${todayIdx+1} 獎勵：${parts.join(' + ')}`;
     btn.disabled = false;
   }
@@ -9630,7 +9626,7 @@ function claimCheckin() {
 
   // 第 7 天領完 → 下一輪重置（保留連續天數累計）
   if (todayIdx === 6) {
-    grantArtifactShards(1, '連續簽到第7天');
+    if (r.shard) grantArtifactShards(r.shard, '連續簽到第7天');
     setTimeout(() => {
       c.claimedDays = [];
       c.cycleStart  = new Date(Date.now() + 86400000).toLocaleDateString('sv'); // 明天開始新輪
@@ -9646,6 +9642,7 @@ function claimCheckin() {
   const parts = [];
   if (r.gold) parts.push(`${r.gold}💰 金幣`);
   if (r.gems) parts.push(`${r.gems}💎 寶石`);
+  if (r.shard) parts.push(`${r.shard}🔹 神器碎片`);
   showToast(`🎉 Day ${todayIdx+1} 獎勵：${parts.join(' + ')} 已入帳！`);
 }
 
@@ -10148,6 +10145,7 @@ function openMineGame() {
     document.getElementById('mineCancelBtn').classList.remove('hidden');
     document.getElementById('mineCoinCount').textContent = mineState.rewards.coinGold || 0;
     document.getElementById('mineGemCount').textContent  = mineState.rewards.gemGems || 0;
+    document.getElementById('mineShardCount').textContent = mineState.rewards.shard || 0;
     renderMineGrid();
     updateMineUI();
     return;
@@ -10191,6 +10189,7 @@ function openMineGame() {
   document.getElementById('mineCancelBtn').classList.remove('hidden');
   document.getElementById('mineCoinCount').textContent = 0;
   document.getElementById('mineGemCount').textContent  = 0;
+  document.getElementById('mineShardCount').textContent = 0;
   renderMineGrid();
   updateMineUI();
 }
