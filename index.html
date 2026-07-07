@@ -1845,7 +1845,7 @@ button:active { transform:scale(.96); }
     <div id="gearSub-artifact" class="hidden">
       <div style="font-size:.72em;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">🔮 神器</div>
       <div id="artifactShardInfo" class="artifact-shard-info">🔹 神器碎片：<b>0</b> 個</div>
-      <div style="font-size:.65em;color:#CBD5E1;text-align:center;margin:6px 0 14px">連勝、簽到、挖礦、翻牌都有機會獲得神器碎片，每 5 個可任選一項神器強化 +1%</div>
+      <div style="font-size:.65em;color:#CBD5E1;text-align:center;margin:6px 0 14px">連勝、簽到、挖礦、翻牌都有機會獲得神器碎片，每個碎片可任選一項神器強化1次</div>
       <div class="artifact-grid" id="artifactGrid"></div>
     </div>
   </div>
@@ -2304,6 +2304,7 @@ const FAMILY_MOD = {// 種族加成
   Hercules:      { hp:1,    atk:1,    def:2,    gold:1.2,  exp:1    },
   anglerfish:    { hp:1.1,  atk:1.1,  def:1,    gold:1.2,  exp:1    },
   wild_boar:     { hp:1,    atk:1,    def:1,    gold:1,    exp:1    },
+  panda:         { hp:1,    atk:1.1,  def:1,    gold:1,    exp:1    },
 };
 
 const ENEMIES = [
@@ -2432,16 +2433,21 @@ const ENEMIES = [
   {id:'s123',name:'紅紋野豬',    emoji:'🐗',stage:123,family:'wild_boar',    alienMult:12.5},
   {id:'s124',name:'紫紋野豬',    emoji:'🐗',stage:124,family:'wild_boar',    alienMult:13.0},
   {id:'s125',name:'金紋野豬',    emoji:'🐗',stage:125,family:'wild_boar',    alienMult:13.5},
+  {id:'s126',name:'竹棍貓熊',    emoji:'🐼',stage:126,family:'panda',        alienMult:14.0},
+  {id:'s127',name:'雙棍貓熊',    emoji:'🐼',stage:127,family:'panda',        alienMult:14.5},
+  {id:'s128',name:'竹劍貓熊',    emoji:'🐼',stage:128,family:'panda',        alienMult:15.0},
+  {id:'s129',name:'竹槍貓熊',    emoji:'🐼',stage:129,family:'panda',        alienMult:15.5},
+  {id:'s130',name:'竹刀貓熊',    emoji:'🐼',stage:130,family:'panda',        alienMult:16.0},
 ];
 
 function enemyStats(id) {// 怪物數值計算
   const e = ENEMIES.find(x => x.id === id);
   if (!e) return null;
   const vary  = v => Math.max(1, Math.round(v * (1 + (Math.random() * 0.06 - 0.03))));
-  const scale1 = Math.pow(1.127, e.stage - 1);// 生命成長倍率
+  const scale1 = Math.pow(1.126, e.stage - 1);// 生命成長倍率
   const scale2 = Math.pow(1.087, e.stage - 1);// 攻擊成長倍率
   const scale3 = Math.pow(1.089, e.stage - 1);// 防禦成長倍率
-  const scale4 = Math.pow(1.064, e.stage - 1);// 金幣及經驗成長倍率
+  const scale4 = Math.pow(1.067, e.stage - 1);// 金幣及經驗成長倍率
   const mod   = FAMILY_MOD[e.family] || { hp:1, atk:1, def:1, gold:1, exp:1 };
   const baseMult   = e.postMult || 1;//第二階段魔界
   const stones     = state?.curseStones || 0;
@@ -2461,7 +2467,7 @@ function enemyStats(id) {// 怪物數值計算
     ...e,
     maxHp: vary(Math.round((28 * scale1 + e.stage *80)* mod.hp * totalMult)),
     atk:   vary(Math.round((20 * scale2 + e.stage * 5)* mod.atk* totalMult)),
-    def:   vary(Math.round((23 * scale3 + e.stage *15)* mod.def* totalMult)),
+    def:   vary(Math.round((28 * scale3 + e.stage *11)* mod.def* totalMult)),
     gold:  vary(Math.round((10 * scale4 + e.stage * 1)* mod.gold)),
     exp:   vary(Math.round((20 * scale4 + e.stage * 2)* mod.exp)),
     heroAtkBoost:  1 + finalExcessRatio,
@@ -3486,7 +3492,7 @@ function rollCard(forceLegendary, forceEpic) {
 
 function rollStone() {
   const total = (state.curseStones || 0) + (state.boughtStones || 0);
-  if (total > 400) return rollEquip('common');; // 達到400顆上限就改抽普通裝備
+  if (total > 400) return rollGold(); // 達到400顆上限就改抽金幣
   state.curseStones = (state.curseStones || 0) + 1;
   autoSave();
   return {
@@ -3500,7 +3506,7 @@ function rollStone() {
 
 function rollAlienStone() {
   const total = (state.alienStones || 0);
-  if (total > 500) return rollEquip('common');;
+  if (total > 500) return rollGold(); // 達到500顆上限就改抽金幣
   state.alienStones = (state.alienStones || 0) + 1;
   autoSave();
   return {
@@ -3533,7 +3539,7 @@ function rollSkill(rarity) {
 
 function rollGold() {
   const lv = state.hero.level || 1;
-  const base = 500 * (1 + lv / 100);
+  const base = 500 * (1 + lv / 25);
   const variance = 1 + (Math.random() * 0.2 - 0.1); // ±10%
   const amount = Math.floor(base * variance);
   return { _isGold: true, amount, emoji: '💰', name: `${amount} 金幣`, rarity: 'rare' };
@@ -4867,7 +4873,7 @@ function setEnemyFrozen(val) {
 }
 
 function expNeededForLevel(lv) {
-  return Math.round(100 * Math.pow(1.05, lv - 1));
+  return Math.round(100 * Math.pow(1.04, lv - 1));
 }
 
 function addExp(amount) {
@@ -5896,6 +5902,55 @@ function doSave() {
   } catch(e) { setSaveStatus('error'); }
 }
 
+// 依照目前 EQUIP_POOL 的資料，重新計算單一裝備卡片的數值
+// 保留玩家個人化的欄位（uid、star、refine），其餘（含強化後的 atk/def/mag/hp/mp）一律以最新資料重算
+function syncCardWithPool(card) {
+  if (!card || card._isSkill) return card;
+  const base = EQUIP_POOL.find(e => e.id === card.id);
+  if (!base) return card; // EQUIP_POOL 找不到對應 id（可能已下架），保留原樣避免出錯
+
+  const star = card.star || 0;
+  const mult = star + 1;
+  const refineCount = card.refine || 0;
+  const enhStat = base.enhStat || 'atk';
+  const enhPer  = base.enhPer  ?? 2;
+  const perRefine = Math.floor(enhPer / 2) * (star + 1);
+
+  const refineAtk = enhStat === '攻擊' ? refineCount * perRefine : 0;
+  const refineDef = enhStat === '防禦' ? refineCount * perRefine : 0;
+  const refineMag = enhStat === '魔法' ? refineCount * perRefine : 0;
+  const refineHp  = enhStat === 'HP'   ? refineCount * perRefine : 0;
+  const refineMp  = enhStat === 'MP'   ? refineCount * perRefine : 0;
+
+  return {
+    ...card,
+    name: base.name, emoji: base.emoji, type: base.type, rarity: base.rarity,
+    price: base.price, specialEffect: base.specialEffect,
+    enhStat: base.enhStat, enhPer: base.enhPer,
+    baseAtk: base.atk, baseDef: base.def, baseMag: base.mag,
+    baseHp: base.hp || 0, baseMp: base.mp || 0,
+    atk: base.atk * mult + refineAtk,
+    def: base.def * mult + refineDef,
+    mag: base.mag * mult + refineMag,
+    hp:  (base.hp || 0) + refineHp,
+    mp:  (base.mp || 0) + refineMp,
+  };
+}
+
+// 讀檔完成後，一次性把背包與已裝備的裝備數值同步成 EQUIP_POOL 目前的版本
+function syncAllEquipWithPool() {
+  if (Array.isArray(state.bag)) {
+    state.bag = state.bag.map(syncCardWithPool);
+  }
+  if (state.equipped) {
+    Object.keys(state.equipped).forEach(slot => {
+      if (state.equipped[slot]) {
+        state.equipped[slot] = syncCardWithPool(state.equipped[slot]);
+      }
+    });
+  }
+}
+
 function loadFromStorage() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
@@ -5960,6 +6015,7 @@ function loadFromStorage() {
     if (data.state?.autoSkillId !== undefined) state.autoSkillId = data.state.autoSkillId;
     if (data.state?.tickets) state.tickets = data.state.tickets;
     if (data.state?.mineProgress) state.mineProgress = data.state.mineProgress;
+    syncAllEquipWithPool(); // 讀檔完成後，把舊裝備數值同步成 EQUIP_POOL 目前的最新版本
     setSaveStatus('saved'); setTimeout(() => setSaveStatus('idle'), 2000);
   } catch(e) { setSaveStatus('error'); }
 }
@@ -6584,6 +6640,26 @@ const ACHIEVEMENTS = [
   progress: () => Math.min(Math.max((state.stats?.totalCorrect || 0) - 3000, 0), 100),
   displayProgress: () => `${Math.min(state.stats?.totalCorrect || 0, 3100)} / 3100`,
   check: () => (state.stats?.totalCorrect || 0) >= 3100,
+},
+{
+  // ── 無限成就：3200 題之後，每累積答對 100 題可再次領取獎勵 ──
+  id: 'correctInfinite', name: '賢者', desc: '每累積答對 100 題可再次領取獎勵',
+  category: '學習', icon: '📚', requires: 'correct3200', goal: 100, infinite: true,
+  reward: { gems: 500, statBonus: { hp: 500 } },
+  progress: () => {
+    const claimed = state.achievements?.correctInfinite?.claimed || 0;
+    const base = 3200 + claimed * 100;
+    return Math.min(Math.max((state.stats?.totalCorrect || 0) - base, 0), 100);
+  },
+  displayProgress: () => {
+    const claimed = state.achievements?.correctInfinite?.claimed || 0;
+    const nextGoal = 3200 + (claimed + 1) * 100;
+    return `${Math.min(state.stats?.totalCorrect || 0, nextGoal)} / ${nextGoal}（已領取 ${claimed} 次）`;
+  },
+  check: () => {
+    const claimed = state.achievements?.correctInfinite?.claimed || 0;
+    return (state.stats?.totalCorrect || 0) >= 3200 + (claimed + 1) * 100;
+  },
 },
 {
   id: 'math10', name: '數學小能手1', desc: '數學題答對 10 題', category: '學習', icon: '🔢', goal: 10,
@@ -7378,6 +7454,26 @@ const ACHIEVEMENTS = [
   check: () => (state.checkin.totalDays || 0) >= 100,
 },
 {
+  // ── 無限成就：100 天之後，每累積登入 10 天可再次領取獎勵 ──
+  id: 'loginInfinite', name: '登入天數', desc: '每累積登入 10 天可再次領取獎勵',
+  category: '簽到', icon: '📅', requires: 'login_100', goal: 10, infinite: true,
+  reward: { gems: 100, statBonus: { hp: 100 } },
+  progress: () => {
+    const claimed = state.achievements?.loginInfinite?.claimed || 0;
+    const base = 100 + claimed * 10;
+    return Math.min(Math.max((state.checkin.totalDays || 0) - base, 0), 10);
+  },
+  displayProgress: () => {
+    const claimed = state.achievements?.loginInfinite?.claimed || 0;
+    const nextGoal = 100 + (claimed + 1) * 10;
+    return `${Math.min(state.checkin.totalDays || 0, nextGoal)} / ${nextGoal}（已領取 ${claimed} 次）`;
+  },
+  check: () => {
+    const claimed = state.achievements?.loginInfinite?.claimed || 0;
+    return (state.checkin.totalDays || 0) >= 100 + (claimed + 1) * 10;
+  },
+},
+{
   id: 'skill_lv5', name: '強化技能1', desc: '任意一個技能疊加達到 5 次', category: '技能', icon: '⭐', goal: 5,
   reward: { gems: 50, statBonus: { atk: 1, mag: 1 } },
   progress: () => {
@@ -8150,6 +8246,19 @@ const ACHIEVEMENTS = [
   },
 },
 {
+  id: 'kill_panda_all', name: '貓熊獵人', desc: '擊敗所有貓熊', category: '圖鑑', icon: '🐼', _family: 'panda',
+  reward: { gems: 1000, statBonus: { atk: 5, def: 5, mag: 5 }},
+  progress: () => {
+    const ids = new Set(state.defeatedEnemies || []);
+    return ENEMIES.filter(e => e.family === 'panda' && ids.has(e.id)).length;
+  },
+  get goal() { return ENEMIES.filter(e => e.family === 'panda').length; },
+  check: () => {
+    const ids = new Set(state.defeatedEnemies || []);
+    return ENEMIES.filter(e => e.family === 'panda').every(e => ids.has(e.id));
+  },
+},
+{
   id: 'kill_all_enemy', name: '獵人大師', desc: '擊敗所有敵人', category: '圖鑑', icon: '🏆', _family: 'all',
   reward: { gems: 800, statBonus: { atk: 4, def: 4, mag: 4 }},
   progress: () => {
@@ -8371,12 +8480,44 @@ const ACHIEVEMENTS = [
   displayProgress: () => `${Math.min(state.stats?.totalGamePlays || 0, 290)} / 290`,
   check: () => (state.stats?.totalGamePlays || 0) >= 290,
 },
+{
+  // ── 無限成就：290 次之後，每累積再 10 次就能再領一次固定獎勵，不用再手動加卡 ──
+  id: 'gamePlayInfinite', name: '小遊戲愛好者', desc: '每玩小遊戲 10 次可再次領取獎勵',
+  category: '遊戲', icon: '🎮', requires: 'gamePlay290', goal: 10, infinite: true,
+  reward: { gems: 100, statBonus: { hp: 300 } },
+  progress: () => {
+    const claimed = state.achievements?.gamePlayInfinite?.claimed || 0;
+    const base = 290 + claimed * 10;
+    return Math.min(Math.max((state.stats?.totalGamePlays || 0) - base, 0), 10);
+  },
+  displayProgress: () => {
+    const claimed = state.achievements?.gamePlayInfinite?.claimed || 0;
+    const nextGoal = 290 + (claimed + 1) * 10;
+    return `${Math.min(state.stats?.totalGamePlays || 0, nextGoal)} / ${nextGoal}（已領取 ${claimed} 次）`;
+  },
+  check: () => {
+    const claimed = state.achievements?.gamePlayInfinite?.claimed || 0;
+    return (state.stats?.totalGamePlays || 0) >= 290 + (claimed + 1) * 10;
+  },
+},
 ];
 
 function checkAchievements() {
   if (!state.achievements) state.achievements = {};
   let anyNew = false;
   ACHIEVEMENTS.forEach(ach => {
+    if (ach.infinite) {
+      // 無限成就：用物件 {claimed:N, status} 記錄，領完後可以再次解鎖，不會停在 true
+      let rec = state.achievements[ach.id];
+      if (!rec || typeof rec !== 'object') rec = state.achievements[ach.id] = { claimed: 0, status: null };
+      if (rec.status === 'unlocked') return;  // 已經待領，跳過
+      if (!ach.check()) return;               // 還沒達成下一輪門檻
+      rec.status = 'unlocked';
+      showToast(`🏅 成就達成：${ach.name}！進入成就頁領取獎勵`);
+      speakText(`成就已達成！`, 0.8);
+      anyNew = true;
+      return;
+    }
     if (state.achievements[ach.id] === true) return;       // 已領跳過
     if (state.achievements[ach.id] === 'unlocked') return; // 待領跳過
     if (!ach.check()) return;                              // 未達成跳過
@@ -8388,9 +8529,15 @@ function checkAchievements() {
   if (anyNew) { updateAchieveBadge(); autoSave(); }
 }
 
+function isAchPending(ach) {
+  const rec = state.achievements?.[ach.id];
+  if (ach.infinite) return !!(rec && rec.status === 'unlocked');
+  return rec === 'unlocked';
+}
+
 function updateAchieveBadge() {
   if (!state.achievements) state.achievements = {};
-  const count = ACHIEVEMENTS.filter(a => state.achievements[a.id] === 'unlocked').length;
+  const count = ACHIEVEMENTS.filter(a => isAchPending(a)).length;
   const badge = document.getElementById('achieveBadge');
   if (!badge) return;
   if (count > 0) {
@@ -8420,13 +8567,7 @@ function updateSkillBadge() {
   }
 }
 
-function claimAchievement(id) {
-  if (!state.achievements) state.achievements = {};
-  if (state.achievements[id] !== 'unlocked') return;
-  const ach = ACHIEVEMENTS.find(a => a.id === id);
-  if (!ach) return;
-  state.achievements[id] = true;
-  state.achievements[id] = true;
+function grantAchievementReward(ach) {
   if (ach.reward.gems) {
     state.hero.gems += ach.reward.gems;
   }
@@ -8446,6 +8587,27 @@ function claimAchievement(id) {
     : '';
   showToast(`🎉 領取成就：${ach.name}${ach.reward.gems ? ` ＋${ach.reward.gems}💎` : ''}${bonusText ? ` ${bonusText}` : ''}`);
   if (ach.reward.gems) showGemPopup(ach.reward.gems);
+}
+
+function claimAchievement(id) {
+  if (!state.achievements) state.achievements = {};
+  const ach = ACHIEVEMENTS.find(a => a.id === id);
+  if (!ach) return;
+
+  if (ach.infinite) {
+    const rec = state.achievements[id];
+    if (!rec || rec.status !== 'unlocked') return;
+    rec.claimed = (rec.claimed || 0) + 1;
+    rec.status = null; // 這一輪領完，清空待領狀態，等下個 10 次累積再解鎖
+    grantAchievementReward(ach);
+    updateAchieveBadge();
+    renderHero(); renderAchieveTab(); autoSave();
+    return;
+  }
+
+  if (state.achievements[id] !== 'unlocked') return;
+  state.achievements[id] = true;
+  grantAchievementReward(ach);
   updateAchieveBadge();
   renderHero(); renderAchieveTab(); autoSave();
 }
@@ -8849,9 +9011,9 @@ function renderAchieveTab(){
     cats.forEach(cat => {
       const btn = document.createElement('button');
       const pendingCount = ACHIEVEMENTS.filter(a => 
-        a.category === cat && state.achievements[a.id] === 'unlocked'
+        a.category === cat && isAchPending(a)
       ).length;
-      const allPending = ACHIEVEMENTS.filter(a => state.achievements[a.id] === 'unlocked').length;
+      const allPending = ACHIEVEMENTS.filter(a => isAchPending(a)).length;
       const count = cat === 'all' ? allPending : pendingCount;
       btn.textContent = (cat === 'all' ? '全部' : cat) + (count > 0 ? ` (${count})` : '');
       btn.style.cssText = `padding:6px 14px;border-radius:20px;border:2px solid ${_achieveCat===cat?'#f59e0b':'#e2e8f0'};background:${_achieveCat===cat?'#fffbe6':'#f8fafc'};color:${_achieveCat===cat?'#b45309':'#64748b'};font-family:'Nunito',sans-serif;font-size:.78em;font-weight:800;cursor:pointer;margin-bottom:4px`;
@@ -8881,18 +9043,18 @@ function renderAchieveTab(){
     })
     .sort((a, b) => {
       // 第一層：可領取（unlocked）排最前面
-      const aUnlocked = state.achievements[a.id] === 'unlocked' ? 0 : 1;
-      const bUnlocked = state.achievements[b.id] === 'unlocked' ? 0 : 1;
+      const aUnlocked = isAchPending(a) ? 0 : 1;
+      const bUnlocked = isAchPending(b) ? 0 : 1;
       if (aUnlocked !== bUnlocked) return aUnlocked - bUnlocked;
-      // 第二層：已完成排最後面
-      const aDone = state.achievements[a.id] === true ? 1 : 0;
-      const bDone = state.achievements[b.id] === true ? 1 : 0;
+      // 第二層：已完成排最後面（無限成就永遠不算「已完成」）
+      const aDone = (!a.infinite && state.achievements[a.id] === true) ? 1 : 0;
+      const bDone = (!b.infinite && state.achievements[b.id] === true) ? 1 : 0;
       return aDone - bDone;
     });
   sorted.forEach(ach => {
-    const status = state.achievements[ach.id];
-    const done     = status === true;
-    const unlocked = status === 'unlocked';
+    const infRec   = ach.infinite ? (state.achievements[ach.id] || {}) : null;
+    const done     = ach.infinite ? false : state.achievements[ach.id] === true;
+    const unlocked = isAchPending(ach);
     const cur = ach.progress();
     const pct = Math.round(cur / ach.goal * 100);
     const div = document.createElement('div');
@@ -8901,7 +9063,7 @@ function renderAchieveTab(){
       background:${done ? '#fffbe6' : unlocked ? '#f0fdf4' : '#f8fafc'};
       border:2px solid ${done ? '#f59e0b' : unlocked ? '#22c55e' : '#e2e8f0'};
     `;
-    const iconEl    = done ? getAchievementIconHtml(ach) : unlocked ? getAchievementIconHtml(ach) : '🔒';
+    const iconEl    = done ? getAchievementIconHtml(ach) : unlocked ? getAchievementIconHtml(ach) : (ach.infinite && (infRec.claimed||0) > 0 ? getAchievementIconHtml(ach) : '🔒');
     const nameColor = done ? '#b45309' : unlocked ? '#15803d' : '#64748b';
     const statusEl  = (done ? '<div style="font-size:1.4em">✅</div>'
       : unlocked ? '<button onclick="claimAchievement(\'' + ach.id + '\')" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;border-radius:10px;padding:6px 12px;font-weight:900;font-size:.78em;cursor:pointer">領取！</button>'
@@ -8909,6 +9071,9 @@ function renderAchieveTab(){
     const statIcons = { atk:'⚔️', def:'🛡️', mag:'✨', hp:'❤️', mp:'💧', crit:'🎯', critDmg:'💥' };
     const bonusStr = ach.reward.statBonus
       ? ' ' + Object.entries(ach.reward.statBonus).map(([k,v]) => `+${v}${statIcons[k]||k}`).join(' ')
+      : '';
+    const infiniteBadge = ach.infinite
+      ? `<span style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:10px;background:#ede9fe;color:#7c3aed;font-size:.7em;font-weight:800">已領取 ${infRec.claimed||0} 次</span>`
       : '';
     div.innerHTML = `
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
@@ -8918,6 +9083,7 @@ function renderAchieveTab(){
             <div style="font-weight:900;font-size:.92em;color:${nameColor}">${ach.name}</div>
             <button class="ach-speak-btn" data-ach-id="${ach.id}"
               style="background:none;border:none;cursor:pointer;font-size:1.2em;padding:0;opacity:.8">🔊</button>
+            ${infiniteBadge}
           </div>
           <div style="font-size:.74em;color:#94a3b8;margin-top:2px">${ach.desc}</div>
           <div style="font-size:.72em;color:#f59e0b;margin-top:3px;font-weight:700">🎁 獎勵：${ach.reward.gems}💎${bonusStr}</div>
@@ -9178,16 +9344,24 @@ function renderEnemyCompendium(container) {
 function applyAchievementBonuses() {
   if (!state.achievements) return;
   ACHIEVEMENTS.forEach(ach => {
-    if (state.achievements[ach.id] !== true) return;
     const b = ach.reward?.statBonus;
     if (!b) return;
-    if (b.atk)     state.hero.baseAtk += b.atk;
-    if (b.def)     state.hero.baseDef += b.def;
-    if (b.mag)     state.hero.baseMag += b.mag;
-    if (b.hp)      state.hero.maxHp   += b.hp;
-    if (b.mp)      state.hero.maxMp   += b.mp;
-    if (b.crit)    state.hero.crit    += b.crit / 100;
-    if (b.critDmg) state.hero.critDmg += b.critDmg / 100;
+    // 一般成就：領取過(true)算1次；無限成就：依已領取次數疊加
+    let times = 0;
+    if (ach.infinite) {
+      const rec = state.achievements[ach.id];
+      times = (rec && typeof rec === 'object') ? (rec.claimed || 0) : 0;
+    } else {
+      times = state.achievements[ach.id] === true ? 1 : 0;
+    }
+    if (!times) return;
+    if (b.atk)     state.hero.baseAtk += b.atk * times;
+    if (b.def)     state.hero.baseDef += b.def * times;
+    if (b.mag)     state.hero.baseMag += b.mag * times;
+    if (b.hp)      state.hero.maxHp   += b.hp * times;
+    if (b.mp)      state.hero.maxMp   += b.mp * times;
+    if (b.crit)    state.hero.crit    += b.crit / 100 * times;
+    if (b.critDmg) state.hero.critDmg += b.critDmg / 100 * times;
   });
 }
 
