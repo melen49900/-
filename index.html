@@ -10531,10 +10531,10 @@ function mineMove(r, c) {
 function mineCalcReward(type, depth) {//挖礦獎勵計算
   const lv = state.hero.level || 1;
   if (type === 'coin') {
-    return Math.round((lv * 3 + depth * 3.3) * (Math.floor(Math.random() * 3) + 2));
+    return Math.round((lv * 10 + depth * 2) * (Math.floor(Math.random() * 2) + 2));
   } else {
-    const base = Math.ceil(lv / 100) + Math.ceil(depth / 100);
-    return Math.round(base * (Math.floor(Math.random() * 3) + 1));
+    const base = Math.ceil(lv / 50) + Math.ceil(depth / 150);
+    return Math.round(base * (Math.floor(Math.random() * 2) + 1));
   }
 }
 
@@ -10779,6 +10779,12 @@ function adminAutoMineAll() {
 
   // 扣光入場券
   state.tickets['ticket_memory'] = 0;
+
+  // 每張票視為玩了一次小遊戲，計入成就與任務進度
+  state.stats = state.stats || {};
+  state.stats.totalGamePlays = (state.stats.totalGamePlays || 0) + ticketCount;
+  updateQuestProgress('gamePlay', ticketCount);
+  checkAchievements();
 
   // 發放獎勵
   if (totals.coinGold > 0) state.hero.gold = (state.hero.gold || 0) + totals.coinGold;
