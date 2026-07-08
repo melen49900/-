@@ -315,6 +315,17 @@
     },
     {
       "category": "國文",
+      "question": "「ㄅㄨˊ要」怎麼寫？",
+      "options": [
+        "不",
+        "部",
+        "木",
+        "下"
+      ],
+      "answer": "不"
+    },
+    {
+      "category": "國文",
       "question": "「ㄆㄥˊ友」怎麼寫？",
       "options": [
         "朋",
@@ -513,6 +524,17 @@
     },
     {
       "category": "國文",
+      "question": "「ㄏㄨㄚ草」怎麼寫？",
+      "options": [
+        "花",
+        "化",
+        "艾",
+        "英"
+      ],
+      "answer": "花"
+    },
+    {
+      "category": "國文",
       "question": "「ㄏㄨㄛˇ山」怎麼寫",
       "options": [
         "火",
@@ -590,6 +612,17 @@
     },
     {
       "category": "國文",
+      "question": "「ㄒㄧㄣ臟」怎麼寫？",
+      "options": [
+        "心",
+        "新",
+        "星",
+        "興"
+      ],
+      "answer": "心"
+    },
+    {
+      "category": "國文",
       "question": "「ㄒㄧ邊」怎麼寫？",
       "options": [
         "東",
@@ -601,7 +634,7 @@
     },
     {
       "category": "國文",
-      "question": "「ㄓˇㄧㄡˇ」怎麼寫？",
+      "question": "「ㄓˇㄧㄡˇ一個」怎麼寫？",
       "options": [
         "只有",
         "止由",
@@ -645,6 +678,28 @@
     },
     {
       "category": "國文",
+      "question": "「ㄔ飯」怎麼寫？",
+      "options": [
+        "吃",
+        "乞",
+        "吐",
+        "叫"
+      ],
+      "answer": "吃"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄕㄡˇ指」怎麼寫？",
+      "options": [
+        "手",
+        "三",
+        "守",
+        "毛"
+      ],
+      "answer": "手"
+    },
+    {
+      "category": "國文",
       "question": "「ㄗㄨㄛˇ右」怎麼寫？",
       "options": [
         "左",
@@ -653,6 +708,17 @@
         "下"
       ],
       "answer": "左"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄦˇ朵」怎麼寫？",
+      "options": [
+        "耳",
+        "目",
+        "爾",
+        "白"
+      ],
+      "answer": "耳"
     },
     {
       "category": "國文",
@@ -686,6 +752,17 @@
         "魚"
       ],
       "answer": "羊"
+    },
+    {
+      "category": "國文",
+      "question": "「ㄨㄢˊ遊戲」怎麼寫？",
+      "options": [
+        "玩",
+        "丸",
+        "完",
+        "元"
+      ],
+      "answer": "玩"
     },
     {
       "category": "國文",
@@ -843,6 +920,17 @@
     },
     {
       "category": "國文",
+      "question": "「不ㄧㄠˋ」怎麼寫？",
+      "options": [
+        "要",
+        "西",
+        "藥",
+        "覃"
+      ],
+      "answer": "要"
+    },
+    {
+      "category": "國文",
       "question": "「五」的注音是？",
       "options": [
         "ㄨˇ",
@@ -906,6 +994,17 @@
         "們"
       ],
       "answer": "們"
+    },
+    {
+      "category": "國文",
+      "question": "「車ㄇㄣˊ」怎麼寫？",
+      "options": [
+        "門",
+        "們",
+        "捫",
+        "悶"
+      ],
+      "answer": "門"
     },
     {
       "category": "國文",
@@ -1215,6 +1314,18 @@
         "下雪",
         "陰天"
       ],
+      "answer": "陰天",
+      "image": "q_天氣陰.jpg"
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼天氣?",
+      "options": [
+        "下雨",
+        "晴天",
+        "下雪",
+        "陰天"
+      ],
       "answer": "晴天",
       "image": "q_天氣晴.jpg"
     },
@@ -1376,6 +1487,171 @@
     },
     {
       "category": "英文",
+      "question": "10的英文是?",
+      "options": [
+        "ten",
+        "six",
+        "seven",
+        "nine"
+      ],
+      "answer": "ten"
+    },
+    {
+      "category": "英文",
+      "question": "11的英文是?",
+      "options": [
+        "eleven",
+        "ten",
+        "nine",
+        "twelve"
+      ],
+      "answer": "eleven"
+    },
+    {
+      "category": "英文",
+      "question": "12的英文是?",
+      "options": [
+        "twelve",
+        "eleven",
+        "thirteen",
+        "fourteen"
+      ],
+      "answer": "twelve"
+    },
+    {
+      "category": "英文",
+      "question": "13的英文是?",
+      "options": [
+        "thirteen",
+        "eleven",
+        "twelve",
+        "fourteen"
+      ],
+      "answer": "thirteen"
+    },
+    {
+      "category": "英文",
+      "question": "14的英文是?",
+      "options": [
+        "fourteen",
+        "eleven",
+        "thirteen",
+        "twelve"
+      ],
+      "answer": "fourteen"
+    },
+    {
+      "category": "英文",
+      "question": "15的英文是?",
+      "options": [
+        "fourteen",
+        "fifteen",
+        "thirteen",
+        "twelve"
+      ],
+      "answer": "fifteen"
+    },
+    {
+      "category": "英文",
+      "question": "1的英文是?",
+      "options": [
+        "one",
+        "two",
+        "three",
+        "four"
+      ],
+      "answer": "one"
+    },
+    {
+      "category": "英文",
+      "question": "2的英文是?",
+      "options": [
+        "two",
+        "three",
+        "four",
+        "five"
+      ],
+      "answer": "two"
+    },
+    {
+      "category": "英文",
+      "question": "3的英文是?",
+      "options": [
+        "three",
+        "four",
+        "five",
+        "six"
+      ],
+      "answer": "three"
+    },
+    {
+      "category": "英文",
+      "question": "4的英文是?",
+      "options": [
+        "four",
+        "five",
+        "six",
+        "seven"
+      ],
+      "answer": "four"
+    },
+    {
+      "category": "英文",
+      "question": "5的英文是?",
+      "options": [
+        "five",
+        "six",
+        "seven",
+        "eight"
+      ],
+      "answer": "five"
+    },
+    {
+      "category": "英文",
+      "question": "6的英文是?",
+      "options": [
+        "six",
+        "seven",
+        "eight",
+        "two"
+      ],
+      "answer": "six"
+    },
+    {
+      "category": "英文",
+      "question": "7的英文是?",
+      "options": [
+        "seven",
+        "six",
+        "one",
+        "eight"
+      ],
+      "answer": "seven"
+    },
+    {
+      "category": "英文",
+      "question": "8的英文是?",
+      "options": [
+        "eight",
+        "six",
+        "seven",
+        "nine"
+      ],
+      "answer": "eight"
+    },
+    {
+      "category": "英文",
+      "question": "9的英文是?",
+      "options": [
+        "nine",
+        "six",
+        "seven",
+        "eight"
+      ],
+      "answer": "nine"
+    },
+    {
+      "category": "英文",
       "question": "How's the weather?",
       "options": [
         "It’s cloudy",
@@ -1385,6 +1661,18 @@
       ],
       "answer": "It’s rainy",
       "image": "q_天氣雨.jpg"
+    },
+    {
+      "category": "英文",
+      "question": "How's the weather?",
+      "options": [
+        "It’s cloudy",
+        "It’s rainy",
+        "It’s sunny",
+        "It’s windy"
+      ],
+      "answer": "It’s cloudy",
+      "image": "q_天氣陰.jpg"
     },
     {
       "category": "英文",
@@ -2122,6 +2410,61 @@
     },
     {
       "category": "英文",
+      "question": "What's the Chinese word for insect?",
+      "options": [
+        "昆蟲",
+        "選擇",
+        "吃飯",
+        "開心"
+      ],
+      "answer": "昆蟲"
+    },
+    {
+      "category": "英文",
+      "question": "What's the Chinese word for boy?",
+      "options": [
+        "男孩",
+        "球",
+        "書",
+        "袋子"
+      ],
+      "answer": "男孩"
+    },
+    {
+      "category": "英文",
+      "question": "What's the Chinese word for ball?",
+      "options": [
+        "男孩",
+        "球",
+        "書",
+        "袋子"
+      ],
+      "answer": "球"
+    },
+    {
+      "category": "英文",
+      "question": "What's the Chinese word for book?",
+      "options": [
+        "男孩",
+        "球",
+        "書",
+        "袋子"
+      ],
+      "answer": "書"
+    },
+    {
+      "category": "英文",
+      "question": "What's the Chinese word for bag?",
+      "options": [
+        "男孩",
+        "球",
+        "書",
+        "袋子"
+      ],
+      "answer": "袋子"
+    },
+    {
+      "category": "英文",
       "question": "Which one is a fruit?",
       "options": [
         "orange",
@@ -2166,160 +2509,6 @@
     },
     {
       "category": "英文",
-      "question": "一的英文是?",
-      "options": [
-        "one",
-        "two",
-        "three",
-        "four"
-      ],
-      "answer": "one"
-    },
-    {
-      "category": "英文",
-      "question": "七的英文是?",
-      "options": [
-        "seven",
-        "six",
-        "one",
-        "eight"
-      ],
-      "answer": "seven"
-    },
-    {
-      "category": "英文",
-      "question": "九的英文是?",
-      "options": [
-        "nine",
-        "six",
-        "seven",
-        "eight"
-      ],
-      "answer": "nine"
-    },
-    {
-      "category": "英文",
-      "question": "二的英文是?",
-      "options": [
-        "two",
-        "three",
-        "four",
-        "five"
-      ],
-      "answer": "two"
-    },
-    {
-      "category": "英文",
-      "question": "八的英文是?",
-      "options": [
-        "eight",
-        "six",
-        "seven",
-        "nine"
-      ],
-      "answer": "eight"
-    },
-    {
-      "category": "英文",
-      "question": "十一的英文是?",
-      "options": [
-        "eleven",
-        "ten",
-        "nine",
-        "twelve"
-      ],
-      "answer": "eleven"
-    },
-    {
-      "category": "英文",
-      "question": "十二的英文是?",
-      "options": [
-        "twelve",
-        "eleven",
-        "thirteen",
-        "fourteen"
-      ],
-      "answer": "twelve"
-    },
-    {
-      "category": "英文",
-      "question": "十三的英文是?",
-      "options": [
-        "thirteen",
-        "eleven",
-        "twelve",
-        "fourteen"
-      ],
-      "answer": "thirteen"
-    },
-    {
-      "category": "英文",
-      "question": "十五的英文是?",
-      "options": [
-        "fourteen",
-        "fifteen",
-        "thirteen",
-        "twelve"
-      ],
-      "answer": "fifteen"
-    },
-    {
-      "category": "英文",
-      "question": "十四的英文是?",
-      "options": [
-        "fourteen",
-        "eleven",
-        "thirteen",
-        "twelve"
-      ],
-      "answer": "fourteen"
-    },
-    {
-      "category": "英文",
-      "question": "十的英文是?",
-      "options": [
-        "ten",
-        "six",
-        "seven",
-        "nine"
-      ],
-      "answer": "ten"
-    },
-    {
-      "category": "英文",
-      "question": "三的英文是?",
-      "options": [
-        "three",
-        "four",
-        "five",
-        "six"
-      ],
-      "answer": "three"
-    },
-    {
-      "category": "英文",
-      "question": "五的英文是?",
-      "options": [
-        "five",
-        "six",
-        "seven",
-        "eight"
-      ],
-      "answer": "five"
-    },
-    {
-      "category": "英文",
-      "question": "六的英文是?",
-      "options": [
-        "six",
-        "seven",
-        "eight",
-        "two"
-      ],
-      "answer": "six"
-    },
-    {
-      "category": "英文",
       "question": "毛毛蟲的英文是?",
       "options": [
         "caterpillar",
@@ -2350,17 +2539,6 @@
         "truck"
       ],
       "answer": "train"
-    },
-    {
-      "category": "英文",
-      "question": "四的英文是?",
-      "options": [
-        "four",
-        "five",
-        "six",
-        "seven"
-      ],
-      "answer": "four"
     },
     {
       "category": "英文",
@@ -2717,17 +2895,6 @@
     },
     {
       "category": "自然",
-      "question": "火山裡面噴出來、非常熱的液體岩石叫做什麼？",
-      "options": [
-        "岩石",
-        "岩漿",
-        "沙子",
-        "泥巴"
-      ],
-      "answer": "岩漿"
-    },
-    {
-      "category": "自然",
       "question": "火星是太陽系第幾顆行星？",
       "options": [
         "第三顆",
@@ -2882,6 +3049,17 @@
     },
     {
       "category": "自然",
+      "question": "為什麼有些人的膚色黑、有些白?",
+      "options": [
+        "因為皮膚的黑色素多少",
+        "黑皮膚是因為吃太多黑木耳",
+        "白皮膚是因為喝太多豆漿",
+        "黃皮膚是因為吃太多蛋黃"
+      ],
+      "answer": "因為皮膚的黑色素多少"
+    },
+    {
+      "category": "自然",
       "question": "食物鏈中「生產者」指的是？",
       "options": [
         "植物",
@@ -2982,6 +3160,18 @@
     },
     {
       "category": "自然",
+      "question": "馬陸和蜈蚣哪裡不一樣?",
+      "options": [
+        "馬陸身體比較圓",
+        "馬陸有毒",
+        "沒有不一樣",
+        "馬陸移動速度比較快"
+      ],
+      "answer": "馬陸身體比較圓",
+      "image": "q_動物馬陸.jpg"
+    },
+    {
+      "category": "自然",
       "question": "彩虹有幾種顏色？",
       "options": [
         "7種",
@@ -3056,17 +3246,6 @@
         "土壤和鹽分"
       ],
       "answer": "陽光、水和二氧化碳"
-    },
-    {
-      "category": "自然",
-      "question": "發生地震時如果在屋內要做什麼？",
-      "options": [
-        "坐電梯逃生",
-        "趴下、掩護、穩住",
-        "把大門打開",
-        "躲冰箱旁邊"
-      ],
-      "answer": "趴下、掩護、穩住"
     },
     {
       "category": "自然",
@@ -3146,6 +3325,17 @@
         "平原中央"
       ],
       "answer": "地殼活動強的地方"
+    },
+    {
+      "category": "地理",
+      "question": "火山裡面噴出來、非常熱的液體岩石叫做什麼？",
+      "options": [
+        "岩石",
+        "岩漿",
+        "沙子",
+        "泥巴"
+      ],
+      "answer": "岩漿"
     },
     {
       "category": "地理",
@@ -3435,6 +3625,18 @@
       "category": "地理",
       "question": "這是臺灣哪個縣市？",
       "options": [
+        "雲林",
+        "台中",
+        "高雄",
+        "屏東"
+      ],
+      "answer": "雲林",
+      "image": "q_縣市雲林.jpg"
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
         "台北",
         "新北",
         "基隆",
@@ -3457,6 +3659,28 @@
     },
     {
       "category": "地理",
+      "question": "發生地震時如果在屋內要做什麼？",
+      "options": [
+        "坐電梯逃生",
+        "趴下、掩護、穩住",
+        "把大門打開",
+        "躲冰箱旁邊"
+      ],
+      "answer": "趴下、掩護、穩住"
+    },
+    {
+      "category": "地理",
+      "question": "陽明山的大屯火山群最後一次噴發大約六千年前，這叫做什麼火山?",
+      "options": [
+        "活火山",
+        "死火山",
+        "睡著的火山",
+        "不是火山"
+      ],
+      "answer": "活火山"
+    },
+    {
+      "category": "地理",
       "question": "臺灣四周大多被什麼包圍？",
       "options": [
         "森林",
@@ -3468,17 +3692,6 @@
     },
     {
       "category": "地理",
-      "question": "臺灣的在地球的哪一洲？",
-      "options": [
-        "亞洲",
-        "非洲",
-        "歐洲",
-        "南美洲"
-      ],
-      "answer": "亞洲"
-    },
-    {
-      "category": "地理",
       "question": "臺灣的首都是哪裡？",
       "options": [
         "高雄",
@@ -3487,6 +3700,17 @@
         "台南"
       ],
       "answer": "台北"
+    },
+    {
+      "category": "地理",
+      "question": "臺灣是在地球的哪一洲？",
+      "options": [
+        "亞洲",
+        "非洲",
+        "歐洲",
+        "南美洲"
+      ],
+      "answer": "亞洲"
     },
     {
       "category": "地理",

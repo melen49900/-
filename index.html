@@ -1801,6 +1801,9 @@ button:active { transform:scale(.96); }
     <!-- ⬆️ 裝備升級 -->
     <div class="shop-section">
       <div class="shop-section-title">🔨 裝備精煉（消耗💰強化指定屬性，加成隨星級提升）</div>
+      <div style="text-align:center;margin-bottom:10px">
+        <button class="forge-btn" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)" onclick="autoBalanceUpgradeAll()" title="每次都挑目前已裝備中精煉值最低的裝備升級，直到金幣花完為止，讓所有裝備等級盡量平均">⚖️ 平均強化全部已裝備</button>
+      </div>
       <div class="upgrade-list" id="upgradeList">
         <div style="text-align:center;color:#94a3b8;font-size:.82em;padding:12px">背包中沒有裝備</div>
       </div>
@@ -2067,9 +2070,11 @@ button:active { transform:scale(.96); }
 
       <div class="admin-section">
         <div class="admin-section-title">⛏️ 挖礦紀錄</div>
-        <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 16px;font-size:.88em;font-weight:800;color:#4a5568;">
-          歷史最深層數：<span id="adminMineDepth" style="color:#e67e22;font-size:1.1em;">0</span> 層
+        <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 16px;font-size:.88em;font-weight:800;color:#4a5568;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <div>歷史最深層數：<span id="adminMineDepth" style="color:#e67e22;font-size:1.1em;">0</span> 層</div>
+          <button class="admin-btn purple" style="padding:8px 14px;font-size:.9em" onclick="adminAutoMineAll()" title="消耗全部入場券，每張自動往下挖10層，一次結算所有獎勵">⛏️ 用全部入場券自動挖礦</button>
         </div>
+        <div id="adminAutoMineResult" style="margin-top:10px;font-size:.8em;color:#4a5568;line-height:1.7;display:none;background:#fff7ed;border:1.5px dashed #f59e0b55;border-radius:10px;padding:10px 14px;"></div>
       </div>
 
       <!-- 存檔管理 -->
@@ -2245,12 +2250,12 @@ const EQUIP_POOL = [
   {id:'eq22',name:'魔力水晶',   emoji:'💠',type:'道具',rarity:'rare',     atk:0,  def:0,  mag:6,  hp:0, mp:0, price:250, enhStat:'MP',   enhPer:2},
   {id:'eq23',name:'精靈寶珠',   emoji:'🔵',type:'道具',rarity:'epic',     atk:0,  def:0,  mag:12, hp:0, mp:0, price:375, enhStat:'MP',   enhPer:4},
   {id:'eq24',name:'混沌之源',   emoji:'🌀',type:'道具',rarity:'legendary',atk:0,  def:0,  mag:20, hp:0, mp:0, price:500, enhStat:'MP',   enhPer:4, specialEffect:{type:'chaosBuff', dmgBase:20, dmgPerStar:20, mpBase:50, mpPerStar:50, desc:'技能傷害提升%，但魔力消耗增加%'}},
-  {id:'eq25',name:'草帽',       emoji:'👒',type:'頭盔',rarity:'common',   atk:0,  def:1,  mag:0,  hp:0, mp:0, price:125, enhStat:'HP',   enhPer:4},
-  {id:'eq26',name:'魔法帽',     emoji:'🧢',type:'頭盔',rarity:'rare',     atk:0,  def:1,  mag:2,  hp:0, mp:0, price:250, enhStat:'HP',   enhPer:8},
-  {id:'eq27',name:'鐵盔',       emoji:'⛑️',type:'頭盔',rarity:'rare',     atk:0,  def:3,  mag:0,  hp:0, mp:0, price:250, enhStat:'HP',   enhPer:8},
-  {id:'eq28',name:'魔導頭冠',   emoji:'👑',type:'頭盔',rarity:'epic',     atk:0,  def:2,  mag:8,  hp:0, mp:0, price:375, enhStat:'HP',   enhPer:12},
-  {id:'eq29',name:'特製鋼盔',   emoji:'🪖',type:'頭盔',rarity:'epic',       atk:1,  def:9,  mag:0,  hp:0, mp:0, price:375, enhStat:'HP',   enhPer:12},
-  {id:'eq30',name:'龍鱗頭盔',   emoji:'🐲',type:'頭盔',rarity:'legendary',atk:0,  def:10, mag:6,  hp:0, mp:0, price:500, enhStat:'HP',   enhPer:16, specialEffect:{type:'critDmgUp', base:8, perStar:8, desc:'暴擊傷害提升%'}},
+  {id:'eq25',name:'草帽',       emoji:'👒',type:'頭盔',rarity:'common',   atk:0,  def:1,  mag:0,  hp:0, mp:0, price:125, enhStat:'HP',   enhPer:10},
+  {id:'eq26',name:'魔法帽',     emoji:'🧢',type:'頭盔',rarity:'rare',     atk:0,  def:1,  mag:2,  hp:0, mp:0, price:250, enhStat:'HP',   enhPer:20},
+  {id:'eq27',name:'鐵盔',       emoji:'⛑️',type:'頭盔',rarity:'rare',     atk:0,  def:3,  mag:0,  hp:0, mp:0, price:250, enhStat:'HP',   enhPer:20},
+  {id:'eq28',name:'魔導頭冠',   emoji:'👑',type:'頭盔',rarity:'epic',     atk:0,  def:2,  mag:8,  hp:0, mp:0, price:375, enhStat:'HP',   enhPer:30},
+  {id:'eq29',name:'特製鋼盔',   emoji:'🪖',type:'頭盔',rarity:'epic',       atk:1,  def:9,  mag:0,  hp:0, mp:0, price:375, enhStat:'HP',   enhPer:30},
+  {id:'eq30',name:'龍鱗頭盔',   emoji:'🐲',type:'頭盔',rarity:'legendary',atk:0,  def:10, mag:6,  hp:0, mp:0, price:500, enhStat:'HP',   enhPer:40, specialEffect:{type:'critDmgUp', base:8, perStar:8, desc:'暴擊傷害提升%'}},
   {id:'eq31',name:'皮甲',       emoji:'🧥',type:'鎧甲',rarity:'common',   atk:0,  def:3,  mag:0,  hp:0, mp:0, price:125, enhStat:'防禦', enhPer:2},
   {id:'eq32',name:'連鎖甲',     emoji:'🦺',type:'鎧甲',rarity:'rare',     atk:0,  def:6,  mag:0,  hp:0, mp:0, price:250, enhStat:'防禦', enhPer:4},
   {id:'eq33',name:'鳳凰羽衣',   emoji:'👘',type:'鎧甲',rarity:'epic',     atk:0,  def:7,  mag:3,  hp:0, mp:0, price:375, enhStat:'防禦', enhPer:6},
@@ -5349,7 +5354,7 @@ function giveCustomGems() {
 
 // 商店系統===================================
 const POTION_LIST = {
-  hp:  { keys:['hp1','hp2','hp3','hp4'], costs:[45,220,1050,2500],   labels:['低階','中階','高階','超階'], color:'linear-gradient(135deg,#e74c3c,#c0392b)', emoji:'🧪', descFn: v=>`回復生命值  ${v} ` },
+  hp:  { keys:['hp1','hp2','hp3','hp4'], costs:[45,550,2575,7500],   labels:['低階','中階','高階','超階'], color:'linear-gradient(135deg,#e74c3c,#c0392b)', emoji:'🧪', descFn: v=>`回復生命值  ${v} ` },
   mp:  { keys:['mp1','mp2','mp3','mp4'], costs:[43,212,670,1250],    labels:['低階','中階','高階','超階'], color:'linear-gradient(135deg,#3498db,#2980b9)', emoji:'💧',  descFn: v=>`回復魔力值  ${v} ` },
   exp: { keys:['exp1','exp2','exp3'],    costs:[70,550,2720],      labels:['低階','中階','高階'],        color:'linear-gradient(135deg,#f59e0b,#d97706)', emoji:'⭐', descFn: v=>`增加經驗  ${v} ` },
 };
@@ -5407,10 +5412,10 @@ function renderShopUI() {
 
 // ── 藥水定義 ──────────────────────────────────────────────
 const POTION_DEFS = {
-  hp1:  { name:'低階生命藥水', type:'hp',  value:80  },
-  hp2:  { name:'中階生命藥水', type:'hp',  value:400 },
-  hp3:  { name:'高階生命藥水', type:'hp',  value:2000},
-  hp4:  { name:'超階生命藥水', type:'hp',  value:5000},
+  hp1:  { name:'低階生命藥水', type:'hp',  value:80   },
+  hp2:  { name:'中階生命藥水', type:'hp',  value:1000 },
+  hp3:  { name:'高階生命藥水', type:'hp',  value:5000 },
+  hp4:  { name:'超階生命藥水', type:'hp',  value:15000},
   mp1:  { name:'低階魔力藥水', type:'mp',  value:50  },
   mp2:  { name:'中階魔力藥水', type:'mp',  value:250 },
   mp3:  { name:'高階魔力藥水', type:'mp',  value:800 },
@@ -5872,6 +5877,44 @@ function doUpgrade(uid) {
   showToast(`🔨 ${card.name} 精煉至 +${card.refine}（${stat} +${per}）！`);
 }
 
+// 平均強化全部已裝備：每次都挑目前 refine 最低的裝備升級，直到金幣花完為止
+function autoBalanceUpgradeAll() {
+  const items = Object.values(state.equipped).filter(Boolean);
+  if (items.length === 0) { showToast('⚠️ 目前沒有已裝備的裝備'); return; }
+  let count = 0;
+  while (true) {
+    // 找出目前已裝備中精煉值最低的一件（並列時挑升級花費最低的）
+    let target = null;
+    for (const c of items) {
+      if (!target || (c.refine || 0) < (target.refine || 0)) target = c;
+    }
+    const cost = upgradeCost(target);
+    if (state.hero.gold < cost) break;
+
+    state.hero.gold -= cost;
+    target.refine = (target.refine || 0) + 1;
+    // 若舊存檔裝備缺少 enhStat/enhPer，從 EQUIP_POOL 查同名補回
+    if (!target.enhStat || !target.enhPer) {
+      const base = EQUIP_POOL.find(e => e.id === target.id || e.name === target.name);
+      if (base) { target.enhStat = base.enhStat; target.enhPer = base.enhPer; }
+    }
+    const star = target.star || 0;
+    const per  = Math.floor((target.enhPer || 2) / 2) * (star + 1);
+    const stat = target.enhStat || '攻擊';
+    if      (stat === '攻擊') target.atk = (target.atk || 0) + per;
+    else if (stat === '防禦') target.def = (target.def || 0) + per;
+    else if (stat === '魔法') target.mag = (target.mag || 0) + per;
+    else if (stat === 'HP')   target.hp  = (target.hp  || 0) + per;
+    else if (stat === 'MP')   target.mp  = (target.mp  || 0) + per;
+
+    count++;
+    if (count > 100000) break; // 安全防呆，避免極端情況下無窮迴圈
+  }
+  renderHero(); renderShopUI(); autoSave();
+  if (count === 0) showToast('💰 金幣不足，無法強化任何裝備');
+  else showToast(`⚖️ 平均強化完成，共強化 ${count} 次！`);
+}
+
 function doUpgrade10(uid) {
   for (let i = 0; i < 10; i++) {
     const cost = upgradeCost(
@@ -5908,20 +5951,17 @@ function syncCardWithPool(card) {
   if (!card || card._isSkill) return card;
   const base = EQUIP_POOL.find(e => e.id === card.id);
   if (!base) return card; // EQUIP_POOL 找不到對應 id（可能已下架），保留原樣避免出錯
-
   const star = card.star || 0;
   const mult = star + 1;
   const refineCount = card.refine || 0;
   const enhStat = base.enhStat || 'atk';
   const enhPer  = base.enhPer  ?? 2;
   const perRefine = Math.floor(enhPer / 2) * (star + 1);
-
   const refineAtk = enhStat === '攻擊' ? refineCount * perRefine : 0;
   const refineDef = enhStat === '防禦' ? refineCount * perRefine : 0;
   const refineMag = enhStat === '魔法' ? refineCount * perRefine : 0;
   const refineHp  = enhStat === 'HP'   ? refineCount * perRefine : 0;
   const refineMp  = enhStat === 'MP'   ? refineCount * perRefine : 0;
-
   return {
     ...card,
     name: base.name, emoji: base.emoji, type: base.type, rarity: base.rarity,
@@ -10372,9 +10412,9 @@ function mineGenCell(worldRow) {
   const r = Math.random();
   // 挖礦機率：鑽石 → 金幣 → 神器碎片 → 空
   const depth = worldRow;
-  const gemChance   = Math.min(0.2 + depth * 0.0001, 0.41);
-  const coinChance  = Math.min(0.2 + depth * 0.0001, 0.41);
-  const shardChance = Math.min(0.002 + depth * 0.00007, 0.15);
+  const gemChance   = Math.max(0.45 - depth * 0.00003, 0.42);
+  const coinChance  = Math.max(0.45 - depth * 0.00003, 0.42);
+  const shardChance = Math.min(0.002 + depth * 0.00006, 0.16);
   if (r < gemChance) return 'gem';
   if (r < gemChance + coinChance) return 'coin';
   if (r < gemChance + coinChance + shardChance) return 'shard';
@@ -10681,6 +10721,90 @@ function closeMineGame() {
   document.getElementById('mineGameOv').classList.add('hidden');
   mineState = null;
   renderGameHall();
+}
+
+// 後台：一次用完全部入場券，每張自動往下挖 10 層，最後回傳總共獲得的物品
+function adminAutoMineAll() {
+  const ticketCount = (state.tickets && state.tickets['ticket_memory']) || 0;
+  if (ticketCount <= 0) { showToast('❌ 沒有入場券！'); return; }
+  // 若目前正在手動挖礦中，避免資料衝突
+  if (mineState && !mineState.finished) { showToast('⚠️ 請先關閉目前的挖礦畫面再使用此功能'); return; }
+
+  // 沿用玩家目前的挖礦進度（跟手動挖礦共用同一份資料，才不會挖到重複的層數）
+  const prev = state.mineProgress;
+  let worldRow      = prev ? prev.worldRow      : 0;
+  let visibleTopRow = prev ? prev.visibleTopRow : -1;
+  let playerCol     = prev ? prev.playerCol     : 2;
+  let playerRow     = prev ? prev.playerRow     : 0;
+  const worldCells  = prev ? prev.worldCells    : {};
+
+  const getCell = (r, c) => {
+    const key = `${r},${c}`;
+    if (!(key in worldCells)) worldCells[key] = mineGenCell(r);
+    return worldCells[key];
+  };
+  const setCell = (r, c, val) => { worldCells[`${r},${c}`] = val; };
+
+  const totals = { coin: 0, coinGold: 0, gem: 0, gemGems: 0, shard: 0, digs: 0 };
+  const startDepth = worldRow;
+
+  for (let t = 0; t < ticketCount; t++) {
+    for (let i = 0; i < 10; i++) {
+      const depth = worldRow;
+      const cell = getCell(depth, playerCol);
+      if (cell === 'coin') {
+        const val = mineCalcReward('coin', depth);
+        totals.coin++; totals.coinGold += val;
+        setCell(depth, playerCol, 'empty_coin');
+      } else if (cell === 'gem') {
+        const val = mineCalcReward('gem', depth);
+        totals.gem++; totals.gemGems += val;
+        setCell(depth, playerCol, 'empty_gem');
+      } else if (cell === 'shard') {
+        totals.shard++;
+        setCell(depth, playerCol, 'empty_shard');
+      } else if (cell === 'rock') {
+        setCell(depth, playerCol, 'empty_rock');
+      }
+      // 若這格早已被挖過（empty系列），不重複計算獎勵，但仍照樣往下移動一層
+      totals.digs++;
+      worldRow++;
+      playerRow++;
+      if (playerRow >= MINE_ROWS - 1) {
+        visibleTopRow++;
+        playerRow = MINE_ROWS - 2;
+      }
+    }
+  }
+
+  // 扣光入場券
+  state.tickets['ticket_memory'] = 0;
+
+  // 發放獎勵
+  if (totals.coinGold > 0) state.hero.gold = (state.hero.gold || 0) + totals.coinGold;
+  if (totals.gemGems  > 0) state.hero.gems = (state.hero.gems  || 0) + totals.gemGems;
+  if (totals.shard    > 0) grantArtifactShards(totals.shard, `後台自動挖礦（第${startDepth+1}~${worldRow}層）`);
+
+  // 儲存挖礦進度，讓下次手動挖礦能從新的深度繼續
+  state.mineProgress = { worldRow, visibleTopRow, playerCol, playerRow, worldCells };
+  state.stats = state.stats || {};
+  state.stats.mineMaxDepth = Math.max(state.stats.mineMaxDepth || 0, worldRow);
+
+  autoSave();
+  renderHero();
+  renderGameHall();
+  renderAdminUI();
+
+  const resEl = document.getElementById('adminAutoMineResult');
+  if (resEl) {
+    const lines = [`✅ 使用了 ${ticketCount} 張入場券，共往下挖了 ${totals.digs} 層（第 ${startDepth + 1}～${worldRow} 層）`];
+    lines.push(`💰 金幣 ×${totals.coin}（+${totals.coinGold} Gold）`);
+    lines.push(`💎 鑽石 ×${totals.gem}（+${totals.gemGems} Gems）`);
+    lines.push(`🔹 神器碎片 ×${totals.shard}`);
+    resEl.innerHTML = lines.join('<br>');
+    resEl.style.display = 'block';
+  }
+  showToast(`⛏️ 自動挖礦完成！共挖 ${totals.digs} 層，獲得 💰${totals.coinGold} 💎${totals.gemGems} 🔹${totals.shard}`, 3200);
 }
 
 function updateMineTicketCount() {
