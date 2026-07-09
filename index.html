@@ -4,6 +4,81 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>✨ 魔法學院大冒險</title>
+<script>
+// ===== 臨時除錯用：把錯誤直接顯示在畫面上，方便在 iPad 等無法開主控台的裝置上排查 =====
+(function(){
+  var errBox = null;
+  function ensureBox(){
+    if (errBox) return errBox;
+    errBox = document.createElement('div');
+    errBox.id = '__debugErrBox';
+    errBox.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;'
+      + 'max-height:60vh;overflow:auto;background:rgba(200,0,0,.95);color:#fff;'
+      + 'font:12px/1.5 monospace;padding:10px;white-space:pre-wrap;word-break:break-all;';
+    var closeBtn = document.createElement('div');
+    closeBtn.textContent = '✕ 關閉這個除錯視窗';
+    closeBtn.style.cssText = 'position:sticky;top:0;background:#000;color:#fff;padding:6px;text-align:center;margin:-10px -10px 8px -10px;';
+    closeBtn.onclick = function(){ errBox.remove(); errBox = null; };
+    errBox.appendChild(closeBtn);
+    (document.body || document.documentElement).appendChild(errBox);
+    return errBox;
+  }
+  function log(msg){
+    try {
+      var box = ensureBox();
+      var line = document.createElement('div');
+      line.textContent = msg;
+      line.style.borderTop = '1px solid rgba(255,255,255,.3)';
+      line.style.padding = '4px 0';
+      box.appendChild(line);
+    } catch(e) {}
+  }
+  window.addEventListener('error', function(e){
+    log('❌ 錯誤: ' + (e.message || e) + '\n來源: ' + (e.filename || '') + ':' + (e.lineno || '') + ':' + (e.colno || ''));
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    var reason = e.reason;
+    var msg = (reason && (reason.message || reason.toString)) ? (reason.message || reason.toString()) : JSON.stringify(reason);
+    log('⚠️ Promise 未處理的錯誤: ' + msg);
+  });
+  // 存檔/資源讀取狀態，方便確認是不是 fetch 或 storage 造成的
+  window.addEventListener('DOMContentLoaded', function(){
+    log('ℹ️ DOMContentLoaded 已觸發，頁面基礎結構已載入');
+  });
+  window.addEventListener('load', function(){
+    log('ℹ️ window load 已觸發（所有資源含圖片已載入完成）');
+  });
+
+  // 主動檢查 localStorage / IndexedDB 是否可用（例如私密瀏覽模式常會擋掉）
+  try {
+    localStorage.setItem('__test__', '1');
+    localStorage.removeItem('__test__');
+    log('✅ localStorage 可正常使用');
+  } catch(e) {
+    log('❌ localStorage 無法使用: ' + e.message + '（可能是私密瀏覽模式或裝置設定封鎖了網站資料）');
+  }
+  try {
+    if (!window.indexedDB) {
+      log('❌ 這個瀏覽器沒有 indexedDB');
+    } else {
+      var req = indexedDB.open('__test_db__', 1);
+      req.onsuccess = function(){ log('✅ IndexedDB 可正常使用'); indexedDB.deleteDatabase('__test_db__'); };
+      req.onerror = function(){ log('❌ IndexedDB 開啟失敗: ' + (req.error && req.error.message)); };
+    }
+  } catch(e) {
+    log('❌ IndexedDB 測試時發生例外: ' + e.message);
+  }
+
+  // 主動測試遊戲需要的資源檔案是否抓得到（常見問題：檔名含中文、大小寫、路徑）
+  ['./questions.json','./1怪物.json','./2魔界.json','./3題目.json','./4其他.json','./5外星.json'].forEach(function(f){
+    fetch(f).then(function(r){
+      log((r.ok ? '✅ ' : '❌ ') + f + ' → HTTP ' + r.status);
+    }).catch(function(e){
+      log('❌ ' + f + ' 抓取失敗（可能是 CORS 或路徑問題): ' + e.message);
+    });
+  });
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -2265,12 +2340,12 @@ const EQUIP_POOL = [
 
 // 技能卡、強化
 const SKILL_POOL = [
-  {id:'sk1',name:'重斬',   emoji:'⚡', rarity:'rare', restrict:'武器', mpCost:7,  baseDmg:8,  stackBase:4, atkMult:1.6, magMult:0,   stackAtk:0.08, stackMag:0,    hits:1, desc:'攻擊 1.6 倍'},
-  {id:'sk2',name:'火焰斬', emoji:'🔥', rarity:'rare', restrict:'武器', mpCost:13, baseDmg:15, stackBase:7, atkMult:1.6, magMult:0.6, stackAtk:0.08, stackMag:0.02, hits:1, desc:'攻擊 1.6＋魔法 0.6 倍'},
-  {id:'sk3',name:'三連斬', emoji:'⚔️', rarity:'epic', restrict:'武器', mpCost:27, baseDmg:7,  stackBase:4, atkMult:1.0, magMult:0,   stackAtk:0.1 , stackMag:0,    hits:3, defPen:0.2, desc:'攻擊 1.0 倍 × 3，無視 20% 防禦'},
-  {id:'sk4',name:'火球術', emoji:'🔮', rarity:'rare', restrict:'法杖', mpCost:15, baseDmg:15, stackBase:7, atkMult:0,   magMult:1.8, stackAtk:0,    stackMag:0.1,  hits:1, desc:'魔攻 1.8 倍'},
-  {id:'sk5',name:'冰錐術', emoji:'❄️', rarity:'rare', restrict:'法杖', mpCost:15, baseDmg:16, stackBase:6, atkMult:0,   magMult:1.3, stackAtk:0,    stackMag:0.05, hits:1, freeze:0.3, desc:'魔攻 1.3 倍，30%冰凍'},
-  {id:'sk6',name:'暴風術', emoji:'🌪️', rarity:'epic', restrict:'法杖', mpCost:30, baseDmg:8,  stackBase:6, atkMult:0,   magMult:1.0, stackAtk:0,    stackMag:0.1,  hits:3, defPen:0.2, desc:'魔攻 1.0 倍 × 3，無視 20% 防禦'},
+  {id:'sk1',name:'重斬',   emoji:'⚡', rarity:'rare', restrict:'武器', mpCost:8,  baseDmg:8,  stackBase:4, atkMult:1.6, magMult:0,   stackAtk:0.08, stackMag:0,    hits:1, desc:'攻擊 1.6 倍'},
+  {id:'sk2',name:'火焰斬', emoji:'🔥', rarity:'rare', restrict:'武器', mpCost:15, baseDmg:15, stackBase:7, atkMult:1.8, magMult:0.5, stackAtk:0.09, stackMag:0.02, hits:1, desc:'攻擊 1.6＋魔法 0.6 倍'},
+  {id:'sk3',name:'三連斬', emoji:'⚔️', rarity:'epic', restrict:'武器', mpCost:30, baseDmg:7,  stackBase:4, atkMult:1.0, magMult:0,   stackAtk:0.1 , stackMag:0,    hits:3, defPen:0.2, desc:'攻擊 1.0 倍 × 3，無視 20% 防禦'},
+  {id:'sk4',name:'火球術', emoji:'🔮', rarity:'rare', restrict:'法杖', mpCost:17, baseDmg:15, stackBase:7, atkMult:0,   magMult:1.8, stackAtk:0,    stackMag:0.1,  hits:1, desc:'魔攻 1.8 倍'},
+  {id:'sk5',name:'冰錐術', emoji:'❄️', rarity:'rare', restrict:'法杖', mpCost:17, baseDmg:16, stackBase:6, atkMult:0,   magMult:1.3, stackAtk:0,    stackMag:0.05, hits:1, freeze:0.3, desc:'魔攻 1.3 倍，30%冰凍'},
+  {id:'sk6',name:'暴風術', emoji:'🌪️', rarity:'epic', restrict:'法杖', mpCost:33, baseDmg:8,  stackBase:6, atkMult:0,   magMult:1.1, stackAtk:0,    stackMag:0.11, hits:3, defPen:0.2, desc:'魔攻 1.0 倍 × 3，無視 20% 防禦'},
 ];
 
 const FAMILY_MOD = {// 種族加成
@@ -2449,7 +2524,7 @@ function enemyStats(id) {// 怪物數值計算
   const e = ENEMIES.find(x => x.id === id);
   if (!e) return null;
   const vary  = v => Math.max(1, Math.round(v * (1 + (Math.random() * 0.06 - 0.03))));
-  const scale1 = Math.pow(1.126, e.stage - 1);// 生命成長倍率
+  const scale1 = Math.pow(1.125, e.stage - 1);// 生命成長倍率
   const scale2 = Math.pow(1.087, e.stage - 1);// 攻擊成長倍率
   const scale3 = Math.pow(1.089, e.stage - 1);// 防禦成長倍率
   const scale4 = Math.pow(1.067, e.stage - 1);// 金幣及經驗成長倍率
@@ -2470,9 +2545,9 @@ function enemyStats(id) {// 怪物數值計算
   const finalExcessRatio = e.alienMult ? alienExcessRatio : excessRatio;
   return {
     ...e,
-    maxHp: vary(Math.round((28 * scale1 + e.stage *80)* mod.hp * totalMult)),
+    maxHp: vary(Math.round((27 * scale1 + e.stage *81)* mod.hp * totalMult)),
     atk:   vary(Math.round((20 * scale2 + e.stage * 5)* mod.atk* totalMult)),
-    def:   vary(Math.round((28 * scale3 + e.stage *11)* mod.def* totalMult)),
+    def:   vary(Math.round((30 * scale3 + e.stage * 8)* mod.def* totalMult)),
     gold:  vary(Math.round((10 * scale4 + e.stage * 1)* mod.gold)),
     exp:   vary(Math.round((20 * scale4 + e.stage * 2)* mod.exp)),
     heroAtkBoost:  1 + finalExcessRatio,
