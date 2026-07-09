@@ -4,81 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>✨ 魔法學院大冒險</title>
-<script>
-// ===== 臨時除錯用：把錯誤直接顯示在畫面上，方便在 iPad 等無法開主控台的裝置上排查 =====
-(function(){
-  var errBox = null;
-  function ensureBox(){
-    if (errBox) return errBox;
-    errBox = document.createElement('div');
-    errBox.id = '__debugErrBox';
-    errBox.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;'
-      + 'max-height:60vh;overflow:auto;background:rgba(200,0,0,.95);color:#fff;'
-      + 'font:12px/1.5 monospace;padding:10px;white-space:pre-wrap;word-break:break-all;';
-    var closeBtn = document.createElement('div');
-    closeBtn.textContent = '✕ 關閉這個除錯視窗';
-    closeBtn.style.cssText = 'position:sticky;top:0;background:#000;color:#fff;padding:6px;text-align:center;margin:-10px -10px 8px -10px;';
-    closeBtn.onclick = function(){ errBox.remove(); errBox = null; };
-    errBox.appendChild(closeBtn);
-    (document.body || document.documentElement).appendChild(errBox);
-    return errBox;
-  }
-  function log(msg){
-    try {
-      var box = ensureBox();
-      var line = document.createElement('div');
-      line.textContent = msg;
-      line.style.borderTop = '1px solid rgba(255,255,255,.3)';
-      line.style.padding = '4px 0';
-      box.appendChild(line);
-    } catch(e) {}
-  }
-  window.addEventListener('error', function(e){
-    log('❌ 錯誤: ' + (e.message || e) + '\n來源: ' + (e.filename || '') + ':' + (e.lineno || '') + ':' + (e.colno || ''));
-  });
-  window.addEventListener('unhandledrejection', function(e){
-    var reason = e.reason;
-    var msg = (reason && (reason.message || reason.toString)) ? (reason.message || reason.toString()) : JSON.stringify(reason);
-    log('⚠️ Promise 未處理的錯誤: ' + msg);
-  });
-  // 存檔/資源讀取狀態，方便確認是不是 fetch 或 storage 造成的
-  window.addEventListener('DOMContentLoaded', function(){
-    log('ℹ️ DOMContentLoaded 已觸發，頁面基礎結構已載入');
-  });
-  window.addEventListener('load', function(){
-    log('ℹ️ window load 已觸發（所有資源含圖片已載入完成）');
-  });
-
-  // 主動檢查 localStorage / IndexedDB 是否可用（例如私密瀏覽模式常會擋掉）
-  try {
-    localStorage.setItem('__test__', '1');
-    localStorage.removeItem('__test__');
-    log('✅ localStorage 可正常使用');
-  } catch(e) {
-    log('❌ localStorage 無法使用: ' + e.message + '（可能是私密瀏覽模式或裝置設定封鎖了網站資料）');
-  }
-  try {
-    if (!window.indexedDB) {
-      log('❌ 這個瀏覽器沒有 indexedDB');
-    } else {
-      var req = indexedDB.open('__test_db__', 1);
-      req.onsuccess = function(){ log('✅ IndexedDB 可正常使用'); indexedDB.deleteDatabase('__test_db__'); };
-      req.onerror = function(){ log('❌ IndexedDB 開啟失敗: ' + (req.error && req.error.message)); };
-    }
-  } catch(e) {
-    log('❌ IndexedDB 測試時發生例外: ' + e.message);
-  }
-
-  // 主動測試遊戲需要的資源檔案是否抓得到（常見問題：檔名含中文、大小寫、路徑）
-  ['./questions.json','./1怪物.json','./2魔界.json','./3題目.json','./4其他.json','./5外星.json'].forEach(function(f){
-    fetch(f).then(function(r){
-      log((r.ok ? '✅ ' : '❌ ') + f + ' → HTTP ' + r.status);
-    }).catch(function(e){
-      log('❌ ' + f + ' 抓取失敗（可能是 CORS 或路徑問題): ' + e.message);
-    });
-  });
-})();
-</script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -10896,9 +10821,10 @@ function updateMineTicketCount() {
   }
 }
 
-init();
-
-// ── BGM 系統 ──────────────────────────────────────────────
+// ── BGM 系統（宣告必須放在 init() 之前，否則存檔剛好卡在「敵人已死但尚未切換」
+// 狀態時，init() 會同步呼叫 selectEnemy() → bgmPlay()，提早讀取到還沒初始化的
+// BGM_TRACKS / bgmState，導致 ReferenceError 讓整支 script 中斷 ── 這正是本次
+// 平板玩家「裝備/任務/技能/簽到/小遊戲全部失效」的根本原因）───────────────
 const BGM_TRACKS = {
   shop:      'audio/BGM-shop.mp3',
   battle:    'audio/BGM-battle.mp3',    // 普通戰鬥（stage 1~61）
@@ -10925,6 +10851,8 @@ const bgmState = {
   gen: 0,           // 世代序號：每次 bgmPlay 都會 +1，用來辨識「這個播放請求是不是已經過期」
   ducked: false,    // 是否處於休息狀態
 };
+
+init();
 
 function bgmPlay(key) {//背景音樂
   const src = BGM_TRACKS[key];
