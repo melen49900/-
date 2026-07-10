@@ -1990,13 +1990,24 @@ button:active { transform:scale(.96); }
         </div>
       </div>
 
+      <!-- 關卡進度總覽（測試/除錯用） -->
+      <div class="admin-section">
+        <div class="admin-section-title">🪜 關卡進度總覽（測試用）</div>
+        <div id="tierStatusBox" style="font-size:.85em;line-height:1.8"></div>
+        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+          <button class="admin-btn" onclick="adjustMathStage(-5)">數學 -5階</button>
+          <button class="admin-btn" onclick="adjustMathStage(5)">數學 +5階</button>
+          <button class="admin-btn red" onclick="resetAllTierProgress()">重置全部關卡進度</button>
+        </div>
+      </div>
+
       <!-- 數學題庫設定 -->
       <div class="admin-section">
-        <div class="admin-section-title">🔢 數學題庫設定</div>
+        <div class="admin-section-title">🔢 數學題庫設定（僅供手動預覽測試，實際出題難度由上方關卡進度中的數學階段自動決定）</div>
         <div class="math-op-grid" id="mathOpGrid">
           <!-- 由 JS 產生 -->
         </div>
-        <button class="math-preview-btn" onclick="previewMathQ()">🔍 預覽隨機出題</button>
+        <button class="math-preview-btn" onclick="previewMathQ()">🔍 預覽目前階段的出題</button>
         <div class="math-preview-box" id="mathPreviewBox">點擊上方按鈕預覽題目</div>
       </div>
 
@@ -2536,6 +2547,11 @@ let state = {
     queue:[],
     shield: 3,        // 綠燈保險，初始 3 顆
     retrying: false,  // 是否正在重答同一題
+    mathStage: 1,          // 數學難度階段 1~300
+    mathStageInit: false,  // 是否已依歷史答對數換算過起始階段
+    mathWindowCount: 0,    // 目前判定視窗內已作答（第一次作答）題數
+    mathWindowCorrect: 0,  // 視窗內第一次就答對的題數
+    mathWindowWrong: 0,    // 視窗內第一次就答錯的題數
   },
   quests: [
   { slotId:0, questId:null, progress:0, cooldownUntil:0 },
@@ -2544,6 +2560,7 @@ let state = {
   { slotId:3, questId:null, progress:0, cooldownUntil:0 },
   ],
   clearedStages: [],
+  tier: { chinese:null, english:null, science:null, geography:null }, // 各科關卡進度，null=尚未初始化
   seenShopStoneBadge: false,
   multiDrawCount: 0,
   customQ: { math:[], chinese:[], english:[], science:[], geography:[] },
@@ -3135,7 +3152,7 @@ function nextSubject() {
   return state.quiz.queue.shift();
 }
 
-// 數學題庫設定（可在後台調整）
+// 數學題庫設定（後台手動預覽用，實際出題難度改由 getMathStageCfg() 依 mathStage 動態計算）
 const mathCfg = {
   add: { enabled:true, label:'➕ 加法', aMin:60,  aMax:280, bMin:17, bMax:60 },
   sub: { enabled:true, label:'➖ 減法', aMin:60,  aMax:280, bMin:17, bMax:60 },
@@ -3143,11 +3160,75 @@ const mathCfg = {
   div: { enabled:true, label:'➗ 除法', aMin:6,   aMax:17,  dMin:2,  dMax:5  },
 };
 
-function generateMath() {
-  const activeOps = Object.keys(mathCfg).filter(k => mathCfg[k].enabled);
+// ── 數學難度階段系統（1~300階，統一控制自動出題難度＋固定題庫開放比例）──
+const MATH_STAGE_MAX = 300;
+
+function getMathStageCfg(stage) {
+  stage = Math.max(1, Math.min(MATH_STAGE_MAX, Number(stage) || 1));
+  const addLimit = 5 + 2 * (stage - 1); // 加法上限：第1階5，之後每階+2，持續套用
+  const cfg = {
+    add: { enabled:true,  label:'➕ 加法', aMin:1, aMax:addLimit, bMin:1, bMax:addLimit },
+    sub: { enabled:false, label:'➖ 減法', aMin:1, aMax:addLimit, bMin:1, bMax:2 },
+    mul: { enabled:false, label:'✖️ 乘法', aMin:1, aMax:3,        bMin:1, bMax:3 },
+    div: { enabled:false, label:'➗ 除法', aMin:6, aMax:6,        dMin:2, dMax:2 },
+  };
+  if (stage >= 10) { // 第10階開放減法：a 沿用加法上限，b 從2起、每階+1
+    cfg.sub.enabled = true;
+    cfg.sub.bMax = Math.min(addLimit, 2 + (stage - 10));
+  }
+  if (stage >= 30) { // 第30階開放乘法：a、b 從3起，每10階+1，上限9
+    cfg.mul.enabled = true;
+    const mulLimit = Math.min(9, 3 + Math.floor((stage - 30) / 10));
+    cfg.mul.aMax = mulLimit;
+    cfg.mul.bMax = mulLimit;
+  }
+  if (stage >= 100) { // 第100階開放除法：被除數從6起(上限20)，除數從2起(上限6)，每10階+1
+    cfg.div.enabled = true;
+    cfg.div.aMax = Math.min(20, 6 + Math.floor((stage - 100) / 10));
+    cfg.div.dMax = Math.min(6,  2 + Math.floor((stage - 100) / 10));
+  }
+  return cfg;
+}
+
+// 老玩家（存檔中已有 mathCorrect 歷史答對數）第一次啟用本系統時，換算起始階段；新玩家一律從第1階開始
+function ensureMathStageInit() {
+  if (state.quiz.mathStageInit) return;
+  state.quiz.mathStageInit = true;
+  const correct = (state.stats && state.stats.mathCorrect) || 0;
+  state.quiz.mathStage = Math.max(1, Math.min(MATH_STAGE_MAX, Math.floor(correct / 30)));
+}
+
+// 每次「第一次作答」數學題後呼叫：依最近視窗表現動態升降階
+// 升階：視窗滿10題且9題以上第一次就答對；降階：視窗內累積4題第一次就答錯（不用等滿10題）
+function updateMathStage(firstAttemptCorrect) {
+  const q = state.quiz;
+  q.mathWindowCount = (q.mathWindowCount || 0) + 1;
+  if (firstAttemptCorrect) q.mathWindowCorrect = (q.mathWindowCorrect || 0) + 1;
+  else q.mathWindowWrong = (q.mathWindowWrong || 0) + 1;
+
+  if (q.mathWindowWrong >= 4) {
+    const before = q.mathStage || 1;
+    q.mathStage = Math.max(1, before - 1);
+    q.mathWindowCount = 0; q.mathWindowCorrect = 0; q.mathWindowWrong = 0;
+    if (q.mathStage !== before) showToast('📉 數學難度稍微調降，慢慢來～');
+    return;
+  }
+  if (q.mathWindowCount >= 10) {
+    if (q.mathWindowCorrect >= 9) {
+      const before = q.mathStage || 1;
+      q.mathStage = Math.min(MATH_STAGE_MAX, before + 1);
+      if (q.mathStage !== before) showToast('📈 數學難度提升囉！');
+    }
+    q.mathWindowCount = 0; q.mathWindowCorrect = 0; q.mathWindowWrong = 0;
+  }
+}
+
+function generateMath(cfg) {
+  cfg = cfg || getMathStageCfg(state.quiz.mathStage || 1);
+  const activeOps = Object.keys(cfg).filter(k => cfg[k].enabled);
   if (activeOps.length === 0) return { q:'請至少啟用一種運算！', ans:'OK', opts:['OK','好','Yes','是'] };
   const op = activeOps[Math.floor(Math.random() * activeOps.length)];
-  const c = mathCfg[op];
+  const c = cfg[op];
   let a, b, ans, q;
   const ri = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
   if (op === 'add') {
@@ -3199,11 +3280,12 @@ function calcResult(sym, a, b) {
   return null;
 }
 
-function generateMathReverse() {//自動數學題
-  const activeOps = Object.keys(mathCfg).filter(k => mathCfg[k].enabled);
-  if (activeOps.length < 2) return generateMath();
+function generateMathReverse(cfg) {//自動數學題
+  cfg = cfg || getMathStageCfg(state.quiz.mathStage || 1);
+  const activeOps = Object.keys(cfg).filter(k => cfg[k].enabled);
+  if (activeOps.length < 2) return generateMath(cfg);
   const op = activeOps[Math.floor(Math.random() * activeOps.length)];
-  const c = mathCfg[op];
+  const c = cfg[op];
   const ri = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
   let a, b, ans, q;
   if (op === 'add') {                                 //加法
@@ -3222,7 +3304,7 @@ function generateMathReverse() {//自動數學題
     b = ri(c.dMin, c.dMax);
     const aMinAdj = Math.max(c.aMin, b);
     a = ri(aMinAdj, Math.min(Math.max(aMinAdj, c.aMax), 20));
-    if (a % b !== 0) return generateMathReverse();
+    if (a % b !== 0) return generateMathReverse(cfg);
     ans = '÷'; q = `${a} ？ ${b} ＝ ${a / b}`;
   }
   // 檢查是否有其他符號也能讓算式成立
@@ -3232,7 +3314,7 @@ function generateMathReverse() {//自動數學題
     if (sym === ans) return false;
     return calcResult(sym, a, b) === correctResult;
   });
-  if (isAmbiguous) return generateMathReverse(); // 有歧義就重新出題
+  if (isAmbiguous) return generateMathReverse(cfg); // 有歧義就重新出題
 
   const opts = allSymbols.sort(() => Math.random() - .5);
   return { q, ans, opts };
@@ -3259,19 +3341,139 @@ function _pickFromPool(subject, pool) {
   return p;
 }
 
+// ── 四科（國文/英文/自然/地理）關卡系統：以題號分批解鎖 ──
+const SUBJECT_CATEGORY_MAP = { math:'數學', chinese:'國文', english:'英文', science:'自然', geography:'地理' };
+const TIER_SUBJECTS = ['chinese','english','science','geography'];
+const SUBJ_LABEL = { chinese:'📖 國文', english:'🔤 英文', science:'🌿 自然', geography:'🌍 地理' };
+
+// 彙整某科目「有題號」的題目（匯入JSON＋自訂題庫），依題號排序；沒題號的舊題目不參與關卡機制
+function getNumberedPool(subject) {
+  const cat = SUBJECT_CATEGORY_MAP[subject];
+  const toNum = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  const importedRaw = (questionsData?.questions || []).filter(x => x.category === cat && toNum(x.id));
+  const imported = importedRaw.map(x => ({ q:x.question, ans:x.answer, opts:x.options, img:x.image || x.img, id: toNum(x.id) }));
+  const custom = (state.customQ?.[subject] || [])
+    .filter(x => toNum(x.id))
+    .map(x => ({ ...x, id: toNum(x.id) }));
+  const map = new Map();
+  imported.forEach(x => map.set(x.id, x));
+  custom.forEach(x => map.set(x.id, x)); // 持久化的自訂題庫優先覆蓋
+  return Array.from(map.values())
+    .filter(x => x.q && x.ans && Array.isArray(x.opts) && x.opts.length >= 2)
+    .sort((a, b) => a.id - b.id);
+}
+
+// 依目前解鎖上限，計算「本批（最新5題）尚未通過」的題號清單
+function recomputePendingBatch(subject, pool) {
+  pool = pool || getNumberedPool(subject);
+  const t = state.tier[subject];
+  if (!t) return;
+  const lower = Math.max(1, t.unlockedMax - 4);
+  t.pendingIds = pool.filter(p => p.id >= lower && p.id <= t.unlockedMax).map(p => p.id);
+}
+
+// 初始化某科目關卡狀態（只會做一次）；若玩家原本就有該科目的歷史答對數，直接換算起始解鎖上限，避免老玩家從頭來過
+function ensureTierState(subject, pool) {
+  if (!state.tier) state.tier = {};
+  if (state.tier[subject]) return;
+  pool = pool || getNumberedPool(subject);
+  const correct = (state.stats && state.stats[subject + 'Correct']) || 0;
+  const maxId = pool.length ? pool[pool.length - 1].id : 0;
+  const startMax = pool.length ? Math.min(maxId, Math.max(5, 5 + 5 * Math.floor(correct / 30))) : 5;
+  state.tier[subject] = { unlockedMax: startMax, pendingIds: null, retryQueue: [] };
+  recomputePendingBatch(subject, pool);
+}
+
+function advanceTier(subject) {
+  const t = state.tier[subject];
+  const pool = getNumberedPool(subject);
+  const maxId = pool.length ? pool[pool.length - 1].id : 0;
+  if (t.unlockedMax >= maxId) { t.pendingIds = []; return; } // 已全部解鎖，沒有下一批了
+  t.unlockedMax = Math.min(maxId, t.unlockedMax + 5);
+  recomputePendingBatch(subject, pool);
+  showToast(`🎉 ${SUBJ_LABEL[subject] || subject} 難度晉級！開放到第 ${t.unlockedMax} 題`);
+}
+
+// 答對某題號時呼叫：若該題屬於目前這一批門檻，就從待通過清單移除，全部通過後自動晉級
+function onTierCorrect(subject, id) {
+  const t = state.tier?.[subject];
+  if (!t || !Array.isArray(t.pendingIds) || id == null) return;
+  const idx = t.pendingIds.indexOf(id);
+  if (idx === -1) return; // 不在本批門檻內（可能是複習舊題），不影響進度
+  t.pendingIds.splice(idx, 1);
+  if (t.pendingIds.length === 0) advanceTier(subject);
+}
+
+// 答錯（最終確定答錯，非綠燈重答中）時呼叫：安排隨機2~4題後再重新出現，確認是否真的學會了
+function scheduleRetry(subject, id) {
+  const t = state.tier?.[subject];
+  if (!t || id == null) return;
+  if (t.retryQueue.some(e => e.id === id)) return; // 已排隊中，不重複加入
+  const wait = 2 + Math.floor(Math.random() * 3); // 2~4
+  t.retryQueue.push({ id, wait });
+}
+
+function _buildTierEntry(p) {
+  const entry = { q: p.q, ans: p.ans, opts: (p.opts || []).slice().sort(() => Math.random() - .5), id: p.id };
+  if (p.img) entry.img = p.img;
+  return entry;
+}
+
+// 依關卡狀態挑一題；若該科目完全沒有帶題號的題目，回傳 null 讓呼叫端退回舊的全隨機模式
+function pickQuestionTiered(subject) {
+  const pool = getNumberedPool(subject);
+  if (pool.length === 0) return null;
+  ensureTierState(subject, pool);
+  const t = state.tier[subject];
+
+  // 優先處理到期的延後重考題
+  if (t.retryQueue.length) {
+    t.retryQueue.forEach(e => e.wait--);
+    const dueIdx = t.retryQueue.findIndex(e => e.wait <= 0);
+    if (dueIdx >= 0) {
+      const due = t.retryQueue.splice(dueIdx, 1)[0];
+      const q = pool.find(p => p.id === due.id);
+      if (q) return _buildTierEntry(q);
+    }
+  }
+
+  const maxId = pool[pool.length - 1].id;
+  const upper = Math.min(t.unlockedMax, maxId);
+  const candidates = pool.filter(p => p.id <= upper);
+  const p = _pickFromPool(subject, candidates.length ? candidates : pool);
+  return p ? _buildTierEntry(p) : null;
+}
+
 function pickQuestion(subject) {
   if (subject === 'math') {
+    ensureMathStageInit();
+    const stage = state.quiz.mathStage || 1;
     const MATH_BANK_RATIO = 0.3;// 數學題庫占比，0全隨機、1全題庫
-    const mathImported = questionsData?.questions?.filter(x => x.category === '數學') || [];
-    const mathCustom   = state.customQ?.math || []; 
-    const mathBuiltin  = (state.editedBuiltin?.math) || BUILTIN_Q?.math || [];
-    const mathPool     = [...mathImported.map(x=>({q:x.question, ans:x.answer, opts:x.options, img:x.image||x.img})),...mathCustom,...mathBuiltin];
+    const numberedMathPool = getNumberedPool('math');
+    let mathPool;
+    if (numberedMathPool.length > 0) {
+      // 固定題庫（有題號的）開放範圍跟著 mathStage 等比例放大，避免自動出題還在加法、固定題庫卻跑出除法題的怪現象
+      const ratio = Math.min(1, stage / MATH_STAGE_MAX);
+      const openCount = Math.max(1, Math.round(numberedMathPool.length * ratio));
+      mathPool = numberedMathPool.slice(0, openCount);
+    } else {
+      const mathImported = questionsData?.questions?.filter(x => x.category === '數學') || [];
+      const mathCustom   = state.customQ?.math || [];
+      const mathBuiltin  = (state.editedBuiltin?.math) || BUILTIN_Q?.math || [];
+      mathPool = [...mathImported.map(x=>({q:x.question, ans:x.answer, opts:x.options, img:x.image||x.img})),...mathCustom,...mathBuiltin];
+    }
     if (mathPool.length > 0 && Math.random() < MATH_BANK_RATIO) {
       const p = _pickFromPool(subject, mathPool);
       if (p) { const e = { q: p.q, ans: p.ans, opts: (p.opts || []).slice().sort(() => Math.random()-.5) }; if (p.img) e.img = p.img; return e; }
     }
-    return Math.random() < 0.3 ? generateMathReverse() : generateMath();
+    const cfg = getMathStageCfg(stage);
+    return Math.random() < 0.3 ? generateMathReverse(cfg) : generateMath(cfg);
   }
+  const tiered = pickQuestionTiered(subject);
+  if (tiered) return tiered;
   const imported = questionsData?.questions?.filter(x => {
     const map = { chinese:'國文', english:'英文', science:'自然', geography:'地理' };
     return x.category === (map[subject] || subject);
@@ -3351,6 +3553,8 @@ function checkAnswer(selected) {
   state.quiz.answered = true;
   const correct = String(selected) === String(state.quiz.q.ans);
   const isRetrying = state.quiz.retrying; // 記錄進來時是否已在重答
+  const subj = state.quiz.subject;
+  const tierId = state.quiz.q?.id; // 這題若屬於「有題號」的關卡題目，會帶有 id
   document.querySelectorAll('.ans-btn').forEach(btn => {
     btn.disabled = true;
     if (correct) {
@@ -3383,8 +3587,9 @@ function checkAnswer(selected) {
     state.hero.gems += gems;
     state.stats = state.stats || {};
     state.stats.totalCorrect = (state.stats.totalCorrect || 0) + 1;
-    const subj = state.quiz.subject;
     state.stats[subj + 'Correct'] = (state.stats[subj + 'Correct'] || 0) + 1;
+    if (TIER_SUBJECTS.includes(subj) && tierId != null) onTierCorrect(subj, tierId);
+    if (subj === 'math' && !isRetrying) updateMathStage(true); // 只用「第一次作答」判定，重答補考成功不算
     checkAchievements();
     updateQuestProgress('correct');
     state.hero.gold += gold;
@@ -3399,6 +3604,7 @@ function checkAnswer(selected) {
       // 第一次答錯
       if ((state.quiz.shield ?? 3) > 0) {
         // 還有綠燈：扣1顆，允許重答
+        if (subj === 'math') updateMathStage(false); // 第一次作答就錯，不論後面補考是否成功都算一次「不會」
         state.quiz.shield--;
         state.quiz.retrying = true;
         state.quiz.answered = false; // 允許再按
@@ -3418,6 +3624,8 @@ function checkAnswer(selected) {
         return; // 不進入「下一題」流程
       } else {
         // 綠燈已空：直接中斷連勝
+        if (subj === 'math') updateMathStage(false);
+        if (TIER_SUBJECTS.includes(subj) && tierId != null) scheduleRetry(subj, tierId);
         state.quiz.streak = 0;
         state.quiz.retrying = false;
         lockAndReveal();
@@ -3427,7 +3635,8 @@ function checkAnswer(selected) {
         speakText(`答案是「${state.quiz.q.ans}」`, 0.9);
       }
     } else {
-      // 第二次（重答）也錯：中斷連勝
+      // 第二次（重答）也錯：中斷連勝（第一次作答時已計入數學難度視窗，這裡不重複計算）
+      if (TIER_SUBJECTS.includes(subj) && tierId != null) scheduleRetry(subj, tierId);
       state.quiz.streak = 0;
       state.quiz.retrying = false;
       lockAndReveal();
@@ -5236,7 +5445,47 @@ function renderAdminUI() {
   document.getElementById('streakBonusVal').textContent = GEM_STREAK_BONUS;
   document.getElementById('adminMineDepth').textContent = state.stats?.mineMaxDepth || 0;
   renderMathOpGrid();
+  renderTierStatus();
   beditRender();
+}
+
+function renderTierStatus() {
+  const box = document.getElementById('tierStatusBox');
+  if (!box) return;
+  let html = '';
+  TIER_SUBJECTS.forEach(subj => {
+    const pool = getNumberedPool(subj);
+    const t = state.tier?.[subj];
+    if (pool.length === 0) {
+      html += `<div>${SUBJ_LABEL[subj]}：尚無題號題目，關卡功能未啟用（全隨機）</div>`;
+    } else if (!t) {
+      html += `<div>${SUBJ_LABEL[subj]}：尚未初始化（題庫共 ${pool.length} 題）</div>`;
+    } else {
+      const pending = (t.pendingIds || []).join('、') || '（本批已全部通過）';
+      html += `<div>${SUBJ_LABEL[subj]}：解鎖到第 ${t.unlockedMax} 題／共 ${pool.length} 題，本批待通過題號：${pending}</div>`;
+    }
+  });
+  ensureMathStageInit();
+  const stage = state.quiz.mathStage || 1;
+  html += `<div style="margin-top:6px">🔢 數學：第 ${stage} / ${MATH_STAGE_MAX} 階　（判定視窗：第一次答對 ${state.quiz.mathWindowCorrect||0}／答錯 ${state.quiz.mathWindowWrong||0}／共作答 ${state.quiz.mathWindowCount||0} 題）</div>`;
+  box.innerHTML = html;
+}
+
+function adjustMathStage(delta) {
+  ensureMathStageInit();
+  state.quiz.mathStage = Math.max(1, Math.min(MATH_STAGE_MAX, (state.quiz.mathStage || 1) + delta));
+  state.quiz.mathWindowCount = 0; state.quiz.mathWindowCorrect = 0; state.quiz.mathWindowWrong = 0;
+  autoSave(); renderTierStatus();
+  showToast(`數學難度調整為第 ${state.quiz.mathStage} 階`);
+}
+
+function resetAllTierProgress() {
+  if (!confirm('確定重置全部關卡進度與數學難度階段？（測試用，玩家的其他資料不受影響）')) return;
+  state.tier = { chinese:null, english:null, science:null, geography:null };
+  state.quiz.mathStage = 1; state.quiz.mathStageInit = false;
+  state.quiz.mathWindowCount = 0; state.quiz.mathWindowCorrect = 0; state.quiz.mathWindowWrong = 0;
+  autoSave(); renderTierStatus();
+  showToast('🔄 已重置全部關卡進度');
 }
 
 function renderMathOpGrid() {
@@ -5321,7 +5570,8 @@ function setMathRange(op, key, val) {
 }
 
 function previewMathQ() {
-  const q = generateMath();
+  ensureMathStageInit();
+  const q = generateMath(getMathStageCfg(state.quiz.mathStage || 1));
   const box = document.getElementById('mathPreviewBox');
   box.innerHTML = `<div style="font-size:1.3em;margin-bottom:4px;">${q.q}</div>
     <div style="color:#8e24aa;font-size:.82em;">選項：${q.opts.join('　')}　／　正解：${q.ans}</div>`;
@@ -6021,6 +6271,7 @@ function loadFromStorage() {
     }
     if (data.state?.achievements) state.achievements = data.state.achievements;
     if (data.state?.clearedStages) state.clearedStages = data.state.clearedStages;
+    if (data.state?.tier) state.tier = data.state.tier;
     if (data.state?.seenEquipIds)   state.seenEquipIds   = data.state.seenEquipIds;
     if (data.state?.defeatedEnemies) state.defeatedEnemies = data.state.defeatedEnemies;
     if (typeof data.state?.curseStones === 'number') state.curseStones = data.state.curseStones;
@@ -6148,6 +6399,7 @@ function exportQuestions() {
         answer:    item.ans,
       };
       if (item.img) entry.image = item.img;
+      if (item.id != null) entry.id = item.id;
       questions.push(entry);
     });
   });
@@ -6188,9 +6440,11 @@ function loadQuestionsFile(event) {
         const opts = (item.options || []).filter(Boolean);
         if (!q || !ans || opts.length < 2) return;  // ← 加這行
         if (!opts.includes(ans)) opts[0] = ans;      // ← 確保答案在選項裡
+        const idNum = Number(item.id);
         state.customQ[sub].push({
           q, ans, opts,
-          ...(item.image ? { img: item.image } : {})
+          ...(item.image ? { img: item.image } : {}),
+          ...(Number.isFinite(idNum) && idNum > 0 ? { id: idNum } : {})
         });
       });
       _dirty = true; doSave();
@@ -6260,6 +6514,7 @@ function importExcel(event) {
           const o3  = get('optionC','選項C','選項3');
           const o4  = get('optionD','選項D','選項4');
           const img = get('圖片','image','img');
+          const idRaw = get('題號','id','編號','No','no','序號');
           if (!q || !ans) return;
           const opts = [o1,o2,o3,o4].filter(Boolean);
           if (opts.length < 2) return;
@@ -6273,18 +6528,25 @@ function importExcel(event) {
           if (!sub) return;
           const entry = { q, ans, opts };
           if (img) entry.img = img;
+          const idNum = parseInt(idRaw, 10);
+          if (!isNaN(idNum) && idNum > 0) entry.id = idNum; // 題號用於難度關卡分階，同科目內從1起編
           newQ[sub].push(entry);
           total++;
         });
       });
 
       if (total === 0) { showToast('⚠️ 找不到題目，請確認工作表名稱（數學/國文/英文/自然/地理）或欄位含「科目」'); return; }
-      // 合併進 customQ
+      // 合併進 customQ：有題號的以題號比對覆蓋更新，沒題號的沿用舊的文字比對去重
       Object.keys(newQ).forEach(sub => {
         const existing = state.customQ[sub] || [];
         const merged = [...existing];
         newQ[sub].forEach(nq => {
-          if (!merged.some(eq => eq.q === nq.q && eq.ans === nq.ans && eq.img === nq.img)) merged.push(nq);
+          if (nq.id != null) {
+            const idx = merged.findIndex(eq => eq.id === nq.id);
+            if (idx >= 0) merged[idx] = nq; else merged.push(nq);
+          } else if (!merged.some(eq => eq.q === nq.q && eq.ans === nq.ans && eq.img === nq.img)) {
+            merged.push(nq);
+          }
         });
         state.customQ[sub] = merged;
       });
@@ -9685,9 +9947,19 @@ function init() {
       const opts = (item.options||[]).filter(Boolean);
       if (!q||!ans||opts.length<2) return;
       if (!opts.includes(ans)) opts[0]=ans;
-      const key = q+'|'+ans;
-      const exists = (state.customQ[sub]||[]).some(x=>x.q+'|'+x.ans===key);
-      if (!exists) state.customQ[sub].push({q,ans,opts,...(item.image?{img:item.image}:{})});
+      const idNum = Number(item.id);
+      const hasId = Number.isFinite(idNum) && idNum > 0;
+      const entry = {q,ans,opts,...(item.image?{img:item.image}:{}),...(hasId?{id:idNum}:{})};
+      if (!state.customQ[sub]) state.customQ[sub] = [];
+      if (hasId) {
+        // 有題號：以題號比對，若已存在就覆蓋更新內容（方便之後修正題目或補上題號）
+        const idx = state.customQ[sub].findIndex(x => x.id === idNum);
+        if (idx >= 0) state.customQ[sub][idx] = entry; else state.customQ[sub].push(entry);
+      } else {
+        const key = q+'|'+ans;
+        const exists = state.customQ[sub].some(x=>x.q+'|'+x.ans===key);
+        if (!exists) state.customQ[sub].push(entry);
+      }
     });
     _dirty=true; doSave();
     loadQuestion();

@@ -2,94 +2,6 @@
   "questions": [
     {
       "category": "數學",
-      "question": "1000c.c. = 幾公升",
-      "options": [
-        "1",
-        "10",
-        "100",
-        "1000"
-      ],
-      "answer": "1"
-    },
-    {
-      "category": "數學",
-      "question": "1公升 = 幾c.c.",
-      "options": [
-        "1",
-        "10",
-        "100",
-        "1000"
-      ],
-      "answer": "1000"
-    },
-    {
-      "category": "數學",
-      "question": "1公尺 = 幾公分",
-      "options": [
-        "1",
-        "10",
-        "100",
-        "1000"
-      ],
-      "answer": "100"
-    },
-    {
-      "category": "數學",
-      "question": "1公噸 = 幾公斤",
-      "options": [
-        "1",
-        "10",
-        "100",
-        "1000"
-      ],
-      "answer": "1000"
-    },
-    {
-      "category": "數學",
-      "question": "1包10元的餅乾買6包要多少錢",
-      "options": [
-        "50",
-        "60",
-        "70",
-        "80"
-      ],
-      "answer": "60"
-    },
-    {
-      "category": "數學",
-      "question": "2公尺 = 幾公分",
-      "options": [
-        "200",
-        "100",
-        "20",
-        "1000"
-      ],
-      "answer": "200"
-    },
-    {
-      "category": "數學",
-      "question": "38元最多可以買幾包10元的餅乾",
-      "options": [
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
-      "answer": "3"
-    },
-    {
-      "category": "數學",
-      "question": "50元最多可以買幾包10元的餅乾",
-      "options": [
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
-      "answer": "5"
-    },
-    {
-      "category": "數學",
       "question": "長針指到1代表什麼意思",
       "options": [
         "1點",
@@ -97,128 +9,32 @@
         "1分",
         "1秒"
       ],
-      "answer": "5分"
+      "answer": "5分",
+      "id": 1
     },
     {
       "category": "數學",
-      "question": "長針指到2代表什麼意思",
+      "question": "1小時 = 幾分鐘",
       "options": [
-        "2點",
-        "10分",
-        "2分",
-        "5分"
+        "60",
+        "20",
+        "30",
+        "40"
       ],
-      "answer": "10分"
+      "answer": "60",
+      "id": 2
     },
     {
       "category": "數學",
-      "question": "長針指到3代表什麼意思",
+      "question": "1分鐘 = 幾秒",
       "options": [
-        "3點",
-        "15分",
-        "3分",
-        "2點"
+        "60",
+        "20",
+        "30",
+        "40"
       ],
-      "answer": "15分"
-    },
-    {
-      "category": "數學",
-      "question": "長針指到4代表什麼意思",
-      "options": [
-        "4點",
-        "20分",
-        "4分",
-        "4個人"
-      ],
-      "answer": "20分"
-    },
-    {
-      "category": "數學",
-      "question": "長針指到5代表什麼意思",
-      "options": [
-        "5點",
-        "25分",
-        "5分",
-        "5個人"
-      ],
-      "answer": "25分"
-    },
-    {
-      "category": "數學",
-      "question": "長針指到6代表什麼意思",
-      "options": [
-        "6點",
-        "30分",
-        "6分",
-        "30秒"
-      ],
-      "answer": "30分"
-    },
-    {
-      "category": "數學",
-      "question": "短針指到1代表什麼意思",
-      "options": [
-        "1點",
-        "5分",
-        "1分",
-        "1秒"
-      ],
-      "answer": "1點"
-    },
-    {
-      "category": "數學",
-      "question": "短針指到2代表什麼意思",
-      "options": [
-        "2點",
-        "10分",
-        "2分",
-        "1點"
-      ],
-      "answer": "2點"
-    },
-    {
-      "category": "數學",
-      "question": "短針指到3代表什麼意思",
-      "options": [
-        "3點",
-        "15分",
-        "3分",
-        "2點"
-      ],
-      "answer": "3點"
-    },
-    {
-      "category": "數學",
-      "question": "短針指到4代表什麼意思",
-      "options": [
-        "4點",
-        "20分",
-        "4分",
-        "4秒"
-      ],
-      "answer": "4點"
-    },
-    {
-      "category": "數學",
-      "question": "短針指到5代表什麼意思",
-      "options": [
-        "5點",
-        "25分",
-        "5分",
-        "5秒"
-      ],
-      "answer": "5點"
-    },
-    {
-      "category": "數學",
-      "question": "短針指到6代表什麼意思",
-      "options": [
-        "6點",
-        "30分",
-        "6分",
-        "30秒"
-      ],
-      "answer": "6點"
+      "answer": "60",
+      "id": 3
     },
     {
       "category": "數學",
@@ -230,7 +46,44 @@
         "8"
       ],
       "answer": "5",
-      "image": "q_math_ruler_5.jpg"
+      "image": "q_math_ruler_5.jpg",
+      "id": 4
+    },
+    {
+      "category": "數學",
+      "question": "1公尺 = 幾公分",
+      "options": [
+        "1",
+        "10",
+        "100",
+        "1000"
+      ],
+      "answer": "100",
+      "id": 5
+    },
+    {
+      "category": "數學",
+      "question": "1包10元的餅乾買6包要多少錢",
+      "options": [
+        "50",
+        "60",
+        "70",
+        "80"
+      ],
+      "answer": "60",
+      "id": 6
+    },
+    {
+      "category": "數學",
+      "question": "短針指到1代表什麼意思",
+      "options": [
+        "1點",
+        "5分",
+        "1分",
+        "1秒"
+      ],
+      "answer": "1點",
+      "id": 7
     },
     {
       "category": "數學",
@@ -242,7 +95,56 @@
         "7"
       ],
       "answer": "6",
-      "image": "q_math_ruler_6.jpg"
+      "image": "q_math_ruler_6.jpg",
+      "id": 8
+    },
+    {
+      "category": "數學",
+      "question": "短針指到2代表什麼意思",
+      "options": [
+        "2點",
+        "10分",
+        "2分",
+        "1點"
+      ],
+      "answer": "2點",
+      "id": 9
+    },
+    {
+      "category": "數學",
+      "question": "長針指到2代表什麼意思",
+      "options": [
+        "2點",
+        "10分",
+        "2分",
+        "5分"
+      ],
+      "answer": "10分",
+      "id": 10
+    },
+    {
+      "category": "數學",
+      "question": "1000c.c. = 幾公升",
+      "options": [
+        "1",
+        "10",
+        "100",
+        "1000"
+      ],
+      "answer": "1",
+      "id": 11
+    },
+    {
+      "category": "數學",
+      "question": "1公升 = 幾c.c.",
+      "options": [
+        "1",
+        "10",
+        "100",
+        "1000"
+      ],
+      "answer": "1000",
+      "id": 12
     },
     {
       "category": "數學",
@@ -254,7 +156,56 @@
         "8"
       ],
       "answer": "7",
-      "image": "q_math_ruler_7.jpg"
+      "image": "q_math_ruler_7.jpg",
+      "id": 13
+    },
+    {
+      "category": "數學",
+      "question": "短針指到3代表什麼意思",
+      "options": [
+        "3點",
+        "15分",
+        "3分",
+        "2點"
+      ],
+      "answer": "3點",
+      "id": 14
+    },
+    {
+      "category": "數學",
+      "question": "長針指到3代表什麼意思",
+      "options": [
+        "3點",
+        "15分",
+        "3分",
+        "2點"
+      ],
+      "answer": "15分",
+      "id": 15
+    },
+    {
+      "category": "數學",
+      "question": "38元最多可以買幾包10元的餅乾",
+      "options": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "answer": "3",
+      "id": 16
+    },
+    {
+      "category": "數學",
+      "question": "1公噸 = 幾公斤",
+      "options": [
+        "1",
+        "10",
+        "100",
+        "1000"
+      ],
+      "answer": "1000",
+      "id": 17
     },
     {
       "category": "數學",
@@ -266,7 +217,56 @@
         "8"
       ],
       "answer": "8",
-      "image": "q_math_ruler_8.jpg"
+      "image": "q_math_ruler_8.jpg",
+      "id": 18
+    },
+    {
+      "category": "數學",
+      "question": "短針指到4代表什麼意思",
+      "options": [
+        "4點",
+        "20分",
+        "4分",
+        "4秒"
+      ],
+      "answer": "4點",
+      "id": 19
+    },
+    {
+      "category": "數學",
+      "question": "長針指到4代表什麼意思",
+      "options": [
+        "4點",
+        "20分",
+        "4分",
+        "4個人"
+      ],
+      "answer": "20分",
+      "id": 20
+    },
+    {
+      "category": "數學",
+      "question": "50元最多可以買幾包10元的餅乾",
+      "options": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "answer": "5",
+      "id": 21
+    },
+    {
+      "category": "數學",
+      "question": "2公尺 = 幾公分",
+      "options": [
+        "200",
+        "100",
+        "20",
+        "1000"
+      ],
+      "answer": "200",
+      "id": 22
     },
     {
       "category": "數學",
@@ -278,656 +278,68 @@
         "9"
       ],
       "answer": "9",
-      "image": "q_math_ruler_9.jpg"
+      "image": "q_math_ruler_9.jpg",
+      "id": 23
     },
     {
-      "category": "國文",
-      "question": "「ㄅㄚˋㄅㄚ˙」怎麼寫？",
+      "category": "數學",
+      "question": "短針指到5代表什麼意思",
       "options": [
-        "爸",
-        "媽",
-        "爺",
-        "奶"
+        "5點",
+        "25分",
+        "5分",
+        "5秒"
       ],
-      "answer": "爸"
+      "answer": "5點",
+      "id": 24
     },
     {
-      "category": "國文",
-      "question": "「ㄅㄞˇ貨公司」怎麼寫？",
+      "category": "數學",
+      "question": "長針指到5代表什麼意思",
       "options": [
-        "十",
-        "百",
-        "千",
-        "萬"
+        "5點",
+        "25分",
+        "5分",
+        "5個人"
       ],
-      "answer": "百"
+      "answer": "25分",
+      "id": 25
     },
     {
-      "category": "國文",
-      "question": "「ㄅㄟˇ邊」怎麼寫？",
+      "category": "數學",
+      "question": "短針指到6代表什麼意思",
       "options": [
-        "東",
-        "南",
-        "西",
-        "北"
+        "6點",
+        "30分",
+        "6分",
+        "30秒"
       ],
-      "answer": "北"
+      "answer": "6點",
+      "id": 26
     },
     {
-      "category": "國文",
-      "question": "「ㄅㄨˊ要」怎麼寫？",
+      "category": "數學",
+      "question": "長針指到6代表什麼意思",
       "options": [
-        "不",
-        "部",
-        "木",
-        "下"
+        "6點",
+        "30分",
+        "6分",
+        "30秒"
       ],
-      "answer": "不"
+      "answer": "30分",
+      "id": 27
     },
     {
-      "category": "國文",
-      "question": "「ㄆㄥˊ友」怎麼寫？",
+      "category": "數學",
+      "question": "短針指到7代表什麼意思",
       "options": [
-        "朋",
-        "烹",
-        "捧",
-        "碰"
+        "7點",
+        "35分",
+        "7分",
+        "35秒"
       ],
-      "answer": "朋"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄇㄚ ㄇㄚ˙」怎麼寫？",
-      "options": [
-        "爸",
-        "媽",
-        "爺",
-        "奶"
-      ],
-      "answer": "媽"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄇㄢˋ吞吞」怎麼寫？",
-      "options": [
-        "慢",
-        "曼",
-        "漫",
-        "饅"
-      ],
-      "answer": "慢"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄇㄧㄥˊ天」怎麼寫",
-      "options": [
-        "明",
-        "名",
-        "鳴",
-        "銘"
-      ],
-      "answer": "明"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄉㄚˋ人」怎麼寫？",
-      "options": [
-        "大",
-        "小",
-        "中",
-        "白"
-      ],
-      "answer": "大"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄉㄠ子」怎麼寫",
-      "options": [
-        "刀",
-        "刃",
-        "分",
-        "切"
-      ],
-      "answer": "刀"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄉㄨㄛㄕㄠˇ」怎麼寫？",
-      "options": [
-        "多少",
-        "夕少",
-        "多沙",
-        "夕沙"
-      ],
-      "answer": "多少"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄉㄨㄥ天」怎麼寫？",
-      "options": [
-        "春",
-        "夏",
-        "秋",
-        "冬"
-      ],
-      "answer": "冬"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄉㄨㄥ邊」怎麼寫？",
-      "options": [
-        "東",
-        "南",
-        "西",
-        "北"
-      ],
-      "answer": "東"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄊㄚ的東西」怎麼寫？",
-      "options": [
-        "你",
-        "我",
-        "他",
-        "們"
-      ],
-      "answer": "他"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄊㄞˋ陽」怎麼寫？",
-      "options": [
-        "太",
-        "夫",
-        "大",
-        "天"
-      ],
-      "answer": "太"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄋㄞˇㄋㄞ˙」怎麼寫？",
-      "options": [
-        "爸",
-        "媽",
-        "爺",
-        "奶"
-      ],
-      "answer": "奶"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄋㄢˊ邊」怎麼寫？",
-      "options": [
-        "東",
-        "南",
-        "西",
-        "北"
-      ],
-      "answer": "南"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄋㄧㄡˊ排」怎麼寫？",
-      "options": [
-        "牛",
-        "象",
-        "魚",
-        "羊"
-      ],
-      "answer": "牛"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄌㄧㄤˇ個」怎麼寫？",
-      "options": [
-        "兩",
-        "三",
-        "二",
-        "雨"
-      ],
-      "answer": "兩"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄌㄧㄥˊ食」怎麼寫？",
-      "options": [
-        "零",
-        "一",
-        "二",
-        "三"
-      ],
-      "answer": "零"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄎㄨㄞˋ慢」怎麼寫？",
-      "options": [
-        "快",
-        "決",
-        "快",
-        "筷"
-      ],
-      "answer": "快"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄏㄜˊ花」怎麼寫？",
-      "options": [
-        "河",
-        "海",
-        "荷",
-        "湖"
-      ],
-      "answer": "荷"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄏㄨㄚ草」怎麼寫？",
-      "options": [
-        "花",
-        "化",
-        "艾",
-        "英"
-      ],
-      "answer": "花"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄏㄨㄛˇ山」怎麼寫",
-      "options": [
-        "火",
-        "伙",
-        "光",
-        "灰"
-      ],
-      "answer": "火"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄏㄨㄛˇ災」怎麼寫？",
-      "options": [
-        "火",
-        "活",
-        "或",
-        "侯"
-      ],
-      "answer": "火"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄐㄧㄣ天」怎麼寫",
-      "options": [
-        "今",
-        "金",
-        "斤",
-        "巾"
-      ],
-      "answer": "今"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄑㄧㄡ天」怎麼寫？",
-      "options": [
-        "春",
-        "夏",
-        "秋",
-        "冬"
-      ],
-      "answer": "秋"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄑㄧㄢˊ後」怎麼寫？",
-      "options": [
-        "前",
-        "後",
-        "左",
-        "右"
-      ],
-      "answer": "前"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄒㄧㄚˋ天」怎麼寫？",
-      "options": [
-        "春",
-        "夏",
-        "秋",
-        "冬"
-      ],
-      "answer": "夏"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄒㄧㄠˇ孩」怎麼寫？",
-      "options": [
-        "小",
-        "川",
-        "山",
-        "三"
-      ],
-      "answer": "小"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄒㄧㄣ臟」怎麼寫？",
-      "options": [
-        "心",
-        "新",
-        "星",
-        "興"
-      ],
-      "answer": "心"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄒㄧ邊」怎麼寫？",
-      "options": [
-        "東",
-        "南",
-        "西",
-        "北"
-      ],
-      "answer": "西"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄓˇㄧㄡˇ一個」怎麼寫？",
-      "options": [
-        "只有",
-        "止由",
-        "直友",
-        "止友"
-      ],
-      "answer": "只有"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄓㄨㄥˋ量」怎麼寫",
-      "options": [
-        "重",
-        "種",
-        "湩",
-        "鍾"
-      ],
-      "answer": "重"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄓㄨㄥ間」怎麼寫？",
-      "options": [
-        "中",
-        "木",
-        "牛",
-        "王"
-      ],
-      "answer": "中"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄔㄨㄣ天」怎麼寫？",
-      "options": [
-        "春",
-        "夏",
-        "秋",
-        "冬"
-      ],
-      "answer": "春"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄔ飯」怎麼寫？",
-      "options": [
-        "吃",
-        "乞",
-        "吐",
-        "叫"
-      ],
-      "answer": "吃"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄕㄡˇ指」怎麼寫？",
-      "options": [
-        "手",
-        "三",
-        "守",
-        "毛"
-      ],
-      "answer": "手"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄗㄨㄛˇ右」怎麼寫？",
-      "options": [
-        "左",
-        "右",
-        "上",
-        "下"
-      ],
-      "answer": "左"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄦˇ朵」怎麼寫？",
-      "options": [
-        "耳",
-        "目",
-        "爾",
-        "白"
-      ],
-      "answer": "耳"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄧㄝˊㄧㄝ˙」怎麼寫？",
-      "options": [
-        "爸",
-        "媽",
-        "爺",
-        "奶"
-      ],
-      "answer": "爺"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄧㄝˇ是」怎麼寫？",
-      "options": [
-        "也",
-        "野",
-        "爺",
-        "耶"
-      ],
-      "answer": "也"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄧㄤˊ肉」怎麼寫？",
-      "options": [
-        "羊",
-        "牛",
-        "象",
-        "魚"
-      ],
-      "answer": "羊"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄨㄢˊ遊戲」怎麼寫？",
-      "options": [
-        "玩",
-        "丸",
-        "完",
-        "元"
-      ],
-      "answer": "玩"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄩˊ類」怎麼寫？",
-      "options": [
-        "魚",
-        "羊",
-        "牛",
-        "象"
-      ],
-      "answer": "魚"
-    },
-    {
-      "category": "國文",
-      "question": "「ㄩㄝˋ亮」怎麼寫",
-      "options": [
-        "月",
-        "日",
-        "光",
-        "星"
-      ],
-      "answer": "月"
-    },
-    {
-      "category": "國文",
-      "question": "「一」的注音是？",
-      "options": [
-        "ㄧ",
-        "ㄦˋ",
-        "ㄙㄢ",
-        "ㄙˋ"
-      ],
-      "answer": "ㄧ"
-    },
-    {
-      "category": "國文",
-      "question": "「一ㄑㄧㄢ元」怎麼寫？",
-      "options": [
-        "十",
-        "百",
-        "千",
-        "萬"
-      ],
-      "answer": "千"
-    },
-    {
-      "category": "國文",
-      "question": "「七」的注音是？",
-      "options": [
-        "ㄑㄧ",
-        "ㄅㄚ",
-        "ㄨˇ",
-        "ㄌㄧㄡˋ"
-      ],
-      "answer": "ㄑㄧ"
-    },
-    {
-      "category": "國文",
-      "question": "「九」的注音是？",
-      "options": [
-        "ㄐㄧㄡˇ",
-        "ㄕˊ",
-        "ㄅㄚ",
-        "ㄑㄧ"
-      ],
-      "answer": "ㄐㄧㄡˇ"
-    },
-    {
-      "category": "國文",
-      "question": "「二」的注音是？",
-      "options": [
-        "ㄦˋ",
-        "ㄙㄢ",
-        "ㄙˋ",
-        "ㄧ"
-      ],
-      "answer": "ㄦˋ"
-    },
-    {
-      "category": "國文",
-      "question": "「八」的注音是？",
-      "options": [
-        "ㄅㄚ",
-        "ㄨˇ",
-        "ㄌㄧㄡˋ",
-        "ㄑㄧ"
-      ],
-      "answer": "ㄅㄚ"
-    },
-    {
-      "category": "國文",
-      "question": "「十」的注音是？",
-      "options": [
-        "ㄕˊ",
-        "ㄐㄧㄡˇ",
-        "ㄅㄚ",
-        "ㄑㄧ"
-      ],
-      "answer": "ㄕˊ"
-    },
-    {
-      "category": "國文",
-      "question": "「三」的注音是？",
-      "options": [
-        "ㄙㄢ",
-        "ㄙˋ",
-        "ㄧ",
-        "ㄦˋ"
-      ],
-      "answer": "ㄙㄢ"
-    },
-    {
-      "category": "國文",
-      "question": "「上」的注音是？",
-      "options": [
-        "ㄕㄤˋ",
-        "ㄕㄤ",
-        "ㄕㄤˊ",
-        "ㄕㄤˇ"
-      ],
-      "answer": "ㄕㄤˋ"
-    },
-    {
-      "category": "國文",
-      "question": "「下」的注音是？",
-      "options": [
-        "ㄒㄧㄚˋ",
-        "ㄒㄧㄚ",
-        "ㄒㄧㄚˊ",
-        "ㄒㄧㄚˇ"
-      ],
-      "answer": "ㄒㄧㄚˋ"
-    },
-    {
-      "category": "國文",
-      "question": "「小ㄍㄡˇ」怎麼寫？",
-      "options": [
-        "狗",
-        "猴",
-        "魚",
-        "牛"
-      ],
-      "answer": "狗"
-    },
-    {
-      "category": "國文",
-      "question": "「小孩ㄗ˙」怎麼寫？",
-      "options": [
-        "子",
-        "紫",
-        "自",
-        "茲"
-      ],
-      "answer": "子"
-    },
-    {
-      "category": "國文",
-      "question": "「不ㄧㄠˋ」怎麼寫？",
-      "options": [
-        "要",
-        "西",
-        "藥",
-        "覃"
-      ],
-      "answer": "要"
+      "answer": "7點",
+      "id": 28
     },
     {
       "category": "國文",
@@ -938,7 +350,80 @@
         "ㄑㄧ",
         "ㄅㄚ"
       ],
-      "answer": "ㄨˇ"
+      "answer": "ㄨˇ",
+      "id": 1
+    },
+    {
+      "category": "國文",
+      "question": "「十」的注音是？",
+      "options": [
+        "ㄕˊ",
+        "ㄐㄧㄡˇ",
+        "ㄅㄚ",
+        "ㄑㄧ"
+      ],
+      "answer": "ㄕˊ",
+      "id": 2
+    },
+    {
+      "category": "國文",
+      "question": "「二」的注音是？",
+      "options": [
+        "ㄦˋ",
+        "ㄙㄢ",
+        "ㄙˋ",
+        "ㄧ"
+      ],
+      "answer": "ㄦˋ",
+      "id": 3
+    },
+    {
+      "category": "國文",
+      "question": "「七」的注音是？",
+      "options": [
+        "ㄑㄧ",
+        "ㄅㄚ",
+        "ㄨˇ",
+        "ㄌㄧㄡˋ"
+      ],
+      "answer": "ㄑㄧ",
+      "id": 4
+    },
+    {
+      "category": "國文",
+      "question": "「一」的注音是？",
+      "options": [
+        "ㄧ",
+        "ㄦˋ",
+        "ㄙㄢ",
+        "ㄙˋ"
+      ],
+      "answer": "ㄧ",
+      "id": 5
+    },
+    {
+      "category": "國文",
+      "question": "「上」的注音是？",
+      "options": [
+        "ㄕㄤˋ",
+        "ㄕㄤ",
+        "ㄕㄤˊ",
+        "ㄕㄤˇ"
+      ],
+      "answer": "ㄕㄤˋ",
+      "id": 6
+    },
+    {
+      "category": "國文",
+      "question": "「下」的注音是？",
+      "options": [
+        "ㄒㄧㄚˋ",
+        "ㄒㄧㄚ",
+        "ㄒㄧㄚˊ",
+        "ㄒㄧㄚˇ"
+      ],
+      "answer": "ㄒㄧㄚˋ",
+      "id": 7
     },
     {
       "category": "國文",
@@ -949,18 +434,8 @@
         "ㄅㄚ",
         "ㄨˇ"
       ],
-      "answer": "ㄌㄧㄡˋ"
-    },
-    {
-      "category": "國文",
-      "question": "「牛ㄋㄞˇ」怎麼寫？",
-      "options": [
-        "奶",
-        "乃",
-        "艿",
-        "氖"
-      ],
-      "answer": "奶"
+      "answer": "ㄌㄧㄡˋ",
+      "id": 8
     },
     {
       "category": "國文",
@@ -971,129 +446,8 @@
         "ㄦˋ",
         "ㄙㄢ"
       ],
-      "answer": "ㄙˋ"
-    },
-    {
-      "category": "國文",
-      "question": "「左ㄧㄡˋ」怎麼寫？",
-      "options": [
-        "左",
-        "右",
-        "上",
-        "下"
-      ],
-      "answer": "右"
-    },
-    {
-      "category": "國文",
-      "question": "「你ㄇㄣ˙」怎麼寫？",
-      "options": [
-        "你",
-        "我",
-        "他",
-        "們"
-      ],
-      "answer": "們"
-    },
-    {
-      "category": "國文",
-      "question": "「車ㄇㄣˊ」怎麼寫？",
-      "options": [
-        "門",
-        "們",
-        "捫",
-        "悶"
-      ],
-      "answer": "門"
-    },
-    {
-      "category": "國文",
-      "question": "「姓ㄇㄧㄥˊ」怎麼寫？",
-      "options": [
-        "名",
-        "酩",
-        "洺",
-        "銘"
-      ],
-      "answer": "名"
-    },
-    {
-      "category": "國文",
-      "question": "「朋ㄧㄡˇ」怎麼寫？",
-      "options": [
-        "友",
-        "有",
-        "黝",
-        "油"
-      ],
-      "answer": "友"
-    },
-    {
-      "category": "國文",
-      "question": "「長ㄐㄧㄤ」怎麼寫？",
-      "options": [
-        "江",
-        "工",
-        "漿",
-        "姜"
-      ],
-      "answer": "江"
-    },
-    {
-      "category": "國文",
-      "question": "「前ㄏㄡˋ」怎麼寫？",
-      "options": [
-        "前",
-        "後",
-        "左",
-        "右"
-      ],
-      "answer": "後"
-    },
-    {
-      "category": "國文",
-      "question": "「書ㄅㄣˇ」怎麼寫？",
-      "options": [
-        "本",
-        "木",
-        "沐",
-        "禾"
-      ],
-      "answer": "本"
-    },
-    {
-      "category": "國文",
-      "question": "「這是ㄨㄛˇ的」怎麼寫？",
-      "options": [
-        "你",
-        "我",
-        "他",
-        "們"
-      ],
-      "answer": "我"
-    },
-    {
-      "category": "國文",
-      "question": "「過ㄋㄧㄢˊ」怎麼寫",
-      "options": [
-        "月",
-        "日",
-        "年",
-        "星"
-      ],
-      "answer": "年"
-    },
-    {
-      "category": "國文",
-      "question": "「蝴蝶」的注音是？",
-      "options": [
-        "ㄏㄨˊ ㄉㄧㄝˊ",
-        "ㄏㄜˊ ㄊㄨㄣˊ",
-        "ㄓ  ㄓㄨ",
-        "ㄆㄤˊ ㄒㄧㄝˋ"
-      ],
-      "answer": "ㄏㄨˊ ㄉㄧㄝˊ",
-      "image": "q_動物蝴蝶.jpeg"
+      "answer": "ㄙˋ",
+      "id": 9
     },
     {
       "category": "國文",
@@ -1105,193 +459,57 @@
         "ㄇㄠˋ"
       ],
       "answer": "ㄇㄠ",
-      "image": "q_動物貓.jpg"
+      "image": "q_動物貓.jpg",
+      "id": 10
     },
     {
       "category": "國文",
-      "question": "他是什麼職業?",
+      "question": "「九」的注音是？",
       "options": [
-        "消防員",
-        "澆花員",
-        "洗地員",
-        "抽水員"
+        "ㄐㄧㄡˇ",
+        "ㄕˊ",
+        "ㄅㄚ",
+        "ㄑㄧ"
       ],
-      "answer": "消防員",
-      "image": "q_職業消防員.jpg"
+      "answer": "ㄐㄧㄡˇ",
+      "id": 11
     },
     {
       "category": "國文",
-      "question": "他是什麼職業?",
+      "question": "「八」的注音是？",
       "options": [
-        "老師",
-        "醫生",
-        "農夫",
-        "警察"
+        "ㄅㄚ",
+        "ㄨˇ",
+        "ㄌㄧㄡˋ",
+        "ㄑㄧ"
       ],
-      "answer": "農夫",
-      "image": "q_職業農夫.jpg"
+      "answer": "ㄅㄚ",
+      "id": 12
     },
     {
       "category": "國文",
-      "question": "他是什麼職業?",
+      "question": "「三」的注音是？",
       "options": [
-        "廚師",
-        "醫生",
-        "學生",
-        "警察"
+        "ㄙㄢ",
+        "ㄙˋ",
+        "ㄧ",
+        "ㄦˋ"
       ],
-      "answer": "廚師",
-      "image": "q_職業廚師.jpg"
+      "answer": "ㄙㄢ",
+      "id": 13
     },
     {
       "category": "國文",
-      "question": "他是什麼職業?",
+      "question": "「蝴蝶」的注音是？",
       "options": [
-        "老師",
-        "醫生",
-        "學生",
-        "警察"
+        "ㄏㄨˊ ㄉㄧㄝˊ",
+        "ㄏㄜˊ ㄊㄨㄣˊ",
+        "ㄓ  ㄓㄨ",
+        "ㄆㄤˊ ㄒㄧㄝˋ"
       ],
-      "answer": "警察",
-      "image": "q_職業警察.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "她是什麼職業?",
-      "options": [
-        "老師",
-        "醫生",
-        "學生",
-        "警察"
-      ],
-      "answer": "老師",
-      "image": "q_職業老師.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "她是什麼職業?",
-      "options": [
-        "老師",
-        "醫生",
-        "學生",
-        "警察"
-      ],
-      "answer": "醫生",
-      "image": "q_職業醫生.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "哪個字是「ㄋㄧˇ」？",
-      "options": [
-        "你",
-        "我",
-        "他",
-        "們"
-      ],
-      "answer": "你"
-    },
-    {
-      "category": "國文",
-      "question": "哪種動物叫聲是正確的？",
-      "options": [
-        "小羊咩咩咩",
-        "小狗喵喵喵",
-        "小雞汪汪汪",
-        "小豬啾啾啾"
-      ],
-      "answer": "小羊咩咩咩"
-    },
-    {
-      "category": "國文",
-      "question": "哪種動物叫聲是正確的？",
-      "options": [
-        "小狗汪汪汪",
-        "青蛙啾啾啾",
-        "小鳥喵喵喵",
-        "小貓呱呱呱"
-      ],
-      "answer": "小狗汪汪汪"
-    },
-    {
-      "category": "國文",
-      "question": "哪種動物叫聲是正確的？",
-      "options": [
-        "小鳥啾啾啾",
-        "青蛙喵喵喵",
-        "小狗呱呱呱",
-        "小貓汪汪汪"
-      ],
-      "answer": "小鳥啾啾啾"
-    },
-    {
-      "category": "國文",
-      "question": "哪種動物叫聲是正確的？",
-      "options": [
-        "小貓喵喵喵",
-        "青蛙啾啾啾",
-        "小狗呱呱呱",
-        "小鳥汪汪汪"
-      ],
-      "answer": "小貓喵喵喵"
-    },
-    {
-      "category": "國文",
-      "question": "哪種動物叫聲是正確的？",
-      "options": [
-        "青蛙呱呱呱",
-        "小鳥汪汪汪",
-        "小狗喵喵喵",
-        "小貓啾啾啾"
-      ],
-      "answer": "青蛙呱呱呱"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼?",
-      "options": [
-        "公車",
-        "火車",
-        "機車",
-        "計程車"
-      ],
-      "answer": "公車",
-      "image": "q_物品巴士.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼?",
-      "options": [
-        "車",
-        "申",
-        "甲",
-        "東"
-      ],
-      "answer": "車",
-      "image": "q_物品車.jpeg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼?",
-      "options": [
-        "炒飯",
-        "炒麵",
-        "白飯",
-        "麵包"
-      ],
-      "answer": "炒飯",
-      "image": "q_食物炒飯.jpg"
-    },
-    {
-      "category": "國文",
-      "question": "這是什麼?",
-      "options": [
-        "麵",
-        "飯",
-        "薯條",
-        "麵包"
-      ],
-      "answer": "麵",
-      "image": "q_食物麵.jpg"
+      "answer": "ㄏㄨˊ ㄉㄧㄝˊ",
+      "image": "q_動物蝴蝶.jpeg",
+      "id": 14
     },
     {
       "category": "國文",
@@ -1303,7 +521,8 @@
         "陰天"
       ],
       "answer": "下雨",
-      "image": "q_天氣雨.jpg"
+      "image": "q_天氣雨.jpg",
+      "id": 15
     },
     {
       "category": "國文",
@@ -1315,7 +534,21 @@
         "陰天"
       ],
       "answer": "陰天",
-      "image": "q_天氣陰.jpg"
+      "image": "q_天氣陰.jpg",
+      "id": 16
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼?",
+      "options": [
+        "麵",
+        "飯",
+        "薯條",
+        "麵包"
+      ],
+      "answer": "麵",
+      "image": "q_食物麵.jpg",
+      "id": 17
     },
     {
       "category": "國文",
@@ -1327,7 +560,185 @@
         "陰天"
       ],
       "answer": "晴天",
-      "image": "q_天氣晴.jpg"
+      "image": "q_天氣晴.jpg",
+      "id": 18
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼?",
+      "options": [
+        "炒飯",
+        "炒麵",
+        "白飯",
+        "麵包"
+      ],
+      "answer": "炒飯",
+      "image": "q_食物炒飯.jpg",
+      "id": 19
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼?",
+      "options": [
+        "車",
+        "申",
+        "甲",
+        "東"
+      ],
+      "answer": "車",
+      "image": "q_物品車.jpeg",
+      "id": 20
+    },
+    {
+      "category": "國文",
+      "question": "這是什麼?",
+      "options": [
+        "公車",
+        "火車",
+        "機車",
+        "計程車"
+      ],
+      "answer": "公車",
+      "image": "q_物品巴士.jpg",
+      "id": 21
+    },
+    {
+      "category": "國文",
+      "question": "哪種動物叫聲是正確的？",
+      "options": [
+        "青蛙呱呱呱",
+        "小鳥汪汪汪",
+        "小狗喵喵喵",
+        "小貓啾啾啾"
+      ],
+      "answer": "青蛙呱呱呱",
+      "id": 22
+    },
+    {
+      "category": "國文",
+      "question": "哪種動物叫聲是正確的？",
+      "options": [
+        "小貓喵喵喵",
+        "青蛙啾啾啾",
+        "小狗呱呱呱",
+        "小鳥汪汪汪"
+      ],
+      "answer": "小貓喵喵喵",
+      "id": 23
+    },
+    {
+      "category": "國文",
+      "question": "哪種動物叫聲是正確的？",
+      "options": [
+        "小鳥啾啾啾",
+        "青蛙喵喵喵",
+        "小狗呱呱呱",
+        "小貓汪汪汪"
+      ],
+      "answer": "小鳥啾啾啾",
+      "id": 24
+    },
+    {
+      "category": "國文",
+      "question": "哪種動物叫聲是正確的？",
+      "options": [
+        "小狗汪汪汪",
+        "青蛙啾啾啾",
+        "小鳥喵喵喵",
+        "小貓呱呱呱"
+      ],
+      "answer": "小狗汪汪汪",
+      "id": 25
+    },
+    {
+      "category": "國文",
+      "question": "哪種動物叫聲是正確的？",
+      "options": [
+        "小羊咩咩咩",
+        "小狗喵喵喵",
+        "小雞汪汪汪",
+        "小豬啾啾啾"
+      ],
+      "answer": "小羊咩咩咩",
+      "id": 26
+    },
+    {
+      "category": "國文",
+      "question": "她是什麼職業?",
+      "options": [
+        "老師",
+        "醫生",
+        "學生",
+        "警察"
+      ],
+      "answer": "醫生",
+      "image": "q_職業醫生.jpeg",
+      "id": 27
+    },
+    {
+      "category": "國文",
+      "question": "她是什麼職業?",
+      "options": [
+        "老師",
+        "醫生",
+        "學生",
+        "警察"
+      ],
+      "answer": "老師",
+      "image": "q_職業老師.jpeg",
+      "id": 28
+    },
+    {
+      "category": "國文",
+      "question": "他是什麼職業?",
+      "options": [
+        "老師",
+        "醫生",
+        "學生",
+        "警察"
+      ],
+      "answer": "警察",
+      "image": "q_職業警察.jpeg",
+      "id": 29
+    },
+    {
+      "category": "國文",
+      "question": "他是什麼職業?",
+      "options": [
+        "廚師",
+        "醫生",
+        "學生",
+        "警察"
+      ],
+      "answer": "廚師",
+      "image": "q_職業廚師.jpg",
+      "id": 30
+    },
+    {
+      "category": "國文",
+      "question": "他是什麼職業?",
+      "options": [
+        "老師",
+        "醫生",
+        "農夫",
+        "警察"
+      ],
+      "answer": "農夫",
+      "image": "q_職業農夫.jpg",
+      "id": 31
+    },
+    {
+      "category": "國文",
+      "question": "他是什麼職業?",
+      "options": [
+        "消防員",
+        "澆花員",
+        "洗地員",
+        "抽水員"
+      ],
+      "answer": "消防員",
+      "image": "q_職業消防員.jpg",
+      "id": 32
     },
     {
       "category": "國文",
@@ -1339,7 +750,8 @@
         "牛"
       ],
       "answer": "象",
-      "image": "q_動物大象.jpeg"
+      "image": "q_動物大象.jpeg",
+      "id": 33
     },
     {
       "category": "國文",
@@ -1351,7 +763,8 @@
         "般馬"
       ],
       "answer": "斑馬",
-      "image": "q_動物斑馬.jpeg"
+      "image": "q_動物斑馬.jpeg",
+      "id": 34
     },
     {
       "category": "國文",
@@ -1363,7 +776,8 @@
         "羆"
       ],
       "answer": "熊",
-      "image": "q_動物熊.jpg"
+      "image": "q_動物熊.jpg",
+      "id": 35
     },
     {
       "category": "國文",
@@ -1375,7 +789,8 @@
         "伯"
       ],
       "answer": "白",
-      "image": "q_顏色白.jpg"
+      "image": "q_顏色白.jpg",
+      "id": 36
     },
     {
       "category": "國文",
@@ -1387,7 +802,8 @@
         "黃"
       ],
       "answer": "灰",
-      "image": "q_顏色灰.jpeg"
+      "image": "q_顏色灰.jpeg",
+      "id": 37
     },
     {
       "category": "國文",
@@ -1399,7 +815,8 @@
         "橘"
       ],
       "answer": "紅",
-      "image": "q_顏色紅.jpeg"
+      "image": "q_顏色紅.jpeg",
+      "id": 38
     },
     {
       "category": "國文",
@@ -1411,7 +828,8 @@
         "橘"
       ],
       "answer": "粉紅",
-      "image": "q_顏色粉紅.jpg"
+      "image": "q_顏色粉紅.jpg",
+      "id": 39
     },
     {
       "category": "國文",
@@ -1423,7 +841,8 @@
         "藍"
       ],
       "answer": "紫",
-      "image": "q_顏色紫.jpeg"
+      "image": "q_顏色紫.jpeg",
+      "id": 40
     },
     {
       "category": "國文",
@@ -1435,7 +854,8 @@
         "黑"
       ],
       "answer": "黃",
-      "image": "q_顏色黃.jpg"
+      "image": "q_顏色黃.jpg",
+      "id": 41
     },
     {
       "category": "國文",
@@ -1447,7 +867,8 @@
         "黃"
       ],
       "answer": "黑",
-      "image": "q_顏色黑.jpg"
+      "image": "q_顏色黑.jpg",
+      "id": 42
     },
     {
       "category": "國文",
@@ -1459,7 +880,8 @@
         "藍"
       ],
       "answer": "綠",
-      "image": "q_顏色綠.jpeg"
+      "image": "q_顏色綠.jpeg",
+      "id": 43
     },
     {
       "category": "國文",
@@ -1471,7 +893,8 @@
         "橘"
       ],
       "answer": "橘",
-      "image": "q_顏色橘.jpeg"
+      "image": "q_顏色橘.jpeg",
+      "id": 44
     },
     {
       "category": "國文",
@@ -1483,73 +906,740 @@
         "綠"
       ],
       "answer": "藍",
-      "image": "q_顏色藍.jpeg"
+      "image": "q_顏色藍.jpeg",
+      "id": 45
     },
     {
-      "category": "英文",
-      "question": "10的英文是?",
+      "category": "國文",
+      "question": "「ㄅㄚˋㄅㄚ˙」怎麼寫？",
       "options": [
-        "ten",
-        "six",
-        "seven",
-        "nine"
+        "爸",
+        "媽",
+        "爺",
+        "奶"
       ],
-      "answer": "ten"
+      "answer": "爸",
+      "id": 46
     },
     {
-      "category": "英文",
-      "question": "11的英文是?",
+      "category": "國文",
+      "question": "「ㄅㄨˊ要」怎麼寫？",
       "options": [
-        "eleven",
-        "ten",
-        "nine",
-        "twelve"
+        "不",
+        "部",
+        "木",
+        "下"
       ],
-      "answer": "eleven"
+      "answer": "不",
+      "id": 47
     },
     {
-      "category": "英文",
-      "question": "12的英文是?",
+      "category": "國文",
+      "question": "「ㄉㄚˋ人」怎麼寫？",
       "options": [
-        "twelve",
-        "eleven",
-        "thirteen",
-        "fourteen"
+        "大",
+        "小",
+        "中",
+        "白"
       ],
-      "answer": "twelve"
+      "answer": "大",
+      "id": 48
     },
     {
-      "category": "英文",
-      "question": "13的英文是?",
+      "category": "國文",
+      "question": "「ㄉㄠ子」怎麼寫",
       "options": [
-        "thirteen",
-        "eleven",
-        "twelve",
-        "fourteen"
+        "刀",
+        "刃",
+        "分",
+        "切"
       ],
-      "answer": "thirteen"
+      "answer": "刀",
+      "id": 49
     },
     {
-      "category": "英文",
-      "question": "14的英文是?",
+      "category": "國文",
+      "question": "「ㄊㄞˋ陽」怎麼寫？",
       "options": [
-        "fourteen",
-        "eleven",
-        "thirteen",
-        "twelve"
+        "太",
+        "夫",
+        "大",
+        "天"
       ],
-      "answer": "fourteen"
+      "answer": "太",
+      "id": 50
     },
     {
-      "category": "英文",
-      "question": "15的英文是?",
+      "category": "國文",
+      "question": "「ㄏㄨㄛˇ災」怎麼寫？",
       "options": [
-        "fourteen",
-        "fifteen",
-        "thirteen",
-        "twelve"
+        "火",
+        "活",
+        "或",
+        "侯"
       ],
-      "answer": "fifteen"
+      "answer": "火",
+      "id": 51
+    },
+    {
+      "category": "國文",
+      "question": "「ㄒㄧㄠˇ孩」怎麼寫？",
+      "options": [
+        "小",
+        "川",
+        "山",
+        "三"
+      ],
+      "answer": "小",
+      "id": 52
+    },
+    {
+      "category": "國文",
+      "question": "「ㄓㄨㄥ間」怎麼寫？",
+      "options": [
+        "中",
+        "木",
+        "牛",
+        "王"
+      ],
+      "answer": "中",
+      "id": 53
+    },
+    {
+      "category": "國文",
+      "question": "「一ㄑㄧㄢ元」怎麼寫？",
+      "options": [
+        "十",
+        "百",
+        "千",
+        "萬"
+      ],
+      "answer": "千",
+      "id": 54
+    },
+    {
+      "category": "國文",
+      "question": "「小孩ㄗ˙」怎麼寫？",
+      "options": [
+        "子",
+        "紫",
+        "自",
+        "茲"
+      ],
+      "answer": "子",
+      "id": 55
+    },
+    {
+      "category": "國文",
+      "question": "「ㄒㄧㄣ臟」怎麼寫？",
+      "options": [
+        "心",
+        "新",
+        "星",
+        "興"
+      ],
+      "answer": "心",
+      "id": 56
+    },
+    {
+      "category": "國文",
+      "question": "「ㄔ飯」怎麼寫？",
+      "options": [
+        "吃",
+        "乞",
+        "吐",
+        "叫"
+      ],
+      "answer": "吃",
+      "id": 57
+    },
+    {
+      "category": "國文",
+      "question": "「ㄗㄨㄛˇ右」怎麼寫？",
+      "options": [
+        "左",
+        "右",
+        "上",
+        "下"
+      ],
+      "answer": "左",
+      "id": 58
+    },
+    {
+      "category": "國文",
+      "question": "「ㄩㄝˋ亮」怎麼寫",
+      "options": [
+        "月",
+        "日",
+        "光",
+        "星"
+      ],
+      "answer": "月",
+      "id": 59
+    },
+    {
+      "category": "國文",
+      "question": "「左ㄧㄡˋ」怎麼寫？",
+      "options": [
+        "左",
+        "右",
+        "上",
+        "下"
+      ],
+      "answer": "右",
+      "id": 60
+    },
+    {
+      "category": "國文",
+      "question": "「長ㄐㄧㄤ」怎麼寫？",
+      "options": [
+        "江",
+        "工",
+        "漿",
+        "姜"
+      ],
+      "answer": "江",
+      "id": 61
+    },
+    {
+      "category": "國文",
+      "question": "哪個字是「ㄋㄧˇ」？",
+      "options": [
+        "你",
+        "我",
+        "他",
+        "們"
+      ],
+      "answer": "你",
+      "id": 62
+    },
+    {
+      "category": "國文",
+      "question": "「ㄏㄨㄚ草」怎麼寫？",
+      "options": [
+        "花",
+        "化",
+        "艾",
+        "英"
+      ],
+      "answer": "花",
+      "id": 63
+    },
+    {
+      "category": "國文",
+      "question": "「ㄐㄧㄣ天」怎麼寫",
+      "options": [
+        "今",
+        "金",
+        "斤",
+        "巾"
+      ],
+      "answer": "今",
+      "id": 64
+    },
+    {
+      "category": "國文",
+      "question": "「ㄋㄧㄡˊ排」怎麼寫？",
+      "options": [
+        "牛",
+        "象",
+        "魚",
+        "羊"
+      ],
+      "answer": "牛",
+      "id": 65
+    },
+    {
+      "category": "國文",
+      "question": "「ㄏㄜˊ花」怎麼寫？",
+      "options": [
+        "河",
+        "海",
+        "荷",
+        "湖"
+      ],
+      "answer": "荷",
+      "id": 66
+    },
+    {
+      "category": "國文",
+      "question": "「ㄓˇㄧㄡˇ一個」怎麼寫？",
+      "options": [
+        "只有",
+        "止由",
+        "直友",
+        "止友"
+      ],
+      "answer": "只有",
+      "id": 67
+    },
+    {
+      "category": "國文",
+      "question": "「ㄧㄝˇ是」怎麼寫？",
+      "options": [
+        "也",
+        "野",
+        "爺",
+        "耶"
+      ],
+      "answer": "也",
+      "id": 68
+    },
+    {
+      "category": "國文",
+      "question": "「姓ㄇㄧㄥˊ」怎麼寫？",
+      "options": [
+        "名",
+        "酩",
+        "洺",
+        "銘"
+      ],
+      "answer": "名",
+      "id": 69
+    },
+    {
+      "category": "國文",
+      "question": "「這是ㄨㄛˇ的」怎麼寫？",
+      "options": [
+        "你",
+        "我",
+        "他",
+        "們"
+      ],
+      "answer": "我",
+      "id": 70
+    },
+    {
+      "category": "國文",
+      "question": "「ㄨㄢˊ遊戲」怎麼寫？",
+      "options": [
+        "玩",
+        "丸",
+        "完",
+        "元"
+      ],
+      "answer": "玩",
+      "id": 71
+    },
+    {
+      "category": "國文",
+      "question": "「ㄒㄧ邊」怎麼寫？",
+      "options": [
+        "東",
+        "南",
+        "西",
+        "北"
+      ],
+      "answer": "西",
+      "id": 72
+    },
+    {
+      "category": "國文",
+      "question": "「ㄉㄨㄛㄕㄠˇ」怎麼寫？",
+      "options": [
+        "多少",
+        "夕少",
+        "多沙",
+        "夕沙"
+      ],
+      "answer": "多少",
+      "id": 73
+    },
+    {
+      "category": "國文",
+      "question": "「ㄅㄟˇ邊」怎麼寫？",
+      "options": [
+        "東",
+        "南",
+        "西",
+        "北"
+      ],
+      "answer": "北",
+      "id": 74
+    },
+    {
+      "category": "國文",
+      "question": "「ㄅㄞˇ貨公司」怎麼寫？",
+      "options": [
+        "十",
+        "百",
+        "千",
+        "萬"
+      ],
+      "answer": "百",
+      "id": 75
+    },
+    {
+      "category": "國文",
+      "question": "「ㄆㄥˊ友」怎麼寫？",
+      "options": [
+        "朋",
+        "烹",
+        "捧",
+        "碰"
+      ],
+      "answer": "朋",
+      "id": 76
+    },
+    {
+      "category": "國文",
+      "question": "「ㄇㄚ ㄇㄚ˙」怎麼寫？",
+      "options": [
+        "爸",
+        "媽",
+        "爺",
+        "奶"
+      ],
+      "answer": "媽",
+      "id": 77
+    },
+    {
+      "category": "國文",
+      "question": "「ㄇㄢˋ吞吞」怎麼寫？",
+      "options": [
+        "慢",
+        "曼",
+        "漫",
+        "饅"
+      ],
+      "answer": "慢",
+      "id": 78
+    },
+    {
+      "category": "國文",
+      "question": "「ㄇㄧㄥˊ天」怎麼寫",
+      "options": [
+        "明",
+        "名",
+        "鳴",
+        "銘"
+      ],
+      "answer": "明",
+      "id": 79
+    },
+    {
+      "category": "國文",
+      "question": "「ㄉㄨㄥ天」怎麼寫？",
+      "options": [
+        "春",
+        "夏",
+        "秋",
+        "冬"
+      ],
+      "answer": "冬",
+      "id": 80
+    },
+    {
+      "category": "國文",
+      "question": "「ㄉㄨㄥ邊」怎麼寫？",
+      "options": [
+        "東",
+        "南",
+        "西",
+        "北"
+      ],
+      "answer": "東",
+      "id": 81
+    },
+    {
+      "category": "國文",
+      "question": "「ㄊㄚ的東西」怎麼寫？",
+      "options": [
+        "你",
+        "我",
+        "他",
+        "們"
+      ],
+      "answer": "他",
+      "id": 82
+    },
+    {
+      "category": "國文",
+      "question": "「ㄋㄞˇㄋㄞ˙」怎麼寫？",
+      "options": [
+        "爸",
+        "媽",
+        "爺",
+        "奶"
+      ],
+      "answer": "奶",
+      "id": 83
+    },
+    {
+      "category": "國文",
+      "question": "「ㄋㄢˊ邊」怎麼寫？",
+      "options": [
+        "東",
+        "南",
+        "西",
+        "北"
+      ],
+      "answer": "南",
+      "id": 84
+    },
+    {
+      "category": "國文",
+      "question": "「ㄌㄧㄤˇ個」怎麼寫？",
+      "options": [
+        "兩",
+        "三",
+        "二",
+        "雨"
+      ],
+      "answer": "兩",
+      "id": 85
+    },
+    {
+      "category": "國文",
+      "question": "「ㄌㄧㄥˊ食」怎麼寫？",
+      "options": [
+        "零",
+        "一",
+        "二",
+        "三"
+      ],
+      "answer": "零",
+      "id": 86
+    },
+    {
+      "category": "國文",
+      "question": "「ㄎㄨㄞˋ慢」怎麼寫？",
+      "options": [
+        "快",
+        "決",
+        "快",
+        "筷"
+      ],
+      "answer": "快",
+      "id": 87
+    },
+    {
+      "category": "國文",
+      "question": "「ㄑㄧㄡ天」怎麼寫？",
+      "options": [
+        "春",
+        "夏",
+        "秋",
+        "冬"
+      ],
+      "answer": "秋",
+      "id": 88
+    },
+    {
+      "category": "國文",
+      "question": "「ㄑㄧㄢˊ後」怎麼寫？",
+      "options": [
+        "前",
+        "後",
+        "左",
+        "右"
+      ],
+      "answer": "前",
+      "id": 89
+    },
+    {
+      "category": "國文",
+      "question": "「ㄒㄧㄚˋ天」怎麼寫？",
+      "options": [
+        "春",
+        "夏",
+        "秋",
+        "冬"
+      ],
+      "answer": "夏",
+      "id": 90
+    },
+    {
+      "category": "國文",
+      "question": "「ㄕㄡˇ指」怎麼寫？",
+      "options": [
+        "手",
+        "三",
+        "守",
+        "毛"
+      ],
+      "answer": "手",
+      "id": 91
+    },
+    {
+      "category": "國文",
+      "question": "「ㄓㄨㄥˋ量」怎麼寫",
+      "options": [
+        "重",
+        "種",
+        "湩",
+        "鍾"
+      ],
+      "answer": "重",
+      "id": 92
+    },
+    {
+      "category": "國文",
+      "question": "「ㄔㄨㄣ天」怎麼寫？",
+      "options": [
+        "春",
+        "夏",
+        "秋",
+        "冬"
+      ],
+      "answer": "春",
+      "id": 93
+    },
+    {
+      "category": "國文",
+      "question": "「ㄦˇ朵」怎麼寫？",
+      "options": [
+        "耳",
+        "目",
+        "爾",
+        "白"
+      ],
+      "answer": "耳",
+      "id": 94
+    },
+    {
+      "category": "國文",
+      "question": "「ㄧㄝˊㄧㄝ˙」怎麼寫？",
+      "options": [
+        "爸",
+        "媽",
+        "爺",
+        "奶"
+      ],
+      "answer": "爺",
+      "id": 95
+    },
+    {
+      "category": "國文",
+      "question": "「ㄧㄤˊ肉」怎麼寫？",
+      "options": [
+        "羊",
+        "牛",
+        "象",
+        "魚"
+      ],
+      "answer": "羊",
+      "id": 96
+    },
+    {
+      "category": "國文",
+      "question": "「ㄩˊ類」怎麼寫？",
+      "options": [
+        "魚",
+        "羊",
+        "牛",
+        "象"
+      ],
+      "answer": "魚",
+      "id": 97
+    },
+    {
+      "category": "國文",
+      "question": "「小ㄍㄡˇ」怎麼寫？",
+      "options": [
+        "狗",
+        "猴",
+        "魚",
+        "牛"
+      ],
+      "answer": "狗",
+      "id": 98
+    },
+    {
+      "category": "國文",
+      "question": "「不ㄧㄠˋ」怎麼寫？",
+      "options": [
+        "要",
+        "西",
+        "藥",
+        "覃"
+      ],
+      "answer": "要",
+      "id": 99
+    },
+    {
+      "category": "國文",
+      "question": "「牛ㄋㄞˇ」怎麼寫？",
+      "options": [
+        "奶",
+        "乃",
+        "艿",
+        "氖"
+      ],
+      "answer": "奶",
+      "id": 100
+    },
+    {
+      "category": "國文",
+      "question": "「你ㄇㄣ˙」怎麼寫？",
+      "options": [
+        "你",
+        "我",
+        "他",
+        "們"
+      ],
+      "answer": "們",
+      "id": 101
+    },
+    {
+      "category": "國文",
+      "question": "「車ㄇㄣˊ」怎麼寫？",
+      "options": [
+        "門",
+        "們",
+        "捫",
+        "悶"
+      ],
+      "answer": "門",
+      "id": 102
+    },
+    {
+      "category": "國文",
+      "question": "「朋ㄧㄡˇ」怎麼寫？",
+      "options": [
+        "友",
+        "有",
+        "黝",
+        "油"
+      ],
+      "answer": "友",
+      "id": 103
+    },
+    {
+      "category": "國文",
+      "question": "「前ㄏㄡˋ」怎麼寫？",
+      "options": [
+        "前",
+        "後",
+        "左",
+        "右"
+      ],
+      "answer": "後",
+      "id": 104
+    },
+    {
+      "category": "國文",
+      "question": "「書ㄅㄣˇ」怎麼寫？",
+      "options": [
+        "本",
+        "木",
+        "沐",
+        "禾"
+      ],
+      "answer": "本",
+      "id": 105
+    },
+    {
+      "category": "國文",
+      "question": "「過ㄋㄧㄢˊ」怎麼寫",
+      "options": [
+        "月",
+        "日",
+        "年",
+        "星"
+      ],
+      "answer": "年",
+      "id": 106
     },
     {
       "category": "英文",
@@ -1560,7 +1650,8 @@
         "three",
         "four"
       ],
-      "answer": "one"
+      "answer": "one",
+      "id": 1
     },
     {
       "category": "英文",
@@ -1571,7 +1662,8 @@
         "four",
         "five"
       ],
-      "answer": "two"
+      "answer": "two",
+      "id": 2
     },
     {
       "category": "英文",
@@ -1582,7 +1674,8 @@
         "five",
         "six"
       ],
-      "answer": "three"
+      "answer": "three",
+      "id": 3
     },
     {
       "category": "英文",
@@ -1593,7 +1686,8 @@
         "six",
         "seven"
       ],
-      "answer": "four"
+      "answer": "four",
+      "id": 4
     },
     {
       "category": "英文",
@@ -1604,7 +1698,8 @@
         "seven",
         "eight"
       ],
-      "answer": "five"
+      "answer": "five",
+      "id": 5
     },
     {
       "category": "英文",
@@ -1615,7 +1710,8 @@
         "eight",
         "two"
       ],
-      "answer": "six"
+      "answer": "six",
+      "id": 6
     },
     {
       "category": "英文",
@@ -1626,7 +1722,8 @@
         "one",
         "eight"
       ],
-      "answer": "seven"
+      "answer": "seven",
+      "id": 7
     },
     {
       "category": "英文",
@@ -1637,7 +1734,8 @@
         "seven",
         "nine"
       ],
-      "answer": "eight"
+      "answer": "eight",
+      "id": 8
     },
     {
       "category": "英文",
@@ -1648,127 +1746,20 @@
         "seven",
         "eight"
       ],
-      "answer": "nine"
+      "answer": "nine",
+      "id": 9
     },
     {
       "category": "英文",
-      "question": "How's the weather?",
+      "question": "10的英文是?",
       "options": [
-        "It’s cloudy",
-        "It’s rainy",
-        "It’s sunny",
-        "It’s windy"
+        "ten",
+        "six",
+        "seven",
+        "nine"
       ],
-      "answer": "It’s rainy",
-      "image": "q_天氣雨.jpg"
-    },
-    {
-      "category": "英文",
-      "question": "How's the weather?",
-      "options": [
-        "It’s cloudy",
-        "It’s rainy",
-        "It’s sunny",
-        "It’s windy"
-      ],
-      "answer": "It’s cloudy",
-      "image": "q_天氣陰.jpg"
-    },
-    {
-      "category": "英文",
-      "question": "How's the weather?",
-      "options": [
-        "It’s cloudy",
-        "It’s rainy",
-        "It’s sunny",
-        "It’s windy"
-      ],
-      "answer": "It’s sunny",
-      "image": "q_天氣晴.jpg"
-    },
-    {
-      "category": "英文",
-      "question": "What animal is this?",
-      "options": [
-        "car",
-        "card",
-        "cook",
-        "cat"
-      ],
-      "answer": "cat",
-      "image": "q_動物貓.jpeg"
-    },
-    {
-      "category": "英文",
-      "question": "what animal is this?",
-      "options": [
-        "elephant",
-        "excellent",
-        "exercise",
-        "entrance"
-      ],
-      "answer": "elephant",
-      "image": "q_動物大象.jpeg"
-    },
-    {
-      "category": "英文",
-      "question": "what animal is this?",
-      "options": [
-        "frog",
-        "fish",
-        "fire",
-        "face"
-      ],
-      "answer": "frog",
-      "image": "q_動物青蛙.jpg"
-    },
-    {
-      "category": "英文",
-      "question": "what animal is this?",
-      "options": [
-        "butterfly",
-        "beautiful",
-        "banana",
-        "baseball"
-      ],
-      "answer": "butterfly",
-      "image": "q_動物蝴蝶.jpeg"
-    },
-    {
-      "category": "英文",
-      "question": "what animal is this?",
-      "options": [
-        "giraffe",
-        "great",
-        "game",
-        "girl"
-      ],
-      "answer": "giraffe",
-      "image": "q_動物長頸鹿.jpeg"
-    },
-    {
-      "category": "英文",
-      "question": "what animal is this?",
-      "options": [
-        "bear",
-        "ball",
-        "break",
-        "baby"
-      ],
-      "answer": "bear",
-      "image": "q_動物熊.jpg"
-    },
-    {
-      "category": "英文",
-      "question": "what animal is this?",
-      "options": [
-        "zebra",
-        "zero",
-        "zoo",
-        "zip"
-      ],
-      "answer": "zebra",
-      "image": "q_動物斑馬.jpeg"
+      "answer": "ten",
+      "id": 10
     },
     {
       "category": "英文",
@@ -1780,31 +1771,8 @@
         "white"
       ],
       "answer": "red",
-      "image": "q_顏色紅.jpeg"
-    },
-    {
-      "category": "英文",
-      "question": "What color is this?",
-      "options": [
-        "orange",
-        "blue",
-        "red",
-        "white"
-      ],
-      "answer": "orange",
-      "image": "q_顏色橘.jpeg"
-    },
-    {
-      "category": "英文",
-      "question": "What color is this?",
-      "options": [
-        "purple",
-        "black",
-        "white",
-        "red"
-      ],
-      "answer": "purple",
-      "image": "q_顏色紫.jpeg"
+      "image": "q_顏色紅.jpeg",
+      "id": 11
     },
     {
       "category": "英文",
@@ -1816,19 +1784,8 @@
         "black"
       ],
       "answer": "white",
-      "image": "q_顏色白.jpg"
-    },
-    {
-      "category": "英文",
-      "question": "What color is this?",
-      "options": [
-        "gray",
-        "white",
-        "black",
-        "brown"
-      ],
-      "answer": "gray",
-      "image": "q_顏色灰.jpeg"
+      "image": "q_顏色白.jpg",
+      "id": 12
     },
     {
       "category": "英文",
@@ -1840,19 +1797,8 @@
         "blue"
       ],
       "answer": "blue",
-      "image": "q_顏色藍.jpeg"
-    },
-    {
-      "category": "英文",
-      "question": "What color is this?",
-      "options": [
-        "pink",
-        "white",
-        "red",
-        "blue"
-      ],
-      "answer": "pink",
-      "image": "q_顏色粉紅.jpg"
+      "image": "q_顏色藍.jpeg",
+      "id": 13
     },
     {
       "category": "英文",
@@ -1864,7 +1810,8 @@
         "blue"
       ],
       "answer": "yellow",
-      "image": "q_顏色黃.jpg"
+      "image": "q_顏色黃.jpg",
+      "id": 14
     },
     {
       "category": "英文",
@@ -1876,7 +1823,120 @@
         "red"
       ],
       "answer": "black",
-      "image": "q_顏色黑.jpg"
+      "image": "q_顏色黑.jpg",
+      "id": 15
+    },
+    {
+      "category": "英文",
+      "question": "11的英文是?",
+      "options": [
+        "eleven",
+        "ten",
+        "nine",
+        "twelve"
+      ],
+      "answer": "eleven",
+      "id": 16
+    },
+    {
+      "category": "英文",
+      "question": "12的英文是?",
+      "options": [
+        "twelve",
+        "eleven",
+        "thirteen",
+        "fourteen"
+      ],
+      "answer": "twelve",
+      "id": 17
+    },
+    {
+      "category": "英文",
+      "question": "13的英文是?",
+      "options": [
+        "thirteen",
+        "eleven",
+        "twelve",
+        "fourteen"
+      ],
+      "answer": "thirteen",
+      "id": 18
+    },
+    {
+      "category": "英文",
+      "question": "14的英文是?",
+      "options": [
+        "fourteen",
+        "eleven",
+        "thirteen",
+        "twelve"
+      ],
+      "answer": "fourteen",
+      "id": 19
+    },
+    {
+      "category": "英文",
+      "question": "15的英文是?",
+      "options": [
+        "fourteen",
+        "fifteen",
+        "thirteen",
+        "twelve"
+      ],
+      "answer": "fifteen",
+      "id": 20
+    },
+    {
+      "category": "英文",
+      "question": "What color is this?",
+      "options": [
+        "purple",
+        "black",
+        "white",
+        "red"
+      ],
+      "answer": "purple",
+      "image": "q_顏色紫.jpeg",
+      "id": 21
+    },
+    {
+      "category": "英文",
+      "question": "What color is this?",
+      "options": [
+        "orange",
+        "blue",
+        "red",
+        "white"
+      ],
+      "answer": "orange",
+      "image": "q_顏色橘.jpeg",
+      "id": 22
+    },
+    {
+      "category": "英文",
+      "question": "What color is this?",
+      "options": [
+        "gray",
+        "white",
+        "black",
+        "brown"
+      ],
+      "answer": "gray",
+      "image": "q_顏色灰.jpeg",
+      "id": 23
+    },
+    {
+      "category": "英文",
+      "question": "What color is this?",
+      "options": [
+        "pink",
+        "white",
+        "red",
+        "blue"
+      ],
+      "answer": "pink",
+      "image": "q_顏色粉紅.jpg",
+      "id": 24
     },
     {
       "category": "英文",
@@ -1888,7 +1948,8 @@
         "blue"
       ],
       "answer": "green",
-      "image": "q_顏色綠.jpeg"
+      "image": "q_顏色綠.jpeg",
+      "id": 25
     },
     {
       "category": "英文",
@@ -1900,91 +1961,176 @@
         "brown"
       ],
       "answer": "brown",
-      "image": "q_顏色褐.jpg"
+      "image": "q_顏色褐.jpg",
+      "id": 26
     },
     {
       "category": "英文",
-      "question": "What is her job?",
+      "question": "起司的英文是?",
       "options": [
-        "teacher",
-        "doctor",
-        "student",
-        "police"
+        "cheese",
+        "freeze",
+        "fleece",
+        "fierce"
       ],
-      "answer": "teacher",
-      "image": "q_職業老師.jpeg"
+      "answer": "cheese",
+      "id": 27
     },
     {
       "category": "英文",
-      "question": "What is her job?",
+      "question": "毛毛蟲的英文是?",
       "options": [
-        "teacher",
-        "doctor",
-        "student",
-        "police"
+        "caterpillar",
+        "calculator",
+        "celebration",
+        "collection"
       ],
-      "answer": "doctor",
-      "image": "q_職業醫生.jpeg"
+      "answer": "caterpillar",
+      "id": 28
     },
     {
       "category": "英文",
-      "question": "What is his job?",
+      "question": "火山的英文是？",
       "options": [
-        "teacher",
-        "doctor",
-        "student",
-        "police"
+        "volcano",
+        "vegetable",
+        "visible",
+        "valuable"
       ],
-      "answer": "police",
-      "image": "q_職業警察.jpeg"
+      "answer": "volcano",
+      "id": 29
     },
     {
       "category": "英文",
-      "question": "What is his job?",
+      "question": "火車的英文是?",
       "options": [
-        "firefighter",
-        "police",
-        "doctor",
-        "teacher"
+        "train",
+        "trail",
+        "track",
+        "truck"
       ],
-      "answer": "firefighter",
-      "image": "q_職業消防員.jpg"
+      "answer": "train",
+      "id": 30
     },
     {
       "category": "英文",
-      "question": "What is his job?",
+      "question": "生氣的英文是?",
       "options": [
-        "farmer",
-        "police",
-        "cook",
-        "teacher"
+        "angry",
+        "angle",
+        "ankle",
+        "apple"
       ],
-      "answer": "farmer",
-      "image": "q_職業農夫.jpg"
+      "answer": "angry",
+      "id": 31
     },
     {
       "category": "英文",
-      "question": "What is his job?",
+      "question": "早餐的英文是?",
       "options": [
-        "cook",
-        "police",
-        "doctor",
-        "student"
+        "breakfast",
+        "firework",
+        "football",
+        "feedback"
       ],
-      "answer": "cook",
-      "image": "q_職業廚師.jpg"
+      "answer": "breakfast",
+      "id": 32
     },
     {
       "category": "英文",
-      "question": "What is she doing?",
+      "question": "姐姐的英文是?",
       "options": [
-        "running",
-        "sitting",
-        "jumping",
-        "walking"
+        "sister",
+        "brother",
+        "mother",
+        "father"
       ],
-      "answer": "running",
-      "image": "q_動作跑.JPG"
+      "answer": "sister",
+      "id": 33
+    },
+    {
+      "category": "英文",
+      "question": "朋友的英文是?",
+      "options": [
+        "friends",
+        "flowers",
+        "fighters",
+        "families"
+      ],
+      "answer": "friends",
+      "id": 34
+    },
+    {
+      "category": "英文",
+      "question": "花園的英文是?",
+      "options": [
+        "garden",
+        "park",
+        "flower",
+        "mountain"
+      ],
+      "answer": "garden",
+      "id": 35
+    },
+    {
+      "category": "英文",
+      "question": "美人魚的英文是?",
+      "options": [
+        "mermaid",
+        "morning",
+        "monster",
+        "message"
+      ],
+      "answer": "mermaid",
+      "id": 36
+    },
+    {
+      "category": "英文",
+      "question": "笑的英文是?",
+      "options": [
+        "laugh",
+        "launch",
+        "layer",
+        "latch"
+      ],
+      "answer": "laugh",
+      "id": 37
+    },
+    {
+      "category": "英文",
+      "question": "猴子的英文是?",
+      "options": [
+        "monckey",
+        "frog",
+        "rabbit",
+        "fish"
+      ],
+      "answer": "monckey",
+      "id": 38
+    },
+    {
+      "category": "英文",
+      "question": "跳舞的英文是?",
+      "options": [
+        "dance",
+        "dense",
+        "dare",
+        "dune"
+      ],
+      "answer": "dance",
+      "id": 39
+    },
+    {
+      "category": "英文",
+      "question": "鞋子的英文是?",
+      "options": [
+        "shoes",
+        "shore",
+        "shape",
+        "shine"
+      ],
+      "answer": "shoes",
+      "id": 40
     },
     {
       "category": "英文",
@@ -1996,7 +2142,8 @@
         "bed"
       ],
       "answer": "bus",
-      "image": "q_物品巴士.jpg"
+      "image": "q_物品巴士.jpg",
+      "id": 41
     },
     {
       "category": "英文",
@@ -2008,7 +2155,8 @@
         "cat"
       ],
       "answer": "car",
-      "image": "q_物品車.jpeg"
+      "image": "q_物品車.jpeg",
+      "id": 42
     },
     {
       "category": "英文",
@@ -2020,7 +2168,8 @@
         "fried fish"
       ],
       "answer": "fried rice",
-      "image": "q_食物炒飯.jpg"
+      "image": "q_食物炒飯.jpg",
+      "id": 43
     },
     {
       "category": "英文",
@@ -2032,7 +2181,99 @@
         "noon"
       ],
       "answer": "noodle",
-      "image": "q_食物麵.jpg"
+      "image": "q_食物麵.jpg",
+      "id": 44
+    },
+    {
+      "category": "英文",
+      "question": "What is her job?",
+      "options": [
+        "teacher",
+        "doctor",
+        "student",
+        "police"
+      ],
+      "answer": "teacher",
+      "image": "q_職業老師.jpeg",
+      "id": 45
+    },
+    {
+      "category": "英文",
+      "question": "What is her job?",
+      "options": [
+        "teacher",
+        "doctor",
+        "student",
+        "police"
+      ],
+      "answer": "doctor",
+      "image": "q_職業醫生.jpeg",
+      "id": 46
+    },
+    {
+      "category": "英文",
+      "question": "What is his job?",
+      "options": [
+        "teacher",
+        "doctor",
+        "student",
+        "police"
+      ],
+      "answer": "police",
+      "image": "q_職業警察.jpeg",
+      "id": 47
+    },
+    {
+      "category": "英文",
+      "question": "What is his job?",
+      "options": [
+        "firefighter",
+        "police",
+        "doctor",
+        "teacher"
+      ],
+      "answer": "firefighter",
+      "image": "q_職業消防員.jpg",
+      "id": 48
+    },
+    {
+      "category": "英文",
+      "question": "What is his job?",
+      "options": [
+        "farmer",
+        "police",
+        "cook",
+        "teacher"
+      ],
+      "answer": "farmer",
+      "image": "q_職業農夫.jpg",
+      "id": 49
+    },
+    {
+      "category": "英文",
+      "question": "What is his job?",
+      "options": [
+        "cook",
+        "police",
+        "doctor",
+        "student"
+      ],
+      "answer": "cook",
+      "image": "q_職業廚師.jpg",
+      "id": 50
+    },
+    {
+      "category": "英文",
+      "question": "What is she doing?",
+      "options": [
+        "running",
+        "sitting",
+        "jumping",
+        "walking"
+      ],
+      "answer": "running",
+      "image": "q_動作跑.JPG",
+      "id": 51
     },
     {
       "category": "英文",
@@ -2043,7 +2284,8 @@
         "時鐘",
         "相機"
       ],
-      "answer": "蛋糕"
+      "answer": "蛋糕",
+      "id": 52
     },
     {
       "category": "英文",
@@ -2054,7 +2296,8 @@
         "時鐘",
         "相機"
       ],
-      "answer": "蘿蔔"
+      "answer": "蘿蔔",
+      "id": 53
     },
     {
       "category": "英文",
@@ -2065,7 +2308,8 @@
         "時鐘",
         "相機"
       ],
-      "answer": "時鐘"
+      "answer": "時鐘",
+      "id": 54
     },
     {
       "category": "英文",
@@ -2076,7 +2320,8 @@
         "爺爺",
         "奶奶"
       ],
-      "answer": "爸爸"
+      "answer": "爸爸",
+      "id": 55
     },
     {
       "category": "英文",
@@ -2087,7 +2332,8 @@
         "鳥",
         "鴨"
       ],
-      "answer": "狗"
+      "answer": "狗",
+      "id": 56
     },
     {
       "category": "英文",
@@ -2098,7 +2344,8 @@
         "耳朵",
         "嘴巴"
       ],
-      "answer": "耳朵"
+      "answer": "耳朵",
+      "id": 57
     },
     {
       "category": "英文",
@@ -2109,7 +2356,8 @@
         "坐",
         "看"
       ],
-      "answer": "吃"
+      "answer": "吃",
+      "id": 58
     },
     {
       "category": "英文",
@@ -2120,7 +2368,8 @@
         "十七",
         "十八"
       ],
-      "answer": "十八"
+      "answer": "十八",
+      "id": 59
     },
     {
       "category": "英文",
@@ -2131,7 +2380,8 @@
         "腳",
         "眼"
       ],
-      "answer": "眼"
+      "answer": "眼",
+      "id": 60
     },
     {
       "category": "英文",
@@ -2142,7 +2392,8 @@
         "腳",
         "眼"
       ],
-      "answer": "腳"
+      "answer": "腳",
+      "id": 61
     },
     {
       "category": "英文",
@@ -2153,7 +2404,8 @@
         "果實",
         "星星"
       ],
-      "answer": "花"
+      "answer": "花",
+      "id": 62
     },
     {
       "category": "英文",
@@ -2164,7 +2416,8 @@
         "爺爺",
         "奶奶"
       ],
-      "answer": "奶奶"
+      "answer": "奶奶",
+      "id": 63
     },
     {
       "category": "英文",
@@ -2175,7 +2428,8 @@
         "爺爺",
         "奶奶"
       ],
-      "answer": "爺爺"
+      "answer": "爺爺",
+      "id": 64
     },
     {
       "category": "英文",
@@ -2186,7 +2440,8 @@
         "耳朵",
         "嘴巴"
       ],
-      "answer": "頭髮"
+      "answer": "頭髮",
+      "id": 65
     },
     {
       "category": "英文",
@@ -2197,7 +2452,8 @@
         "腳",
         "眼"
       ],
-      "answer": "手"
+      "answer": "手",
+      "id": 66
     },
     {
       "category": "英文",
@@ -2208,7 +2464,8 @@
         "腳",
         "眼"
       ],
-      "answer": "頭"
+      "answer": "頭",
+      "id": 67
     },
     {
       "category": "英文",
@@ -2219,7 +2476,8 @@
         "水壺",
         "書包"
       ],
-      "answer": "幼兒園"
+      "answer": "幼兒園",
+      "id": 68
     },
     {
       "category": "英文",
@@ -2230,7 +2488,8 @@
         "耳朵",
         "嘴巴"
       ],
-      "answer": "腿"
+      "answer": "腿",
+      "id": 69
     },
     {
       "category": "英文",
@@ -2241,7 +2500,8 @@
         "抹布",
         "媽媽"
       ],
-      "answer": "地圖"
+      "answer": "地圖",
+      "id": 70
     },
     {
       "category": "英文",
@@ -2252,7 +2512,8 @@
         "爺爺",
         "奶奶"
       ],
-      "answer": "媽媽"
+      "answer": "媽媽",
+      "id": 71
     },
     {
       "category": "英文",
@@ -2263,7 +2524,8 @@
         "耳朵",
         "嘴巴"
       ],
-      "answer": "嘴巴"
+      "answer": "嘴巴",
+      "id": 72
     },
     {
       "category": "英文",
@@ -2274,7 +2536,8 @@
         "耳朵",
         "嘴巴"
       ],
-      "answer": "鼻子"
+      "answer": "鼻子",
+      "id": 73
     },
     {
       "category": "英文",
@@ -2285,7 +2548,8 @@
         "貓",
         "老鼠"
       ],
-      "answer": "兔子"
+      "answer": "兔子",
+      "id": 74
     },
     {
       "category": "英文",
@@ -2296,7 +2560,8 @@
         "飯糰",
         "麵包"
       ],
-      "answer": "三明治"
+      "answer": "三明治",
+      "id": 75
     },
     {
       "category": "英文",
@@ -2307,7 +2572,8 @@
         "雜貨店",
         "圖書館"
       ],
-      "answer": "學校"
+      "answer": "學校",
+      "id": 76
     },
     {
       "category": "英文",
@@ -2318,7 +2584,8 @@
         "躺",
         "說"
       ],
-      "answer": "看"
+      "answer": "看",
+      "id": 77
     },
     {
       "category": "英文",
@@ -2329,7 +2596,8 @@
         "十七",
         "十八"
       ],
-      "answer": "十七"
+      "answer": "十七",
+      "id": 78
     },
     {
       "category": "英文",
@@ -2340,7 +2608,8 @@
         "外套",
         "襪子"
       ],
-      "answer": "鞋子"
+      "answer": "鞋子",
+      "id": 79
     },
     {
       "category": "英文",
@@ -2351,7 +2620,8 @@
         "說",
         "笑"
       ],
-      "answer": "唱"
+      "answer": "唱",
+      "id": 80
     },
     {
       "category": "英文",
@@ -2362,7 +2632,8 @@
         "十七",
         "十八"
       ],
-      "answer": "十六"
+      "answer": "十六",
+      "id": 81
     },
     {
       "category": "英文",
@@ -2373,7 +2644,8 @@
         "外套",
         "襪子"
       ],
-      "answer": "襪子"
+      "answer": "襪子",
+      "id": 82
     },
     {
       "category": "英文",
@@ -2384,7 +2656,8 @@
         "太陽",
         "雨水"
       ],
-      "answer": "太陽"
+      "answer": "太陽",
+      "id": 83
     },
     {
       "category": "英文",
@@ -2395,7 +2668,8 @@
         "香蕉",
         "葡萄"
       ],
-      "answer": "西瓜"
+      "answer": "西瓜",
+      "id": 84
     },
     {
       "category": "英文",
@@ -2406,7 +2680,8 @@
         "二",
         "三"
       ],
-      "answer": "零"
+      "answer": "零",
+      "id": 85
     },
     {
       "category": "英文",
@@ -2417,7 +2692,8 @@
         "吃飯",
         "開心"
       ],
-      "answer": "昆蟲"
+      "answer": "昆蟲",
+      "id": 86
     },
     {
       "category": "英文",
@@ -2428,7 +2704,8 @@
         "書",
         "袋子"
       ],
-      "answer": "男孩"
+      "answer": "男孩",
+      "id": 87
     },
     {
       "category": "英文",
@@ -2439,7 +2716,8 @@
         "書",
         "袋子"
       ],
-      "answer": "球"
+      "answer": "球",
+      "id": 88
     },
     {
       "category": "英文",
@@ -2450,7 +2728,8 @@
         "書",
         "袋子"
       ],
-      "answer": "書"
+      "answer": "書",
+      "id": 89
     },
     {
       "category": "英文",
@@ -2461,7 +2740,8 @@
         "書",
         "袋子"
       ],
-      "answer": "袋子"
+      "answer": "袋子",
+      "id": 90
     },
     {
       "category": "英文",
@@ -2472,7 +2752,8 @@
         "sofa",
         "towel"
       ],
-      "answer": "orange"
+      "answer": "orange",
+      "id": 91
     },
     {
       "category": "英文",
@@ -2483,7 +2764,8 @@
         "pencil",
         "table"
       ],
-      "answer": "apple"
+      "answer": "apple",
+      "id": 92
     },
     {
       "category": "英文",
@@ -2494,7 +2776,8 @@
         "fan",
         "paper"
       ],
-      "answer": "banana"
+      "answer": "banana",
+      "id": 93
     },
     {
       "category": "英文",
@@ -2505,172 +2788,138 @@
         "map",
         "water"
       ],
-      "answer": "watermelon"
+      "answer": "watermelon",
+      "id": 94
     },
     {
       "category": "英文",
-      "question": "毛毛蟲的英文是?",
+      "question": "What animal is this?",
       "options": [
-        "caterpillar",
-        "calculator",
-        "celebration",
-        "collection"
+        "car",
+        "card",
+        "cook",
+        "cat"
       ],
-      "answer": "caterpillar"
+      "answer": "cat",
+      "image": "q_動物貓.jpeg",
+      "id": 95
     },
     {
       "category": "英文",
-      "question": "火山的英文是？",
+      "question": "what animal is this?",
       "options": [
-        "volcano",
-        "vegetable",
-        "visible",
-        "valuable"
+        "elephant",
+        "excellent",
+        "exercise",
+        "entrance"
       ],
-      "answer": "volcano"
+      "answer": "elephant",
+      "image": "q_動物大象.jpeg",
+      "id": 96
     },
     {
       "category": "英文",
-      "question": "火車的英文是?",
+      "question": "what animal is this?",
       "options": [
-        "train",
-        "trail",
-        "track",
-        "truck"
-      ],
-      "answer": "train"
-    },
-    {
-      "category": "英文",
-      "question": "生氣的英文是?",
-      "options": [
-        "angry",
-        "angle",
-        "ankle",
-        "apple"
-      ],
-      "answer": "angry"
-    },
-    {
-      "category": "英文",
-      "question": "早餐的英文是?",
-      "options": [
-        "breakfast",
-        "firework",
-        "football",
-        "feedback"
-      ],
-      "answer": "breakfast"
-    },
-    {
-      "category": "英文",
-      "question": "姐姐的英文是?",
-      "options": [
-        "sister",
-        "brother",
-        "mother",
-        "father"
-      ],
-      "answer": "sister"
-    },
-    {
-      "category": "英文",
-      "question": "朋友的英文是?",
-      "options": [
-        "friends",
-        "flowers",
-        "fighters",
-        "families"
-      ],
-      "answer": "friends"
-    },
-    {
-      "category": "英文",
-      "question": "花園的英文是?",
-      "options": [
-        "garden",
-        "park",
-        "flower",
-        "mountain"
-      ],
-      "answer": "garden"
-    },
-    {
-      "category": "英文",
-      "question": "美人魚的英文是?",
-      "options": [
-        "mermaid",
-        "morning",
-        "monster",
-        "message"
-      ],
-      "answer": "mermaid"
-    },
-    {
-      "category": "英文",
-      "question": "笑的英文是?",
-      "options": [
-        "laugh",
-        "launch",
-        "layer",
-        "latch"
-      ],
-      "answer": "laugh"
-    },
-    {
-      "category": "英文",
-      "question": "起司的英文是?",
-      "options": [
-        "cheese",
-        "freeze",
-        "fleece",
-        "fierce"
-      ],
-      "answer": "cheese"
-    },
-    {
-      "category": "英文",
-      "question": "猴子的英文是?",
-      "options": [
-        "monckey",
         "frog",
-        "rabbit",
-        "fish"
+        "fish",
+        "fire",
+        "face"
       ],
-      "answer": "monckey"
+      "answer": "frog",
+      "image": "q_動物青蛙.jpg",
+      "id": 97
     },
     {
       "category": "英文",
-      "question": "跳舞的英文是?",
+      "question": "what animal is this?",
       "options": [
-        "dance",
-        "dense",
-        "dare",
-        "dune"
+        "butterfly",
+        "beautiful",
+        "banana",
+        "baseball"
       ],
-      "answer": "dance"
+      "answer": "butterfly",
+      "image": "q_動物蝴蝶.jpeg",
+      "id": 98
     },
     {
       "category": "英文",
-      "question": "鞋子的英文是?",
+      "question": "what animal is this?",
       "options": [
-        "shoes",
-        "shore",
-        "shape",
-        "shine"
+        "giraffe",
+        "great",
+        "game",
+        "girl"
       ],
-      "answer": "shoes"
+      "answer": "giraffe",
+      "image": "q_動物長頸鹿.jpeg",
+      "id": 99
     },
     {
-      "category": "自然",
-      "question": "一杯水放在室外，過一段時間水變少了，最可能的原因是？",
+      "category": "英文",
+      "question": "what animal is this?",
       "options": [
-        "水蒸發到空氣中",
-        "被地面吸走",
-        "被別人喝掉了",
-        "被太陽吃掉了"
+        "bear",
+        "ball",
+        "break",
+        "baby"
       ],
-      "answer": "水蒸發到空氣中"
+      "answer": "bear",
+      "image": "q_動物熊.jpg",
+      "id": 100
+    },
+    {
+      "category": "英文",
+      "question": "what animal is this?",
+      "options": [
+        "zebra",
+        "zero",
+        "zoo",
+        "zip"
+      ],
+      "answer": "zebra",
+      "image": "q_動物斑馬.jpeg",
+      "id": 101
+    },
+    {
+      "category": "英文",
+      "question": "How's the weather?",
+      "options": [
+        "It’s cloudy",
+        "It’s rainy",
+        "It’s sunny",
+        "It’s windy"
+      ],
+      "answer": "It’s rainy",
+      "image": "q_天氣雨.jpg",
+      "id": 102
+    },
+    {
+      "category": "英文",
+      "question": "How's the weather?",
+      "options": [
+        "It’s cloudy",
+        "It’s rainy",
+        "It’s sunny",
+        "It’s windy"
+      ],
+      "answer": "It’s cloudy",
+      "image": "q_天氣陰.jpg",
+      "id": 103
+    },
+    {
+      "category": "英文",
+      "question": "How's the weather?",
+      "options": [
+        "It’s cloudy",
+        "It’s rainy",
+        "It’s sunny",
+        "It’s windy"
+      ],
+      "answer": "It’s sunny",
+      "image": "q_天氣晴.jpg",
+      "id": 104
     },
     {
       "category": "自然",
@@ -2681,140 +2930,8 @@
         "石頭",
         "牛奶"
       ],
-      "answer": "空氣"
-    },
-    {
-      "category": "自然",
-      "question": "人體最大的器官是？",
-      "options": [
-        "皮膚",
-        "心臟",
-        "肺臟",
-        "肝臟"
-      ],
-      "answer": "皮膚"
-    },
-    {
-      "category": "自然",
-      "question": "下列哪個是可再生能源？",
-      "options": [
-        "太陽能",
-        "煤炭",
-        "石油",
-        "天然氣"
-      ],
-      "answer": "太陽能"
-    },
-    {
-      "category": "自然",
-      "question": "下列哪個是哺乳動物？",
-      "options": [
-        "狗",
-        "魚",
-        "青蛙",
-        "鴿子"
-      ],
-      "answer": "狗"
-    },
-    {
-      "category": "自然",
-      "question": "下列哪個是哺乳動物？",
-      "options": [
-        "海豚",
-        "鯊魚",
-        "鮪魚",
-        "白鯧"
-      ],
-      "answer": "海豚"
-    },
-    {
-      "category": "自然",
-      "question": "下列哪個是哺乳動物？",
-      "options": [
-        "鯨魚",
-        "鱷魚",
-        "鮭魚",
-        "蜥蜴"
-      ],
-      "answer": "鯨魚"
-    },
-    {
-      "category": "自然",
-      "question": "下列哪種動物是兩棲類？",
-      "options": [
-        "青蛙",
-        "蛇",
-        "魚",
-        "陸龜"
-      ],
-      "answer": "青蛙"
-    },
-    {
-      "category": "自然",
-      "question": "下雨前天空常會出現很多什麼？",
-      "options": [
-        "白雲",
-        "烏雲",
-        "星星",
-        "彩虹"
-      ],
-      "answer": "烏雲"
-    },
-    {
-      "category": "自然",
-      "question": "下雨最主要的原因是什麼?",
-      "options": [
-        "雲裡的水滴變大掉下來",
-        "地上的水跳上去",
-        "風把水吹下來",
-        "天上有一個洞漏水"
-      ],
-      "answer": "雲裡的水滴變大掉下來",
-      "image": "q_天氣雨.jpg"
-    },
-    {
-      "category": "自然",
-      "question": "下面哪一個敘述是正確的？",
-      "options": [
-        "燃燒塑膠時會產生空氣汙染",
-        "海龜可以吃塑膠當食物",
-        "海灘因為彩色塑膠變得漂亮",
-        "塑膠會自己分解"
-      ],
-      "answer": "燃燒塑膠時會產生空氣汙染"
-    },
-    {
-      "category": "自然",
-      "question": "土星是太陽系第幾顆行星？",
-      "options": [
-        "第三顆",
-        "第四顆",
-        "第五顆",
-        "第六顆"
-      ],
-      "answer": "第六顆"
-    },
-    {
-      "category": "自然",
-      "question": "小丑魚身上的什麼能避免被海葵攻擊?",
-      "options": [
-        "產生的黏液",
-        "鮮豔的顏色",
-        "堅硬的鱗片",
-        "發光的斑紋"
-      ],
-      "answer": "產生的黏液"
-    },
-    {
-      "category": "自然",
-      "question": "天王星是太陽系第幾顆行星？",
-      "options": [
-        "第四顆",
-        "第五顆",
-        "第六顆",
-        "第七顆"
-      ],
-      "answer": "第七顆"
+      "answer": "空氣",
+      "id": 1
     },
     {
       "category": "自然",
@@ -2825,29 +2942,8 @@
         "南邊",
         "北邊"
       ],
-      "answer": "東邊"
-    },
-    {
-      "category": "自然",
-      "question": "月亮本身會發光嗎？",
-      "options": [
-        "不會，反射太陽光",
-        "會，自己發光",
-        "白天發光",
-        "只在滿月時發光"
-      ],
-      "answer": "不會，反射太陽光"
-    },
-    {
-      "category": "自然",
-      "question": "木星是太陽系第幾顆行星？",
-      "options": [
-        "第二顆",
-        "第三顆",
-        "第四顆",
-        "第五顆"
-      ],
-      "answer": "第五顆"
+      "answer": "東邊",
+      "id": 2
     },
     {
       "category": "自然",
@@ -2858,7 +2954,8 @@
         "50度",
         "-10度"
       ],
-      "answer": "0度"
+      "answer": "0度",
+      "id": 3
     },
     {
       "category": "自然",
@@ -2869,106 +2966,8 @@
         "火",
         "空氣"
       ],
-      "answer": "冰"
-    },
-    {
-      "category": "自然",
-      "question": "水星是太陽系第幾顆行星？",
-      "options": [
-        "第三顆",
-        "第二顆",
-        "第四顆",
-        "第一顆"
-      ],
-      "answer": "第一顆"
-    },
-    {
-      "category": "自然",
-      "question": "水龍頭的水是乾淨的是因為誰負責過濾?",
-      "options": [
-        "自來水廠",
-        "水庫管理員",
-        "下水道清潔隊",
-        "不用過濾"
-      ],
-      "answer": "自來水廠"
-    },
-    {
-      "category": "自然",
-      "question": "火星是太陽系第幾顆行星？",
-      "options": [
-        "第三顆",
-        "第二顆",
-        "第四顆",
-        "第一顆"
-      ],
-      "answer": "第四顆"
-    },
-    {
-      "category": "自然",
-      "question": "在公園裡看到花和蝴蝶，牠們之間有什麼關係？",
-      "options": [
-        "蝴蝶會幫助花傳粉",
-        "沒有關係",
-        "花會吃蝴蝶",
-        "蝴蝶會讓花消失"
-      ],
-      "answer": "蝴蝶會幫助花傳粉"
-    },
-    {
-      "category": "自然",
-      "question": "在吹氣球時，氣球會慢慢變大，這代表什麼？",
-      "options": [
-        "空氣進到氣球裡",
-        "氣球自己長大",
-        "氣球在呼吸",
-        "手的力量讓氣球變大"
-      ],
-      "answer": "空氣進到氣球裡"
-    },
-    {
-      "category": "自然",
-      "question": "地球是太陽系第幾顆行星？",
-      "options": [
-        "第三顆",
-        "第二顆",
-        "第四顆",
-        "第一顆"
-      ],
-      "answer": "第三顆"
-    },
-    {
-      "category": "自然",
-      "question": "地球繞著什麼轉？",
-      "options": [
-        "太陽",
-        "月亮",
-        "火星",
-        "木星"
-      ],
-      "answer": "太陽"
-    },
-    {
-      "category": "自然",
-      "question": "我們吃胡蘿蔔主要是吃什麼部位？",
-      "options": [
-        "根",
-        "莖",
-        "葉",
-        "果實"
-      ],
-      "answer": "根"
-    },
-    {
-      "category": "自然",
-      "question": "我們喝的水通常是什麼顏色？",
-      "options": [
-        "透明",
-        "藍色",
-        "紅色",
-        "綠色"
-      ],
-      "answer": "透明"
+      "answer": "冰",
+      "id": 4
     },
     {
       "category": "自然",
@@ -2979,62 +2978,8 @@
         "四條",
         "十條"
       ],
-      "answer": "六條"
-    },
-    {
-      "category": "自然",
-      "question": "空氣主要由哪兩種氣體組成？",
-      "options": [
-        "氮氣和氧氣",
-        "氧氣和二氧化碳",
-        "氫氣和氧氣",
-        "氮氣和二氧化碳"
-      ],
-      "answer": "氮氣和氧氣"
-    },
-    {
-      "category": "自然",
-      "question": "空氣看不到，但我們可以用什麼方法知道它存在？",
-      "options": [
-        "感覺風在吹",
-        "看電視",
-        "聽音樂",
-        "看書"
-      ],
-      "answer": "感覺風在吹"
-    },
-    {
-      "category": "自然",
-      "question": "金星是太陽系第幾顆行星？",
-      "options": [
-        "第三顆",
-        "第二顆",
-        "第四顆",
-        "第一顆"
-      ],
-      "answer": "第二顆"
-    },
-    {
-      "category": "自然",
-      "question": "某些動物身體顏色和環境很像，這樣有什麼好處？",
-      "options": [
-        "可以保護自己不被敵人發現",
-        "比較漂亮",
-        "比較容易被發現",
-        "讓身體變大"
-      ],
-      "answer": "可以保護自己不被敵人發現"
-    },
-    {
-      "category": "自然",
-      "question": "洗完手沒有擦乾，過一段時間手變乾了，最可能的原因是？",
-      "options": [
-        "水蒸發到空氣中",
-        "水跑到地上",
-        "手把水喝掉了",
-        "水變成沙子"
-      ],
-      "answer": "水蒸發到空氣中"
+      "answer": "六條",
+      "id": 5
     },
     {
       "category": "自然",
@@ -3045,73 +2990,8 @@
         "被雲吃掉了",
         "星星跑走了"
       ],
-      "answer": "太陽光太亮"
-    },
-    {
-      "category": "自然",
-      "question": "為什麼有些人的膚色黑、有些白?",
-      "options": [
-        "因為皮膚的黑色素多少",
-        "黑皮膚是因為吃太多黑木耳",
-        "白皮膚是因為喝太多豆漿",
-        "黃皮膚是因為吃太多蛋黃"
-      ],
-      "answer": "因為皮膚的黑色素多少"
-    },
-    {
-      "category": "自然",
-      "question": "食物鏈中「生產者」指的是？",
-      "options": [
-        "植物",
-        "草食動物",
-        "肉食動物",
-        "細菌"
-      ],
-      "answer": "植物"
-    },
-    {
-      "category": "自然",
-      "question": "哪一杯洗米水比較快沉澱？",
-      "options": [
-        "普通洗米水",
-        "加入明礬的洗米水",
-        "兩杯一樣快",
-        "兩杯都不會沉澱"
-      ],
-      "answer": "加入明礬的洗米水"
-    },
-    {
-      "category": "自然",
-      "question": "哪一個行為最有助於保護環境？",
-      "options": [
-        "垃圾分類回收",
-        "隨地丟垃圾",
-        "多使用一次性塑膠袋",
-        "浪費水"
-      ],
-      "answer": "垃圾分類回收"
-    },
-    {
-      "category": "自然",
-      "question": "哪個東西磁鐵可以吸起來?",
-      "options": [
-        "鐵釘",
-        "木頭",
-        "塑膠",
-        "紙"
-      ],
-      "answer": "鐵釘"
-    },
-    {
-      "category": "自然",
-      "question": "海龜如果把海裡的塑膠袋當成食物吃掉會怎麼樣？",
-      "options": [
-        "海龜會生病之後死掉",
-        "海龜會變健康",
-        "塑膠袋會被消化",
-        "海龜會變大隻"
-      ],
-      "answer": "海龜會生病之後死掉"
+      "answer": "太陽光太亮",
+      "id": 6
     },
     {
       "category": "自然",
@@ -3122,29 +3002,284 @@
         "皮膚",
         "不需要呼吸"
       ],
-      "answer": "肺"
+      "answer": "肺",
+      "id": 7
     },
     {
       "category": "自然",
-      "question": "荔枝椿象一次會下幾個卵？",
+      "question": "彩虹有幾種顏色？",
       "options": [
-        "14",
-        "15",
-        "16",
-        "13"
+        "7種",
+        "5種",
+        "6種",
+        "8種"
       ],
-      "answer": "14"
+      "answer": "7種",
+      "id": 8
     },
     {
       "category": "自然",
-      "question": "針鼴跟鴨嘴獸都是哺乳動物，哪種是卵生?",
+      "question": "球往上丟，為什麼會掉下來?",
       "options": [
-        "兩種都是",
-        "只有針鼴是",
-        "只有鴨嘴獸是",
-        "兩種都不是"
+        "因為地球的引力",
+        "因為球飛累了",
+        "因為風把它吹下來",
+        "有看不見的人把它打下來"
       ],
-      "answer": "兩種都是"
+      "answer": "因為地球的引力",
+      "id": 9
+    },
+    {
+      "category": "自然",
+      "question": "森林裡有很多樹木，對我們的空氣有什麼幫助？",
+      "options": [
+        "讓空氣變清新",
+        "讓空氣變髒",
+        "讓空氣消失",
+        "沒有影響"
+      ],
+      "answer": "讓空氣變清新",
+      "id": 10
+    },
+    {
+      "category": "自然",
+      "question": "植物的葉子通常是綠色的，主要是因為什麼？",
+      "options": [
+        "裡面有葉綠素吸收陽光製造養分",
+        "吸收水變成綠色",
+        "被風吹久了變成綠色",
+        "自然變色"
+      ],
+      "answer": "裡面有葉綠素吸收陽光製造養分",
+      "id": 11
+    },
+    {
+      "category": "自然",
+      "question": "植物如果長時間沒有陽光，最可能會怎樣？",
+      "options": [
+        "長不好或枯萎",
+        "不會變",
+        "長得更快",
+        "變成動物"
+      ],
+      "answer": "長不好或枯萎",
+      "id": 12
+    },
+    {
+      "category": "自然",
+      "question": "在公園裡看到花和蝴蝶，牠們之間有什麼關係？",
+      "options": [
+        "蝴蝶會幫助花傳粉",
+        "沒有關係",
+        "花會吃蝴蝶",
+        "蝴蝶會讓花消失"
+      ],
+      "answer": "蝴蝶會幫助花傳粉",
+      "id": 13
+    },
+    {
+      "category": "自然",
+      "question": "小丑魚身上的什麼能避免被海葵攻擊?",
+      "options": [
+        "產生的黏液",
+        "鮮豔的顏色",
+        "堅硬的鱗片",
+        "發光的斑紋"
+      ],
+      "answer": "產生的黏液",
+      "id": 14
+    },
+    {
+      "category": "自然",
+      "question": "一杯水放在室外，過一段時間水變少了，最可能的原因是？",
+      "options": [
+        "水蒸發到空氣中",
+        "被地面吸走",
+        "被別人喝掉了",
+        "被太陽吃掉了"
+      ],
+      "answer": "水蒸發到空氣中",
+      "id": 15
+    },
+    {
+      "category": "自然",
+      "question": "下列哪個是哺乳動物？",
+      "options": [
+        "狗",
+        "魚",
+        "青蛙",
+        "鴿子"
+      ],
+      "answer": "狗",
+      "id": 16
+    },
+    {
+      "category": "自然",
+      "question": "下列哪種動物是兩棲類？",
+      "options": [
+        "青蛙",
+        "蛇",
+        "魚",
+        "陸龜"
+      ],
+      "answer": "青蛙",
+      "id": 17
+    },
+    {
+      "category": "自然",
+      "question": "月亮本身會發光嗎？",
+      "options": [
+        "不會，反射太陽光",
+        "會，自己發光",
+        "白天發光",
+        "只在滿月時發光"
+      ],
+      "answer": "不會，反射太陽光",
+      "id": 18
+    },
+    {
+      "category": "自然",
+      "question": "地球繞著什麼轉？",
+      "options": [
+        "太陽",
+        "月亮",
+        "火星",
+        "木星"
+      ],
+      "answer": "太陽",
+      "id": 19
+    },
+    {
+      "category": "自然",
+      "question": "海龜如果把海裡的塑膠袋當成食物吃掉會怎麼樣？",
+      "options": [
+        "海龜會生病之後死掉",
+        "海龜會變健康",
+        "塑膠袋會被消化",
+        "海龜會變大隻"
+      ],
+      "answer": "海龜會生病之後死掉",
+      "id": 20
+    },
+    {
+      "category": "自然",
+      "question": "植物進行光合作用需要什麼？",
+      "options": [
+        "陽光、水和二氧化碳",
+        "陽光和氧氣",
+        "水和氮氣",
+        "土壤和鹽分"
+      ],
+      "answer": "陽光、水和二氧化碳",
+      "id": 21
+    },
+    {
+      "category": "自然",
+      "question": "機場人員怎麼看行李箱有沒有違禁品？",
+      "options": [
+        "用X光機",
+        "請旅客打開",
+        "自己打開",
+        "不用看"
+      ],
+      "answer": "用X光機",
+      "id": 22
+    },
+    {
+      "category": "自然",
+      "question": "水星是太陽系第幾顆行星？",
+      "options": [
+        "第三顆",
+        "第二顆",
+        "第四顆",
+        "第一顆"
+      ],
+      "answer": "第一顆",
+      "id": 23
+    },
+    {
+      "category": "自然",
+      "question": "下列哪個是可再生能源？",
+      "options": [
+        "太陽能",
+        "煤炭",
+        "石油",
+        "天然氣"
+      ],
+      "answer": "太陽能",
+      "id": 24
+    },
+    {
+      "category": "自然",
+      "question": "下列哪個是哺乳動物？",
+      "options": [
+        "海豚",
+        "鯊魚",
+        "鮪魚",
+        "白鯧"
+      ],
+      "answer": "海豚",
+      "id": 25
+    },
+    {
+      "category": "自然",
+      "question": "下雨前天空常會出現很多什麼？",
+      "options": [
+        "白雲",
+        "烏雲",
+        "星星",
+        "彩虹"
+      ],
+      "answer": "烏雲",
+      "id": 26
+    },
+    {
+      "category": "自然",
+      "question": "下面哪一個敘述是正確的？",
+      "options": [
+        "燃燒塑膠時會產生空氣汙染",
+        "海龜可以吃塑膠當食物",
+        "海灘因為彩色塑膠變得漂亮",
+        "塑膠會自己分解"
+      ],
+      "answer": "燃燒塑膠時會產生空氣汙染",
+      "id": 27
+    },
+    {
+      "category": "自然",
+      "question": "金星是太陽系第幾顆行星？",
+      "options": [
+        "第三顆",
+        "第二顆",
+        "第四顆",
+        "第一顆"
+      ],
+      "answer": "第二顆",
+      "id": 28
+    },
+    {
+      "category": "自然",
+      "question": "食物鏈中「生產者」指的是？",
+      "options": [
+        "植物",
+        "草食動物",
+        "肉食動物",
+        "細菌"
+      ],
+      "answer": "植物",
+      "id": 29
+    },
+    {
+      "category": "自然",
+      "question": "哪個東西磁鐵可以吸起來?",
+      "options": [
+        "鐵釘",
+        "木頭",
+        "塑膠",
+        "紙"
+      ],
+      "answer": "鐵釘",
+      "id": 30
     },
     {
       "category": "自然",
@@ -3156,96 +3291,32 @@
         "黃色疣點旁的短毛"
       ],
       "answer": "黃色疣點旁的短毛",
-      "image": "q_動物閃光苔蛾.jpg"
+      "image": "q_動物閃光苔蛾.jpg",
+      "id": 31
     },
     {
       "category": "自然",
-      "question": "馬陸和蜈蚣哪裡不一樣?",
+      "question": "我們喝的水通常是什麼顏色？",
       "options": [
-        "馬陸身體比較圓",
-        "馬陸有毒",
-        "沒有不一樣",
-        "馬陸移動速度比較快"
+        "透明",
+        "藍色",
+        "紅色",
+        "綠色"
       ],
-      "answer": "馬陸身體比較圓",
-      "image": "q_動物馬陸.jpg"
+      "answer": "透明",
+      "id": 32
     },
     {
       "category": "自然",
-      "question": "彩虹有幾種顏色？",
+      "question": "地球是太陽系第幾顆行星？",
       "options": [
-        "7種",
-        "5種",
-        "6種",
-        "8種"
+        "第三顆",
+        "第二顆",
+        "第四顆",
+        "第一顆"
       ],
-      "answer": "7種"
-    },
-    {
-      "category": "自然",
-      "question": "球往上丟，為什麼會掉下來?",
-      "options": [
-        "因為地球的引力",
-        "因為球飛累了",
-        "因為風把它吹下來",
-        "有看不見的人把它打下來"
-      ],
-      "answer": "因為地球的引力"
-    },
-    {
-      "category": "自然",
-      "question": "森林裡有很多樹木，對我們的空氣有什麼幫助？",
-      "options": [
-        "讓空氣變清新",
-        "讓空氣變髒",
-        "讓空氣消失",
-        "沒有影響"
-      ],
-      "answer": "讓空氣變清新"
-    },
-    {
-      "category": "自然",
-      "question": "植物如果長時間沒有陽光，最可能會怎樣？",
-      "options": [
-        "長不好或枯萎",
-        "不會變",
-        "長得更快",
-        "變成動物"
-      ],
-      "answer": "長不好或枯萎"
-    },
-    {
-      "category": "自然",
-      "question": "植物的哪個部分負責吸收水分和養分？",
-      "options": [
-        "根",
-        "葉",
-        "莖",
-        "花"
-      ],
-      "answer": "根"
-    },
-    {
-      "category": "自然",
-      "question": "植物的葉子通常是綠色的，主要是因為什麼？",
-      "options": [
-        "裡面有葉綠素吸收陽光製造養分",
-        "吸收水變成綠色",
-        "被風吹久了變成綠色",
-        "自然變色"
-      ],
-      "answer": "裡面有葉綠素吸收陽光製造養分"
-    },
-    {
-      "category": "自然",
-      "question": "植物進行光合作用需要什麼？",
-      "options": [
-        "陽光、水和二氧化碳",
-        "陽光和氧氣",
-        "水和氮氣",
-        "土壤和鹽分"
-      ],
-      "answer": "陽光、水和二氧化碳"
+      "answer": "第三顆",
+      "id": 33
     },
     {
       "category": "自然",
@@ -3256,19 +3327,153 @@
         "改吃素食避免中毒",
         "立即將毒素排出"
       ],
-      "answer": "累積毒素而中毒死亡"
+      "answer": "累積毒素而中毒死亡",
+      "id": 34
     },
     {
       "category": "自然",
-      "question": "蛾靜止時，翅膀會怎麼樣?",
+      "question": "下列哪個是哺乳動物？",
       "options": [
-        "雙翅合攏在背上",
-        "張開平放",
-        "有時張開、有時閉合",
-        "隨便放"
+        "鯨魚",
+        "鱷魚",
+        "鮭魚",
+        "蜥蜴"
       ],
-      "answer": "張開平放",
-      "image": "q_動物蛾.jpg"
+      "answer": "鯨魚",
+      "id": 35
+    },
+    {
+      "category": "自然",
+      "question": "人體最大的器官是？",
+      "options": [
+        "皮膚",
+        "心臟",
+        "肺臟",
+        "脾臟"
+      ],
+      "answer": "皮膚",
+      "id": 36
+    },
+    {
+      "category": "自然",
+      "question": "火星是太陽系第幾顆行星？",
+      "options": [
+        "第三顆",
+        "第二顆",
+        "第四顆",
+        "第一顆"
+      ],
+      "answer": "第四顆",
+      "id": 37
+    },
+    {
+      "category": "自然",
+      "question": "下雨最主要的原因是什麼?",
+      "options": [
+        "雲裡的水滴變大掉下來",
+        "地上的水跳上去",
+        "風把水吹下來",
+        "天上有一個洞漏水"
+      ],
+      "answer": "雲裡的水滴變大掉下來",
+      "image": "q_天氣雨.jpg",
+      "id": 38
+    },
+    {
+      "category": "自然",
+      "question": "水龍頭的水是乾淨的是因為誰負責過濾?",
+      "options": [
+        "自來水廠",
+        "水庫管理員",
+        "下水道清潔隊",
+        "不用過濾"
+      ],
+      "answer": "自來水廠",
+      "id": 39
+    },
+    {
+      "category": "自然",
+      "question": "在吹氣球時，氣球會慢慢變大，這代表什麼？",
+      "options": [
+        "空氣進到氣球裡",
+        "氣球自己長大",
+        "氣球在呼吸",
+        "手的力量讓氣球變大"
+      ],
+      "answer": "空氣進到氣球裡",
+      "id": 40
+    },
+    {
+      "category": "自然",
+      "question": "木星是太陽系第幾顆行星？",
+      "options": [
+        "第二顆",
+        "第三顆",
+        "第四顆",
+        "第五顆"
+      ],
+      "answer": "第五顆",
+      "id": 41
+    },
+    {
+      "category": "自然",
+      "question": "我們吃胡蘿蔔主要是吃什麼部位？",
+      "options": [
+        "根",
+        "莖",
+        "葉",
+        "果實"
+      ],
+      "answer": "根",
+      "id": 42
+    },
+    {
+      "category": "自然",
+      "question": "某些動物身體顏色和環境很像，這樣有什麼好處？",
+      "options": [
+        "可以保護自己不被敵人發現",
+        "比較漂亮",
+        "比較容易被發現",
+        "讓身體變大"
+      ],
+      "answer": "可以保護自己不被敵人發現",
+      "id": 43
+    },
+    {
+      "category": "自然",
+      "question": "為什麼有些人的膚色黑、有些白?",
+      "options": [
+        "因為皮膚的黑色素多少",
+        "黑皮膚是因為吃太多黑木耳",
+        "白皮膚是因為喝太多豆漿",
+        "黃皮膚是因為吃太多蛋黃"
+      ],
+      "answer": "因為皮膚的黑色素多少",
+      "id": 44
+    },
+    {
+      "category": "自然",
+      "question": "哪一個行為最有助於保護環境？",
+      "options": [
+        "垃圾分類回收",
+        "隨地丟垃圾",
+        "多使用一次性塑膠袋",
+        "浪費水"
+      ],
+      "answer": "垃圾分類回收",
+      "id": 45
+    },
+    {
+      "category": "自然",
+      "question": "土星是太陽系第幾顆行星？",
+      "options": [
+        "第三顆",
+        "第四顆",
+        "第五顆",
+        "第六顆"
+      ],
+      "answer": "第六顆",
+      "id": 46
     },
     {
       "category": "自然",
@@ -3280,18 +3485,70 @@
         "隨便放"
       ],
       "answer": "雙翅合攏在背上",
-      "image": "q_動物蝴蝶.jpeg"
+      "image": "q_動物蝴蝶.jpeg",
+      "id": 47
     },
     {
       "category": "自然",
-      "question": "機場人員怎麼看行李箱有沒有違禁品？",
+      "question": "蛾靜止時，翅膀會怎麼樣?",
       "options": [
-        "用X光機",
-        "請旅客打開",
-        "自己打開",
-        "不用看"
+        "雙翅合攏在背上",
+        "張開平放",
+        "有時張開、有時閉合",
+        "隨便放"
       ],
-      "answer": "用X光機"
+      "answer": "張開平放",
+      "image": "q_動物蛾.jpg",
+      "id": 48
+    },
+    {
+      "category": "自然",
+      "question": "針鼴跟鴨嘴獸都是哺乳動物，哪種是卵生?",
+      "options": [
+        "兩種都是",
+        "只有針鼴是",
+        "只有鴨嘴獸是",
+        "兩種都不是"
+      ],
+      "answer": "兩種都是",
+      "id": 49
+    },
+    {
+      "category": "自然",
+      "question": "荔枝椿象一次會下幾個卵？",
+      "options": [
+        "14",
+        "1",
+        "30",
+        "100"
+      ],
+      "answer": "14",
+      "id": 50
+    },
+    {
+      "category": "自然",
+      "question": "天王星是太陽系第幾顆行星？",
+      "options": [
+        "第四顆",
+        "第五顆",
+        "第六顆",
+        "第七顆"
+      ],
+      "answer": "第七顆",
+      "id": 51
+    },
+    {
+      "category": "自然",
+      "question": "馬陸和蜈蚣哪裡不一樣?",
+      "options": [
+        "馬陸身體比較圓",
+        "馬陸有毒",
+        "沒有不一樣",
+        "馬陸移動速度比較快"
+      ],
+      "answer": "馬陸身體比較圓",
+      "image": "q_動物馬陸.jpg",
+      "id": 52
     },
     {
       "category": "自然",
@@ -3302,29 +3559,80 @@
         "氣體",
         "真空"
       ],
-      "answer": "固體"
+      "answer": "固體",
+      "id": 53
     },
     {
-      "category": "地理",
-      "question": "下面哪一個是臺灣的著名高山？",
+      "category": "自然",
+      "question": "空氣看不到，但我們可以用什麼方法知道它存在？",
       "options": [
-        "玉山",
-        "富士山",
-        "阿爾卑斯山",
-        "喜馬拉雅山"
+        "感覺風在吹",
+        "看電視",
+        "聽音樂",
+        "看書"
       ],
-      "answer": "玉山"
+      "answer": "感覺風在吹",
+      "id": 54
     },
     {
-      "category": "地理",
-      "question": "火山通常形成在什麼地方？",
+      "category": "自然",
+      "question": "空氣主要由哪兩種氣體組成？",
       "options": [
-        "地殼活動強的地方",
-        "海邊沙灘",
-        "森林中",
-        "平原中央"
+        "氮氣和氧氣",
+        "氧氣和二氧化碳",
+        "氫氣和氧氣",
+        "氮氣和二氧化碳"
       ],
-      "answer": "地殼活動強的地方"
+      "answer": "氮氣和氧氣",
+      "id": 55
+    },
+    {
+      "category": "自然",
+      "question": "海王星是太陽系第幾顆行星？",
+      "options": [
+        "第五顆",
+        "第六顆",
+        "第七顆",
+        "第八顆"
+      ],
+      "answer": "第八顆",
+      "id": 56
+    },
+    {
+      "category": "自然",
+      "question": "哪一杯洗米水比較快沉澱？",
+      "options": [
+        "普通洗米水",
+        "加入明礬的洗米水",
+        "兩杯一樣快",
+        "兩杯都不會沉澱"
+      ],
+      "answer": "加入明礬的洗米水",
+      "id": 57
+    },
+    {
+      "category": "自然",
+      "question": "洗完手沒有擦乾，過一段時間手變乾了，最可能的原因是？",
+      "options": [
+        "水蒸發到空氣中",
+        "水跑到地上",
+        "手把水喝掉了",
+        "水變成沙子"
+      ],
+      "answer": "水蒸發到空氣中",
+      "id": 58
+    },
+    {
+      "category": "自然",
+      "question": "植物的哪個部分負責吸收水分和養分？",
+      "options": [
+        "根",
+        "葉",
+        "莖",
+        "花"
+      ],
+      "answer": "根",
+      "id": 59
     },
     {
       "category": "地理",
@@ -3335,123 +3643,8 @@
         "沙子",
         "泥巴"
       ],
-      "answer": "岩漿"
-    },
-    {
-      "category": "地理",
-      "question": "世界最大的炎熱沙漠是?",
-      "options": [
-        "撒哈拉沙漠",
-        "大沙沙漠",
-        "莫哈韋沙漠",
-        "阿拉伯沙漠"
-      ],
-      "answer": "撒哈拉沙漠"
-    },
-    {
-      "category": "地理",
-      "question": "世界最高的山是?",
-      "options": [
-        "玉山",
-        "富士山",
-        "阿爾卑斯山",
-        "喜馬拉雅山"
-      ],
-      "answer": "喜馬拉雅山"
-    },
-    {
-      "category": "地理",
-      "question": "地球上的陸地分成幾大洲?",
-      "options": [
-        "4",
-        "5",
-        "6",
-        "7"
-      ],
-      "answer": "7"
-    },
-    {
-      "category": "地理",
-      "question": "亞洲最長的河流是？",
-      "options": [
-        "印度河",
-        "黑龍江",
-        "黃河",
-        "長江"
-      ],
-      "answer": "長江"
-    },
-    {
-      "category": "地理",
-      "question": "紅色的部分是哪一洲？",
-      "options": [
-        "亞洲",
-        "非洲",
-        "歐洲",
-        "南美洲"
-      ],
-      "answer": "亞洲",
-      "image": "q_七大洲亞洲.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "紅色的部分是哪一洲？",
-      "options": [
-        "亞洲",
-        "非洲",
-        "歐洲",
-        "南美洲"
-      ],
-      "answer": "歐洲",
-      "image": "q_七大洲歐洲.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個國家？",
-      "options": [
-        "臺灣",
-        "中國",
-        "日本",
-        "韓國"
-      ],
-      "answer": "中國",
-      "image": "q_國家中國.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個國家？",
-      "options": [
-        "臺灣",
-        "中國",
-        "日本",
-        "韓國"
-      ],
-      "answer": "日本",
-      "image": "q_國家日本.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個國家？",
-      "options": [
-        "俄羅斯",
-        "中國",
-        "日本",
-        "韓國"
-      ],
-      "answer": "俄羅斯",
-      "image": "q_國家俄羅斯.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是哪個國家？",
-      "options": [
-        "俄羅斯",
-        "菲律賓",
-        "日本",
-        "韓國"
-      ],
-      "answer": "菲律賓",
-      "image": "q_國家菲律賓.jpg"
+      "answer": "岩漿",
+      "id": 1
     },
     {
       "category": "地理",
@@ -3463,7 +3656,68 @@
         "韓國"
       ],
       "answer": "臺灣",
-      "image": "q_國家臺灣.jpg"
+      "image": "q_國家臺灣.jpg",
+      "id": 2
+    },
+    {
+      "category": "地理",
+      "question": "臺灣的首都是哪裡？",
+      "options": [
+        "高雄",
+        "台中",
+        "台北",
+        "台南"
+      ],
+      "answer": "台北",
+      "id": 3
+    },
+    {
+      "category": "地理",
+      "question": "臺灣夏天常見的天然災害是？",
+      "options": [
+        "暴風雪",
+        "沙塵暴",
+        "颱風",
+        "火山爆發"
+      ],
+      "answer": "颱風",
+      "id": 4
+    },
+    {
+      "category": "地理",
+      "question": "發生地震時如果在屋內要做什麼？",
+      "options": [
+        "坐電梯逃生",
+        "趴下、掩護、穩住",
+        "把大門打開",
+        "躲冰箱旁邊"
+      ],
+      "answer": "趴下、掩護、穩住",
+      "id": 5
+    },
+    {
+      "category": "地理",
+      "question": "下面哪一個是臺灣的著名高山？",
+      "options": [
+        "玉山",
+        "富士山",
+        "阿爾卑斯山",
+        "喜馬拉雅山"
+      ],
+      "answer": "玉山",
+      "id": 6
+    },
+    {
+      "category": "地理",
+      "question": "火山通常形成在什麼地方？",
+      "options": [
+        "地殼活動強的地方",
+        "海邊沙灘",
+        "森林中",
+        "平原中央"
+      ],
+      "answer": "地殼活動強的地方",
+      "id": 7
     },
     {
       "category": "地理",
@@ -3474,20 +3728,9 @@
         "日本",
         "韓國"
       ],
-      "answer": "韓國",
-      "image": "q_國家韓國.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "台中",
-        "台北",
-        "台南",
-        "台東"
-      ],
-      "answer": "台中",
-      "image": "q_縣市台中.jpg"
+      "answer": "日本",
+      "image": "q_國家日本.jpg",
+      "id": 8
     },
     {
       "category": "地理",
@@ -3499,55 +3742,20 @@
         "桃園"
       ],
       "answer": "台北",
-      "image": "q_縣市台北.jpg"
+      "image": "q_縣市台北.jpg",
+      "id": 9
     },
     {
       "category": "地理",
-      "question": "這是臺灣哪個縣市？",
+      "question": "臺灣最長的河流是？",
       "options": [
-        "台東",
-        "台南",
-        "高雄",
-        "屏東"
+        "淡水河",
+        "高屏溪",
+        "濁水溪",
+        "大甲溪"
       ],
-      "answer": "台東",
-      "image": "q_縣市台東.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "屏東",
-        "高雄",
-        "台南",
-        "台東"
-      ],
-      "answer": "台南",
-      "image": "q_縣市台南.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "宜蘭",
-        "新北",
-        "台北",
-        "基隆"
-      ],
-      "answer": "宜蘭",
-      "image": "q_縣市宜蘭.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "花蓮",
-        "高雄",
-        "台南",
-        "新北"
-      ],
-      "answer": "花蓮",
-      "image": "q_縣市花蓮.jpg"
+      "answer": "濁水溪",
+      "id": 10
     },
     {
       "category": "地理",
@@ -3559,43 +3767,45 @@
         "台中"
       ],
       "answer": "南投",
-      "image": "q_縣市南投.jpg"
+      "image": "q_縣市南投.jpg",
+      "id": 11
+    },
+    {
+      "category": "地理",
+      "question": "地球上的陸地分成幾大洲?",
+      "options": [
+        "4",
+        "5",
+        "6",
+        "7"
+      ],
+      "answer": "7",
+      "id": 12
     },
     {
       "category": "地理",
       "question": "這是臺灣哪個縣市？",
       "options": [
-        "屏東",
-        "高雄",
+        "台中",
+        "台北",
         "台南",
         "台東"
       ],
-      "answer": "屏東",
-      "image": "q_縣市屏東.jpg"
+      "answer": "台中",
+      "image": "q_縣市台中.jpg",
+      "id": 13
     },
     {
       "category": "地理",
-      "question": "這是臺灣哪個縣市？",
+      "question": "臺灣四周大多被什麼包圍？",
       "options": [
-        "屏東",
-        "苗栗",
-        "新北",
-        "基隆"
+        "森林",
+        "沙漠",
+        "海洋",
+        "冰山"
       ],
-      "answer": "苗栗",
-      "image": "q_縣市苗栗.jpg"
-    },
-    {
-      "category": "地理",
-      "question": "這是臺灣哪個縣市？",
-      "options": [
-        "台北",
-        "新北",
-        "基隆",
-        "桃園"
-      ],
-      "answer": "桃園",
-      "image": "q_縣市桃園.jpg"
+      "answer": "海洋",
+      "id": 14
     },
     {
       "category": "地理",
@@ -3607,7 +3817,97 @@
         "台東"
       ],
       "answer": "高雄",
-      "image": "q_縣市高雄.jpg"
+      "image": "q_縣市高雄.jpg",
+      "id": 15
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個國家？",
+      "options": [
+        "臺灣",
+        "中國",
+        "日本",
+        "韓國"
+      ],
+      "answer": "中國",
+      "image": "q_國家中國.jpg",
+      "id": 16
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "屏東",
+        "高雄",
+        "台南",
+        "台東"
+      ],
+      "answer": "台南",
+      "image": "q_縣市台南.jpg",
+      "id": 17
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "花蓮",
+        "高雄",
+        "台南",
+        "新北"
+      ],
+      "answer": "花蓮",
+      "image": "q_縣市花蓮.jpg",
+      "id": 18
+    },
+    {
+      "category": "地理",
+      "question": "陽明山的大屯火山群最後一次噴發大約六千年前，這叫做什麼火山?",
+      "options": [
+        "活火山",
+        "死火山",
+        "睡著的火山",
+        "不是火山"
+      ],
+      "answer": "活火山",
+      "id": 19
+    },
+    {
+      "category": "地理",
+      "question": "世界最高的山是?",
+      "options": [
+        "玉山",
+        "富士山",
+        "阿爾卑斯山",
+        "喜馬拉雅山"
+      ],
+      "answer": "喜馬拉雅山",
+      "id": 20
+    },
+    {
+      "category": "地理",
+      "question": "紅色的部分是哪一洲？",
+      "options": [
+        "亞洲",
+        "非洲",
+        "歐洲",
+        "南美洲"
+      ],
+      "answer": "亞洲",
+      "image": "q_七大洲亞洲.jpg",
+      "id": 21
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "屏東",
+        "高雄",
+        "台南",
+        "台東"
+      ],
+      "answer": "屏東",
+      "image": "q_縣市屏東.jpg",
+      "id": 22
     },
     {
       "category": "地理",
@@ -3619,19 +3919,83 @@
         "桃園"
       ],
       "answer": "基隆",
-      "image": "q_縣市基隆.jpg"
+      "image": "q_縣市基隆.jpg",
+      "id": 23
+    },
+    {
+      "category": "地理",
+      "question": "臺灣是在地球的哪一洲？",
+      "options": [
+        "亞洲",
+        "非洲",
+        "歐洲",
+        "南美洲"
+      ],
+      "answer": "亞洲",
+      "id": 24
+    },
+    {
+      "category": "地理",
+      "question": "亞洲最長的河流是？",
+      "options": [
+        "印度河",
+        "黑龍江",
+        "黃河",
+        "長江"
+      ],
+      "answer": "長江",
+      "id": 25
+    },
+    {
+      "category": "地理",
+      "question": "世界最大的炎熱沙漠是?",
+      "options": [
+        "撒哈拉沙漠",
+        "大沙沙漠",
+        "莫哈韋沙漠",
+        "阿拉伯沙漠"
+      ],
+      "answer": "撒哈拉沙漠",
+      "id": 26
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個國家？",
+      "options": [
+        "臺灣",
+        "中國",
+        "日本",
+        "韓國"
+      ],
+      "answer": "韓國",
+      "image": "q_國家韓國.jpg",
+      "id": 27
     },
     {
       "category": "地理",
       "question": "這是臺灣哪個縣市？",
       "options": [
-        "雲林",
-        "台中",
-        "高雄",
-        "屏東"
+        "宜蘭",
+        "新北",
+        "台北",
+        "基隆"
       ],
-      "answer": "雲林",
-      "image": "q_縣市雲林.jpg"
+      "answer": "宜蘭",
+      "image": "q_縣市宜蘭.jpg",
+      "id": 28
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "台北",
+        "新北",
+        "基隆",
+        "桃園"
+      ],
+      "answer": "桃園",
+      "image": "q_縣市桃園.jpg",
+      "id": 29
     },
     {
       "category": "地理",
@@ -3643,7 +4007,73 @@
         "桃園"
       ],
       "answer": "新北",
-      "image": "q_縣市新北.jpg"
+      "image": "q_縣市新北.jpg",
+      "id": 30
+    },
+    {
+      "category": "地理",
+      "question": "這是哪個國家？",
+      "options": [
+        "俄羅斯",
+        "中國",
+        "日本",
+        "韓國"
+      ],
+      "answer": "俄羅斯",
+      "image": "q_國家俄羅斯.jpg",
+      "id": 31
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "台東",
+        "台南",
+        "高雄",
+        "屏東"
+      ],
+      "answer": "台東",
+      "image": "q_縣市台東.jpg",
+      "id": 32
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "屏東",
+        "苗栗",
+        "新北",
+        "基隆"
+      ],
+      "answer": "苗栗",
+      "image": "q_縣市苗栗.jpg",
+      "id": 33
+    },
+    {
+      "category": "地理",
+      "question": "這是臺灣哪個縣市？",
+      "options": [
+        "雲林",
+        "台中",
+        "高雄",
+        "屏東"
+      ],
+      "answer": "雲林",
+      "image": "q_縣市雲林.jpg",
+      "id": 34
+    },
+    {
+      "category": "地理",
+      "question": "紅色的部分是哪一洲？",
+      "options": [
+        "亞洲",
+        "非洲",
+        "歐洲",
+        "南美洲"
+      ],
+      "answer": "歐洲",
+      "image": "q_七大洲歐洲.jpg",
+      "id": 35
     },
     {
       "category": "地理",
@@ -3655,84 +4085,21 @@
         "花蓮"
       ],
       "answer": "彰化",
-      "image": "q_縣市彰化.jpg"
+      "image": "q_縣市彰化.jpg",
+      "id": 36
     },
     {
       "category": "地理",
-      "question": "發生地震時如果在屋內要做什麼？",
+      "question": "這是哪個國家？",
       "options": [
-        "坐電梯逃生",
-        "趴下、掩護、穩住",
-        "把大門打開",
-        "躲冰箱旁邊"
+        "俄羅斯",
+        "菲律賓",
+        "日本",
+        "韓國"
       ],
-      "answer": "趴下、掩護、穩住"
-    },
-    {
-      "category": "地理",
-      "question": "陽明山的大屯火山群最後一次噴發大約六千年前，這叫做什麼火山?",
-      "options": [
-        "活火山",
-        "死火山",
-        "睡著的火山",
-        "不是火山"
-      ],
-      "answer": "活火山"
-    },
-    {
-      "category": "地理",
-      "question": "臺灣四周大多被什麼包圍？",
-      "options": [
-        "森林",
-        "沙漠",
-        "海洋",
-        "冰山"
-      ],
-      "answer": "海洋"
-    },
-    {
-      "category": "地理",
-      "question": "臺灣的首都是哪裡？",
-      "options": [
-        "高雄",
-        "台中",
-        "台北",
-        "台南"
-      ],
-      "answer": "台北"
-    },
-    {
-      "category": "地理",
-      "question": "臺灣是在地球的哪一洲？",
-      "options": [
-        "亞洲",
-        "非洲",
-        "歐洲",
-        "南美洲"
-      ],
-      "answer": "亞洲"
-    },
-    {
-      "category": "地理",
-      "question": "臺灣夏天常見的天然災害是？",
-      "options": [
-        "暴風雪",
-        "沙塵暴",
-        "颱風",
-        "火山爆發"
-      ],
-      "answer": "颱風"
-    },
-    {
-      "category": "地理",
-      "question": "臺灣最長的河流是？",
-      "options": [
-        "淡水河",
-        "高屏溪",
-        "濁水溪",
-        "大甲溪"
-      ],
-      "answer": "濁水溪"
+      "answer": "菲律賓",
+      "image": "q_國家菲律賓.jpg",
+      "id": 37
     }
   ]
 }
