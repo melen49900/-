@@ -1577,7 +1577,7 @@ button:active { transform:scale(.96); }
       <div class="subj-pip" id="pip-chinese">  📖 國文</div>
       <div class="subj-pip" id="pip-english">  🔤 英文</div>
       <div class="subj-pip" id="pip-science">  🌿 自然</div>
-      <div class="subj-pip" id="pip-geography">🌍 地理</div>
+      <div class="subj-pip" id="pip-geography">🌍 社會</div>
     </div>
     <div class="streak-bar">
       <div class="streak-badge">🔥 連勝：<span id="streakCount">0</span></div>
@@ -1848,7 +1848,10 @@ button:active { transform:scale(.96); }
     <div id="gearSub-artifact" class="hidden">
       <div style="font-size:.72em;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">🔮 神器</div>
       <div id="artifactShardInfo" class="artifact-shard-info">🔹 神器碎片：<b>0</b> 個</div>
-      <div style="font-size:.65em;color:#CBD5E1;text-align:center;margin:6px 0 14px">連勝、簽到、挖礦、翻牌都有機會獲得神器碎片，每個碎片可任選一項神器強化1次</div>
+      <div style="font-size:.85em;color:#000;text-align:center;margin:6px 0 14px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">
+        <span>連勝、簽到、挖礦、翻牌都有機會獲得神器碎片，每個碎片可任選一項神器強化1次</span>
+        <button onclick="event.stopPropagation(); speakText('連勝、簽到、挖礦、翻牌都有機會獲得神器碎片，每個碎片可任選一項神器強化1次')" style="background:linear-gradient(135deg,#06b6d4,#0284c7);border:none;border-radius:10px;padding:4px 8px;color:white;font-size:.9em;font-weight:900;cursor:pointer;flex-shrink:0;">🔊</button>
+      </div>
       <div class="artifact-grid" id="artifactGrid"></div>
     </div>
   </div>
@@ -1981,7 +1984,7 @@ button:active { transform:scale(.96); }
           <button class="bedit-tab active" onclick="beditSetSubject('chinese')">  🇹🇼 國文</button>
           <button class="bedit-tab"        onclick="beditSetSubject('english')">  🇺🇸 英文</button>
           <button class="bedit-tab"        onclick="beditSetSubject('science')">  🔬 自然</button>
-          <button class="bedit-tab"        onclick="beditSetSubject('geography')">🌍 地理</button>
+          <button class="bedit-tab"        onclick="beditSetSubject('geography')">🌍 社會</button>
         </div>
         <div class="bedit-list" id="beditList"></div>
         <button class="bedit-add-btn" onclick="beditOpenAdd()">＋ 新增題目</button>
@@ -1995,8 +1998,8 @@ button:active { transform:scale(.96); }
         <div class="admin-section-title">🪜 關卡進度總覽（測試用）</div>
         <div id="tierStatusBox" style="font-size:.85em;line-height:1.8"></div>
         <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-          <button class="admin-btn" onclick="adjustMathStage(-5)">數學 -5階</button>
-          <button class="admin-btn" onclick="adjustMathStage(5)">數學 +5階</button>
+          <button class="admin-btn" onclick="adjustMathStage(-1)">數學-1階</button>
+          <button class="admin-btn" onclick="adjustMathStage(1)">數學+1階</button>
           <button class="admin-btn red" onclick="resetAllTierProgress()">重置全部關卡進度</button>
         </div>
       </div>
@@ -2321,6 +2324,7 @@ const FAMILY_MOD = {// 種族加成
   anglerfish:    { hp:1.1,  atk:1.1,  def:1,    gold:1.2,  exp:1    },
   wild_boar:     { hp:1,    atk:1,    def:1,    gold:1,    exp:1    },
   panda:         { hp:1,    atk:1.1,  def:1,    gold:1,    exp:1    },
+  dog:           { hp:1,    atk:1,    def:1,    gold:1,    exp:1    },
 };
 
 const ENEMIES = [
@@ -2454,6 +2458,11 @@ const ENEMIES = [
   {id:'s128',name:'竹劍貓熊',    emoji:'🐼',stage:128,family:'panda',        alienMult:15.0},
   {id:'s129',name:'竹槍貓熊',    emoji:'🐼',stage:129,family:'panda',        alienMult:15.5},
   {id:'s130',name:'竹刀貓熊',    emoji:'🐼',stage:130,family:'panda',        alienMult:16.0},
+  {id:'s131',name:'戰車博美',    emoji:'🐕',stage:131,family:'dog',          alienMult:16.5},
+  {id:'s132',name:'戰車雪納瑞',  emoji:'🐕',stage:132,family:'dog',          alienMult:17.0},
+  {id:'s133',name:'戰車貴賓狗',  emoji:'🐕',stage:133,family:'dog',          alienMult:17.5},
+  {id:'s134',name:'戰艦哈士奇',  emoji:'🐕',stage:134,family:'dog',          alienMult:18.0},
+  {id:'s135',name:'戰艦柴犬',    emoji:'🐕',stage:135,family:'dog',          alienMult:18.5},
 ];
 
 function enemyStats(id) {// 怪物數值計算
@@ -3177,18 +3186,18 @@ function getMathStageCfg(stage) {
     cfg.sub.enabled = true;
     cfg.sub.bMax = Math.min(addLimit, 2 + (stage - 10));
   }
-  if (stage >= 30) {
+  if (stage >= 25) {
     cfg.mul.enabled = true;
-    const mulLimit = Math.min(9, 3 + Math.floor((stage - 30) / 10));
+    const mulLimit = Math.min(11, 3 + Math.floor((stage - 25) / 5));
     cfg.mul.aMax = mulLimit;
     cfg.mul.bMax = mulLimit;
   }
-  if (stage >= 100) {
+  if (stage >= 40) {
     cfg.div.enabled = true;
-    cfg.div.aMax = Math.min(20, 6 + Math.floor((stage - 100) / 10));
-    cfg.div.dMax = Math.min(6,  2 + Math.floor((stage - 100) / 10));
+    cfg.div.aMax = Math.min(30, 6 + Math.floor((stage - 40) / 10));
+    cfg.div.dMax = Math.min(7,  2 + Math.floor((stage - 40) / 10));
   }
-  if (stage >= 200) { //第200階開放「猜符號」題型
+  if (stage >= 100) { //第100階開放「猜符號」題型
     cfg.reverseChance = 0.3;
   }
   return cfg;
@@ -3203,25 +3212,19 @@ function ensureMathStageInit() {
 }
 
 // 每次「第一次作答」數學題後呼叫：依最近視窗表現動態升降階
-// 升階：視窗滿10題且9題以上第一次就答對；降階：視窗內累積4題第一次就答錯（不用等滿10題）
 function updateMathStage(firstAttemptCorrect) {
   const q = state.quiz;
   q.mathWindowCount = (q.mathWindowCount || 0) + 1;
   if (firstAttemptCorrect) q.mathWindowCorrect = (q.mathWindowCorrect || 0) + 1;
   else q.mathWindowWrong = (q.mathWindowWrong || 0) + 1;
-
-  if (q.mathWindowWrong >= 4) {
-    const before = q.mathStage || 1;
-    q.mathStage = Math.max(1, before - 1);
+  if (q.mathWindowWrong >= 4) {// 降階：視窗內累積4題第一次就答錯（不用等滿10題）
+    q.mathStage = Math.max(1, (q.mathStage || 1) - 1);
     q.mathWindowCount = 0; q.mathWindowCorrect = 0; q.mathWindowWrong = 0;
-    if (q.mathStage !== before) showToast('📉 數學難度稍微調降，慢慢來～');
     return;
   }
-  if (q.mathWindowCount >= 10) {
+  if (q.mathWindowCount >= 10) {// 升階：視窗滿10題且9題以上第一次就答對
     if (q.mathWindowCorrect >= 9) {
-      const before = q.mathStage || 1;
-      q.mathStage = Math.min(MATH_STAGE_MAX, before + 1);
-      if (q.mathStage !== before) showToast('📈 數學難度提升囉！');
+      q.mathStage = Math.min(MATH_STAGE_MAX, (q.mathStage || 1) + 1);
     }
     q.mathWindowCount = 0; q.mathWindowCorrect = 0; q.mathWindowWrong = 0;
   }
@@ -3326,30 +3329,31 @@ function generateMathReverse(cfg) {//自動數學題
 // 防重複題目──────────────────────────────────
 // 有題號（分階關卡題目）就用「科目+題號」當唯一鍵，比題目全文短很多，省存檔空間；
 // 沒題號（舊題／數學自動出題）沿用 "科目|題目文字|正確答案" 文字比對
-const RECENT_Q_MAX = 60; // 記憶幾題
-if (!state.quiz.recentKeys) state.quiz.recentKeys = [];
+if (!state.quiz.recentKeys) state.quiz.recentKeys = {};
 
-function _qKey(subject, p) {
-  if (p && p.id != null) return `${subject}#${p.id}`;
-  return `${subject}|${p.q}|${p.ans}`;
+function _qKey(p) {
+  if (p && p.id != null) return `${p.id}`;
+  return `${p.q}|${p.ans}`;
 }
 
+const MEMORY_RATIO = 0.6; // 記住最近6成，之後可以調整這個比例
 function _pickFromPool(subject, pool) {
   if (pool.length === 0) return null;
-  const recent = state.quiz.recentKeys || [];// 優先選紀錄以外的題目
-  const fresh = pool.filter(p => !recent.includes(_qKey(subject, p)));
-  const candidates = fresh.length > 0 ? fresh : pool; // 全出過不限制
+  const cap = Math.max(1, Math.ceil(pool.length * MEMORY_RATIO));
+  const list = state.quiz.recentKeys[subject] || (state.quiz.recentKeys[subject] = []);
+  const fresh = pool.filter(p => !list.includes(_qKey(p)));
+  const candidates = fresh.length > 0 ? fresh : pool;
   const p = candidates[Math.floor(Math.random() * candidates.length)];
-  // 記錄此題
-  const key = _qKey(subject, p);
-  state.quiz.recentKeys = [key, ...recent].slice(0, RECENT_Q_MAX);
+  const key = _qKey(p);
+  list.unshift(key);
+  if (list.length > cap) list.length = cap;
   return p;
 }
 
-// ── 四科（國文/英文/自然/地理）關卡系統：以題號分批解鎖 ──
-const SUBJECT_CATEGORY_MAP = { math:'數學', chinese:'國文', english:'英文', science:'自然', geography:'地理' };
+// ── 四科（國文/英文/自然/社會）關卡系統：以題號分批解鎖 ──
+const SUBJECT_CATEGORY_MAP = { math:'數學', chinese:'國文', english:'英文', science:'自然', geography:'社會' };
 const TIER_SUBJECTS = ['chinese','english','science','geography'];
-const SUBJ_LABEL = { chinese:'📖 國文', english:'🔤 英文', science:'🌿 自然', geography:'🌍 地理' };
+const SUBJ_LABEL = { chinese:'📖 國文', english:'🔤 英文', science:'🌿 自然', geography:'🌍 社會' };
 
 // 彙整某科目「有題號」的題目（匯入JSON＋自訂題庫），依題號排序；沒題號的舊題目不參與關卡機制
 function getNumberedPool(subject) {
@@ -3432,7 +3436,6 @@ function pickQuestionTiered(subject) {
   if (pool.length === 0) return null;
   ensureTierState(subject, pool);
   const t = state.tier[subject];
-
   // 優先處理到期的延後重考題
   if (t.retryQueue.length) {
     t.retryQueue.forEach(e => e.wait--);
@@ -3443,7 +3446,6 @@ function pickQuestionTiered(subject) {
       if (q) return _buildTierEntry(q);
     }
   }
-
   const maxId = pool[pool.length - 1].id;
   const upper = Math.min(t.unlockedMax, maxId);
   const candidates = pool.filter(p => p.id <= upper);
@@ -3459,9 +3461,8 @@ function pickQuestion(subject) {
     const numberedMathPool = getNumberedPool('math');
     let mathPool;
     if (numberedMathPool.length > 0) {
-      // 固定題庫（有題號的）開放範圍跟著 mathStage 等比例放大，避免自動出題還在加法、固定題庫卻跑出除法題的怪現象
-      const ratio = Math.min(1, stage / MATH_STAGE_MAX);
-      const openCount = Math.max(1, Math.round(numberedMathPool.length * ratio));
+      // 固定題庫（有題號的）每1階開放1題，並用題庫實際題數封頂
+      const openCount = Math.min(numberedMathPool.length, Math.max(1, stage));
       mathPool = numberedMathPool.slice(0, openCount);
     } else {
       const mathImported = questionsData?.questions?.filter(x => x.category === '數學') || [];
@@ -3479,7 +3480,7 @@ function pickQuestion(subject) {
   const tiered = pickQuestionTiered(subject);
   if (tiered) return tiered;
   const imported = questionsData?.questions?.filter(x => {
-    const map = { chinese:'國文', english:'英文', science:'自然', geography:'地理' };
+    const map = { chinese:'國文', english:'英文', science:'自然', geography:'社會' };
     return x.category === (map[subject] || subject);
   }) || [];
   const custom  = state.customQ[subject] || [];
@@ -3504,7 +3505,7 @@ function loadQuestion() {
 
 function renderQuestion() {
   const { subject, q } = state.quiz;
-  const labels = { math:'🔢 數學', chinese:'📖 國文', english:'🔤 英文', science:'🌿 自然', geography:'🌍 地理' };
+  const labels = { math:'🔢 數學', chinese:'📖 國文', english:'🔤 英文', science:'🌿 自然', geography:'🌍 社會' };
   const activeCls = { math:'active-math', chinese:'active-chinese', english:'active-english', science:'active-science', geography:'active-geography' };
   SUBJECTS.forEach(s => {
     const el = document.getElementById(`pip-${s}`);
@@ -5180,7 +5181,7 @@ function speakQ() {
     text = text.replace(/[?？]/g, '').replace(/["""'']/g, '');
     _doSpeak(text, speechCfg.lang, speechCfg.volume.quiz);
   } else {
-    // 國文、自然、地理：移除問號，符號轉國字
+    // 國文、自然、社會：移除問號，符號轉國字
     text = text
       .replace(/[?？]/g, '')
       .replace(/[=＝]/g, '等於')
@@ -6394,7 +6395,7 @@ function importSave(event) {
 }
 
 function exportQuestions() {
-  const subjectMap = { math:'數學', chinese:'國文', english:'英文', science:'自然', geography:'地理' };
+  const subjectMap = { math:'數學', chinese:'國文', english:'英文', science:'自然', geography:'社會' };
   const questions = [];
   ['math','chinese','english','science','geography'].forEach(sub => {
     // 合併 customQ 和 editedBuiltin
@@ -6438,7 +6439,7 @@ function loadQuestionsFile(event) {
       const data = JSON.parse(e.target.result);
       if (!data.questions) { showToast('⚠️ 格式錯誤，找不到 questions 欄位'); return; }
       questionsData = data;
-      const subjectMap = { '數學':'math','國文':'chinese','英文':'english','自然':'science','地理':'geography' };
+      const subjectMap = { '數學':'math','國文':'chinese','英文':'english','自然':'science','社會':'geography' };
       if (!state.customQ) state.customQ = { math:[], chinese:[], english:[], science:[], geography:[] };
       // 清空再重新寫入（避免重複）
       state.customQ = { math:[], chinese:[], english:[], science:[], geography:[] };
@@ -6500,7 +6501,7 @@ function importExcel(event) {
         '國文':'chinese','中文':'chinese','語文':'chinese','國語':'chinese','chinese':'chinese','Chinese':'chinese',
         '英文':'english','英語':'english','english':'english','English':'english','ENGLISH':'english',
         '自然':'science','自然科學':'science','科學':'science','science':'science','Science':'science','SCIENCE':'science',
-        '地理':'geography','geography':'geography','Geography':'geography','GEOGRAPHY':'geography',
+        '社會':'geography','geography':'geography','Geography':'geography','GEOGRAPHY':'geography',
       };
       let total = 0;
       const newQ = { math:[], chinese:[], english:[], science:[], geography:[] };
@@ -6545,7 +6546,7 @@ function importExcel(event) {
         });
       });
 
-      if (total === 0) { showToast('⚠️ 找不到題目，請確認工作表名稱（數學/國文/英文/自然/地理）或欄位含「科目」'); return; }
+      if (total === 0) { showToast('⚠️ 找不到題目，請確認工作表名稱（數學/國文/英文/自然/社會）或欄位含「科目」'); return; }
       // 合併進 customQ：有題號的以題號比對覆蓋更新，沒題號的沿用舊的文字比對去重
       Object.keys(newQ).forEach(sub => {
         const existing = state.customQ[sub] || [];
@@ -6561,7 +6562,7 @@ function importExcel(event) {
         state.customQ[sub] = merged;
       });
       _dirty = true; doSave(); // 立即寫入，不等 15 秒
-      showToast(`✅ Excel 匯入 ${total} 題成功！（數學${newQ.math.length} 國文${newQ.chinese.length} 英文${newQ.english.length} 自然${newQ.science.length} 地理${newQ.geography.length}）`);
+      showToast(`✅ Excel 匯入 ${total} 題成功！（數學${newQ.math.length} 國文${newQ.chinese.length} 英文${newQ.english.length} 自然${newQ.science.length} 社會${newQ.geography.length}）`);
       loadQuestion();
     } catch(err) {
       showToast('❌ 讀取失敗，請確認是 .xlsx 格式');
@@ -7446,118 +7447,118 @@ const ACHIEVEMENTS = [
   check: () => (state.stats?.scienceCorrect || 0) >= 550,
 },
 {
-  id: 'geography10', name: '地理小能手1', desc: '地理題答對 10 題', category: '學習', icon: '🌍', goal: 10,
+  id: 'geography10', name: '社會小能手1', desc: '社會題答對 10 題', category: '學習', icon: '🌍', goal: 10,
   reward: { gems: 15 },
   progress: () => Math.min(state.stats?.geographyCorrect || 0, 10),
   check: () => (state.stats?.geographyCorrect || 0) >= 10,
 },
 {
-  id: 'geography20', name: '地理小能手2', desc: '地理題答對 20 題', category: '學習', icon: '🌍', requires: 'geography10', goal: 10,
+  id: 'geography20', name: '社會小能手2', desc: '社會題答對 20 題', category: '學習', icon: '🌍', requires: 'geography10', goal: 10,
   reward: { gems: 30 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 10, 0), 10),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 20)} / 20`,
   check: () => (state.stats?.geographyCorrect || 0) >= 20,
 },
 {
-  id: 'geography30', name: '地理小能手3', desc: '地理題答對 30 題', category: '學習', icon: '🌍', requires: 'geography20', goal: 10,
+  id: 'geography30', name: '社會小能手3', desc: '社會題答對 30 題', category: '學習', icon: '🌍', requires: 'geography20', goal: 10,
   reward: { gems: 45 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 20, 0), 10),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 30)} / 30`,
   check: () => (state.stats?.geographyCorrect || 0) >= 30,
 },
 {
-  id: 'geography40', name: '地理小能手4', desc: '地理題答對 40 題', category: '學習', icon: '🌍', requires: 'geography30', goal: 10,
+  id: 'geography40', name: '社會小能手4', desc: '社會題答對 40 題', category: '學習', icon: '🌍', requires: 'geography30', goal: 10,
   reward: { gems: 60 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 30, 0), 10),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 40)} / 40`,
   check: () => (state.stats?.geographyCorrect || 0) >= 40,
 },
 {
-  id: 'geography50', name: '地理小能手5', desc: '地理題答對 50 題', category: '學習', icon: '🌍', requires: 'geography40', goal: 10,
+  id: 'geography50', name: '社會小能手5', desc: '社會題答對 50 題', category: '學習', icon: '🌍', requires: 'geography40', goal: 10,
   reward: { gems: 75 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 40, 0), 10),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 50)} / 50`,
   check: () => (state.stats?.geographyCorrect || 0) >= 50,
 },
 {
-  id: 'geography60', name: '地理小能手6', desc: '地理題答對 60 題', category: '學習', icon: '🌍', requires: 'geography50', goal: 10,
+  id: 'geography60', name: '社會小能手6', desc: '社會題答對 60 題', category: '學習', icon: '🌍', requires: 'geography50', goal: 10,
   reward: { gems: 90 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 50, 0), 10),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 60)} / 60`,
   check: () => (state.stats?.geographyCorrect || 0) >= 60,
 },
 {
-  id: 'geography80', name: '地理小能手7', desc: '地理題答對 80 題', category: '學習', icon: '🌍', requires: 'geography60', goal: 20,
+  id: 'geography80', name: '社會小能手7', desc: '社會題答對 80 題', category: '學習', icon: '🌍', requires: 'geography60', goal: 20,
   reward: { gems: 120 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 60, 0), 20),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 80)} / 80`,
   check: () => (state.stats?.geographyCorrect || 0) >= 80,
 },
 {
-  id: 'geography100', name: '地理高手1', desc: '地理題答對 100 題', category: '學習', icon: '🌍', requires: 'geography80', goal: 20,
+  id: 'geography100', name: '社會高手1', desc: '社會題答對 100 題', category: '學習', icon: '🌍', requires: 'geography80', goal: 20,
   reward: { gems: 150 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 80, 0), 20),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 100)} / 100`,
   check: () => (state.stats?.geographyCorrect || 0) >= 100,
 },
 {
-  id: 'geography150', name: '地理高手2', desc: '地理題答對 150 題', category: '學習', icon: '🌍', requires: 'geography100', goal: 50,
+  id: 'geography150', name: '社會高手2', desc: '社會題答對 150 題', category: '學習', icon: '🌍', requires: 'geography100', goal: 50,
   reward: { gems: 225 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 100, 0), 50),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 150)} / 150`,
   check: () => (state.stats?.geographyCorrect || 0) >= 150,
 },
 {
-  id: 'geography200', name: '地理高手3', desc: '地理題答對 200 題', category: '學習', icon: '🌍', requires: 'geography150', goal: 50,
+  id: 'geography200', name: '社會高手3', desc: '社會題答對 200 題', category: '學習', icon: '🌍', requires: 'geography150', goal: 50,
   reward: { gems: 300 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 150, 0), 50),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 200)} / 200`,
   check: () => (state.stats?.geographyCorrect || 0) >= 200,
 },
 {
-  id: 'geography250', name: '地理高手4', desc: '地理題答對 250 題', category: '學習', icon: '🌍', requires: 'geography200', goal: 50,
+  id: 'geography250', name: '社會高手4', desc: '社會題答對 250 題', category: '學習', icon: '🌍', requires: 'geography200', goal: 50,
   reward: { gems: 375 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 200, 0), 50),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 250)} / 250`,
   check: () => (state.stats?.geographyCorrect || 0) >= 250,
 },
 {
-  id: 'geography300', name: '地理高手5', desc: '地理題答對 300 題', category: '學習', icon: '🌍', requires: 'geography250', goal: 50,
+  id: 'geography300', name: '社會高手5', desc: '社會題答對 300 題', category: '學習', icon: '🌍', requires: 'geography250', goal: 50,
   reward: { gems: 450 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 250, 0), 50),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 300)} / 300`,
   check: () => (state.stats?.geographyCorrect || 0) >= 300,
 },
 {
-  id: 'geography350', name: '地理高手6', desc: '地理題答對 350 題', category: '學習', icon: '🌍', requires: 'geography300', goal: 50,
+  id: 'geography350', name: '社會高手6', desc: '社會題答對 350 題', category: '學習', icon: '🌍', requires: 'geography300', goal: 50,
   reward: { gems: 525 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 300, 0), 50),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 350)} / 350`,
   check: () => (state.stats?.geographyCorrect || 0) >= 350,
 },
 {
-  id: 'geography400', name: '地理高手7', desc: '地理題答對 400 題', category: '學習', icon: '🌍', requires: 'geography350', goal: 50,
+  id: 'geography400', name: '社會高手7', desc: '社會題答對 400 題', category: '學習', icon: '🌍', requires: 'geography350', goal: 50,
   reward: { gems: 600 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 350, 0), 50),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 400)} / 400`,
   check: () => (state.stats?.geographyCorrect || 0) >= 400,
 },
 {
-  id: 'geography450', name: '地理高手8', desc: '地理題答對 450 題', category: '學習', icon: '🌍', requires: 'geography400', goal: 50,
+  id: 'geography450', name: '社會高手8', desc: '社會題答對 450 題', category: '學習', icon: '🌍', requires: 'geography400', goal: 50,
   reward: { gems: 675 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 400, 0), 50),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 450)} / 450`,
   check: () => (state.stats?.geographyCorrect || 0) >= 450,
 },
 {
-  id: 'geography500', name: '地理高手9', desc: '地理題答對 500 題', category: '學習', icon: '🌍', requires: 'geography450', goal: 50,
+  id: 'geography500', name: '社會高手9', desc: '社會題答對 500 題', category: '學習', icon: '🌍', requires: 'geography450', goal: 50,
   reward: { gems: 750 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 450, 0), 50),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 500)} / 500`,
   check: () => (state.stats?.geographyCorrect || 0) >= 500,
 },
 {
-  id: 'geography550', name: '地理高手10', desc: '地理題答對 550 題', category: '學習', icon: '🌍', requires: 'geography500', goal: 50,
+  id: 'geography550', name: '社會高手10', desc: '社會題答對 550 題', category: '學習', icon: '🌍', requires: 'geography500', goal: 50,
   reward: { gems: 825 },
   progress: () => Math.min(Math.max((state.stats?.geographyCorrect || 0) - 500, 0), 50),
   displayProgress: () => `${Math.min(state.stats?.geographyCorrect || 0, 550)} / 550`,
@@ -8569,10 +8570,23 @@ const ACHIEVEMENTS = [
     const ids = new Set(state.defeatedEnemies || []);
     return ENEMIES.filter(e => e.family === 'panda').every(e => ids.has(e.id));
   },
-},//**新增怪物**3
+},
 {
+  id: 'kill_dog_all', name: '犬族獵人', desc: '擊敗所有犬族', category: '圖鑑', icon: '🐕', _family: 'dog',
+  reward: { gems: 1000, statBonus: { atk: 10, def: 10, mag: 10 }},
+  progress: () => {
+    const ids = new Set(state.defeatedEnemies || []);
+    return ENEMIES.filter(e => e.family === 'dog' && ids.has(e.id)).length;
+  },
+  get goal() { return ENEMIES.filter(e => e.family === 'dog').length; },
+  check: () => {
+    const ids = new Set(state.defeatedEnemies || []);
+    return ENEMIES.filter(e => e.family === 'dog').every(e => ids.has(e.id));
+  },
+},
+{//**新增怪物**3
   id: 'kill_all_enemy', name: '獵人大師', desc: '擊敗所有敵人', category: '圖鑑', icon: '🏆', _family: 'all',
-  reward: { gems: 800, statBonus: { atk: 4, def: 4, mag: 4 }},
+  reward: { gems: 1500, statBonus: { atk: 10, def: 10, mag: 10 }},
   progress: () => {
     const ids = new Set(state.defeatedEnemies || []);
     return ENEMIES.filter(e => ids.has(e.id)).length;
@@ -9298,6 +9312,7 @@ const ACHIEVEMENT_FAMILY_GROUPS = [
   { key:'anglerfish',  label:'鮟鱇族',    color:'#0369a1', achId:'kill_anglerfish_all' },
   { key:'wild_boar',   label:'野豬族',    color:'#a0522d', achId:'kill_wild_boar_all' },
   { key:'panda',       label:'貓熊族',    color:'#374151', achId:'kill_panda_all' },
+  { key:'dog',         label:'犬族',      color:'#d2b48c', achId:'kill_dog_all' },
 ];//**新增怪物**4
 
 // 取得成就卡片圖示：怪物類成就優先讀取圖鑑縮圖，讀不到才 fallback 成 emoji
@@ -9948,7 +9963,7 @@ function init() {
   // 嘗試自動載入題庫
   fetch('./questions.json').then(r=>r.json()).then(data=>{
     questionsData = data;
-    const subjectMap = {'數學':'math','國文':'chinese','英文':'english','自然':'science','地理':'geography'};
+    const subjectMap = {'數學':'math','國文':'chinese','英文':'english','自然':'science','社會':'geography'};
     if (!state.customQ) state.customQ = {math:[],chinese:[],english:[],science:[],geography:[]};
     (data.questions||[]).forEach(item=>{
       const sub = subjectMap[item.category];
@@ -10814,9 +10829,9 @@ function mineMove(r, c) {
 function mineCalcReward(type, depth) {//挖礦獎勵計算
   const lv = state.hero.level || 1;
   if (type === 'coin') {
-    return Math.round((lv * 10 + depth * 2) * (Math.floor(Math.random() * 2) + 2));
+    return Math.round((lv * 10 + depth * 1.5) * (Math.floor(Math.random() * 2) + 1));
   } else {
-    const base = Math.ceil(lv / 50) + Math.ceil(depth / 150);
+    const base = Math.ceil(lv / 40) + Math.ceil(depth / 180);
     return Math.round(base * (Math.floor(Math.random() * 2) + 1));
   }
 }
