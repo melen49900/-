@@ -2315,7 +2315,7 @@ const FAMILY_MOD = {// 種族加成
   whale:         { hp:1,    atk:1,    def:1.65, gold:1.35, exp:1.1  },
   guard:         { hp:1.2,  atk:1.2,  def:1.2,  gold:1.4,  exp:1.2  },
   kingdemon:     { hp:1.3,  atk:1.3,  def:1.3,  gold:1.5,  exp:1.45 },
-  octopus:       { hp:1,    atk:1.05, def:1,    gold:1.05, exp:1    },
+  octopus:       { hp:1,    atk:1.05, def:1,    gold:1.05, exp:1    },//**新增怪物**1
   sloth:         { hp:1.05, atk:1,    def:1.05, gold:1.1,  exp:1    },
   Hercules:      { hp:1,    atk:1,    def:2,    gold:1.2,  exp:1    },
   anglerfish:    { hp:1.1,  atk:1.1,  def:1,    gold:1.2,  exp:1    },
@@ -2445,7 +2445,7 @@ const ENEMIES = [
   {id:'s119',name:'紫紋鮟鱇',    emoji:'🐟',stage:119,family:'anglerfish',   alienMult:10.5},
   {id:'s120',name:'金紋鮟鱇',    emoji:'🐟',stage:120,family:'anglerfish',   alienMult:11.0},
   {id:'s121',name:'綠紋野豬',    emoji:'🐗',stage:121,family:'wild_boar',    alienMult:11.5},
-  {id:'s122',name:'藍紋野豬',    emoji:'🐗',stage:122,family:'wild_boar',    alienMult:12.0},
+  {id:'s122',name:'藍紋野豬',    emoji:'🐗',stage:122,family:'wild_boar',    alienMult:12.0},//**新增怪物**2
   {id:'s123',name:'紅紋野豬',    emoji:'🐗',stage:123,family:'wild_boar',    alienMult:12.5},
   {id:'s124',name:'紫紋野豬',    emoji:'🐗',stage:124,family:'wild_boar',    alienMult:13.0},
   {id:'s125',name:'金紋野豬',    emoji:'🐗',stage:125,family:'wild_boar',    alienMult:13.5},
@@ -2460,10 +2460,10 @@ function enemyStats(id) {// 怪物數值計算
   const e = ENEMIES.find(x => x.id === id);
   if (!e) return null;
   const vary  = v => Math.max(1, Math.round(v * (1 + (Math.random() * 0.06 - 0.03))));
-  const scale1 = Math.pow(1.125, e.stage - 1);// 生命成長倍率
+  const scale1 = Math.pow(1.124, e.stage - 1);// 生命成長倍率
   const scale2 = Math.pow(1.087, e.stage - 1);// 攻擊成長倍率
-  const scale3 = Math.pow(1.089, e.stage - 1);// 防禦成長倍率
-  const scale4 = Math.pow(1.067, e.stage - 1);// 金幣及經驗成長倍率
+  const scale3 = Math.pow(1.093, e.stage - 1);// 防禦成長倍率
+  const scale4 = Math.pow(1.065, e.stage - 1);// 金幣及經驗成長倍率
   const mod   = FAMILY_MOD[e.family] || { hp:1, atk:1, def:1, gold:1, exp:1 };
   const baseMult   = e.postMult || 1;//第二階段魔界
   const stones     = state?.curseStones || 0;
@@ -2481,11 +2481,11 @@ function enemyStats(id) {// 怪物數值計算
   const finalExcessRatio = e.alienMult ? alienExcessRatio : excessRatio;
   return {
     ...e,
-    maxHp: vary(Math.round((27 * scale1 + e.stage *81)* mod.hp * totalMult)),
-    atk:   vary(Math.round((20 * scale2 + e.stage * 5)* mod.atk* totalMult)),
-    def:   vary(Math.round((30 * scale3 + e.stage * 8)* mod.def* totalMult)),
-    gold:  vary(Math.round((10 * scale4 + e.stage * 1)* mod.gold)),
-    exp:   vary(Math.round((20 * scale4 + e.stage * 2)* mod.exp)),
+    maxHp: vary(Math.round((26 * scale1 + e.stage * 75)* mod.hp * totalMult)),
+    atk:   vary(Math.round((20 * scale2 + e.stage *  5)* mod.atk* totalMult)),
+    def:   vary(Math.round((33 * scale3 + e.stage *  5)* mod.def* totalMult)),
+    gold:  vary(Math.round(( 7 * scale4 + e.stage *  3)* mod.gold)),
+    exp:   vary(Math.round((10 * scale4 + e.stage * 10)* mod.exp)),
     heroAtkBoost:  1 + finalExcessRatio,
     heroDmgReduce: 1 / (1 + finalExcessRatio),
   };
@@ -2504,11 +2504,11 @@ const BUILTIN_Q = {
 function heroStatsForLevel(lv) {
   const t = lv - 1;
   return {
-    maxHp:   Math.round(200  * (1.015 ** t)),  // 每級強化%數
-    maxMp:   Math.round(50   * (1.009 ** t)),
-    baseAtk: Math.round(30   * (1.014 ** t)),
-    baseMag: Math.round(30   * (1.014 ** t)),
-    baseDef: Math.round(15   * (1.014 ** t)),
+    maxHp:   Math.round(200  * (1.023 ** t)),  // 每級強化%數
+    maxMp:   Math.round(50   * (1.008 ** t)),
+    baseAtk: Math.round(50   * (1.016 ** t)),
+    baseMag: Math.round(50   * (1.016 ** t)),
+    baseDef: Math.round(50   * (1.018 ** t)),
     crit:    0.05 + Math.floor((lv - 1) / 30) * 0.01,
     critDmg: 1.50 + Math.floor((lv - 1) /  5) * 0.01,
   };
@@ -2520,7 +2520,7 @@ let state = {
     charId:'fox', name:'勇士',
     level:1, exp:0, expNeeded:100,
     hp:200, maxHp:200, mp:50, maxMp:50,
-    baseAtk:30, baseDef:30, baseMag:15,
+    baseAtk:50, baseDef:50, baseMag:50,
     crit:0.05, critDmg:1.50,
     gold:0, gems:0,
   },
@@ -2535,7 +2535,7 @@ let state = {
   battle: {
     enemyId: 's01',
     enemyHp:0, enemyMaxHp:0,
-    heroHp:100, heroMp:50,
+    heroHp:200, heroMp:50,
     log:'選擇下方敵人開始戰鬥！',
     cooldown:false,
     isFrozen:false,
@@ -3165,27 +3165,31 @@ const MATH_STAGE_MAX = 300;
 
 function getMathStageCfg(stage) {
   stage = Math.max(1, Math.min(MATH_STAGE_MAX, Number(stage) || 1));
-  const addLimit = 5 + 2 * (stage - 1); // 加法上限：第1階5，之後每階+2，持續套用
+  const addLimit = 5 + 2 * (stage - 1);
   const cfg = {
-    add: { enabled:true,  label:'➕ 加法', aMin:1, aMax:addLimit, bMin:1, bMax:addLimit },
-    sub: { enabled:false, label:'➖ 減法', aMin:1, aMax:addLimit, bMin:1, bMax:2 },
+    add: { enabled:true,  label:'➕ 加法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:1, bMax:addLimit },
+    sub: { enabled:false, label:'➖ 減法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:1, bMax:2 },
     mul: { enabled:false, label:'✖️ 乘法', aMin:1, aMax:3,        bMin:1, bMax:3 },
     div: { enabled:false, label:'➗ 除法', aMin:6, aMax:6,        dMin:2, dMax:2 },
+    reverseChance: 0, // 猜符號初始出現機率
   };
-  if (stage >= 10) { // 第10階開放減法：a 沿用加法上限，b 從2起、每階+1
+  if (stage >= 10) {
     cfg.sub.enabled = true;
     cfg.sub.bMax = Math.min(addLimit, 2 + (stage - 10));
   }
-  if (stage >= 30) { // 第30階開放乘法：a、b 從3起，每10階+1，上限9
+  if (stage >= 30) {
     cfg.mul.enabled = true;
     const mulLimit = Math.min(9, 3 + Math.floor((stage - 30) / 10));
     cfg.mul.aMax = mulLimit;
     cfg.mul.bMax = mulLimit;
   }
-  if (stage >= 100) { // 第100階開放除法：被除數從6起(上限20)，除數從2起(上限6)，每10階+1
+  if (stage >= 100) {
     cfg.div.enabled = true;
     cfg.div.aMax = Math.min(20, 6 + Math.floor((stage - 100) / 10));
     cfg.div.dMax = Math.min(6,  2 + Math.floor((stage - 100) / 10));
+  }
+  if (stage >= 200) { //第200階開放「猜符號」題型
+    cfg.reverseChance = 0.3;
   }
   return cfg;
 }
@@ -3265,7 +3269,7 @@ function generateMath(cfg) {
     while (wrong.size < 3) {
       const d = Math.floor(Math.random() * Math.max(3, Math.ceil(ans * .3))) + 1;
       const w = Math.random() < .5 ? Number(ans) + d : Math.max(0, Number(ans) - d);
-      if (String(w) !== ans) wrong.add(String(w));
+      if (String(w) !== String(ans)) wrong.add(String(w));
     }
   }
   const opts = [ans, ...wrong].sort(() => Math.random() - .5);
@@ -3289,21 +3293,21 @@ function generateMathReverse(cfg) {//自動數學題
   const ri = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
   let a, b, ans, q;
   if (op === 'add') {                                 //加法
-    a = ri(c.aMin, Math.min(c.aMax, 20)); 
-    b = ri(c.bMin, Math.min(c.bMax, 20));
+    a = ri(c.aMin, c.aMax);
+    b = ri(c.bMin, c.bMax);
     ans = '＋'; q = `${a} ？ ${b} ＝ ${a + b}`;
   } else if (op === 'sub') {                          //減法
-    a = ri(c.aMin, Math.min(c.aMax, 20)); 
-    b = ri(c.bMin, Math.min(Math.min(c.bMax, a), 20));
+    a = ri(c.aMin, c.aMax);
+    b = ri(c.bMin, Math.min(c.bMax, a));
     ans = '－'; q = `${a} ？ ${b} ＝ ${a - b}`;
   } else if (op === 'mul') {                          //乘法
-    a = ri(c.aMin, Math.min(c.aMax, 9)); 
-    b = ri(c.bMin, Math.min(c.bMax, 5));
+    a = ri(c.aMin, c.aMax);
+    b = ri(c.bMin, c.bMax);
     ans = '×'; q = `${a} ？ ${b} ＝ ${a * b}`;
   } else {                                            //除法
     b = ri(c.dMin, c.dMax);
     const aMinAdj = Math.max(c.aMin, b);
-    a = ri(aMinAdj, Math.min(Math.max(aMinAdj, c.aMax), 20));
+    a = ri(aMinAdj, Math.max(aMinAdj, c.aMax));
     if (a % b !== 0) return generateMathReverse(cfg);
     ans = '÷'; q = `${a} ？ ${b} ＝ ${a / b}`;
   }
@@ -3315,28 +3319,29 @@ function generateMathReverse(cfg) {//自動數學題
     return calcResult(sym, a, b) === correctResult;
   });
   if (isAmbiguous) return generateMathReverse(cfg); // 有歧義就重新出題
-
   const opts = allSymbols.sort(() => Math.random() - .5);
   return { q, ans, opts };
 }
 
 // 防重複題目──────────────────────────────────
-// 用 "科目|題目文字|正確答案" 作為唯一鍵
+// 有題號（分階關卡題目）就用「科目+題號」當唯一鍵，比題目全文短很多，省存檔空間；
+// 沒題號（舊題／數學自動出題）沿用 "科目|題目文字|正確答案" 文字比對
 const RECENT_Q_MAX = 60; // 記憶幾題
 if (!state.quiz.recentKeys) state.quiz.recentKeys = [];
 
-function _qKey(subject, q, ans) {
-  return `${subject}|${q}|${ans}`;
+function _qKey(subject, p) {
+  if (p && p.id != null) return `${subject}#${p.id}`;
+  return `${subject}|${p.q}|${p.ans}`;
 }
 
 function _pickFromPool(subject, pool) {
   if (pool.length === 0) return null;
   const recent = state.quiz.recentKeys || [];// 優先選紀錄以外的題目
-  const fresh = pool.filter(p => !recent.includes(_qKey(subject, p.q, p.ans)));
+  const fresh = pool.filter(p => !recent.includes(_qKey(subject, p)));
   const candidates = fresh.length > 0 ? fresh : pool; // 全出過不限制
   const p = candidates[Math.floor(Math.random() * candidates.length)];
   // 記錄此題
-  const key = _qKey(subject, p.q, p.ans);
+  const key = _qKey(subject, p);
   state.quiz.recentKeys = [key, ...recent].slice(0, RECENT_Q_MAX);
   return p;
 }
@@ -3394,7 +3399,6 @@ function advanceTier(subject) {
   if (t.unlockedMax >= maxId) { t.pendingIds = []; return; } // 已全部解鎖，沒有下一批了
   t.unlockedMax = Math.min(maxId, t.unlockedMax + 5);
   recomputePendingBatch(subject, pool);
-  showToast(`🎉 ${SUBJ_LABEL[subject] || subject} 難度晉級！開放到第 ${t.unlockedMax} 題`);
 }
 
 // 答對某題號時呼叫：若該題屬於目前這一批門檻，就從待通過清單移除，全部通過後自動晉級
@@ -3451,7 +3455,7 @@ function pickQuestion(subject) {
   if (subject === 'math') {
     ensureMathStageInit();
     const stage = state.quiz.mathStage || 1;
-    const MATH_BANK_RATIO = 0.3;// 數學題庫占比，0全隨機、1全題庫
+    const MATH_BANK_RATIO = 0.15;// 數學題庫占比，0全隨機、1全題庫
     const numberedMathPool = getNumberedPool('math');
     let mathPool;
     if (numberedMathPool.length > 0) {
@@ -3470,7 +3474,7 @@ function pickQuestion(subject) {
       if (p) { const e = { q: p.q, ans: p.ans, opts: (p.opts || []).slice().sort(() => Math.random()-.5) }; if (p.img) e.img = p.img; return e; }
     }
     const cfg = getMathStageCfg(stage);
-    return Math.random() < 0.3 ? generateMathReverse(cfg) : generateMath(cfg);
+    return Math.random() < reverseChance ? generateMathReverse(cfg) : generateMath(cfg);
   }
   const tiered = pickQuestionTiered(subject);
   if (tiered) return tiered;
@@ -4664,7 +4668,7 @@ function doAttack() {
   }
   const hitDelay = isMagic ? 450 : 350;
   setTimeout(() => {
-    const { dmg, isCrit } = calcDmg(calcAtkDmg(Math.round(s.atk * (stats.heroAtkBoost || 1)), stats.def, 4));
+    const { dmg, isCrit } = calcDmg(calcAtkDmg(Math.round(s.atk * (stats.heroAtkBoost || 1)), stats.def));
     spawnHitFx('enemy', `⚔️-${dmg}${isCrit?' 💥':''}`, isCrit ? '#FF0000':'#FF8800');
     enSvg.classList.add('hurt-anim');
     setTimeout(() => enSvg.classList.remove('hurt-anim'), 380);
@@ -8559,7 +8563,7 @@ const ACHIEVEMENTS = [
     const ids = new Set(state.defeatedEnemies || []);
     return ENEMIES.filter(e => e.family === 'panda').every(e => ids.has(e.id));
   },
-},
+},//**新增怪物**3
 {
   id: 'kill_all_enemy', name: '獵人大師', desc: '擊敗所有敵人', category: '圖鑑', icon: '🏆', _family: 'all',
   reward: { gems: 800, statBonus: { atk: 4, def: 4, mag: 4 }},
@@ -9255,37 +9259,40 @@ function renderQuestTab() {
   });
 }
 
-// 怪物族群 → 成就ID 對照表（共用於「全部」分頁圖示與「圖鑑」分頁）
+// 怪物族群
 const ACHIEVEMENT_FAMILY_GROUPS = [
-  { key:'goblin',      label:'哥布林族',  emoji:'👺', color:'#29c46b', achId:'kill_goblin_all' },
-  { key:'flower_demon',label:'花妖族',    emoji:'🌸', color:'#f02ecf', achId:'kill_flower_demon_all' },
-  { key:'treant',      label:'樹妖族',    emoji:'🌳', color:'#85621d', achId:'kill_treant_all' },
-  { key:'beast',       label:'狼族',      emoji:'🐺', color:'#8f746a', achId:'kill_beast_all' },
-  { key:'skeleton',    label:'骷髏族',    emoji:'💀', color:'#91b0bf', achId:'kill_skeleton_all' },
-  { key:'undead',      label:'惡靈族',    emoji:'👻', color:'#327cc2', achId:'kill_undead_all' },
-  { key:'orc',         label:'半獸人族',  emoji:'👹', color:'#67bf15', achId:'kill_orc_all' },
-  { key:'element',     label:'元素族',    emoji:'🌍', color:'#e32929', achId:'kill_element_all' },
-  { key:'spider',      label:'蜘蛛族',    emoji:'🕷️', color:'#361163', achId:'kill_spider_all' },
-  { key:'crystal',     label:'水晶族',    emoji:'🔴', color:'#fcf644', achId:'kill_crystal_all' },
-  { key:'frog',        label:'蛙怪族',    emoji:'🐸', color:'#70ba3c', achId:'kill_frog_all' },
-  { key:'capybara',    label:'水豚',      emoji:'🦝', color:'#ab8138', achId:'kill_capybara_all' },
-  { key:'dragon',      label:'龍族',      emoji:'🐲', color:'#e37617', achId:'kill_dragon_all' },
-  { key:'demon',       label:'惡魔族',    emoji:'😈', color:'#c70a0a', achId:'kill_demon_all' },
-  { key:'demon_king',  label:'魔王',      emoji:'👑', color:'#460d8c', achId:'kill_demon_king_all' },
-  { key:'scorpion',    label:'蠍子族',    emoji:'🦂', color:'#e67e22', achId:'kill_scorpion_all' },
-  { key:'Mabeast',     label:'狼族',      emoji:'🐺', color:'#8f746a', achId:'kill_Mabeast_all' },
-  { key:'turtle',      label:'龜族',      emoji:'🐢', color:'#27ae60', achId:'kill_turtle_all' },
-  { key:'snake',       label:'蛇族',      emoji:'🐍', color:'#8e44ad', achId:'kill_snake_all' },
-  { key:'mushroom',    label:'菌族',      emoji:'🍄', color:'#a0522d', achId:'kill_mushroom_all' },
-  { key:'seal',        label:'海豹',      emoji:'🦭',  color:'#59ded7', achId:'kill_seal_all' },
-  { key:'crab',        label:'螃蟹族',    emoji:'🦀', color:'#e74c3c', achId:'kill_crab_all' },
+  { key:'goblin',      label:'哥布林族',  color:'#29c46b', achId:'kill_goblin_all' },
+  { key:'flower_demon',label:'花妖族',    color:'#f02ecf', achId:'kill_flower_demon_all' },
+  { key:'treant',      label:'樹妖族',    color:'#85621d', achId:'kill_treant_all' },
+  { key:'beast',       label:'狼族',      color:'#8f746a', achId:'kill_beast_all' },
+  { key:'skeleton',    label:'骷髏族',    color:'#91b0bf', achId:'kill_skeleton_all' },
+  { key:'undead',      label:'惡靈族',    color:'#327cc2', achId:'kill_undead_all' },
+  { key:'orc',         label:'半獸人族',  color:'#67bf15', achId:'kill_orc_all' },
+  { key:'element',     label:'元素族',    color:'#e32929', achId:'kill_element_all' },
+  { key:'spider',      label:'蜘蛛族',    color:'#361163', achId:'kill_spider_all' },
+  { key:'crystal',     label:'水晶族',    color:'#fcf644', achId:'kill_crystal_all' },
+  { key:'frog',        label:'蛙怪族',    color:'#70ba3c', achId:'kill_frog_all' },
+  { key:'capybara',    label:'水豚',      color:'#ab8138', achId:'kill_capybara_all' },
+  { key:'dragon',      label:'龍族',      color:'#e37617', achId:'kill_dragon_all' },
+  { key:'demon',       label:'惡魔族',    color:'#c70a0a', achId:'kill_demon_all' },
+  { key:'demon_king',  label:'魔王',      color:'#460d8c', achId:'kill_demon_king_all' },
+  { key:'scorpion',    label:'蠍子族',    color:'#e67e22', achId:'kill_scorpion_all' },
+  { key:'Mabeast',     label:'狼族',      color:'#8f746a', achId:'kill_Mabeast_all' },
+  { key:'turtle',      label:'龜族',      color:'#27ae60', achId:'kill_turtle_all' },
+  { key:'snake',       label:'蛇族',      color:'#8e44ad', achId:'kill_snake_all' },
+  { key:'mushroom',    label:'菌族',      color:'#a0522d', achId:'kill_mushroom_all' },
+  { key:'seal',        label:'海豹',      color:'#59ded7', achId:'kill_seal_all' },
+  { key:'crab',        label:'螃蟹族',    color:'#e74c3c', achId:'kill_crab_all' },
   { keys:['DK','lich','whale','guard'],
-                       label:'四天王',    emoji:'👁️', color:'#2c3e50', achId:'kill_four_kings' },
-  { key:'kingdemon',   label:'魔帝',      emoji:'😡', color:'#7b241c', achId:'kill_kingdemon_all' },
-  { key:'octopus',     label:'章魚族',    emoji:'🐙', color:'#0e7490', achId:'kill_octopus_all' },
-  { key:'sloth',       label:'樹懶族',    emoji:'🦥', color:'#8b5e34', achId:'kill_sloth_all' },
-  { key:'hercules',    label:'長戟大兜蟲',emoji:'🪲',   color:'#313775', achId:'kill_hercules_all' },
-];
+                       label:'四天王',    color:'#2c3e50', achId:'kill_four_kings' },
+  { key:'kingdemon',   label:'魔帝',      color:'#7b241c', achId:'kill_kingdemon_all' },
+  { key:'octopus',     label:'章魚族',    color:'#0e7490', achId:'kill_octopus_all' },
+  { key:'sloth',       label:'樹懶族',    color:'#8b5e34', achId:'kill_sloth_all' },
+  { key:'hercules',    label:'長戟大兜蟲',color:'#313775', achId:'kill_hercules_all' },
+  { key:'anglerfish',  label:'鮟鱇族',    color:'#0369a1', achId:'kill_anglerfish_all' },
+  { key:'wild_boar',   label:'野豬族',    color:'#a0522d', achId:'kill_wild_boar_all' },
+  { key:'panda',       label:'貓熊族',    color:'#374151', achId:'kill_panda_all' },
+];//**新增怪物**4
 
 // 取得成就卡片圖示：怪物類成就優先讀取圖鑑縮圖，讀不到才 fallback 成 emoji
 function getAchievementIconHtml(ach) {
@@ -9670,9 +9677,7 @@ function applyAchievementBonuses() {
 /* ════════記憶翻牌小遊戲═════════════ */
 const MEMORY_STEPS = 12;
 const MEMORY_PAIRS = 6;
-
-// 獎勵表（配對數 0~6）
-const MEMORY_REWARDS = [
+const MEMORY_REWARDS = [// 獎勵表（配對數 0~6）
   { gold:0,   exp:0,    gem:0  },  // 0對
   { gold:50,  exp:100,  gem:5  },  // 1對
   { gold:200, exp:400,  gem:10 },  // 2對
