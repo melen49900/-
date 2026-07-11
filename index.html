@@ -6037,15 +6037,21 @@ function doAutoForge() {
   }
 }
 
-function upgradeCost(card) {
-  const refine = card.refine || 0;
-  return Math.min(5000, (refine + 1) * 100);
+function costAtLevel(level) {//裝備花費，5000前:等級*50、5000後+1
+  if (level <= 50) return level * 100;
+  return 5000 + (level - 50);
 }
 
-function upgradeCost10(card) {
+function upgradeCost(card) {//單次升級
+  const level = (card.refine || 0) + 1;
+  return costAtLevel(level);
+}
+
+function upgradeCost10(card) {//升級十次
+  const base = card.refine || 0;
   let total = 0;
   for (let i = 0; i < 10; i++) {
-    total += Math.min(5000, (( card.refine || 0) + i + 1) * 100);
+    total += costAtLevel(base + i + 1);
   }
   return total;
 }
