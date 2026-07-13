@@ -2449,7 +2449,7 @@ const ENEMIES = [
   {id:'s119',name:'紫紋鮟鱇',    emoji:'🐟',stage:119,family:'anglerfish',   alienMult:10.5},
   {id:'s120',name:'金紋鮟鱇',    emoji:'🐟',stage:120,family:'anglerfish',   alienMult:11.0},
   {id:'s121',name:'綠紋野豬',    emoji:'🐗',stage:121,family:'wild_boar',    alienMult:11.5},
-  {id:'s122',name:'藍紋野豬',    emoji:'🐗',stage:122,family:'wild_boar',    alienMult:12.0},//**新增怪物**2
+  {id:'s122',name:'藍紋野豬',    emoji:'🐗',stage:122,family:'wild_boar',    alienMult:12.0},
   {id:'s123',name:'紅紋野豬',    emoji:'🐗',stage:123,family:'wild_boar',    alienMult:12.5},
   {id:'s124',name:'紫紋野豬',    emoji:'🐗',stage:124,family:'wild_boar',    alienMult:13.0},
   {id:'s125',name:'金紋野豬',    emoji:'🐗',stage:125,family:'wild_boar',    alienMult:13.5},
@@ -2458,11 +2458,16 @@ const ENEMIES = [
   {id:'s128',name:'竹劍貓熊',    emoji:'🐼',stage:128,family:'panda',        alienMult:15.0},
   {id:'s129',name:'竹槍貓熊',    emoji:'🐼',stage:129,family:'panda',        alienMult:15.5},
   {id:'s130',name:'竹刀貓熊',    emoji:'🐼',stage:130,family:'panda',        alienMult:16.0},
-  {id:'s131',name:'戰車博美',    emoji:'🐕',stage:131,family:'dog',          alienMult:16.5},
-  {id:'s132',name:'戰車雪納瑞',  emoji:'🐕',stage:132,family:'dog',          alienMult:17.0},
-  {id:'s133',name:'戰車貴賓狗',  emoji:'🐕',stage:133,family:'dog',          alienMult:17.5},
-  {id:'s134',name:'戰艦哈士奇',  emoji:'🐕',stage:134,family:'dog',          alienMult:18.0},
-  {id:'s135',name:'戰艦柴犬',    emoji:'🐕',stage:135,family:'dog',          alienMult:18.5},
+  {id:'s131',name:'戰車博美',      emoji:'🐕',stage:131,family:'dog',        alienMult:16.5},
+  {id:'s132',name:'戰車雪納瑞',    emoji:'🐕',stage:132,family:'dog',        alienMult:17.0},//**新增怪物**2
+  {id:'s133',name:'戰車貴賓狗',    emoji:'🐕',stage:133,family:'dog',        alienMult:17.5},
+  {id:'s134',name:'戰艦哈士奇',    emoji:'🐕',stage:134,family:'dog',        alienMult:18.0},
+  {id:'s135',name:'戰艦柴犬',      emoji:'🐕',stage:135,family:'dog',        alienMult:18.5},
+  {id:'s136',name:'戰艦米格魯',    emoji:'🐕',stage:136,family:'dog',        alienMult:19.0},
+  {id:'s137',name:'戰機大麥町',    emoji:'🐕',stage:137,family:'dog',        alienMult:19.5},
+  {id:'s138',name:'戰機德國牧羊犬',emoji:'🐕',stage:138,family:'dog',        alienMult:20.0},
+  {id:'s139',name:'戰機秋田犬',    emoji:'🐕',stage:139,family:'dog',        alienMult:20.5},
+  {id:'s140',name:'戰鬥直升機獒犬',emoji:'🐕',stage:140,family:'dog',        alienMult:21.0},
 ];
 
 function enemyStats(id) {// 怪物數值計算
@@ -4541,6 +4546,20 @@ function getEnemyEl() {
   return document.getElementById('bEnemyImg') || document.getElementById('bEnemySvg');
 }
 
+// 將數字轉成「X億XXXX萬XXXX」中文格式（不足億/萬的部分省略）
+function formatChineseNum(num) {
+  num = Math.round(num);
+  if (num < 10000) return String(num);
+  const yi = Math.floor(num / 100000000);
+  const wan = Math.floor((num % 100000000) / 10000);
+  const rest = num % 10000;
+  let str = '';
+  if (yi > 0) str += `${yi}億`;
+  if (wan > 0) str += `${yi > 0 ? String(wan).padStart(4, '0') : wan}萬`;
+  if (rest > 0) str += (yi > 0 || wan > 0) ? String(rest).padStart(4, '0') : String(rest);
+  return str || '0';
+}
+
 function calcDmg(base, critBonus = 0) {
   const critRate = (getStats().crit || 0.05) + critBonus;
   const critMult = getStats().critDmg || 1.5;
@@ -4670,7 +4689,7 @@ function doAttack() {
   const hitDelay = isMagic ? 450 : 350;
   setTimeout(() => {
     const { dmg, isCrit } = calcDmg(calcAtkDmg(Math.round(s.atk * (stats.heroAtkBoost || 1)), stats.def));
-    spawnHitFx('enemy', `⚔️-${dmg}${isCrit?' 💥':''}`, isCrit ? '#FF0000':'#FF8800');
+    spawnHitFx('enemy', `⚔️-${formatChineseNum(dmg)}${isCrit?' 💥':''}`, isCrit ? '#FF0000':'#FF8800');
     enSvg.classList.add('hurt-anim');
     setTimeout(() => enSvg.classList.remove('hurt-anim'), 380);
     b.enemyHp = Math.max(0, b.enemyHp - dmg);
@@ -4693,7 +4712,7 @@ function doAttack() {
         enSvg.classList.remove('atk-anim');
         const _edmBase = Math.round(calcIncomingDmg(stats.atk, s.def) * (stats.heroDmgReduce || 1));
         const edm = calcDmg(_edmBase);
-        spawnHitFx('hero', `💢-${edm.dmg}`, '#cc00ff');
+        spawnHitFx('hero', `💢-${formatChineseNum(edm.dmg)}`, '#cc00ff');
         heroSvg.classList.add('hurt-anim');
         setTimeout(() => heroSvg.classList.remove('hurt-anim'), 380);
         b.heroHp = Math.max(0, b.heroHp - edm.dmg);
@@ -4787,7 +4806,7 @@ function doSkill(sk) {
     const { dmg, isCrit } = calcDmg(raw);
     totalDmg += dmg;
     setTimeout(() => {
-      spawnHitFx('enemy', `${sk.emoji}-${dmg}${isCrit?' 💥':''}`, isCrit ? '#FF0000' : '#FF8800');
+      spawnHitFx('enemy', `${sk.emoji}-${formatChineseNum(dmg)}${isCrit?' 💥':''}`, isCrit ? '#FF0000' : '#FF8800');
       enSvg.classList.add('hurt-anim'); setTimeout(() => enSvg.classList.remove('hurt-anim'), 350);
       b.enemyHp = Math.max(0, b.enemyHp - dmg);
       document.getElementById('bEnemyHp').style.width = Math.max(0, b.enemyHp / b.enemyMaxHp * 100) + '%';
@@ -4828,7 +4847,7 @@ function doSkill(sk) {
         enSvg.classList.remove('atk-anim');
         const _edmBase = Math.round(calcIncomingDmg(stats.atk, s.def) * (stats.heroDmgReduce || 1));
         const edm = calcDmg(_edmBase);
-        spawnHitFx('hero', `💢-${edm.dmg}`, '#cc00ff');
+        spawnHitFx('hero', `💢-${formatChineseNum(edm.dmg)}`, '#cc00ff');
         heroSvg.classList.add('hurt-anim'); setTimeout(() => heroSvg.classList.remove('hurt-anim'), 380);
         b.heroHp = Math.max(0, b.heroHp - edm.dmg); state.hero.hp = b.heroHp;
         document.getElementById('bHeroHp').style.width = Math.max(0, b.heroHp / getStats().maxHp * 100) + '%';
@@ -5117,7 +5136,7 @@ function addExp(amount) {
     state.hero.mp = getStats().maxMp;
     state.battle.heroHp = getStats().maxHp;
     state.battle.heroMp = getStats().maxMp;
-    showToast(`🎉 升到 Lv.${state.hero.level}！HP:${s.maxHp} MP:${s.maxMp} 攻:${s.baseAtk} 魔:${s.baseMag} 防:${s.baseDef}`);
+    showToast(`🎉 升到等級${state.hero.level}！`);
   }
   state.hero.expNeeded = expNeededForLevel(state.hero.level);
   renderHero(); autoSave();
@@ -5146,7 +5165,7 @@ function _doSpeak(text, lang, volume = speechCfg.volume.default) {
     u.lang   = lang;
     u.rate   = speechCfg.rate;
     u.pitch  = 1.1;
-    u.volume = volume;   // ← 加這行
+    u.volume = volume;
     window.speechSynthesis.speak(u);
   };
   const voices = window.speechSynthesis.getVoices();
