@@ -3480,7 +3480,7 @@ function pickQuestion(subject) {
       if (p) { const e = { q: p.q, ans: p.ans, opts: (p.opts || []).slice().sort(() => Math.random()-.5) }; if (p.img) e.img = p.img; return e; }
     }
     const cfg = getMathStageCfg(stage);
-    return Math.random() < reverseChance ? generateMathReverse(cfg) : generateMath(cfg);
+    return Math.random() < cfg.reverseChance ? generateMathReverse(cfg) : generateMath(cfg);
   }
   const tiered = pickQuestionTiered(subject);
   if (tiered) return tiered;
