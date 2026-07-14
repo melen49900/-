@@ -592,7 +592,7 @@ body::before {
 .b-enemy.hurt-anim { animation:enemyHrt .35s ease; }
 .b-enemy.fall-anim { animation:enemyFall .7s ease forwards; }
 .hit-fx {
-  position:absolute; font-size:1.7em; font-weight:900; pointer-events:none; z-index:10;
+  position:absolute; font-size:1.7em; font-weight:900; pointer-events:none; z-index:10; white-space:nowrap;
 }
 .hit-fx.fly-right { animation:hitFlyRight 1.4s ease forwards; }
 .hit-fx.fly-left  { animation:hitFlyLeft  1.4s ease forwards; }
@@ -4954,7 +4954,10 @@ function spawnHitFx(side, text, color) {
   const isEnemy = side === 'enemy';
   el.className = `hit-fx ${isEnemy ? 'fly-right' : 'fly-left'}`;
   el.textContent = text;
-  el.style.cssText = `left:${isEnemy?'52':'8'}%;top:22%;color:${color};font-size:${color==='#FF0000'?'2em':'1.7em'};filter:drop-shadow(0 2px 6px ${color});`;
+  const baseSize = color === '#FF0000' ? 1.4 : 1.2;
+  // 文字超過6個字時，每多1個字縮小0.05em，最小不低於0.8em，避免同排放不下
+  const fontSize = text.length > 6 ? Math.max(0.8, baseSize - (text.length - 6) * 0.05) : baseSize;
+  el.style.cssText = `left:${isEnemy?'52':'8'}%;top:22%;color:${color};font-size:${fontSize}em;white-space:nowrap;filter:drop-shadow(0 2px 6px ${color});`;
   scene.appendChild(el);
   setTimeout(() => el.remove(), 1500);
 }
