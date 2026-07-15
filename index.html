@@ -188,6 +188,7 @@ body::before {
 .ck-day-icon { font-size:1.3em; line-height:1; margin-bottom:3px; }
 .ck-day-reward {
   font-size:.52em; font-weight:800; color:#666; line-height:1.3;
+  word-break:break-word; overflow-wrap:break-word;
 }
 .ck-day.today .ck-day-reward  { color:#e67e22; }
 .ck-day.claimed .ck-day-reward { color:#27AE60; }
@@ -385,7 +386,7 @@ body::before {
 .subj-pip.active-science  { background:#e9f7ef; border-color:#27ae60; color:#27ae60; }
 .subj-pip.active-geography { background:#fff8e1; border-color:#f9a825; color:#f57f17; }
 .streak-bar {
-  display:flex; gap:8px; justify-content:center; margin-bottom:10px; font-size:.78em; font-weight:700; color:#666;
+  display:flex; flex-wrap:wrap; gap:8px 6px; justify-content:center; margin-bottom:10px; font-size:.78em; font-weight:700; color:#666;
 }
 .streak-badge {
   background:#f0f4ff; border:1.5px solid #c5cff0; border-radius:18px; padding:2px 11px;
@@ -1582,6 +1583,7 @@ button:active { transform:scale(.96); }
     <div class="streak-bar">
       <div class="streak-badge">🔥 連勝：<span id="streakCount">0</span></div>
       <div class="streak-badge">💎 寶石：<span id="gemCount2">0</span></div>
+      <div class="streak-badge">💰 金幣：<span id="goldCount2">0</span></div>
       <div class="streak-badge" title="保險燈：錯一題扣1顆，可重答；燈空才中斷連勝，答對補1顆">🛡️ <span id="shieldLights">🟢🟢🟢</span></div>
     </div>
     <div class="q-card">
@@ -2586,6 +2588,7 @@ let state = {
     streak: 0,             // 連續天數
     totalDays: 0,          // 總簽到天數
     claimedDays: [],       // 本輪已領取的天數索引 (0~6)，換輪時清空
+    claimedGoldLog: [],    // 本輪每天實際領到的金幣（金幣改為動態計算，需個別記錄）
     cycleStart: null,      // 本輪第1天的日期
   },
   totalPlaySeconds: 0,
@@ -3126,6 +3129,7 @@ function renderHero() {
   document.getElementById('statCrit').textContent    = Math.round((getStats().crit || 0.05) * 100);
   document.getElementById('statCritDmg').textContent = Math.round((getStats().critDmg || 1.5) * 100);
   document.getElementById('gemCount2').textContent = h.gems;
+  document.getElementById('goldCount2').textContent = h.gold;
   // 裝備 badge
   const eqCount = Object.values(state.equipped).filter(Boolean).length;
   document.getElementById('eqBadge').textContent = eqCount;
@@ -5261,6 +5265,8 @@ function showTab(tab) {
     document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
     document.querySelectorAll('.tab-btn')[i].classList.toggle('active', t === tab);
   });
+  // 答題頁隱藏角色資料面板，其他頁面正常顯示
+  document.querySelector('.hero-panel').classList.toggle('hidden', tab === 'quiz');
   // 切換分頁時關閉所有浮層
   closeBagPick();
   closeEqDetail();
@@ -6301,6 +6307,7 @@ function loadFromStorage() {
       Object.assign(state.checkin, data.state.checkin);
       if (!Array.isArray(state.checkin.claimedDays)) state.checkin.claimedDays = [];
       if (state.checkin.claimedDays.some(d => typeof d === 'number')) state.checkin.claimedDays = [];
+      if (!Array.isArray(state.checkin.claimedGoldLog)) state.checkin.claimedGoldLog = []; // 舊存檔沒有這欄位 → 補上
     }
     if (data.state?.achievements) state.achievements = data.state.achievements;
     if (data.state?.clearedStages) state.clearedStages = data.state.clearedStages;
@@ -8983,25 +8990,25 @@ function getAchSpeech(ach) {
 // 任務系統
 // ── 任務池 ──
 const QUEST_POOL = [
-  { id:'q_kill7',    name:'初級獵人',   desc:'擊敗 7 隻敵人',    type:'kill',    target:7,   difficulty:'easy',   reward:{ gold:2800, exp:700,  gems:14 } },
-  { id:'q_kill10',   name:'中級獵人',   desc:'擊敗 10 隻敵人',   type:'kill',    target:10,  difficulty:'normal', reward:{ gold:4000, exp:1000, gems:20 } },
-  { id:'q_kill13',   name:'高級獵人',   desc:'擊敗 13 隻敵人',   type:'kill',    target:13,  difficulty:'hard',   reward:{ gold:5200, exp:1300, gems:26 } },
-  { id:'q_correct5', name:'勤學不倦',   desc:'答對 5 題',        type:'correct', target:5,   difficulty:'easy',   reward:{ gold:2500, exp:1000, gems:20 } },
-  { id:'q_correct7', name:'學習勤奮',   desc:'答對 7 題',        type:'correct', target:7,   difficulty:'easy',   reward:{ gold:3500, exp:1400, gems:28 } },
-  { id:'q_correct9', name:'學習精進',   desc:'答對 9 題',        type:'correct', target:9,   difficulty:'normal', reward:{ gold:4500, exp:1800, gems:36 } },
-  { id:'q_correct11',name:'博學多聞',   desc:'答對 11 題',       type:'correct', target:11,  difficulty:'normal', reward:{ gold:5500, exp:2200, gems:44 } },
-  { id:'q_correct13',name:'學富五車',   desc:'答對 13 題',       type:'correct', target:13,  difficulty:'hard',   reward:{ gold:6500, exp:2600, gems:52 } },
-  { id:'q_correct15',name:'知識大師',   desc:'答對 15 題',       type:'correct', target:15,  difficulty:'hard',   reward:{ gold:7500, exp:3000, gems:60 } },
-  { id:'q_streak3',  name:'3連勝',      desc:'達成 3 連勝',      type:'streak',  target:3,   difficulty:'easy',   reward:{ gold:1800, exp:900,  gems:18 } },
-  { id:'q_streak5',  name:'5連勝',      desc:'達成 5 連勝',      type:'streak',  target:5,   difficulty:'normal', reward:{ gold:3000, exp:1500, gems:30 } },
-  { id:'q_streak7',  name:'7連勝',      desc:'達成 7 連勝',      type:'streak',  target:7,   difficulty:'hard',   reward:{ gold:4200, exp:2100, gems:42 } },
-  { id:'q_streak9',  name:'9連勝',      desc:'達成 9 連勝',      type:'streak',  target:9,   difficulty:'hard',   reward:{ gold:5400, exp:2700, gems:54 } },
-  { id:'q_draw4',    name:'抽卡高手',   desc:'抽卡 4 次',        type:'draw',    target:4,   difficulty:'easy',   reward:{ gold:2000, exp:800,  gems:24 } },
-  { id:'q_draw7',    name:'抽卡達人',   desc:'抽卡 7 次',        type:'draw',    target:7,   difficulty:'normal', reward:{ gold:3500, exp:1400, gems:56 } },
-  { id:'q_draw11',   name:'十一連抽',   desc:'抽卡 11 次',       type:'draw',    target:11,  difficulty:'hard',   reward:{ gold:5500, exp:2200, gems:66 } },
-  { id:'q_game1',    name:'小遊戲玩家', desc:'玩小遊戲 1 次',    type:'gamePlay', target:1,  difficulty:'easy',    reward:{ gold:2000, exp:1000, gems:15 } },
-  { id:'q_game2',    name:'小遊戲高手', desc:'玩小遊戲 2 次',    type:'gamePlay', target:2,  difficulty:'normal',  reward:{ gold:4000, exp:2000, gems:30 } },
-  { id:'q_game3',    name:'小遊戲達人', desc:'玩小遊戲 3 次',    type:'gamePlay', target:3,  difficulty:'hard',    reward:{ gold:6000, exp:3000, gems:45 } },
+  { id:'q_kill7',    name:'初級獵人',   desc:'擊敗 7 隻敵人',    type:'kill',    target:7,   difficulty:'easy',   reward:{ gold:2800, exp:1400, gems:28 } },
+  { id:'q_kill10',   name:'中級獵人',   desc:'擊敗 10 隻敵人',   type:'kill',    target:10,  difficulty:'normal', reward:{ gold:4000, exp:2000, gems:40 } },
+  { id:'q_kill13',   name:'高級獵人',   desc:'擊敗 13 隻敵人',   type:'kill',    target:13,  difficulty:'hard',   reward:{ gold:5200, exp:2600, gems:52 } },
+  { id:'q_correct5', name:'勤學不倦',   desc:'答對 5 題',        type:'correct', target:5,   difficulty:'easy',   reward:{ gold:2500, exp:2000, gems:40 } },
+  { id:'q_correct7', name:'學習勤奮',   desc:'答對 7 題',        type:'correct', target:7,   difficulty:'easy',   reward:{ gold:3500, exp:2800, gems:56 } },
+  { id:'q_correct9', name:'學習精進',   desc:'答對 9 題',        type:'correct', target:9,   difficulty:'normal', reward:{ gold:4500, exp:3600, gems:72 } },
+  { id:'q_correct11',name:'博學多聞',   desc:'答對 11 題',       type:'correct', target:11,  difficulty:'normal', reward:{ gold:5500, exp:4400, gems:88 } },
+  { id:'q_correct13',name:'學富五車',   desc:'答對 13 題',       type:'correct', target:13,  difficulty:'hard',   reward:{ gold:6500, exp:5200, gems:104 } },
+  { id:'q_correct15',name:'知識大師',   desc:'答對 15 題',       type:'correct', target:15,  difficulty:'hard',   reward:{ gold:7500, exp:6000, gems:120 } },
+  { id:'q_streak3',  name:'3連勝',      desc:'達成 3 連勝',      type:'streak',  target:3,   difficulty:'easy',   reward:{ gold:1800, exp:1800, gems:36 } },
+  { id:'q_streak5',  name:'5連勝',      desc:'達成 5 連勝',      type:'streak',  target:5,   difficulty:'normal', reward:{ gold:3000, exp:3000, gems:60 } },
+  { id:'q_streak7',  name:'7連勝',      desc:'達成 7 連勝',      type:'streak',  target:7,   difficulty:'hard',   reward:{ gold:4200, exp:4200, gems:84 } },
+  { id:'q_streak9',  name:'9連勝',      desc:'達成 9 連勝',      type:'streak',  target:9,   difficulty:'hard',   reward:{ gold:5400, exp:5400, gems:108 } },
+  { id:'q_draw4',    name:'抽卡高手',   desc:'抽卡 4 次',        type:'draw',    target:4,   difficulty:'easy',   reward:{ gold:2000, exp:1600, gems:48 } },
+  { id:'q_draw7',    name:'抽卡達人',   desc:'抽卡 7 次',        type:'draw',    target:7,   difficulty:'normal', reward:{ gold:3500, exp:2800, gems:112 } },
+  { id:'q_draw11',   name:'十一連抽',   desc:'抽卡 11 次',       type:'draw',    target:11,  difficulty:'hard',   reward:{ gold:5500, exp:4400, gems:132 } },
+  { id:'q_game1',    name:'小遊戲玩家', desc:'玩小遊戲 1 次',    type:'gamePlay', target:1,  difficulty:'easy',    reward:{ gold:2000, exp:2000, gems:30 } },
+  { id:'q_game2',    name:'小遊戲高手', desc:'玩小遊戲 2 次',    type:'gamePlay', target:2,  difficulty:'normal',  reward:{ gold:4000, exp:4000, gems:60 } },
+  { id:'q_game3',    name:'小遊戲達人', desc:'玩小遊戲 3 次',    type:'gamePlay', target:3,  difficulty:'hard',    reward:{ gold:6000, exp:6000, gems:90 } },
 ];
 // 難度設定（顏色、標籤）
 const QUEST_DIFFICULTY = {
@@ -9466,7 +9473,6 @@ function renderEquipCompendium(container) {
   const achIdMap  = { common:'equip_common_all', rare:'equip_rare_all', epic:'equip_epic_all', legendary:'equip_legendary_all' };
   const statIcons = { atk:'⚔️', def:'🛡️', mag:'✨', hp:'❤️', mp:'💧', crit:'🎯', critDmg:'💥' };
   const seenIds   = new Set(state.seenEquipIds || []);
-
   // 每個稀有度：成就卡 + 裝備格子，依序往下疊
   rarityGroups.forEach(rarity => {
     const rc    = RARITY_CFG[rarity];
@@ -9474,7 +9480,6 @@ function renderEquipCompendium(container) {
       .filter(e => e.rarity === rarity)
       .sort((a,b) => parseInt(a.id.replace('eq','')) - parseInt(b.id.replace('eq','')));
     const have  = items.filter(e => seenIds.has(e.id)).length;
-
     // ── 稀有度標題列（含進度） ──
     const header = document.createElement('div');
     header.style.cssText = `display:flex;align-items:center;justify-content:space-between;margin:12px 0 6px;padding-bottom:4px;border-bottom:2px solid ${rc.color}33;`;
@@ -9483,7 +9488,6 @@ function renderEquipCompendium(container) {
       <span style="font-size:.72em;font-weight:800;color:${rc.color}">${have}/${items.length}</span>
     `;
     container.appendChild(header);
-
     // ── 成就卡 ──
     const ach = ACHIEVEMENTS.find(a => a.id === achIdMap[rarity]);
     if (ach) {
@@ -10047,15 +10051,31 @@ function init() {
 }
 
 // 每日簽到系統═══════════════════
-const CHECKIN_REWARDS = [// 獎勵定義
-  { icon:'🎁', label:'金+石',  gold:500,   gems:5  },
-  { icon:'🎁', label:'金+石',  gold:1000,  gems:10  },
-  { icon:'🎁', label:'金+石',  gold:1500,  gems:15  },
-  { icon:'🎁', label:'金+石',  gold:2000,  gems:20 },
-  { icon:'🎁', label:'金+石',  gold:2500,  gems:25  },
-  { icon:'🎁', label:'金+石',  gold:3000,  gems:30  },
-  { icon:'👑', label:'大獎',   gold:0,     gems:100, shard:1 },
+const CHECKIN_REWARDS = [// 獎勵定義（金幣改為動態：依總簽到天數 × 500 計算，這裡只保留 gems/shard 固定值）
+  { icon:'🎁', label:'金+石',  gems:5   },
+  { icon:'🎁', label:'金+石',  gems:10  },
+  { icon:'🎁', label:'金+石',  gems:15  },
+  { icon:'🎁', label:'金+石',  gems:20  },
+  { icon:'🎁', label:'金+石',  gems:25  },
+  { icon:'🎁', label:'金+石',  gems:30  },
+  { icon:'👑', label:'大獎',   gems:100, shard:1 },
 ];
+
+const GOLD_PER_DAY = 500; // 總簽到天數每 +1，金幣獎勵 +500
+
+// 數字太大時縮寫顯示（1萬 → "1萬"，1000 → "1k"），避免格子被擠爆
+function formatGold(n) {
+  if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, '') + '萬';
+  if (n >= 1000)  return Math.round(n / 1000) + 'k';
+  return String(n);
+}
+
+// 推算「本輪第 dayIdx 格 (0~6)」會拿到的金幣：
+// 以「今天是本輪第 todayIdx 格，總天數為 c.totalDays」為基準往前後推算
+function projectGoldForSlot(dayIdx, todayIdx) {
+  const c = state.checkin;
+  return (c.totalDays + (dayIdx - todayIdx)) * GOLD_PER_DAY;
+}
 
 function getTodayCheckinDayIdx() {
   const c = state.checkin;
@@ -10104,18 +10124,23 @@ function renderCheckinTab() {
     const isClaimed = i < c.claimedDays.length;
     const isToday   = (i === todayIdx) && todaySigned;
     const isFuture  = !isClaimed && !isToday && (i > todayIdx || !todaySigned);
-
     let cls = 'ck-day';
     if (isClaimed) cls += ' claimed';
     else if (isToday) cls += ' today';
     else if (isFuture) cls += ' future';
-
-    // 獎勵文字
+    // 獎勵文字：金幣為動態值 → 已領取用歷史紀錄，未領取用推算值
+    let goldValue;
+    if (isClaimed) {
+      goldValue = (Array.isArray(c.claimedGoldLog) && c.claimedGoldLog[i] != null)
+        ? c.claimedGoldLog[i]
+        : projectGoldForSlot(i, todayIdx); // 沒有歷史紀錄的舊資料備援估算
+    } else {
+      goldValue = projectGoldForSlot(i, todayIdx);
+    }
     const parts = [];
-    if (r.gold) parts.push(`${r.gold}💰`);
+    if (goldValue) parts.push(`${formatGold(goldValue)}💰`);
     if (r.gems) parts.push(`${r.gems}💎`);
     if (r.shard) parts.push(`${r.shard}🔹`);
-
     grid.innerHTML += `
       <div class="${cls}">
         <div class="ck-day-num">Day ${i+1}</div>
@@ -10124,7 +10149,6 @@ function renderCheckinTab() {
         ${isClaimed ? '<div class="ck-check">✅</div>' : ''}
       </div>`;
   });
-
   // 領取按鈕狀態
   const btn = document.getElementById('checkinClaimBtn');
   const alreadyClaimed = c.claimedDays.includes(today);
@@ -10136,8 +10160,9 @@ function renderCheckinTab() {
     btn.disabled = true;
   } else {
     const r = CHECKIN_REWARDS[todayIdx];
+    const goldToday = c.totalDays * GOLD_PER_DAY;
     const parts = [];
-    if (r.gold) parts.push(`${r.gold}💰`);
+    if (goldToday) parts.push(`${formatGold(goldToday)}💰`);
     if (r.gems) parts.push(`${r.gems}💎`);
     if (r.shard) parts.push(`${r.shard}🔹`);
     btn.textContent = `🎁 領取 Day ${todayIdx+1} 獎勵：${parts.join(' + ')}`;
@@ -10149,32 +10174,31 @@ function claimCheckin() {
   const c = state.checkin;
   const today = new Date().toLocaleDateString('sv');
   const todayIdx = getTodayCheckinDayIdx();
-
   if (c.lastDate !== today) { showToast('❌ 今天還沒簽到？請重新整理'); return; }
   if (c.claimedDays.includes(today)) { showToast('✅ 今天已經領過囉！'); return; }
-
   const r = CHECKIN_REWARDS[todayIdx];
-  state.hero.gold += r.gold || 0;
+  const goldEarned = (c.totalDays || 0) * GOLD_PER_DAY; // 依目前累計總天數動態計算本次金幣
+  state.hero.gold += goldEarned || 0;
   state.hero.gems += r.gems || 0;
+  if (!Array.isArray(c.claimedGoldLog)) c.claimedGoldLog = [];
+  c.claimedGoldLog[todayIdx] = goldEarned; // 記錄這格實際拿到多少，供之後格子顯示用
   c.claimedDays.push(today);
-
   // 第 7 天領完 → 下一輪重置（保留連續天數累計）
   if (todayIdx === 6) {
     if (r.shard) grantArtifactShards(r.shard, '連續簽到第7天');
     setTimeout(() => {
       c.claimedDays = [];
+      c.claimedGoldLog = [];
       c.cycleStart  = new Date(Date.now() + 86400000).toLocaleDateString('sv'); // 明天開始新輪
       _dirty = true; doSave();
     }, 500);
   }
-
   _dirty = true; doSave();
   updateCheckinBadge();
   renderCheckinTab();
   renderHero();
-
   const parts = [];
-  if (r.gold) parts.push(`${r.gold}💰 金幣`);
+  if (goldEarned) parts.push(`${formatGold(goldEarned)}💰 金幣`);
   if (r.gems) parts.push(`${r.gems}💎 寶石`);
   if (r.shard) parts.push(`${r.shard}🔹 神器碎片`);
   showToast(`🎉 Day ${todayIdx+1} 獎勵：${parts.join(' + ')} 已入帳！`);
@@ -11141,10 +11165,7 @@ function updateMineTicketCount() {
   }
 }
 
-// ── BGM 系統（宣告必須放在 init() 之前，否則存檔剛好卡在「敵人已死但尚未切換」
-// 狀態時，init() 會同步呼叫 selectEnemy() → bgmPlay()，提早讀取到還沒初始化的
-// BGM_TRACKS / bgmState，導致 ReferenceError 讓整支 script 中斷 ── 這正是本次
-// 平板玩家「裝備/任務/技能/簽到/小遊戲全部失效」的根本原因）───────────────
+// ── BGM 系統──────────────
 const BGM_TRACKS = {
   shop:      'audio/BGM-shop.mp3',
   battle:    'audio/BGM-battle.mp3',    // 普通戰鬥（stage 1~61）
