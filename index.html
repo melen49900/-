@@ -2476,10 +2476,10 @@ function enemyStats(id) {// 怪物數值計算
   const e = ENEMIES.find(x => x.id === id);
   if (!e) return null;
   const vary  = v => Math.max(1, Math.round(v * (1 + (Math.random() * 0.06 - 0.03))));
-  const scale1 = Math.pow(1.124, e.stage - 1);// 生命成長倍率
+  const scale1 = Math.pow(1.123, e.stage - 1);// 生命成長倍率
   const scale2 = Math.pow(1.087, e.stage - 1);// 攻擊成長倍率
-  const scale3 = Math.pow(1.093, e.stage - 1);// 防禦成長倍率
-  const scale4 = Math.pow(1.065, e.stage - 1);// 金幣及經驗成長倍率
+  const scale3 = Math.pow(1.095, e.stage - 1);// 防禦成長倍率
+  const scale4 = Math.pow(1.066, e.stage - 1);// 金幣及經驗成長倍率
   const mod   = FAMILY_MOD[e.family] || { hp:1, atk:1, def:1, gold:1, exp:1 };
   const baseMult   = e.postMult || 1;//第二階段魔界
   const stones     = state?.curseStones || 0;
@@ -2497,11 +2497,11 @@ function enemyStats(id) {// 怪物數值計算
   const finalExcessRatio = e.alienMult ? alienExcessRatio : excessRatio;
   return {
     ...e,
-    maxHp: vary(Math.round((26 * scale1 + e.stage * 75)* mod.hp * totalMult)),
-    atk:   vary(Math.round((20 * scale2 + e.stage *  5)* mod.atk* totalMult)),
+    maxHp: vary(Math.round((25 * scale1 + e.stage * 80)* mod.hp * totalMult)),
+    atk:   vary(Math.round((19 * scale2 + e.stage *  7)* mod.atk* totalMult)),
     def:   vary(Math.round((33 * scale3 + e.stage *  5)* mod.def* totalMult)),
-    gold:  vary(Math.round(( 7 * scale4 + e.stage *  3)* mod.gold)),
-    exp:   vary(Math.round((10 * scale4 + e.stage * 10)* mod.exp)),
+    gold:  vary(Math.round(( 6 * scale4 + e.stage *  4)* mod.gold)),
+    exp:   vary(Math.round(( 5 * scale4 + e.stage * 15)* mod.exp)),
     heroAtkBoost:  1 + finalExcessRatio,
     heroDmgReduce: 1 / (1 + finalExcessRatio),
   };
@@ -4806,7 +4806,8 @@ function doSkill(sk) {
     });
     chaosDmgBonus += getArtifactChaosBonus().dmgBonus;
     const boostedDmg = Math.round((atkDmg + magDmg + baseDmg) * (1 + chaosDmgBonus));
-    const raw = Math.max(1, boostedDmg - effDef + Math.floor(Math.random() * 4));
+    const curveDmg = boostedDmg * (boostedDmg / (boostedDmg + 0.2 * effDef)) - 0.8 * effDef;
+    const raw = Math.max(1, Math.round(curveDmg) + Math.floor(Math.random() * 4));
     const { dmg, isCrit } = calcDmg(raw);
     totalDmg += dmg;
     setTimeout(() => {
@@ -5145,7 +5146,18 @@ function addExp(amount) {
     state.battle.heroMp = getStats().maxMp;
     showToast(`🎉 升到等級${state.hero.level}！`);
   }
-  state.hero.expNeeded = expNeededForLevel(state.hero.level);
+  if (state.hero.level >= MAX_LV) {
+    // 滿等封頂獎勵：沿用 299→300 所需的經驗值當作循環門檻，
+    // 每次經驗累積到這個量，就消耗掉並換成 1 個神器碎片，經驗歸零重新累積
+    const capNeeded = expNeededForLevel(MAX_LV - 1);
+    state.hero.expNeeded = capNeeded;
+    while (state.hero.exp >= capNeeded) {
+      state.hero.exp -= capNeeded;
+      grantArtifactShards(1, '滿等經驗轉換');
+    }
+  } else {
+    state.hero.expNeeded = expNeededForLevel(state.hero.level);
+  }
   renderHero(); autoSave();
 }
 
