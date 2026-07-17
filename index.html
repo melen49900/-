@@ -4806,7 +4806,7 @@ function doSkill(sk) {
     });
     chaosDmgBonus += getArtifactChaosBonus().dmgBonus;
     const boostedDmg = Math.round((atkDmg + magDmg + baseDmg) * (1 + chaosDmgBonus));
-    const curveDmg = boostedDmg * (boostedDmg / (boostedDmg + 0.2 * effDef)) - 0.8 * effDef;
+    const curveDmg = boostedDmg * (boostedDmg / (boostedDmg + 0.7 * effDef)) - 0.4 * effDef;
     const raw = Math.max(1, Math.round(curveDmg) + Math.floor(Math.random() * 4));
     const { dmg, isCrit } = calcDmg(raw);
     totalDmg += dmg;
@@ -6640,8 +6640,19 @@ function resumePlaytime() {
 }
 
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) pausePlaytime();
-  else resumePlaytime();
+  if (document.hidden) {
+    pausePlaytime();
+    if (bgmState.audio && !bgmState.audio.paused) {
+      bgmState.audio.pause();
+      bgmState.wasPlayingBeforeHide = true;
+    }
+  } else {
+    resumePlaytime();
+    if (bgmState.audio && bgmState.wasPlayingBeforeHide) {
+      bgmState.wasPlayingBeforeHide = false;
+      bgmState.audio.play().catch(() => {});
+    }
+  }
 });
 window.addEventListener('beforeunload', () => {
   pausePlaytime();
@@ -11203,6 +11214,7 @@ const bgmState = {
   muted: false,     // 靜音
   gen: 0,           // 世代序號：每次 bgmPlay 都會 +1，用來辨識「這個播放請求是不是已經過期」
   ducked: false,    // 是否處於休息狀態
+  wasPlayingBeforeHide: false, // 螢幕關閉/切背景前是否正在播放，用來判斷回來要不要恢復
 };
 
 init();
