@@ -1129,54 +1129,6 @@ button:active { transform:scale(.96); }
 }
 .pw-change-btn:hover { filter:brightness(1.1); }
 
-/* ── 數學題庫設定 ───────────────────── */
-.math-op-grid {
-  display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;
-}
-.math-op-card {
-  background:#f8fafc; border:2px solid #e2e8f0; border-radius:12px;
-  padding:10px 10px 8px; transition:border-color .18s;
-}
-.math-op-card.enabled { border-color:#8e24aa; background:#faf5ff; }
-.math-op-header {
-  display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;
-}
-.math-op-label { font-size:.82em; font-weight:900; color:#4a5568; }
-.toggle-switch { position:relative; width:36px; height:20px; flex-shrink:0; }
-.toggle-switch input { opacity:0; width:0; height:0; position:absolute; }
-.toggle-slider {
-  position:absolute; inset:0; background:#cbd5e1; border-radius:20px;
-  cursor:pointer; transition:.25s;
-}
-.toggle-slider:before {
-  content:''; position:absolute; width:14px; height:14px;
-  left:3px; top:3px; background:white; border-radius:50%; transition:.25s;
-}
-.toggle-switch input:checked + .toggle-slider { background:#8e24aa; }
-.toggle-switch input:checked + .toggle-slider:before { transform:translateX(16px); }
-.math-range-row {
-  display:flex; align-items:center; gap:4px; margin-bottom:4px;
-}
-.math-range-label { font-size:.66em; color:#94a3b8; font-weight:700; min-width:22px; }
-.math-range-input {
-  width:46px; padding:3px 5px; border:1.5px solid #ddd6fe; border-radius:7px;
-  font-family:'Nunito',sans-serif; font-size:.78em; font-weight:800;
-  text-align:center; color:var(--dark);
-}
-.math-range-input:focus { outline:none; border-color:#8e24aa; }
-.math-range-sep { font-size:.7em; color:#94a3b8; font-weight:700; }
-.math-preview-btn {
-  width:100%; padding:9px; border:none; border-radius:10px;
-  background:linear-gradient(135deg,#3498db,#2980b9);
-  font-family:'Nunito',sans-serif; font-size:.82em; font-weight:800;
-  color:white; cursor:pointer; margin-top:4px;
-}
-.math-preview-box {
-  background:#f0f4ff; border:1.5px solid #c5cff0; border-radius:10px;
-  padding:10px; margin-top:8px; text-align:center;
-  font-size:.88em; font-weight:800; color:#4a5568; min-height:36px;
-}
-
 .admin-section {
   margin-bottom:18px;
 }
@@ -1502,7 +1454,7 @@ button:active { transform:scale(.96); }
   </div>
 
   <!-- 角色面板 -->
-  <div class="hero-panel">
+  <div class="hero-panel hidden">
     <div class="hero-row">
       <div class="av-wrap" onclick="openBag()">
         <svg class="char-svg" id="heroSvg" viewBox="0 0 90 110"></svg>
@@ -2004,16 +1956,6 @@ button:active { transform:scale(.96); }
           <button class="admin-btn" onclick="adjustMathStage(1)">數學+1階</button>
           <button class="admin-btn red" onclick="resetAllTierProgress()">重置全部關卡進度</button>
         </div>
-      </div>
-
-      <!-- 數學題庫設定 -->
-      <div class="admin-section">
-        <div class="admin-section-title">🔢 數學題庫設定（僅供手動預覽測試，實際出題難度由上方關卡進度中的數學階段自動決定）</div>
-        <div class="math-op-grid" id="mathOpGrid">
-          <!-- 由 JS 產生 -->
-        </div>
-        <button class="math-preview-btn" onclick="previewMathQ()">🔍 預覽目前階段的出題</button>
-        <div class="math-preview-box" id="mathPreviewBox">點擊上方按鈕預覽題目</div>
       </div>
 
       <!-- 怪物圖片 -->
@@ -2541,7 +2483,7 @@ let state = {
     gold:0, gems:0,
   },
   equipped:   { weapon:null, armor:null, helmet:null, cloak:null, accessory:null },
-  artifacts: { atk:1, mag:1, hp:1, def:1, crit:1 }, // 神器等級＝加成百分比，預設 +1%
+  artifacts: { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1 }, // 神器等級＝加成百分比，預設 +1%
   artifactShards: 0, // 神器碎片
   bag:        [],
   inventory:  { hp1:0, hp2:0, hp3:0, hp4:0, mp1:0, mp2:0, mp3:0, mp4:0, exp1:0, exp2:0, exp3:0 },
@@ -3170,14 +3112,6 @@ function nextSubject() {
   return state.quiz.queue.shift();
 }
 
-// 數學題庫設定（後台手動預覽用，實際出題難度改由 getMathStageCfg() 依 mathStage 動態計算）
-const mathCfg = {
-  add: { enabled:true, label:'➕ 加法', aMin:60,  aMax:280, bMin:17, bMax:60 },
-  sub: { enabled:true, label:'➖ 減法', aMin:60,  aMax:280, bMin:17, bMax:60 },
-  mul: { enabled:true, label:'✖️ 乘法', aMin:2,   aMax:10,  bMin:2,  bMax:6  },
-  div: { enabled:true, label:'➗ 除法', aMin:6,   aMax:17,  dMin:2,  dMax:5  },
-};
-
 // ── 數學難度階段系統（1~300階，統一控制自動出題難度＋固定題庫開放比例）──
 const MATH_STAGE_MAX = 300;
 
@@ -3185,7 +3119,7 @@ function getMathStageCfg(stage) {
   stage = Math.max(1, Math.min(MATH_STAGE_MAX, Number(stage) || 1));
   const addLimit = 5 + 2 * (stage - 1);
   const cfg = {
-    add: { enabled:true,  label:'➕ 加法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:1, bMax:addLimit },
+    add: { enabled:true,  label:'➕ 加法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:Math.ceil(addLimit/5), bMax:Math.ceil(addLimit/3) },
     sub: { enabled:false, label:'➖ 減法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:1, bMax:2 },
     mul: { enabled:false, label:'✖️ 乘法', aMin:1, aMax:3,        bMin:1, bMax:3 },
     div: { enabled:false, label:'➗ 除法', aMin:6, aMax:6,        dMin:2, dMax:2 },
@@ -3203,10 +3137,10 @@ function getMathStageCfg(stage) {
   }
   if (stage >= 40) {
     cfg.div.enabled = true;
-    cfg.div.aMax = Math.min(30, 6 + Math.floor((stage - 40) / 10));
-    cfg.div.dMax = Math.min(7,  2 + Math.floor((stage - 40) / 10));
+    cfg.div.aMax = Math.min(50, 6 + Math.floor((stage - 40) / 5));
+    cfg.div.dMax = Math.min(10, 2 + Math.floor((stage - 40) / 5));
   }
-  if (stage >= 100) { //第100階開放「猜符號」題型
+  if (stage >= 70) { //第70階開放「猜符號」題型
     cfg.reverseChance = 0.3;
   }
   return cfg;
@@ -3226,13 +3160,13 @@ function updateMathStage(firstAttemptCorrect) {
   q.mathWindowCount = (q.mathWindowCount || 0) + 1;
   if (firstAttemptCorrect) q.mathWindowCorrect = (q.mathWindowCorrect || 0) + 1;
   else q.mathWindowWrong = (q.mathWindowWrong || 0) + 1;
-  if (q.mathWindowWrong >= 4) {// 降階：視窗內累積4題第一次就答錯（不用等滿10題）
+  if (q.mathWindowWrong >= 3) {// 降階：視窗內累積3題第一次就答錯（不用等滿6題）
     q.mathStage = Math.max(1, (q.mathStage || 1) - 1);
     q.mathWindowCount = 0; q.mathWindowCorrect = 0; q.mathWindowWrong = 0;
     return;
   }
-  if (q.mathWindowCount >= 10) {// 升階：視窗滿10題且9題以上第一次就答對
-    if (q.mathWindowCorrect >= 9) {
+  if (q.mathWindowCount >= 6) {// 升階：視窗滿6題且5題以上第一次就答對
+    if (q.mathWindowCorrect >= 5) {
       q.mathStage = Math.min(MATH_STAGE_MAX, (q.mathStage || 1) + 1);
     }
     q.mathWindowCount = 0; q.mathWindowCorrect = 0; q.mathWindowWrong = 0;
@@ -3266,7 +3200,6 @@ function generateMath(cfg) {
     ans = remainder === 0 ? String(quotient) : `${quotient}...${remainder}`;
     q = `${a} ÷ ${b} ＝ ？`;
   }
-
   const wrong = new Set();
     if (op === 'div') {
       const q2 = Math.floor(a / b);
@@ -5489,7 +5422,6 @@ function renderAdminUI() {
   document.getElementById('gemRewardVal').textContent   = GEM_PER_CORRECT;
   document.getElementById('streakBonusVal').textContent = GEM_STREAK_BONUS;
   document.getElementById('adminMineDepth').textContent = state.stats?.mineMaxDepth || 0;
-  renderMathOpGrid();
   renderTierStatus();
   beditRender();
 }
@@ -5531,95 +5463,6 @@ function resetAllTierProgress() {
   state.quiz.mathWindowCount = 0; state.quiz.mathWindowCorrect = 0; state.quiz.mathWindowWrong = 0;
   autoSave(); renderTierStatus();
   showToast('🔄 已重置全部關卡進度');
-}
-
-function renderMathOpGrid() {
-  const grid = document.getElementById('mathOpGrid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  // 加、減、乘（兩數範圍）
-  ['add','sub','mul'].forEach(op => {
-    const c = mathCfg[op];
-    const card = document.createElement('div');
-    card.className = 'math-op-card' + (c.enabled ? ' enabled' : '');
-    card.id = `mathCard_${op}`;
-    card.innerHTML = `
-      <div class="math-op-header">
-        <span class="math-op-label">${c.label}</span>
-        <label class="toggle-switch">
-          <input type="checkbox" ${c.enabled ? 'checked' : ''} onchange="toggleMathOp('${op}',this.checked)">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      <div class="math-range-row">
-        <span class="math-range-label">甲</span>
-        <input class="math-range-input" type="number" value="${c.aMin}" min="0" max="9999" onchange="setMathRange('${op}','aMin',this.value)" title="甲最小值">
-        <span class="math-range-sep">~</span>
-        <input class="math-range-input" type="number" value="${c.aMax}" min="0" max="9999" onchange="setMathRange('${op}','aMax',this.value)" title="甲最大值">
-      </div>
-      <div class="math-range-row">
-        <span class="math-range-label">乙</span>
-        <input class="math-range-input" type="number" value="${c.bMin}" min="0" max="9999" onchange="setMathRange('${op}','bMin',this.value)" title="乙最小值">
-        <span class="math-range-sep">~</span>
-        <input class="math-range-input" type="number" value="${c.bMax}" min="0" max="9999" onchange="setMathRange('${op}','bMax',this.value)" title="乙最大值">
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-  // 除法（商與除數範圍）
-  const dc = mathCfg.div;
-  const divCard = document.createElement('div');
-  divCard.className = 'math-op-card' + (dc.enabled ? ' enabled' : '');
-  divCard.id = 'mathCard_div';
-  divCard.innerHTML = `
-    <div class="math-op-header">
-      <span class="math-op-label">${dc.label}</span>
-      <label class="toggle-switch">
-        <input type="checkbox" ${dc.enabled ? 'checked' : ''} onchange="toggleMathOp('div',this.checked)">
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div class="math-range-row">
-      <span class="math-range-label">被除</span>
-      <input class="math-range-input" type="number" value="${dc.aMin}" min="2" max="9999" onchange="setMathRange('div','aMin',this.value)" title="被除數最小值">
-      <span class="math-range-sep">~</span>
-      <input class="math-range-input" type="number" value="${dc.aMax}" min="2" max="9999" onchange="setMathRange('div','aMax',this.value)" title="被除數最大值">
-    </div>
-    <div class="math-range-row">
-      <span class="math-range-label">除數</span>
-      <input class="math-range-input" type="number" value="${dc.dMin}" min="2" max="999" onchange="setMathRange('div','dMin',this.value)" title="除數最小值">
-      <span class="math-range-sep">~</span>
-      <input class="math-range-input" type="number" value="${dc.dMax}" min="2" max="999" onchange="setMathRange('div','dMax',this.value)" title="除數最大值">
-    </div>
-  `;
-  grid.appendChild(divCard);
-}
-
-function toggleMathOp(op, val) {
-  mathCfg[op].enabled = val;
-  const card = document.getElementById(`mathCard_${op}`);
-  if (card) card.className = 'math-op-card' + (val ? ' enabled' : '');
-  const active = Object.keys(mathCfg).filter(k => mathCfg[k].enabled).length;
-  if (active === 0) {
-    mathCfg[op].enabled = true;
-    document.querySelector(`#mathCard_${op} input[type=checkbox]`).checked = true;
-    document.getElementById(`mathCard_${op}`).className = 'math-op-card enabled';
-    showToast('⚠️ 至少須啟用一種運算');
-  }
-}
-
-function setMathRange(op, key, val) {
-  const n = parseInt(val, 10);
-  if (isNaN(n) || n < 0) return;
-  mathCfg[op][key] = n;
-}
-
-function previewMathQ() {
-  ensureMathStageInit();
-  const q = generateMath(getMathStageCfg(state.quiz.mathStage || 1));
-  const box = document.getElementById('mathPreviewBox');
-  box.innerHTML = `<div style="font-size:1.3em;margin-bottom:4px;">${q.q}</div>
-    <div style="color:#8e24aa;font-size:.82em;">選項：${q.opts.join('　')}　／　正解：${q.ans}</div>`;
 }
 
 function adjustGemReward(delta) {
@@ -6364,7 +6207,7 @@ function loadFromStorage() {
 }
 
 function resetProgress() {
-  gameConfirm('確定清除進度？\n\n將重置為：\n・ Lv.1、HP/MP 初始值\n・ 第1關，其餘關卡重新鎖定\n・ 清空背包、裝備、技能\n・ 金幣、寶石歸零\n・ 成就與答題紀錄歸零\n\n題庫與圖片不受影響').then(ok => {
+  gameConfirm('確定清除進度？\n\n將重置為：\n・ Lv.1、HP/MP 初始值\n・ 第1關，其餘關卡重新鎖定\n・ 清空背包、裝備、技能\n・ 金幣、寶石歸零\n・ 神器等級歸零\n・ 每日任務重新指派\n・ 成就與答題紀錄歸零\n\n題庫與圖片不受影響').then(ok => {
     if (!ok) return;
     // 保留不應清除的東西
     const keepCustomQ     = state.customQ;
@@ -6386,7 +6229,7 @@ function resetProgress() {
     };
     // 清空裝備、背包、技能、關卡
     state.equipped   = { weapon:null, armor:null, helmet:null, cloak:null, accessory:null };
-    state.artifacts  = { atk:1, mag:1, hp:1, def:1 };
+    state.artifacts  = { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1 };
     state.artifactShards = 0;
     state.bag        = [];
     state.inventory  = { hp1:0, hp2:0, hp3:0, hp4:0, mp1:0, mp2:0, mp3:0, mp4:0, exp1:0, exp2:0, exp3:0 };
@@ -6401,10 +6244,13 @@ function resetProgress() {
     state.defeatedEnemies = [];
     state.seenEquipIds = [];
     state.stats         = {};
+    state.quests     = [0,1,2,3].map(i => ({ slotId:i, questId:null, progress:0, cooldownUntil:0 }));
     state.customQ       = keepCustomQ;
     state.editedBuiltin = keepEditedBuiltin;
     multiDrawCount = 0;
     _dirty = true; doSave();
+    initQuests();
+    updateQuestPendingBadge();
     renderHero(); renderDrawUI(); renderBattleUI(); renderEnemyList(); loadQuestion();
     showTab('quiz');
     showToast('✅ 進度已清除，重新開始！');
@@ -6684,6 +6530,7 @@ function showRestAlert() {
   const cdEl = document.getElementById('restCountdown');
   cdEl.textContent = remain;
   bgmDuck();
+  pausePlaytime();
   _doSpeak('請休息三十秒，記得要喝水', speechCfg.lang, speechCfg.volume.quiz);
   _restInterval = setInterval(() => {
     remain--;
@@ -6704,6 +6551,7 @@ function dismissTimer() {
   document.getElementById('timerAlert').classList.add('hidden');
   _timerStart = Date.now(); _timerFired = false;
   bgmUnduck();
+  resumePlaytime();
 }
 setInterval(updateTimer, 1000);
 
@@ -8625,7 +8473,7 @@ const ACHIEVEMENTS = [
 },
 {
   id: 'kill_dog_all', name: '犬族獵人', desc: '擊敗所有犬族', category: '圖鑑', icon: '🐕', _family: 'dog',
-  reward: { gems: 1000, statBonus: { atk: 10, def: 10, mag: 10 }},
+  reward: { gems: 2000, statBonus: { atk: 10, def: 10, mag: 10 }},
   progress: () => {
     const ids = new Set(state.defeatedEnemies || []);
     return ENEMIES.filter(e => e.family === 'dog' && ids.has(e.id)).length;
@@ -8638,7 +8486,7 @@ const ACHIEVEMENTS = [
 },
 {//**新增怪物**3
   id: 'kill_all_enemy', name: '獵人大師', desc: '擊敗所有敵人', category: '圖鑑', icon: '🏆', _family: 'all',
-  reward: { gems: 1500, statBonus: { atk: 10, def: 10, mag: 10 }},
+  reward: { gems: 2000, statBonus: { atk: 10, def: 10, mag: 10 }},
   progress: () => {
     const ids = new Set(state.defeatedEnemies || []);
     return ENEMIES.filter(e => ids.has(e.id)).length;
@@ -8992,12 +8840,9 @@ function claimAchievement(id) {
 let _achieveCat = 'all';
 let _equipAchSub = 'common';
 
-function getAchSpeech(ach) {
-  // 如果有自訂 speech 就用，否則自動組合
+function getAchSpeech(ach) {// 如果有自訂 speech 就用，否則自動組合
   if (ach.speech) return ach.speech;
-
   const statNames = { atk:'攻擊', def:'防禦', mag:'魔法', hp:'血量', mp:'魔力', crit:'暴擊率', critDmg:'暴擊傷害' };
-  
   let rewardText = '';
   if (ach.reward.gems) rewardText += `${ach.reward.gems}顆鑽石`;
   if (ach.reward.statBonus) {
@@ -9006,13 +8851,11 @@ function getAchSpeech(ach) {
       .join('、');
     rewardText += (rewardText ? '，以及' : '') + bonuses;
   }
-
   return `${ach.name}。${ach.desc}。完成獎勵：${rewardText}。`;
 }
 
 // 任務系統
-// ── 任務池 ──
-const QUEST_POOL = [
+const QUEST_POOL = [// ── 任務池 ──
   { id:'q_kill7',    name:'初級獵人',   desc:'擊敗 7 隻敵人',    type:'kill',    target:7,   difficulty:'easy',   reward:{ gold:2800, exp:1400, gems:28 } },
   { id:'q_kill10',   name:'中級獵人',   desc:'擊敗 10 隻敵人',   type:'kill',    target:10,  difficulty:'normal', reward:{ gold:4000, exp:2000, gems:40 } },
   { id:'q_kill13',   name:'高級獵人',   desc:'擊敗 13 隻敵人',   type:'kill',    target:13,  difficulty:'hard',   reward:{ gold:5200, exp:2600, gems:52 } },
@@ -9134,12 +8977,9 @@ function claimQuest(slotId) {
   if (!slot) return;
   const quest = QUEST_POOL.find(q => q.id === slot.questId);
   if (!quest) return;
-
-  // 給獎勵
   if (quest.reward.gold) { state.hero.gold += quest.reward.gold; }
   if (quest.reward.gems) { state.hero.gems += quest.reward.gems; showGemPopup(quest.reward.gems); }
   if (quest.reward.exp)  { addExp(quest.reward.exp); }
-
   const rewardText = [
     quest.reward.gold ? `${quest.reward.gold}💰` : '',
     quest.reward.gems ? `${quest.reward.gems}💎` : '',
@@ -9147,13 +8987,11 @@ function claimQuest(slotId) {
   ].filter(Boolean).join(' ');
   showToast(`🎉 任務完成！獲得 ${rewardText}`);
   speakText(`恭喜獲得獎勵`, 0.8);
-
   // 任務消失，進入冷卻
   slot.accepted  = false;
   slot.questId   = null;
   slot.progress  = 0;
-  slot.cooldownUntil = Date.now() + 8 * 60 * 1000; // 冷卻
-
+  slot.cooldownUntil = Date.now() + 8 * 60 * 1000; // 冷卻8分鐘
   updateQuestBadge();updateQuestPendingBadge();renderHero(); autoSave(); renderQuestTab();
 }
 
@@ -9193,12 +9031,11 @@ function updateQuestProgress(type, amount = 1) {
     } else {
       slot.progress = Math.min((slot.progress || 0) + amount, quest.target);
     }
-    changed = true;
-    // 達成時提示
+    changed = true; 
     if (slot.progress >= quest.target) {
       showToast(`✅ 任務達成：${quest.name}！去任務頁領取獎勵`);
       updateQuestBadge();
-      window._pendingQuestSpeak = `任務已達成，快去領獎勵！`;
+      window._pendingQuestSpeak = `任務達成，快去領獎勵！`;
     }
   });
   if (changed) { autoSave(); renderQuestTab(); updateQuestBadge(); updateQuestPendingBadge(); updateActiveQuestBar(); }
@@ -9232,12 +9069,10 @@ function renderQuestTab() {
     if (!btn) return;
     speakText(btn.dataset.desc);
   });
-
   const COOLDOWN_MS = 8 * 60 * 1000;
   const hasAccepted = state.quests.some(s => s.accepted);
   // 清除舊計時器
   if (window._questTimer) clearInterval(window._questTimer);
-
   // 有冷卻中的槽才啟動計時器
   const hasCooling = state.quests.some(s => !s.questId && (s.cooldownUntil || 0) > Date.now());
   if (hasCooling) {
@@ -9265,10 +9100,8 @@ function renderQuestTab() {
       if (allDone) clearInterval(window._questTimer);
     }, 1000);
   }
-
   state.quests.forEach(slot => {
     const card = document.createElement('div');
-
     // ── 冷卻中 ──
     if (!slot.questId) {
       const remaining = Math.max(0, Math.ceil(((slot.cooldownUntil || 0) - Date.now()) / 1000));
@@ -9285,7 +9118,6 @@ function renderQuestTab() {
       list.appendChild(card);
       return;
     }
-
     const quest = QUEST_POOL.find(q => q.id === slot.questId);
     if (!quest) return;
     const dc      = QUEST_DIFFICULTY[quest.difficulty] || QUEST_DIFFICULTY.easy;
@@ -9296,7 +9128,6 @@ function renderQuestTab() {
       quest.reward.gems ? `鑽石💎${quest.reward.gems}` : '',
       quest.reward.exp  ? `經驗⭐${quest.reward.exp}`  : '',
     ].filter(Boolean);
-
     card.style.cssText = `padding:14px;border-radius:14px;background:${done?'#f0fdf4':slot.accepted?dc.bg:'#f8fafc'};border:2px solid ${done?'#22c55e':slot.accepted?dc.color:'#e2e8f0'};`;
     card.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
