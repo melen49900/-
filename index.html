@@ -1780,10 +1780,10 @@ button:active { transform:scale(.96); }
         <div style="display:flex;gap:6px;align-items:center">
           <div style="display:flex;align-items:center;gap:4px">
             <select id="sellRaritySelect" style="font-size:.66em;padding:4px 6px;border-radius:8px;border:1.5px solid #e0e0e0;font-family:'Nunito',sans-serif;font-weight:800;background:white;color:#4a5568;cursor:pointer;">
-              <option value="common">普通以下</option>
-              <option value="rare">稀有以下</option>
-              <option value="epic">史詩以下</option>
-              <option value="legendary">全部販售</option>
+              <option value="common" style="color:#9fbdae">普通以下</option>
+              <option value="rare" style="color:#0984e3">稀有以下</option>
+              <option value="epic" style="color:#8b5cf6">史詩以下</option>
+              <option value="legendary" style="color:#ff9a17">全部販售</option>
             </select>
             <button onclick="sellAllCards(document.getElementById('sellRaritySelect').value)" style="font-size:.66em;padding:4px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;font-family:'Nunito',sans-serif;font-weight:800;cursor:pointer;" id="sellAllBtn">💰 一鍵販售</button>
           </div>
@@ -2462,7 +2462,7 @@ let state = {
     gold:0, gems:0,
   },
   equipped:   { weapon:null, armor:null, helmet:null, cloak:null, accessory:null },
-  artifacts: { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:1 }, // 神器等級＝加成百分比，預設 +1%
+  artifacts: { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:0 }, // 神器等級＝加成百分比，預設 +1%
   artifactShards: 0, // 神器碎片
   bag:        [],
   inventory:  { hp1:0, hp2:0, hp3:0, hp4:0, mp1:0, mp2:0, mp3:0, mp4:0, exp1:0, exp2:0, exp3:0 },
@@ -2902,7 +2902,7 @@ function grantArtifactShards(n, reason) {
 
 // 強化指定神器：每次消耗 ARTIFACT_SHARD_COST 個碎片，該神器 +1%
 function upgradeArtifact(key) {
-  state.artifacts = state.artifacts || { atk:1, mag:1, hp:1, def:1, mpregen:1 };
+  state.artifacts = state.artifacts || { atk:1, mag:1, hp:1, def:1, mpregen:0 };
   const shards = state.artifactShards || 0;
   if (shards < ARTIFACT_SHARD_COST) { showToast('❌ 神器碎片不足！'); return; }
   state.artifactShards = shards - ARTIFACT_SHARD_COST;
@@ -2978,15 +2978,14 @@ function getStats() {
   });
   mag = Math.round(mag * (1 + magAmpBonus));
   // 神器加成（攻擊/魔法/生命/防禦 各自百分比疊加）
-  const art = state.artifacts || { atk:1, mag:1, hp:1, def:1, mpregen:1 };
+  const art = state.artifacts || { atk:1, mag:1, hp:1, def:1, mpregen:0 };
   atk = Math.round(atk * (1 + (art.atk || 0) / 100));
   def = Math.round(def * (1 + (art.def || 0) / 100));
   mag = Math.round(mag * (1 + (art.mag || 0) / 100));
   const critBonus = (art.crit || 0) / 100;
   const maxHpBase = (state.hero.maxHp || 100) + bonusHp;
   const maxHp = Math.round(maxHpBase * (1 + (art.hp || 0) / 100));
-
-return { atk, def, mag, bonusHp, bonusMp,
+  return { atk, def, mag, bonusHp, bonusMp,
     maxHp,
     maxMp: (state.hero.maxMp || 50)  + bonusMp,
     crit: (state.hero.crit || 0.05) + bonusCrit + critBonus,
@@ -3909,7 +3908,11 @@ function renderGearTab() {
   renderEquippedPane();
   renderBagPane();
   document.getElementById('bagCount').textContent = state.bag.length;
-  renderArtifacts();
+  // 只有神器子分頁「目前正顯示」時才需要重繪，減少不必要的DOM重建
+  const artifactSub = document.getElementById('gearSub-artifact');
+  if (artifactSub && !artifactSub.classList.contains('hidden')) {
+    renderArtifacts();
+  }
 }
 
 // 裝備分頁的子分頁切換：已裝備 / 神器
@@ -3937,7 +3940,7 @@ function updateArtifactBadge() {
 }
 
 function renderArtifacts() {
-  state.artifacts = state.artifacts || { atk:1, mag:1, hp:1, def:1, mpregen:1 };
+  state.artifacts = state.artifacts || { atk:1, mag:1, hp:1, def:1, mpregen:0 };
   const shards = state.artifactShards || 0;
   const info = document.getElementById('artifactShardInfo');
   if (info) info.innerHTML = `🔹 神器碎片：<b>${shards}</b> 個　（每次強化消耗 ${ARTIFACT_SHARD_COST} 個）`;
@@ -4019,6 +4022,7 @@ function renderBagPane() {
   // 稀有度排序
   const rarityOrder = { legendary:0, epic:1, rare:2, common:3 };
   const equippedUids = new Set(Object.values(state.equipped).filter(Boolean).map(e => e.uid));
+  const frag = document.createDocumentFragment(); // 批次插入，避免逐一 appendChild 造成多次 reflow
   [...items].sort((a, b) => {
     const aEq = equippedUids.has(a.uid) ? 0 : 1;
     const bEq = equippedUids.has(b.uid) ? 0 : 1;
@@ -4056,8 +4060,9 @@ function renderBagPane() {
       </div>
     `;
     div.onclick = () => showEqDetail(card, slot?.key||'', isEquipped ? 'equipped' : 'bag');
-    list.appendChild(div);
+    frag.appendChild(div);
   });
+  list.appendChild(frag); // 一次性插入DOM，只觸發一次reflow
 }
 
 function getBagCard(uid) { return state.bag.find(c => c.uid === uid) || null; }
@@ -4840,8 +4845,7 @@ function onDefeat(stats) {
 }
 
 function getBestPotion(type) {
-  // 由高到低找有庫存的藥水
-  const order = type === 'hp' ? ['hp4','hp3','hp2','hp1'] : ['mp4','mp3','mp2','mp1'];
+  const order = type === 'hp' ? ['hp4','hp3','hp2','hp1'] : ['mp4','mp3','mp2','mp1'];// 由高到低找有庫存的藥水
   return order.find(k => (state.inventory[k] || 0) > 0) || null;
 }
 
@@ -5063,14 +5067,12 @@ function addExp(amount) {
     state.battle.heroMp = getStats().maxMp;
     showToast(`🎉 升到等級${state.hero.level}！`);
   }
-  if (state.hero.level >= MAX_LV) {
-    // 滿等封頂獎勵：沿用 299→300 所需的經驗值當作循環門檻，
-    // 每次經驗累積到這個量，就消耗掉並換成 1 個神器碎片，經驗歸零重新累積
-    const capNeeded = expNeededForLevel(MAX_LV - 1);
+  if (state.hero.level >= MAX_LV) {// 滿等封頂獎勵
+    const capNeeded = expNeededForLevel(MAX_LV - 1);//沿用 299→300 所需的經驗值
     state.hero.expNeeded = capNeeded;
     while (state.hero.exp >= capNeeded) {
       state.hero.exp -= capNeeded;
-      grantArtifactShards(1, '滿等經驗轉換');
+      grantArtifactShards(1, '滿等經驗轉換');//消耗掉並換成 1 個神器碎片
     }
   } else {
     state.hero.expNeeded = expNeededForLevel(state.hero.level);
@@ -5745,18 +5747,10 @@ function renderForgeResult() {
   const [a, b] = _forgeSlots;
   const btn = document.getElementById('forgeBtn');
   const txt = document.getElementById('forgeResultText');
-  if (!a || !b) {
-    txt.innerHTML = '選擇兩件同名且同星級的裝備即可合成'; btn.disabled = true; return;
-  }
-  if (a.id !== b.id) {
-    txt.innerHTML = `❌ ${a.name} 與 ${b.name} 名稱不同，無法合成`; btn.disabled = true; return;
-  }
-  if ((a.star || 0) !== (b.star || 0)) {
-    txt.innerHTML = `❌ 兩件裝備星級不同（${a.star||0}★ vs ${b.star||0}★），需相同星級才能合成`; btn.disabled = true; return;
-  }
-  if ((a.star || 0) >= 6) {
-    txt.innerHTML = `❌ 已達最高 6★，無法繼續合成`; btn.disabled = true; return;
-  }
+  if (!a || !b) {txt.innerHTML = '選擇兩件同名且同星級的裝備即可合成'; btn.disabled = true; return;}
+  if (a.id !== b.id) {txt.innerHTML = `❌ ${a.name} 與 ${b.name} 名稱不同，無法合成`; btn.disabled = true; return;}
+  if ((a.star || 0) !== (b.star || 0)) {txt.innerHTML = `❌ 兩件裝備星級不同（${a.star||0}★ vs ${b.star||0}★），需相同星級才能合成`; btn.disabled = true; return;}
+  if ((a.star || 0) >= 6) {txt.innerHTML = `❌ 已達最高 6★，無法繼續合成`; btn.disabled = true; return;}
   const newStar = (a.star || 0) + 1;
   const mult = newStar + 1;
   const bAtk = a.baseAtk ?? a.atk; const bDef = a.baseDef ?? a.def; const bMag = a.baseMag ?? a.mag;
@@ -5818,9 +5812,7 @@ function doForge() {
 function doAutoForge() {
   let totalForged = 0;
   let changed = true;
-
-  // 反覆合成，直到沒有任何可合成的配對為止
-  while (changed) {
+  while (changed) {// 反覆合成，直到沒有任何可合成的配對為止
     changed = false;
     // 找出背包中所有同 id 且同星級的裝備，按 (id, star) 分組
     const groups = {};
@@ -5907,7 +5899,7 @@ function doAutoForge() {
 
 function costAtLevel(level) {//裝備花費，5000前:等級*50、5000後+1
   if (level <= 50) return level * 100;
-  return 5000 + (level - 50);
+  return 4950 + level;
 }
 
 function upgradeCost(card) {//單次升級
@@ -5918,9 +5910,7 @@ function upgradeCost(card) {//單次升級
 function upgradeCost10(card) {//升級十次
   const base = card.refine || 0;
   let total = 0;
-  for (let i = 0; i < 10; i++) {
-    total += costAtLevel(base + i + 1);
-  }
+  for (let i = 0; i < 10; i++) {total += costAtLevel(base + i + 1);}
   return total;
 }
 
@@ -6018,7 +6008,6 @@ function autoBalanceUpgradeAll() {
     }
     const cost = upgradeCost(target);
     if (state.hero.gold < cost) break;
-
     state.hero.gold -= cost;
     target.refine = (target.refine || 0) + 1;
     // 若舊存檔裝備缺少 enhStat/enhPer，從 EQUIP_POOL 查同名補回
@@ -6034,7 +6023,6 @@ function autoBalanceUpgradeAll() {
     else if (stat === '魔法') target.mag = (target.mag || 0) + per;
     else if (stat === 'HP')   target.hp  = (target.hp  || 0) + per;
     else if (stat === 'MP')   target.mp  = (target.mp  || 0) + per;
-
     count++;
     if (count > 100000) break; // 安全防呆，避免極端情況下無窮迴圈
   }
@@ -6053,6 +6041,18 @@ function doUpgrade10(uid) {
       showToast(`💰 金幣不足，完成了 ${i} 次強化`);
       break;
     }
+    doUpgrade(uid);
+  }
+  renderHero(); renderShopUI(); autoSave();
+}
+
+function doUpgrade10(uid) {
+  for (let i = 0; i < 10; i++) {
+    const cost = upgradeCost(
+      state.bag.find(c => c.uid === uid) ||
+      Object.values(state.equipped).find(e => e?.uid === uid)
+    );
+    if (state.hero.gold < cost) {showToast(`💰 金幣不足，完成了 ${i} 次強化`);break;}
     doUpgrade(uid);
   }
   renderHero(); renderShopUI(); autoSave();
@@ -6126,7 +6126,7 @@ function loadFromStorage() {
     const data = JSON.parse(raw);
     if (data.state?.hero) Object.assign(state.hero, data.state.hero);
     if (data.state?.equipped) Object.assign(state.equipped, { weapon:null,armor:null,helmet:null,cloak:null,accessory:null }, data.state.equipped);
-    if (data.state?.artifacts) Object.assign(state.artifacts, { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:1 }, data.state.artifacts);
+    if (data.state?.artifacts) Object.assign(state.artifacts, { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:0 }, data.state.artifacts);
     if (typeof data.state?.artifactShards === 'number') state.artifactShards = data.state.artifactShards;
     if (data.state?.bag)    state.bag    = data.state.bag;
     if (data.state?.inventory) state.inventory = data.state.inventory;
@@ -6213,7 +6213,7 @@ function resetProgress() {
     };
     // 清空裝備、背包、技能、關卡
     state.equipped   = { weapon:null, armor:null, helmet:null, cloak:null, accessory:null };
-    state.artifacts  = { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:1 };
+    state.artifacts  = { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:0 };
     state.artifactShards = 0;
     state.bag        = [];
     state.inventory  = { hp1:0, hp2:0, hp3:0, hp4:0, mp1:0, mp2:0, mp3:0, mp4:0, exp1:0, exp2:0, exp3:0 };
@@ -6841,7 +6841,7 @@ const ACHIEVEMENTS = [
 {
   // ── 無限成就：3200 題之後，每累積答對 100 題可再次領取獎勵 ──
   id: 'correctInfinite', name: '賢者', desc: '每累積答對 100 題可再次領取獎勵',
-  category: '學習', icon: '📚', requires: 'correct3200', goal: 100, infinite: true,
+  category: '學習', icon: '📚', requires: 'correct3100', goal: 100, infinite: true,
   reward: { gems: 500, statBonus: { hp: 500 } },
   progress: () => {
     const claimed = state.achievements?.correctInfinite?.claimed || 0;
