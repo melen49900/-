@@ -2717,14 +2717,46 @@ function mergeAssetsFromPack(pack) {
   });
 }
 
+// 單一資源檔的 fetch，失敗時自動重試（含逐次遞增延遲），全部重試失敗才回傳 null
+function fetchAssetFile(url, retries = 3, delay = 800) {
+  return fetch(url)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .catch(err => {
+      if (retries > 0) {
+        return new Promise(res => setTimeout(res, delay)).then(() => fetchAssetFile(url, retries - 1, delay * 1.6));
+      }
+      console.warn('資源包載入失敗：', url, err);
+      return null; // null 代表這個檔案徹底失敗（跟正常但空的 {} 區分開）
+    });
+}
+
+let _assetRetryCount = 0; // 整批重試次數（避免無限重試）
+const ASSET_RELOAD_FLAG = 'magicAcademy_assetAutoReloadDone';
+
 function fetchAndApplyAssets() {// 從伺服器 fetch 最新資源包，合併後存快取並更新畫面
-  return Promise.all(ASSET_FILES.map(f => fetch(f).then(r => r.json()).catch(() => ({}))))
+  return Promise.all(ASSET_FILES.map(f => fetchAssetFile(f)))
     .then(packs => {
-      packs.forEach(mergeAssetsFromPack);
+      const failCount = packs.filter(p => p === null).length;
+      packs.forEach(p => { if (p) mergeAssetsFromPack(p); });
       dbSet(ASSETS_KEY, gameAssets);
       applyGameAssets();
       renderBattleUI(); renderEnemyList();
       renderQuestion();
+
+      if (failCount > 0) {
+        _assetRetryCount++;
+        if (_assetRetryCount <= 2) {
+          // 整批再試一次（間隔漸長），涵蓋「當下網路剛好卡頓」的情況
+          setTimeout(fetchAndApplyAssets, 2000 * _assetRetryCount);
+        } else if (!sessionStorage.getItem(ASSET_RELOAD_FLAG)) {
+          // 重試多次仍失敗，最後手段：自動重新整理一次頁面（同一 session 只做一次，避免無限迴圈）
+          sessionStorage.setItem(ASSET_RELOAD_FLAG, '1');
+          location.reload();
+        }
+      } else {
+        _assetRetryCount = 0;
+        sessionStorage.removeItem(ASSET_RELOAD_FLAG);
+      }
     });
 }
 
@@ -5117,6 +5149,41 @@ function _doSpeak(text, lang, volume = speechCfg.volume.default) {
   }
 }
 
+// 通用填空題朗讀：偵測文字中的底線（一個或多個連續底線視為同一個空格），
+// 依序唸出空格前後的片段，每個空格處插入一聲提示音。適用於所有科目。
+// 沒有底線時行為與 _doSpeak 完全相同。
+function _speakWithBlanks(text, lang, volume = speechCfg.volume.default) {
+  const parts = text.split(/_+/);
+  if (parts.length <= 1) { _doSpeak(text, lang, volume); return; }
+  window.speechSynthesis.cancel();
+  const doIt = () => {
+    let i = 0;
+    const speakNext = () => {
+      if (i >= parts.length) return;
+      const segment = parts[i].trim();
+      const proceed = () => {
+        i++;
+        if (i < parts.length) { playSound('blank'); speakNext(); }
+      };
+      if (!segment) { proceed(); return; }
+      const u = new SpeechSynthesisUtterance(segment);
+      u.lang = lang; u.rate = speechCfg.rate; u.pitch = 1.1; u.volume = volume;
+      u.onend = proceed;
+      window.speechSynthesis.speak(u);
+    };
+    speakNext();
+  };
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    setTimeout(doIt, 100);
+  } else {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      setTimeout(doIt, 100);
+    };
+  }
+}
+
 function speakQ() {
   if (!speechCfg.enabled || !window.speechSynthesis) return;
   const q = state.quiz.q;
@@ -5132,11 +5199,12 @@ function speakQ() {
       .replace(/÷/g,'除以')
       .replace(/＋/g,'加')
       .replace(/＝/g,'等於').replace(/=/g,'等於');
-    _doSpeak(text, speechCfg.lang, speechCfg.volume.quiz);
+    _speakWithBlanks(text, speechCfg.lang, speechCfg.volume.quiz);
   } else if (sub === 'english') {
-    // 英文題：題目用中文語音讀（題目通常是中文），移除問號
+    // 英文題：移除問號、引號後，判斷題幹是否為整句英文（例如填空題 The ball is ___ the table.）
     text = text.replace(/[?？]/g, '').replace(/["""'']/g, '');
-    _doSpeak(text, speechCfg.lang, speechCfg.volume.quiz);
+    const isEnglishSentence = /^[A-Za-z0-9\s_\-.,!]+$/.test(text.trim());
+    _speakWithBlanks(text, isEnglishSentence ? 'en-US' : speechCfg.lang, speechCfg.volume.quiz);
   } else {
     // 國文、自然、社會：移除問號，符號轉國字
     text = text
@@ -5144,7 +5212,7 @@ function speakQ() {
       .replace(/[=＝]/g, '等於')
       .replace(/[<＜]/g, '小於')
       .replace(/[>＞]/g, '大於');
-    _doSpeak(text, speechCfg.lang, speechCfg.volume.quiz);
+    _speakWithBlanks(text, speechCfg.lang, speechCfg.volume.quiz);
   }
 }
 
@@ -5173,6 +5241,11 @@ function playSound(type) {
         const g2=ctx.createGain(); g2.gain.setValueAtTime(0,ctx.currentTime+t); g2.gain.linearRampToValueAtTime(.8,ctx.currentTime+t+.02); g2.gain.linearRampToValueAtTime(0,ctx.currentTime+t+d);
         o.connect(g2); g2.connect(gain); o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+d+.05);
       });
+    } else if (type === 'blank') {
+      // 填空提示音：單一短嗶聲，語意中立，不分科目通用
+      const o = ctx.createOscillator(); o.type='sine'; o.frequency.value=600;
+      const g2=ctx.createGain(); g2.gain.setValueAtTime(0,ctx.currentTime); g2.gain.linearRampToValueAtTime(.6,ctx.currentTime+.02); g2.gain.linearRampToValueAtTime(0,ctx.currentTime+.18);
+      o.connect(g2); g2.connect(gain); o.start(ctx.currentTime); o.stop(ctx.currentTime+.2);
     } else {
       [[350,0,.25],[294,.28,.25],[247,.56,.45]].forEach(([f,t,d]) => {
         const o = ctx.createOscillator(); o.type='sine'; o.frequency.value=f;

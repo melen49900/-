@@ -1870,6 +1870,18 @@
       "id": 121
     },
     {
+      "category": "國文",
+      "question": "「ㄎㄜˇ愛」怎麼寫？",
+      "options": [
+        "可",
+        "呵",
+        "渴",
+        "克"
+      ],
+      "answer": "可",
+      "id": 122
+    },
+    {
       "category": "英文",
       "question": "1的英文是?",
       "options": [
@@ -2290,6 +2302,18 @@
     },
     {
       "category": "英文",
+      "question": "蘋果的英文是什麼？",
+      "options": [
+        "apple",
+        "banana",
+        "orange",
+        "grape"
+      ],
+      "answer": "apple",
+      "id": 35
+    },
+    {
+      "category": "英文",
       "question": "花園的英文是?",
       "options": [
         "garden",
@@ -2298,7 +2322,7 @@
         "mountain"
       ],
       "answer": "garden",
-      "id": 35
+      "id": 36
     },
     {
       "category": "英文",
@@ -2310,7 +2334,7 @@
         "message"
       ],
       "answer": "mermaid",
-      "id": 36
+      "id": 37
     },
     {
       "category": "英文",
@@ -2322,7 +2346,7 @@
         "latch"
       ],
       "answer": "laugh",
-      "id": 37
+      "id": 38
     },
     {
       "category": "英文",
@@ -2334,7 +2358,7 @@
         "fish"
       ],
       "answer": "monckey",
-      "id": 38
+      "id": 39
     },
     {
       "category": "英文",
@@ -2346,7 +2370,7 @@
         "dune"
       ],
       "answer": "dance",
-      "id": 39
+      "id": 40
     },
     {
       "category": "英文",
@@ -2358,7 +2382,7 @@
         "shine"
       ],
       "answer": "shoes",
-      "id": 40
+      "id": 41
     },
     {
       "category": "英文",
@@ -2371,7 +2395,7 @@
       ],
       "answer": "bus",
       "image": "q_物品巴士.jpg",
-      "id": 41
+      "id": 42
     },
     {
       "category": "英文",
@@ -2384,7 +2408,7 @@
       ],
       "answer": "car",
       "image": "q_物品車.jpeg",
-      "id": 42
+      "id": 43
     },
     {
       "category": "英文",
@@ -2397,7 +2421,7 @@
       ],
       "answer": "fried rice",
       "image": "q_食物炒飯.jpg",
-      "id": 43
+      "id": 44
     },
     {
       "category": "英文",
@@ -2410,7 +2434,7 @@
       ],
       "answer": "noodle",
       "image": "q_食物麵.jpg",
-      "id": 44
+      "id": 45
     },
     {
       "category": "英文",
@@ -2423,7 +2447,7 @@
       ],
       "answer": "teacher",
       "image": "q_職業老師.jpeg",
-      "id": 45
+      "id": 46
     },
     {
       "category": "英文",
@@ -2436,7 +2460,7 @@
       ],
       "answer": "doctor",
       "image": "q_職業醫生.jpeg",
-      "id": 46
+      "id": 47
     },
     {
       "category": "英文",
@@ -2449,7 +2473,7 @@
       ],
       "answer": "police",
       "image": "q_職業警察.jpeg",
-      "id": 47
+      "id": 48
     },
     {
       "category": "英文",
@@ -2462,7 +2486,7 @@
       ],
       "answer": "firefighter",
       "image": "q_職業消防員.jpg",
-      "id": 48
+      "id": 49
     },
     {
       "category": "英文",
@@ -2475,7 +2499,7 @@
       ],
       "answer": "farmer",
       "image": "q_職業農夫.jpg",
-      "id": 49
+      "id": 50
     },
     {
       "category": "英文",
@@ -2488,7 +2512,7 @@
       ],
       "answer": "cook",
       "image": "q_職業廚師.jpg",
-      "id": 50
+      "id": 51
     },
     {
       "category": "英文",
@@ -2501,7 +2525,7 @@
       ],
       "answer": "running",
       "image": "q_動作跑.JPG",
-      "id": 51
+      "id": 52
     },
     {
       "category": "英文",
@@ -2513,7 +2537,7 @@
         "相機"
       ],
       "answer": "蛋糕",
-      "id": 52
+      "id": 53
     },
     {
       "category": "英文",
@@ -2525,7 +2549,7 @@
         "相機"
       ],
       "answer": "蘿蔔",
-      "id": 53
+      "id": 54
     },
     {
       "category": "英文",
@@ -2537,7 +2561,7 @@
         "相機"
       ],
       "answer": "時鐘",
-      "id": 54
+      "id": 55
     },
     {
       "category": "英文",
@@ -2549,7 +2573,7 @@
         "奶奶"
       ],
       "answer": "爸爸",
-      "id": 55
+      "id": 56
     },
     {
       "category": "英文",
@@ -2561,7 +2585,7 @@
         "鴨"
       ],
       "answer": "狗",
-      "id": 56
+      "id": 57
     },
     {
       "category": "英文",
@@ -2573,7 +2597,7 @@
         "嘴巴"
       ],
       "answer": "耳朵",
-      "id": 57
+      "id": 58
     },
     {
       "category": "英文",
@@ -2585,7 +2609,7 @@
         "看"
       ],
       "answer": "吃",
-      "id": 58
+      "id": 59
     },
     {
       "category": "英文",
@@ -2597,7 +2621,7 @@
         "十八"
       ],
       "answer": "十八",
-      "id": 59
+      "id": 60
     },
     {
       "category": "英文",
@@ -2609,7 +2633,7 @@
         "眼"
       ],
       "answer": "眼",
-      "id": 60
+      "id": 61
     },
     {
       "category": "英文",
@@ -2621,7 +2645,7 @@
         "眼"
       ],
       "answer": "腳",
-      "id": 61
+      "id": 62
     },
     {
       "category": "英文",
@@ -2633,7 +2657,7 @@
         "星星"
       ],
       "answer": "花",
-      "id": 62
+      "id": 63
     },
     {
       "category": "英文",
@@ -2645,7 +2669,7 @@
         "奶奶"
       ],
       "answer": "奶奶",
-      "id": 63
+      "id": 64
     },
     {
       "category": "英文",
@@ -2657,7 +2681,7 @@
         "奶奶"
       ],
       "answer": "爺爺",
-      "id": 64
+      "id": 65
     },
     {
       "category": "英文",
@@ -2669,7 +2693,7 @@
         "嘴巴"
       ],
       "answer": "頭髮",
-      "id": 65
+      "id": 66
     },
     {
       "category": "英文",
@@ -2681,7 +2705,7 @@
         "眼"
       ],
       "answer": "手",
-      "id": 66
+      "id": 67
     },
     {
       "category": "英文",
@@ -2693,7 +2717,7 @@
         "眼"
       ],
       "answer": "頭",
-      "id": 67
+      "id": 68
     },
     {
       "category": "英文",
@@ -2705,7 +2729,7 @@
         "書包"
       ],
       "answer": "幼兒園",
-      "id": 68
+      "id": 69
     },
     {
       "category": "英文",
@@ -2717,7 +2741,7 @@
         "嘴巴"
       ],
       "answer": "腿",
-      "id": 69
+      "id": 70
     },
     {
       "category": "英文",
@@ -2729,7 +2753,7 @@
         "媽媽"
       ],
       "answer": "地圖",
-      "id": 70
+      "id": 71
     },
     {
       "category": "英文",
@@ -2741,7 +2765,7 @@
         "奶奶"
       ],
       "answer": "媽媽",
-      "id": 71
+      "id": 72
     },
     {
       "category": "英文",
@@ -2753,7 +2777,7 @@
         "嘴巴"
       ],
       "answer": "嘴巴",
-      "id": 72
+      "id": 73
     },
     {
       "category": "英文",
@@ -2765,7 +2789,7 @@
         "嘴巴"
       ],
       "answer": "鼻子",
-      "id": 73
+      "id": 74
     },
     {
       "category": "英文",
@@ -2777,7 +2801,7 @@
         "老鼠"
       ],
       "answer": "兔子",
-      "id": 74
+      "id": 75
     },
     {
       "category": "英文",
@@ -2789,7 +2813,7 @@
         "麵包"
       ],
       "answer": "三明治",
-      "id": 75
+      "id": 76
     },
     {
       "category": "英文",
@@ -2801,7 +2825,7 @@
         "圖書館"
       ],
       "answer": "學校",
-      "id": 76
+      "id": 77
     },
     {
       "category": "英文",
@@ -2813,7 +2837,7 @@
         "說"
       ],
       "answer": "看",
-      "id": 77
+      "id": 78
     },
     {
       "category": "英文",
@@ -2825,7 +2849,7 @@
         "十八"
       ],
       "answer": "十七",
-      "id": 78
+      "id": 79
     },
     {
       "category": "英文",
@@ -2837,7 +2861,7 @@
         "襪子"
       ],
       "answer": "鞋子",
-      "id": 79
+      "id": 80
     },
     {
       "category": "英文",
@@ -2849,7 +2873,7 @@
         "笑"
       ],
       "answer": "唱",
-      "id": 80
+      "id": 81
     },
     {
       "category": "英文",
@@ -2861,7 +2885,7 @@
         "十八"
       ],
       "answer": "十六",
-      "id": 81
+      "id": 82
     },
     {
       "category": "英文",
@@ -2873,7 +2897,7 @@
         "襪子"
       ],
       "answer": "襪子",
-      "id": 82
+      "id": 83
     },
     {
       "category": "英文",
@@ -2885,7 +2909,7 @@
         "雨水"
       ],
       "answer": "太陽",
-      "id": 83
+      "id": 84
     },
     {
       "category": "英文",
@@ -2897,7 +2921,7 @@
         "葡萄"
       ],
       "answer": "西瓜",
-      "id": 84
+      "id": 85
     },
     {
       "category": "英文",
@@ -2909,7 +2933,7 @@
         "三"
       ],
       "answer": "零",
-      "id": 85
+      "id": 86
     },
     {
       "category": "英文",
@@ -2921,7 +2945,7 @@
         "開心"
       ],
       "answer": "昆蟲",
-      "id": 86
+      "id": 87
     },
     {
       "category": "英文",
@@ -2933,7 +2957,7 @@
         "袋子"
       ],
       "answer": "男孩",
-      "id": 87
+      "id": 88
     },
     {
       "category": "英文",
@@ -2945,7 +2969,7 @@
         "袋子"
       ],
       "answer": "球",
-      "id": 88
+      "id": 89
     },
     {
       "category": "英文",
@@ -2957,7 +2981,7 @@
         "袋子"
       ],
       "answer": "書",
-      "id": 89
+      "id": 90
     },
     {
       "category": "英文",
@@ -2969,7 +2993,7 @@
         "袋子"
       ],
       "answer": "袋子",
-      "id": 90
+      "id": 91
     },
     {
       "category": "英文",
@@ -2981,7 +3005,7 @@
         "towel"
       ],
       "answer": "orange",
-      "id": 91
+      "id": 92
     },
     {
       "category": "英文",
@@ -2993,7 +3017,7 @@
         "table"
       ],
       "answer": "apple",
-      "id": 92
+      "id": 93
     },
     {
       "category": "英文",
@@ -3005,7 +3029,7 @@
         "paper"
       ],
       "answer": "banana",
-      "id": 93
+      "id": 94
     },
     {
       "category": "英文",
@@ -3017,7 +3041,7 @@
         "water"
       ],
       "answer": "watermelon",
-      "id": 94
+      "id": 95
     },
     {
       "category": "英文",
@@ -3030,7 +3054,7 @@
       ],
       "answer": "cat",
       "image": "q_動物貓.jpg",
-      "id": 95
+      "id": 96
     },
     {
       "category": "英文",
@@ -3043,7 +3067,7 @@
       ],
       "answer": "elephant",
       "image": "q_動物大象.jpeg",
-      "id": 96
+      "id": 97
     },
     {
       "category": "英文",
@@ -3056,7 +3080,7 @@
       ],
       "answer": "frog",
       "image": "q_動物青蛙.jpg",
-      "id": 97
+      "id": 98
     },
     {
       "category": "英文",
@@ -3069,7 +3093,7 @@
       ],
       "answer": "butterfly",
       "image": "q_動物蝴蝶.jpeg",
-      "id": 98
+      "id": 99
     },
     {
       "category": "英文",
@@ -3082,7 +3106,7 @@
       ],
       "answer": "giraffe",
       "image": "q_動物長頸鹿.jpeg",
-      "id": 99
+      "id": 100
     },
     {
       "category": "英文",
@@ -3095,7 +3119,7 @@
       ],
       "answer": "bear",
       "image": "q_動物熊.jpg",
-      "id": 100
+      "id": 101
     },
     {
       "category": "英文",
@@ -3108,7 +3132,7 @@
       ],
       "answer": "zebra",
       "image": "q_動物斑馬.jpeg",
-      "id": 101
+      "id": 102
     },
     {
       "category": "英文",
@@ -3121,7 +3145,7 @@
       ],
       "answer": "ant",
       "image": "q_動物螞蟻.jpg",
-      "id": 102
+      "id": 103
     },
     {
       "category": "英文",
@@ -3134,98 +3158,98 @@
       ],
       "answer": "ladybug",
       "image": "q_動物瓢蟲.jpg",
-      "id": 103
-    },
-    {
-      "category": "英文",
-      "question": "How's the weather?",
-      "options": [
-        "It’s cloudy",
-        "It’s rainy",
-        "It’s sunny",
-        "It’s windy"
-      ],
-      "answer": "It’s rainy",
-      "image": "q_天氣雨.jpg",
       "id": 104
     },
     {
       "category": "英文",
       "question": "How's the weather?",
       "options": [
-        "It’s cloudy",
-        "It’s rainy",
-        "It’s sunny",
-        "It’s windy"
+        "It's cloudy",
+        "It's rainy",
+        "It's sunny",
+        "It's windy"
       ],
-      "answer": "It’s cloudy",
-      "image": "q_天氣陰.jpg",
+      "answer": "It's rainy",
+      "image": "q_天氣雨.jpg",
       "id": 105
     },
     {
       "category": "英文",
       "question": "How's the weather?",
       "options": [
-        "It’s cloudy",
-        "It’s rainy",
-        "It’s sunny",
-        "It’s windy"
+        "It's cloudy",
+        "It's rainy",
+        "It's sunny",
+        "It's windy"
       ],
-      "answer": "It’s sunny",
-      "image": "q_天氣晴.jpg",
+      "answer": "It's cloudy",
+      "image": "q_天氣陰.jpg",
       "id": 106
     },
     {
       "category": "英文",
-      "question": "The ball is…",
+      "question": "How's the weather?",
       "options": [
-        "in the box",
-        "on the box",
-        "under the box",
-        "behind the box"
+        "It's cloudy",
+        "It's rainy",
+        "It's sunny",
+        "It's windy"
       ],
-      "answer": "in the box",
-      "image": "q_介詞in.jpg",
+      "answer": "It's sunny",
+      "image": "q_天氣晴.jpg",
       "id": 107
     },
     {
       "category": "英文",
-      "question": "The ball is…",
+      "question": "The ball is ___ the box",
       "options": [
-        "in the box",
-        "on the box",
-        "under the box",
-        "behind the box"
+        "in",
+        "on",
+        "under",
+        "behind"
       ],
-      "answer": "on the box",
-      "image": "q_介詞on.JPG",
+      "answer": "in",
+      "image": "q_介詞in.jpg",
       "id": 108
     },
     {
       "category": "英文",
-      "question": "The ball is…",
+      "question": "The ball is ___ the box",
       "options": [
-        "in the box",
-        "on the box",
-        "under the box",
-        "behind the box"
+        "in",
+        "on",
+        "under",
+        "behind"
       ],
-      "answer": "under the box",
-      "image": "q_介詞under.JPG",
+      "answer": "on",
+      "image": "q_介詞on.JPG",
       "id": 109
     },
     {
       "category": "英文",
-      "question": "The ball is…",
+      "question": "The ball is ___ the box",
       "options": [
-        "in the box",
-        "on the box",
-        "under the box",
-        "behind the box"
+        "in",
+        "on",
+        "under",
+        "behind"
       ],
-      "answer": "behind the box",
-      "image": "q_介詞behind.JPG",
+      "answer": "under",
+      "image": "q_介詞under.JPG",
       "id": 110
+    },
+    {
+      "category": "英文",
+      "question": "The ball is ___ the box",
+      "options": [
+        "in",
+        "on",
+        "under",
+        "behind"
+      ],
+      "answer": "behind",
+      "image": "q_介詞behind.JPG",
+      "id": 111
     },
     {
       "category": "英文",
@@ -3237,7 +3261,379 @@
         "動物園"
       ],
       "answer": "公園",
-      "id": 111
+      "id": 112
+    },
+    {
+      "category": "英文",
+      "question": "Which one is red?",
+      "options": [
+        "apple",
+        "sky",
+        "grass",
+        "milk"
+      ],
+      "answer": "apple",
+      "id": 113
+    },
+    {
+      "category": "英文",
+      "question": "爸爸的英文是什麼？",
+      "options": [
+        "father",
+        "mother",
+        "sister",
+        "grandma"
+      ],
+      "answer": "father",
+      "id": 114
+    },
+    {
+      "category": "英文",
+      "question": "Which animal can fly?",
+      "options": [
+        "bird",
+        "pig",
+        "elephant",
+        "horse"
+      ],
+      "answer": "bird",
+      "id": 115
+    },
+    {
+      "category": "英文",
+      "question": "牛奶的英文是什麼？",
+      "options": [
+        "milk",
+        "juice",
+        "bread",
+        "rice"
+      ],
+      "answer": "milk",
+      "id": 116
+    },
+    {
+      "category": "英文",
+      "question": "We use our ____ to hear.",
+      "options": [
+        "ears",
+        "eyes",
+        "nose",
+        "mouth"
+      ],
+      "answer": "ears",
+      "id": 117
+    },
+    {
+      "category": "英文",
+      "question": "Which one is a number?",
+      "options": [
+        "seven",
+        "blue",
+        "happy",
+        "apple"
+      ],
+      "answer": "seven",
+      "id": 118
+    },
+    {
+      "category": "英文",
+      "question": "Which one can you eat?",
+      "options": [
+        "banana",
+        "pencil",
+        "eraser",
+        "ruler"
+      ],
+      "answer": "banana",
+      "id": 119
+    },
+    {
+      "category": "英文",
+      "question": "太陽的英文是什麼？",
+      "options": [
+        "sun",
+        "moon",
+        "star",
+        "cloud"
+      ],
+      "answer": "sun",
+      "id": 120
+    },
+    {
+      "category": "英文",
+      "question": "I have two ____.",
+      "options": [
+        "hands",
+        "nose",
+        "head",
+        "mouth"
+      ],
+      "answer": "hands",
+      "id": 121
+    },
+    {
+      "category": "英文",
+      "question": "水的英文是什麼？",
+      "options": [
+        "water",
+        "milk",
+        "cake",
+        "egg"
+      ],
+      "answer": "water",
+      "id": 122
+    },
+    {
+      "category": "英文",
+      "question": "Which one is an animal?",
+      "options": [
+        "rabbit",
+        "carrot",
+        "table",
+        "pencil"
+      ],
+      "answer": "rabbit",
+      "id": 123
+    },
+    {
+      "category": "英文",
+      "question": "Which one is in the sky?",
+      "options": [
+        "moon",
+        "fish",
+        "bus",
+        "table"
+      ],
+      "answer": "moon",
+      "id": 124
+    },
+    {
+      "category": "英文",
+      "question": "我知道了怎麼說?",
+      "options": [
+        "I see",
+        "I can",
+        "I want to eat",
+        "I'm lost"
+      ],
+      "answer": "I see",
+      "id": 125
+    },
+    {
+      "category": "英文",
+      "question": "書的英文是什麼？",
+      "options": [
+        "book",
+        "pen",
+        "chair",
+        "desk"
+      ],
+      "answer": "book",
+      "id": 126
+    },
+    {
+      "category": "英文",
+      "question": "我餓了怎麼說?",
+      "options": [
+        "I'm hungry",
+        "I'm good",
+        "I'm tired",
+        "I'm busy"
+      ],
+      "answer": "I'm hungry",
+      "id": 127
+    },
+    {
+      "category": "英文",
+      "question": "我很好怎麼說?",
+      "options": [
+        "I'm hungry",
+        "I'm good",
+        "I'm tired",
+        "I'm busy"
+      ],
+      "answer": "I'm good",
+      "id": 128
+    },
+    {
+      "category": "英文",
+      "question": "我累了怎麼說?",
+      "options": [
+        "I'm hungry",
+        "I'm good",
+        "I'm tired",
+        "I'm busy"
+      ],
+      "answer": "I'm tired",
+      "id": 129
+    },
+    {
+      "category": "英文",
+      "question": "我很忙怎麼說?",
+      "options": [
+        "I'm hungry",
+        "I'm good",
+        "I'm tired",
+        "I'm busy"
+      ],
+      "answer": "I'm busy",
+      "id": 130
+    },
+    {
+      "category": "英文",
+      "question": "I ___ a cat.",
+      "options": [
+        "have",
+        "has",
+        "am",
+        "is"
+      ],
+      "answer": "have",
+      "id": 131
+    },
+    {
+      "category": "英文",
+      "question": "星期一的英文是什麼？",
+      "options": [
+        "Monday",
+        "Friday",
+        "Sunday",
+        "Tuesday"
+      ],
+      "answer": "Monday",
+      "id": 132
+    },
+    {
+      "category": "英文",
+      "question": "What color is the sky on a sunny day?",
+      "options": [
+        "blue",
+        "green",
+        "pink",
+        "black"
+      ],
+      "answer": "blue",
+      "id": 133
+    },
+    {
+      "category": "英文",
+      "question": "Which animal says \"Meow\"?",
+      "options": [
+        "cat",
+        "dog",
+        "cow",
+        "duck"
+      ],
+      "answer": "cat",
+      "id": 134
+    },
+    {
+      "category": "英文",
+      "question": "How many days are there in a week?",
+      "options": [
+        "seven",
+        "five",
+        "eight",
+        "ten"
+      ],
+      "answer": "seven",
+      "id": 135
+    },
+    {
+      "category": "英文",
+      "question": "My mother is in the ____. She is cooking.",
+      "options": [
+        "kitchen",
+        "bedroom",
+        "bathroom",
+        "classroom"
+      ],
+      "answer": "kitchen",
+      "id": 136
+    },
+    {
+      "category": "英文",
+      "question": "We use our ___ to see.",
+      "options": [
+        "eyes",
+        "ears",
+        "nose",
+        "hands"
+      ],
+      "answer": "eyes",
+      "id": 137
+    },
+    {
+      "category": "英文",
+      "question": "謝謝的英文是什麼？",
+      "options": [
+        "Thank you",
+        "Goodbye",
+        "Sorry",
+        "Please"
+      ],
+      "answer": "Thank you",
+      "id": 138
+    },
+    {
+      "category": "英文",
+      "question": "I go to school by ____.",
+      "options": [
+        "bus",
+        "apple",
+        "water",
+        "homework"
+      ],
+      "answer": "bus",
+      "id": 139
+    },
+    {
+      "category": "英文",
+      "question": "狗的英文是什麼？",
+      "options": [
+        "dog",
+        "bird",
+        "fish",
+        "rabbit"
+      ],
+      "answer": "dog",
+      "id": 140
+    },
+    {
+      "category": "英文",
+      "question": "There ___ three books on the desk.",
+      "options": [
+        "are",
+        "is",
+        "am",
+        "be"
+      ],
+      "answer": "are",
+      "id": 141
+    },
+    {
+      "category": "英文",
+      "question": "What do you say before asking for help?",
+      "options": [
+        "Please",
+        "Hello",
+        "Good night",
+        "Welcome"
+      ],
+      "answer": "Please",
+      "id": 142
+    },
+    {
+      "category": "英文",
+      "question": "Which one is a drink?",
+      "options": [
+        "milk",
+        "bread",
+        "rice",
+        "egg"
+      ],
+      "answer": "milk",
+      "id": 143
     },
     {
       "category": "自然",
@@ -3965,7 +4361,7 @@
     },
     {
       "category": "自然",
-      "question": "針鼴跟鴨嘴獸都是哺乳動物，哪種是卵生?",
+      "question": "針鼴跟鴨嘴獸都是哺乳動物，哪種是卵生？",
       "options": [
         "兩種都是",
         "只有針鼴是",
@@ -4110,7 +4506,7 @@
     },
     {
       "category": "自然",
-      "question": "為什麼小寶寶不會走路?",
+      "question": "為什麼小寶寶不會走路？",
       "options": [
         "肌肉和骨骼還不夠強壯",
         "腳正在休息，不想工作",
@@ -4147,7 +4543,7 @@
     },
     {
       "category": "自然",
-      "question": "吃熱的食物時會看到冒白煙，那是什麼?",
+      "question": "吃熱的食物時會看到冒白煙，那是什麼？",
       "options": [
         "水蒸氣",
         "小冰塊",
@@ -4218,6 +4614,18 @@
       "id": 81
     },
     {
+      "category": "自然",
+      "question": "血液中的什麼可以搬運氧氣跟養分給全身細胞？",
+      "options": [
+        "紅血球",
+        "白血球",
+        "血小板",
+        "水分"
+      ],
+      "answer": "紅血球",
+      "id": 82
+    },
+    {
       "category": "社會",
       "question": "紅綠燈是什麼顏色時才能過馬路",
       "options": [
@@ -4267,6 +4675,18 @@
     },
     {
       "category": "社會",
+      "question": "和同學一起玩遊戲時，輸了應該怎麼做？",
+      "options": [
+        "恭喜對方，下次再努力",
+        "生氣罵人",
+        "故意作弊",
+        "把遊戲弄壞"
+      ],
+      "answer": "恭喜對方，下次再努力",
+      "id": 5
+    },
+    {
+      "category": "社會",
       "question": "為什麼晚上會天黑？",
       "options": [
         "太陽照到地球的另一邊",
@@ -4275,7 +4695,31 @@
         "月亮把太陽藏起來"
       ],
       "answer": "太陽照到地球的另一邊",
-      "id": 5
+      "id": 6
+    },
+    {
+      "category": "社會",
+      "question": "一周有多少天？",
+      "options": [
+        "7",
+        "5",
+        "10",
+        "30"
+      ],
+      "answer": "7",
+      "id": 7
+    },
+    {
+      "category": "社會",
+      "question": "發現陌生人請你跟他離開時，最好的做法是什麼？",
+      "options": [
+        "拒絕並找信任的大人",
+        "跟著走",
+        "收下禮物再走",
+        "不告訴任何人"
+      ],
+      "answer": "拒絕並找信任的大人",
+      "id": 8
     },
     {
       "category": "社會",
@@ -4288,7 +4732,7 @@
       ],
       "answer": "臺灣",
       "image": "q_國家臺灣.jpg",
-      "id": 6
+      "id": 9
     },
     {
       "category": "社會",
@@ -4300,7 +4744,7 @@
         "糖果吃太多會讓牙齒變成彩色"
       ],
       "answer": "身體需要各種不同的營養才能健康成長",
-      "id": 7
+      "id": 10
     },
     {
       "category": "社會",
@@ -4312,7 +4756,7 @@
         "台南"
       ],
       "answer": "台北",
-      "id": 8
+      "id": 11
     },
     {
       "category": "社會",
@@ -4324,7 +4768,7 @@
         "月亮每天都需要一本日曆來提醒它工作"
       ],
       "answer": "古人觀察月亮變化方便種稻",
-      "id": 9
+      "id": 12
     },
     {
       "category": "社會",
@@ -4336,7 +4780,31 @@
         "請你離開"
       ],
       "answer": "對不起",
-      "id": 10
+      "id": 13
+    },
+    {
+      "category": "社會",
+      "question": "在圖書館裡的時候，什麼可以做？",
+      "options": [
+        "輕聲說話",
+        "大聲聊天",
+        "跑來跑去",
+        "播放音樂給大家聽"
+      ],
+      "answer": "輕聲說話",
+      "id": 14
+    },
+    {
+      "category": "社會",
+      "question": "吃飯前最應該做什麼？",
+      "options": [
+        "洗手",
+        "先吃零食",
+        "先玩玩具",
+        "看電視"
+      ],
+      "answer": "洗手",
+      "id": 15
     },
     {
       "category": "社會",
@@ -4348,7 +4816,7 @@
         "火山爆發"
       ],
       "answer": "颱風",
-      "id": 11
+      "id": 16
     },
     {
       "category": "社會",
@@ -4360,7 +4828,7 @@
         "排隊時可以先吃也沒關係"
       ],
       "answer": "跟著排隊等候結帳",
-      "id": 12
+      "id": 17
     },
     {
       "category": "社會",
@@ -4372,7 +4840,7 @@
         "躲冰箱旁邊"
       ],
       "answer": "趴下、掩護、穩住",
-      "id": 13
+      "id": 18
     },
     {
       "category": "社會",
@@ -4384,7 +4852,7 @@
         "喜馬拉雅山"
       ],
       "answer": "玉山",
-      "id": 14
+      "id": 19
     },
     {
       "category": "社會",
@@ -4397,7 +4865,7 @@
       ],
       "answer": "日本",
       "image": "q_國家日本.jpg",
-      "id": 15
+      "id": 20
     },
     {
       "category": "社會",
@@ -4409,7 +4877,7 @@
         "1月1日"
       ],
       "answer": "5月5日",
-      "id": 16
+      "id": 21
     },
     {
       "category": "社會",
@@ -4422,7 +4890,7 @@
       ],
       "answer": "台北",
       "image": "q_縣市台北.jpg",
-      "id": 17
+      "id": 22
     },
     {
       "category": "社會",
@@ -4434,7 +4902,7 @@
         "大甲溪"
       ],
       "answer": "濁水溪",
-      "id": 18
+      "id": 23
     },
     {
       "category": "社會",
@@ -4447,7 +4915,19 @@
       ],
       "answer": "南投",
       "image": "q_縣市南投.jpg",
-      "id": 19
+      "id": 24
+    },
+    {
+      "category": "社會",
+      "question": "如果和同學借東西，應該怎麼做？",
+      "options": [
+        "用完後歸還並道謝",
+        "用完就放著",
+        "故意弄壞",
+        "當成自己的"
+      ],
+      "answer": "用完後歸還並道謝",
+      "id": 25
     },
     {
       "category": "社會",
@@ -4459,7 +4939,7 @@
         "7"
       ],
       "answer": "7",
-      "id": 20
+      "id": 26
     },
     {
       "category": "社會",
@@ -4472,7 +4952,7 @@
       ],
       "answer": "台中",
       "image": "q_縣市台中.jpg",
-      "id": 21
+      "id": 27
     },
     {
       "category": "社會",
@@ -4484,7 +4964,19 @@
         "冰山"
       ],
       "answer": "海洋",
-      "id": 22
+      "id": 28
+    },
+    {
+      "category": "社會",
+      "question": "當老師正在說明事情時，應該怎麼做？",
+      "options": [
+        "專心聽並等老師說完",
+        "一直和同學聊天",
+        "隨意走動",
+        "大聲打斷老師"
+      ],
+      "answer": "專心聽並等老師說完",
+      "id": 29
     },
     {
       "category": "社會",
@@ -4496,7 +4988,19 @@
         "為了比賽"
       ],
       "answer": "為了紀念屈原",
-      "id": 23
+      "id": 30
+    },
+    {
+      "category": "社會",
+      "question": "在電梯外看到裡面很多人要出來時，應該怎麼做？",
+      "options": [
+        "先讓裡面的人出來",
+        "擋住門不讓人出來",
+        "一直按關門鍵",
+        "用力擠進去"
+      ],
+      "answer": "先讓裡面的人出來",
+      "id": 31
     },
     {
       "category": "社會",
@@ -4509,7 +5013,7 @@
       ],
       "answer": "高雄",
       "image": "q_縣市高雄.jpg",
-      "id": 24
+      "id": 32
     },
     {
       "category": "社會",
@@ -4522,7 +5026,19 @@
       ],
       "answer": "中國",
       "image": "q_國家中國.jpg",
-      "id": 25
+      "id": 33
+    },
+    {
+      "category": "社會",
+      "question": "如果朋友的東西掉在地上，你可以怎麼做？",
+      "options": [
+        "幫忙撿起來",
+        "用腳踢開",
+        "假裝沒看到",
+        "撿起來藏起來"
+      ],
+      "answer": "幫忙撿起來",
+      "id": 34
     },
     {
       "category": "社會",
@@ -4535,7 +5051,19 @@
       ],
       "answer": "台南",
       "image": "q_縣市台南.jpg",
-      "id": 26
+      "id": 35
+    },
+    {
+      "category": "社會",
+      "question": "在學校走樓梯時，應該怎麼做？",
+      "options": [
+        "靠右慢慢走",
+        "一次跨好幾階",
+        "推同學下樓",
+        "在樓梯上追逐"
+      ],
+      "answer": "靠右慢慢走",
+      "id": 36
     },
     {
       "category": "社會",
@@ -4548,7 +5076,7 @@
       ],
       "answer": "花蓮",
       "image": "q_縣市花蓮.jpg",
-      "id": 27
+      "id": 37
     },
     {
       "category": "社會",
@@ -4560,7 +5088,7 @@
         "喜馬拉雅山"
       ],
       "answer": "喜馬拉雅山",
-      "id": 28
+      "id": 38
     },
     {
       "category": "社會",
@@ -4573,7 +5101,7 @@
       ],
       "answer": "亞洲",
       "image": "q_七大洲亞洲.jpg",
-      "id": 29
+      "id": 39
     },
     {
       "category": "社會",
@@ -4586,7 +5114,19 @@
       ],
       "answer": "屏東",
       "image": "q_縣市屏東.jpg",
-      "id": 30
+      "id": 40
+    },
+    {
+      "category": "社會",
+      "question": "如果借了圖書館的書，最重要的是什麼？",
+      "options": [
+        "按時歸還",
+        "隨意塗鴉",
+        "借給很多人不還",
+        "把書撕下來收藏"
+      ],
+      "answer": "按時歸還",
+      "id": 41
     },
     {
       "category": "社會",
@@ -4599,7 +5139,7 @@
       ],
       "answer": "基隆",
       "image": "q_縣市基隆.jpg",
-      "id": 31
+      "id": 42
     },
     {
       "category": "社會",
@@ -4611,7 +5151,7 @@
         "南美洲"
       ],
       "answer": "亞洲",
-      "id": 32
+      "id": 43
     },
     {
       "category": "社會",
@@ -4623,7 +5163,7 @@
         "長江"
       ],
       "answer": "長江",
-      "id": 33
+      "id": 44
     },
     {
       "category": "社會",
@@ -4635,7 +5175,7 @@
         "阿拉伯沙漠"
       ],
       "answer": "撒哈拉沙漠",
-      "id": 34
+      "id": 45
     },
     {
       "category": "社會",
@@ -4648,7 +5188,7 @@
       ],
       "answer": "韓國",
       "image": "q_國家韓國.jpg",
-      "id": 35
+      "id": 46
     },
     {
       "category": "社會",
@@ -4661,7 +5201,7 @@
       ],
       "answer": "宜蘭",
       "image": "q_縣市宜蘭.jpg",
-      "id": 36
+      "id": 47
     },
     {
       "category": "社會",
@@ -4673,7 +5213,7 @@
         "蚊香"
       ],
       "answer": "艾草與菖蒲",
-      "id": 37
+      "id": 48
     },
     {
       "category": "社會",
@@ -4686,7 +5226,19 @@
       ],
       "answer": "桃園",
       "image": "q_縣市桃園.jpg",
-      "id": 38
+      "id": 49
+    },
+    {
+      "category": "社會",
+      "question": "如果不小心撞到別人，應該怎麼做？",
+      "options": [
+        "說對不起",
+        "假裝不知道",
+        "生氣罵對方",
+        "馬上跑掉"
+      ],
+      "answer": "說對不起",
+      "id": 50
     },
     {
       "category": "社會",
@@ -4699,7 +5251,19 @@
       ],
       "answer": "新北",
       "image": "q_縣市新北.jpg",
-      "id": 39
+      "id": 51
+    },
+    {
+      "category": "社會",
+      "question": "網路上看到不認識的人向你要個人資料，應該怎麼做？",
+      "options": [
+        "不提供並告訴家長或老師",
+        "全部告訴對方",
+        "拍證件給對方",
+        "約對方見面"
+      ],
+      "answer": "不提供並告訴家長或老師",
+      "id": 52
     },
     {
       "category": "社會",
@@ -4712,7 +5276,7 @@
       ],
       "answer": "俄羅斯",
       "image": "q_國家俄羅斯.jpg",
-      "id": 40
+      "id": 53
     },
     {
       "category": "社會",
@@ -4725,7 +5289,7 @@
       ],
       "answer": "台東",
       "image": "q_縣市台東.jpg",
-      "id": 41
+      "id": 54
     },
     {
       "category": "社會",
@@ -4737,7 +5301,7 @@
         "3月3日"
       ],
       "answer": "8月15日",
-      "id": 42
+      "id": 55
     },
     {
       "category": "社會",
@@ -4750,7 +5314,7 @@
       ],
       "answer": "苗栗",
       "image": "q_縣市苗栗.jpg",
-      "id": 43
+      "id": 56
     },
     {
       "category": "社會",
@@ -4763,7 +5327,31 @@
       ],
       "answer": "雲林",
       "image": "q_縣市雲林.jpg",
-      "id": 44
+      "id": 57
+    },
+    {
+      "category": "社會",
+      "question": "天氣很熱時，運動後最適合做什麼？",
+      "options": [
+        "補充水分",
+        "一直喝汽水",
+        "完全不喝水",
+        "一直曬太陽"
+      ],
+      "answer": "補充水分",
+      "id": 58
+    },
+    {
+      "category": "社會",
+      "question": "在公園看到「禁止踩草皮」的標誌，應該怎麼做？",
+      "options": [
+        "遵守標誌，不踩草皮",
+        "故意踩來踩去",
+        "把標誌拔掉",
+        "和朋友比賽跑過去"
+      ],
+      "answer": "遵守標誌，不踩草皮",
+      "id": 59
     },
     {
       "category": "社會",
@@ -4775,7 +5363,7 @@
         "放天燈"
       ],
       "answer": "烤肉、吃月餅跟柚子",
-      "id": 45
+      "id": 60
     },
     {
       "category": "社會",
@@ -4788,7 +5376,7 @@
       ],
       "answer": "歐洲",
       "image": "q_七大洲歐洲.jpg",
-      "id": 46
+      "id": 61
     },
     {
       "category": "社會",
@@ -4801,7 +5389,7 @@
       ],
       "answer": "彰化",
       "image": "q_縣市彰化.jpg",
-      "id": 47
+      "id": 62
     },
     {
       "category": "社會",
@@ -4813,7 +5401,7 @@
         "8月15日"
       ],
       "answer": "12月30日",
-      "id": 48
+      "id": 63
     },
     {
       "category": "社會",
@@ -4825,7 +5413,7 @@
         "會，完全一樣"
       ],
       "answer": "不一定，少數日期可能剛好相同",
-      "id": 49
+      "id": 64
     },
     {
       "category": "社會",
@@ -4838,7 +5426,7 @@
       ],
       "answer": "菲律賓",
       "image": "q_國家菲律賓.jpg",
-      "id": 50
+      "id": 65
     },
     {
       "category": "社會",
@@ -4851,7 +5439,19 @@
       ],
       "answer": "新竹縣",
       "image": "q_縣市新竹縣.jpg",
-      "id": 51
+      "id": 66
+    },
+    {
+      "category": "社會",
+      "question": "使用公共廁所後，哪一個行為最能展現公德心？",
+      "options": [
+        "沖水並保持乾淨",
+        "把垃圾丟地上",
+        "用完直接離開不整理",
+        "把衛生紙塞進馬桶外"
+      ],
+      "answer": "沖水並保持乾淨",
+      "id": 67
     }
   ]
 }
