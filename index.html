@@ -2147,7 +2147,7 @@ const ARTIFACT_DEFS = [
   { key:'atk', label:'攻擊神器', icon:'⚔️', desc:'攻擊力' },
   { key:'mag', label:'魔法神器', icon:'🔮', desc:'魔法力' },
   { key:'hp',  label:'生命神器', icon:'❤️', desc:'生命值' },
-  { key:'mpregen', label:'回魔神器', icon:'💧', desc:'回魔效率' },
+  { key:'mpregen', label:'魔耗神器', icon:'💧', desc:'技能耗魔減少' },
   { key:'def', label:'防禦神器', icon:'🛡️', desc:'防禦力' },
   { key:'crit', label:'暴擊神器', icon:'🎯', desc:'爆擊率' },
   { key:'chaos', label:'混沌神器', icon:'🌀', desc:'技能傷害↑／耗魔↑' },
@@ -2399,7 +2399,7 @@ function enemyStats(id) {// 怪物數值計算
   const vary  = v => Math.max(1, Math.round(v * (1 + (Math.random() * 0.06 - 0.03))));
   const scale1 = Math.pow(1.123, e.stage - 1);// 生命成長倍率
   const scale2 = Math.pow(1.087, e.stage - 1);// 攻擊成長倍率
-  const scale3 = Math.pow(1.098, e.stage - 1);// 防禦成長倍率
+  const scale3 = Math.pow(1.099, e.stage - 1);// 防禦成長倍率
   const scale4 = Math.pow(1.066, e.stage - 1);// 金幣及經驗成長倍率
   const mod   = FAMILY_MOD[e.family] || { hp:1, atk:1, def:1, gold:1, exp:1 };
   const baseMult   = e.postMult || 1;//第二階段魔界
@@ -2462,7 +2462,7 @@ let state = {
     gold:0, gems:0,
   },
   equipped:   { weapon:null, armor:null, helmet:null, cloak:null, accessory:null },
-  artifacts: { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:0 }, // 神器等級＝加成百分比，預設 +1%
+  artifacts: { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:1 }, // 神器等級，預設1等
   artifactShards: 0, // 神器碎片
   bag:        [],
   inventory:  { hp1:0, hp2:0, hp3:0, hp4:0, mp1:0, mp2:0, mp3:0, mp4:0, exp1:0, exp2:0, exp3:0 },
@@ -2932,9 +2932,9 @@ function grantArtifactShards(n, reason) {
   if (infoEl) renderArtifacts();
 }
 
-// 強化指定神器：每次消耗 ARTIFACT_SHARD_COST 個碎片，該神器 +1%
+// 強化指定神器：每次消耗 ARTIFACT_SHARD_COST 個碎片，該神器等級 +1
 function upgradeArtifact(key) {
-  state.artifacts = state.artifacts || { atk:1, mag:1, hp:1, def:1, mpregen:0 };
+  state.artifacts = state.artifacts || { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:1 };
   const shards = state.artifactShards || 0;
   if (shards < ARTIFACT_SHARD_COST) { showToast('❌ 神器碎片不足！'); return; }
   state.artifactShards = shards - ARTIFACT_SHARD_COST;
@@ -2943,13 +2943,19 @@ function upgradeArtifact(key) {
   renderArtifacts();
   renderHero();
   const def = ARTIFACT_DEFS.find(d => d.key === key);
-  showToast(`✨ ${def?.label || '神器'}強化成功！目前 +${state.artifacts[key]}%`);
+  const lv = state.artifacts[key];
+  let detail;
+  if (key === 'chaos') detail = `+${(lv-1)*3}% 技能傷害／+${(lv-1)*5}% 耗魔`;
+  else if (key === 'mpregen') detail = `技能耗魔 -${Math.max(0,(lv-1)*3)} 點`;
+  else if (key === 'atk' || key === 'mag') detail = `+${lv*0.5}% ${def?.desc || ''}`;
+  else detail = `+${lv}% ${def?.desc || ''}`;
+  showToast(`✨ ${def?.label || '神器'}強化成功！目前 ${detail}`);
 }
 
-// 神器版混沌：等級 = 技能傷害% 與 耗魔% 的同步增幅
+// 神器版混沌：等級 = 技能傷害% (每等+3%) 與 耗魔% (每等+5%) 的同步增幅
 function getArtifactChaosBonus() {
   const lv = (state.artifacts && state.artifacts.chaos) || 0;
-  return { dmgBonus: (lv - 1) / 20, mpMult: (lv - 1) / 20 };
+  return { dmgBonus: (lv - 1) * 0.03, mpMult: (lv - 1) * 0.05 };
 }
 
 // 統一計算技能實際消耗的魔力（含混沌套裝加成 + 技能疊加加成，取四捨五入整數）
@@ -2966,7 +2972,12 @@ function getSkillMpCost(sk) {
   chaosMpMult += getArtifactChaosBonus().mpMult;
   const stacks = (state.skillStacks && state.skillStacks[sk.id]) || 0;
   const stackMult = 1 + stacks * 0.01; // 每疊加1層 +1% 魔力消耗
-  return Math.round(sk.mpCost * chaosMpMult * stackMult);
+  let cost = Math.round(sk.mpCost * chaosMpMult * stackMult);
+  // 魔耗神器：改為降低技能魔力消耗，1等0點、每升1等再多減3點，消耗最低為1
+  const mpArtLv = (state.artifacts && state.artifacts.mpregen) || 1;
+  const mpReduce = Math.max(0, (mpArtLv - 1) * 3);
+  cost = Math.max(1, cost - mpReduce);
+  return cost;
 }
 
 function getStats() {
@@ -3010,18 +3021,25 @@ function getStats() {
   });
   mag = Math.round(mag * (1 + magAmpBonus));
   // 神器加成（攻擊/魔法/生命/防禦 各自百分比疊加）
-  const art = state.artifacts || { atk:1, mag:1, hp:1, def:1, mpregen:0 };
-  atk = Math.round(atk * (1 + (art.atk || 0) / 100));
+  const art = state.artifacts || { atk:1, mag:1, hp:1, def:1, mpregen:1 };
+  atk = Math.round(atk * (1 + (art.atk || 0) * 0.5 / 100));   // 攻擊神器：每等 +0.5%
   def = Math.round(def * (1 + (art.def || 0) / 100));
-  mag = Math.round(mag * (1 + (art.mag || 0) / 100));
+  mag = Math.round(mag * (1 + (art.mag || 0) * 0.5 / 100));   // 魔法神器：每等 +0.5%
   const critBonus = (art.crit || 0) / 100;
   const maxHpBase = (state.hero.maxHp || 100) + bonusHp;
   const maxHp = Math.round(maxHpBase * (1 + (art.hp || 0) / 100));
+  // 暴擊率超過 100% 時，超出部分轉換為暴擊傷害加成，暴擊率上限鎖定 100%
+  let critRate = (state.hero.crit || 0.05) + bonusCrit + critBonus;
+  let critDmgRate = (state.hero.critDmg || 1.5) + bonusCritDmg;
+  if (critRate > 1) {
+    critDmgRate += (critRate - 1);
+    critRate = 1;
+  }
   return { atk, def, mag, bonusHp, bonusMp,
     maxHp,
     maxMp: (state.hero.maxMp || 50)  + bonusMp,
-    crit: (state.hero.crit || 0.05) + bonusCrit + critBonus,
-    critDmg: (state.hero.critDmg || 1.5) + bonusCritDmg
+    crit: critRate,
+    critDmg: critDmgRate
   };
 }
 
@@ -3129,8 +3147,8 @@ function getMathStageCfg(stage) {
   stage = Math.max(1, Math.min(MATH_STAGE_MAX, Number(stage) || 1));
   const addLimit = 5 + 2 * (stage - 1);
   const cfg = {
-    add: { enabled:true,  label:'➕ 加法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:Math.ceil(addLimit/5), bMax:Math.ceil(addLimit/3) },
-    sub: { enabled:false, label:'➖ 減法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:1, bMax:2 },
+    add: { enabled:true,  label:'➕ 加法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:Math.ceil(addLimit/6), bMax:Math.ceil(addLimit/3) },
+    sub: { enabled:false, label:'➖ 減法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:Math.ceil(addLimit/6), bMax:2 },
     mul: { enabled:false, label:'✖️ 乘法', aMin:1, aMax:3,        bMin:1, bMax:3 },
     div: { enabled:false, label:'➗ 除法', aMin:6, aMax:6,        dMin:2, dMax:2 },
     reverseChance: 0, // 猜符號初始出現機率
@@ -3141,9 +3159,16 @@ function getMathStageCfg(stage) {
   }
   if (stage >= 25) {
     cfg.mul.enabled = true;
-    const mulLimit = Math.min(11, 3 + Math.floor((stage - 25) / 5));
-    cfg.mul.aMax = mulLimit;
-    cfg.mul.bMax = mulLimit;
+    if (stage < 60) {// 25~59關：逐步逼近 10
+      const mulLimit = 3 + Math.floor((stage - 25) / 5);
+      cfg.mul.aMax = mulLimit;
+      cfg.mul.bMax = mulLimit;
+    } else {// 60關以後：aMax每5關+1，bMax每20關+1(上限20)
+      cfg.mul.aMax = 10 + Math.floor((stage - 60) / 5);
+      cfg.mul.bMax = Math.min(20, 10 + Math.floor((stage - 60) / 20));
+    }
+    cfg.mul.aMin = Math.ceil(cfg.mul.aMax / 6);
+    cfg.mul.bMin = Math.ceil(cfg.mul.bMax / 6);
   }
   if (stage >= 40) {
     cfg.div.enabled = true;
@@ -3972,7 +3997,7 @@ function updateArtifactBadge() {
 }
 
 function renderArtifacts() {
-  state.artifacts = state.artifacts || { atk:1, mag:1, hp:1, def:1, mpregen:0 };
+  state.artifacts = state.artifacts || { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:1 };
   const shards = state.artifactShards || 0;
   const info = document.getElementById('artifactShardInfo');
   if (info) info.innerHTML = `🔹 神器碎片：<b>${shards}</b> 個　（每次強化消耗 ${ARTIFACT_SHARD_COST} 個）`;
@@ -3983,13 +4008,29 @@ function renderArtifacts() {
   ARTIFACT_DEFS.forEach(def => {
   const lv = state.artifacts[def.key] || 1;
   const canUpgrade = shards >= ARTIFACT_SHARD_COST;
-  const pct = def.key === 'chaos' ? (lv - 1) * 5 : lv;// 混沌神器公式不同
+  let lvText;
+  if (def.key === 'chaos') {
+    // 混沌神器：每等 +3% 技能傷害、+5% 耗魔
+    const dmgPct = (lv - 1) * 3;
+    const mpPct = (lv - 1) * 5;
+    lvText = `+${dmgPct}% 技能傷害 ／ +${mpPct}% 耗魔`;
+  } else if (def.key === 'mpregen') {
+    // 魔耗神器：每等減少技能魔力消耗（1等0點，之後每等-3點，最低消耗為1）
+    const reduce = Math.max(0, (lv - 1) * 3);
+    lvText = `技能耗魔 -${reduce} 點（最低為1）`;
+  } else if (def.key === 'atk' || def.key === 'mag') {
+    // 攻擊／魔法神器：每等 +0.5%
+    const pct = lv * 0.5;
+    lvText = `+${pct}% ${def.desc}`;
+  } else {
+    lvText = `+${lv}% ${def.desc}`;
+  }
   const div = document.createElement('div');
   div.className = 'artifact-card';
   div.innerHTML = `
     <div class="artifact-icon">${def.icon}</div>
     <div class="artifact-name">${def.label}</div>
-    <div class="artifact-lv">+${pct}% ${def.desc}</div>
+    <div class="artifact-lv">${lvText}</div>
     <button class="artifact-upg-btn" ${canUpgrade ? '' : 'disabled'} onclick="upgradeArtifact('${def.key}')">✨ 強化（-${ARTIFACT_SHARD_COST}）</button>
   `;
   grid.appendChild(div);
@@ -4582,15 +4623,10 @@ function onTurnEnd(callback) {
       const regen = Math.max(1, Math.round(getStats().maxHp * (eff.base + star * eff.perStar) / 100));
       hpEffects.push({ card, regen });
     } else if (eff.type === 'mpRegen') {
-      const mpArtMult = 1 + ((state.artifacts && state.artifacts.mpregen) || 1) / 100; // 回魔神器：有穿回魔裝備時，每等增加1%回魔量
-      const regen = Math.max(1, Math.round(getStats().maxMp * (eff.base + star * eff.perStar) / 100 * mpArtMult));
+      const regen = Math.max(1, Math.round(getStats().maxMp * (eff.base + star * eff.perStar) / 100));
       mpEffects.push({ card, regen });
     }
   });
-  if (mpEffects.length === 0) {
-    const mpArtLv = (state.artifacts && state.artifacts.mpregen) || 1;
-    if (mpArtLv > 0) mpEffects.push({ card: null, regen: mpArtLv }); // 回魔神器：沒穿回魔裝備時，每等固定回復1點MP
-  }
   if (hpEffects.length === 0 && mpEffects.length === 0) {
     if (callback) callback(); return;
   }
@@ -6199,7 +6235,7 @@ function loadFromStorage() {
     const data = JSON.parse(raw);
     if (data.state?.hero) Object.assign(state.hero, data.state.hero);
     if (data.state?.equipped) Object.assign(state.equipped, { weapon:null,armor:null,helmet:null,cloak:null,accessory:null }, data.state.equipped);
-    if (data.state?.artifacts) Object.assign(state.artifacts, { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:0 }, data.state.artifacts);
+    if (data.state?.artifacts) Object.assign(state.artifacts, { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:1 }, data.state.artifacts);
     if (typeof data.state?.artifactShards === 'number') state.artifactShards = data.state.artifactShards;
     if (data.state?.bag)    state.bag    = data.state.bag;
     if (data.state?.inventory) state.inventory = data.state.inventory;
@@ -6286,7 +6322,7 @@ function resetProgress() {
     };
     // 清空裝備、背包、技能、關卡
     state.equipped   = { weapon:null, armor:null, helmet:null, cloak:null, accessory:null };
-    state.artifacts  = { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:0 };
+    state.artifacts  = { atk:1, mag:1, hp:1, def:1, crit:1, chaos:1, mpregen:1 };
     state.artifactShards = 0;
     state.bag        = [];
     state.inventory  = { hp1:0, hp2:0, hp3:0, hp4:0, mp1:0, mp2:0, mp3:0, mp4:0, exp1:0, exp2:0, exp3:0 };
