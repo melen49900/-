@@ -56,6 +56,39 @@ body {
   white-space: nowrap; min-width: 32px; text-align: right;
 }
 
+/* 語音（TTS）選擇按鈕與面板 */
+#tts-voice-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 1.05em; line-height: 1; padding: 0 0 0 4px;
+  border-left: 1px solid rgba(255,255,255,.2);
+}
+#tts-voice-panel {
+  position: fixed; top: 46px; right: 10px; z-index: 9999;
+  background: rgba(20, 10, 50, 0.95); backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255,215,0,.3); border-radius: 14px;
+  padding: 10px 12px; box-shadow: 0 4px 18px rgba(0,0,0,.45);
+  width: 230px; font-family: 'Nunito', sans-serif;
+}
+#tts-voice-panel.hidden { display: none; }
+#tts-voice-panel .tvp-title {
+  font-size: .72em; font-weight: 800; color: var(--gold); margin-bottom: 6px;
+}
+#tts-voice-panel select {
+  width: 100%; font-size: .72em; font-weight: 700; padding: 5px 6px;
+  border-radius: 8px; border: 1px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.08); color: #fff; margin-bottom: 8px;
+}
+#tts-voice-panel select option { color: #1a0a2e; }
+#tts-voice-panel .tvp-btns { display: flex; gap: 6px; }
+#tts-voice-panel button.tvp-btn {
+  flex: 1; padding: 6px 4px; border: none; border-radius: 8px;
+  font-family: 'Nunito', sans-serif; font-size: .68em; font-weight: 800;
+  cursor: pointer;
+}
+#tts-voice-panel .tvp-test { background: rgba(255,255,255,.15); color: #fff; }
+#tts-voice-panel .tvp-close { background: linear-gradient(135deg,var(--gold),var(--gold2)); color: #1a0a2e; }
+#tts-voice-panel .tvp-hint { font-size: .62em; color: rgba(255,255,255,.5); margin-top: 6px; line-height: 1.4; }
+
 /* 星星背景 */
 body::before {
   content:'';
@@ -1439,6 +1472,18 @@ button:active { transform:scale(.96); }
   <input id="bgm-volume-slider" type="range" min="0" max="100" value="50"
     oninput="bgmSetVolume(this.value)" title="音量">
   <span id="bgm-label">50%</span>
+  <button id="tts-voice-btn" onclick="toggleVoicePanel()" title="選擇朗讀語音">🗣️</button>
+</div>
+
+<!-- 語音（TTS）選擇面板 -->
+<div id="tts-voice-panel" class="hidden">
+  <div class="tvp-title">🗣️ 選擇朗讀語音</div>
+  <select id="tts-voice-select" onchange="onVoiceSelected(this.value)"></select>
+  <div class="tvp-btns">
+    <button class="tvp-btn tvp-test" onclick="previewVoice()">▶️ 試聽</button>
+    <button class="tvp-btn tvp-close" onclick="toggleVoicePanel()">關閉</button>
+  </div>
+  <div class="tvp-hint" id="tts-voice-hint">朗讀語音由你的裝置／瀏覽器提供。若清單中有「台灣」或「Taiwan」字樣的語音，建議優先選用，發音會比較準確。</div>
 </div>
 
 <div id="app">
@@ -3148,36 +3193,27 @@ function getMathStageCfg(stage) {
   const addLimit = 5 + 2 * (stage - 1);
   const cfg = {
     add: { enabled:true,  label:'➕ 加法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:Math.ceil(addLimit/6), bMax:Math.ceil(addLimit/3) },
-    sub: { enabled:false, label:'➖ 減法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:Math.ceil(addLimit/6), bMax:2 },
-    mul: { enabled:false, label:'✖️ 乘法', aMin:1, aMax:3,        bMin:1, bMax:3 },
-    div: { enabled:false, label:'➗ 除法', aMin:6, aMax:6,        dMin:2, dMax:2 },
+    sub: { enabled:false, label:'➖ 減法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:Math.ceil(addLimit/6), bMax:Math.ceil(addLimit/3) },
+    mul: { enabled:false, label:'✖️ 乘法', aMin:2, aMax:3, bMin:1, bMax:3 },
+    div: { enabled:false, label:'➗ 除法', aMin:6, aMax:Math.min(50, 6 + Math.floor((stage - 40) / 5)), dMin:2, dMax:Math.min(10, 2 + Math.floor((stage - 40) / 5)) },
     reverseChance: 0, // 猜符號初始出現機率
   };
-  if (stage >= 10) {
-    cfg.sub.enabled = true;
-    cfg.sub.bMax = Math.min(addLimit, 2 + (stage - 10));
-  }
-  if (stage >= 25) {
+  if (stage >= 10) {cfg.sub.enabled = true;}//10階開放減法
+  if (stage >= 25) {//25階開放乘法
     cfg.mul.enabled = true;
-    if (stage < 60) {// 25~59關：逐步逼近 10
+    if (stage < 60) {// 60階以下：逐步逼近10
       const mulLimit = 3 + Math.floor((stage - 25) / 5);
       cfg.mul.aMax = mulLimit;
       cfg.mul.bMax = mulLimit;
-    } else {// 60關以後：aMax每5關+1，bMax每20關+1(上限20)
+    } else {// 60關以上：aMax每5+1，bMax每20關+1(上限20)
       cfg.mul.aMax = 10 + Math.floor((stage - 60) / 5);
       cfg.mul.bMax = Math.min(20, 10 + Math.floor((stage - 60) / 20));
     }
     cfg.mul.aMin = Math.ceil(cfg.mul.aMax / 6);
     cfg.mul.bMin = Math.ceil(cfg.mul.bMax / 6);
   }
-  if (stage >= 40) {
-    cfg.div.enabled = true;
-    cfg.div.aMax = Math.min(50, 6 + Math.floor((stage - 40) / 5));
-    cfg.div.dMax = Math.min(10, 2 + Math.floor((stage - 40) / 5));
-  }
-  if (stage >= 70) { //第70階開放「猜符號」題型
-    cfg.reverseChance = 0.3;
-  }
+  if (stage >= 40) {cfg.div.enabled = true;}//40階開放除法
+  if (stage >= 70) {cfg.reverseChance = 0.3;}//70階開放猜符號
   return cfg;
 }
 
@@ -3201,9 +3237,7 @@ function updateMathStage(firstAttemptCorrect) {
     return;
   }
   if (q.mathWindowCount >= 6) {// 升階：視窗滿6題且5題以上第一次就答對
-    if (q.mathWindowCorrect >= 5) {
-      q.mathStage = Math.min(MATH_STAGE_MAX, (q.mathStage || 1) + 1);
-    }
+    if (q.mathWindowCorrect >= 5) {q.mathStage = Math.min(MATH_STAGE_MAX, (q.mathStage || 1) + 1);}
     q.mathWindowCount = 0; q.mathWindowCorrect = 0; q.mathWindowWrong = 0;
   }
 }
@@ -3753,7 +3787,6 @@ function renderGameHall() {
     : '🎟️';
   const el = document.getElementById('memoryTicketCount');
   if (el) el.innerHTML = ticketIconHtml + ' x' + count;
-
   const card = document.getElementById('gameCard-memory');
   if (card) {
     if (count > 0) card.classList.remove('locked');
@@ -5151,6 +5184,7 @@ function addExp(amount) {
 // TTS===========================
 const speechCfg = { //音量調整
   rate:0.95, lang:'zh-TW', enabled:true,
+  voiceURI: localStorage.getItem('tts_voice_uri') || null, // 使用者指定的語音（存起來下次自動套用）
   volume: {
     battle:  0.8,   // 冒險頁
     quiz:    1.0,   // 答題頁
@@ -5160,6 +5194,55 @@ const speechCfg = { //音量調整
   }
 };
 
+// ── 語音（發音者）挑選 ──────────────────────────
+// Web Speech API 唸中文時實際用的「聲音」由裝置/瀏覽器提供，同樣設定 lang='zh-TW'
+// 不代表引擎內部真的是台灣腔，所以額外讓使用者從裝置已有的語音清單中手動指定。
+function getSelectedVoice() {
+  if (!window.speechSynthesis) return null;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
+  if (speechCfg.voiceURI) {
+    const v = voices.find(v => v.voiceURI === speechCfg.voiceURI);
+    if (v) return v;
+  }
+  // 沒指定或找不到時，優先挑名稱/語言看起來像台灣的語音
+  const twMatch = voices.find(v => v.lang === 'zh-TW' && /台灣|taiwan|zh-tw/i.test(v.name + v.lang));
+  if (twMatch) return twMatch;
+  return voices.find(v => v.lang === 'zh-TW') || voices.find(v => v.lang && v.lang.startsWith('zh')) || null;
+}
+
+// ── 台灣／中國破音字唸法修正表 ──────────────────────
+// Web Speech API 沒有標音功能，遇到兩岸讀音不同的破音字，
+// 只能在「朗讀用的文字」上用同音字置換，藉此讓引擎唸出正確的台灣讀音。
+// 這個修正只影響朗讀，不會改到畫面上顯示的文字。
+// 之後遇到其他發音不對的字，依同樣格式加進陣列即可：[/原字/g, '替換成的同音字'],
+const TW_PRONOUNCE_FIX = [
+  [/划/g, '滑'],      // 划船 應唸 huá（2聲）；預設語音容易唸成 huà（4聲）
+  [/垃圾/g, '拉基'],   // 台灣唸 lèsè，用同音字讓引擎接近唸出台灣讀音
+];
+
+function applyPronounceFix(text) {
+  let result = text;
+  for (const [pattern, replacement] of TW_PRONOUNCE_FIX) {
+    result = result.replace(pattern, replacement);
+  }
+  return result;
+}
+
+function buildUtterance(text, lang, volume) {
+  const isZh = typeof lang === 'string' && lang.toLowerCase().startsWith('zh');
+  const u = new SpeechSynthesisUtterance(isZh ? applyPronounceFix(text) : text);
+  u.lang   = lang;
+  u.rate   = speechCfg.rate;
+  u.pitch  = 1.1;
+  u.volume = volume;
+  if (isZh) {
+    const voice = getSelectedVoice();
+    if (voice) u.voice = voice;
+  }
+  return u;
+}
+
 let _doSpeakTimer = null;
 
 function _doSpeak(text, lang, volume = speechCfg.volume.default) {
@@ -5167,11 +5250,7 @@ function _doSpeak(text, lang, volume = speechCfg.volume.default) {
   _doSpeakTimer = setTimeout(() => { _doSpeakTimer = null; }, 300);
   window.speechSynthesis.cancel();
   const doIt = () => {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang   = lang;
-    u.rate   = speechCfg.rate;
-    u.pitch  = 1.1;
-    u.volume = volume;
+    const u = buildUtterance(text, lang, volume);
     window.speechSynthesis.speak(u);
   };
   const voices = window.speechSynthesis.getVoices();
@@ -5202,8 +5281,7 @@ function _speakWithBlanks(text, lang, volume = speechCfg.volume.default) {
         if (i < parts.length) { playSound('blank'); speakNext(); }
       };
       if (!segment) { proceed(); return; }
-      const u = new SpeechSynthesisUtterance(segment);
-      u.lang = lang; u.rate = speechCfg.rate; u.pitch = 1.1; u.volume = volume;
+      const u = buildUtterance(segment, lang, volume);
       u.onend = proceed;
       window.speechSynthesis.speak(u);
     };
@@ -6146,10 +6224,7 @@ function doUpgrade10(uid) {
       state.bag.find(c => c.uid === uid) ||
       Object.values(state.equipped).find(e => e?.uid === uid)
     );
-    if (state.hero.gold < cost) {
-      showToast(`💰 金幣不足，完成了 ${i} 次強化`);
-      break;
-    }
+    if (state.hero.gold < cost) {showToast(`💰 金幣不足，完成了 ${i} 次強化`);break;}
     doUpgrade(uid);
   }
   renderHero(); renderShopUI(); autoSave();
@@ -6216,14 +6291,10 @@ function syncCardWithPool(card) {
 
 // 讀檔完成後，一次性把背包與已裝備的裝備數值同步成 EQUIP_POOL 目前的版本
 function syncAllEquipWithPool() {
-  if (Array.isArray(state.bag)) {
-    state.bag = state.bag.map(syncCardWithPool);
-  }
+  if (Array.isArray(state.bag)) {state.bag = state.bag.map(syncCardWithPool);}
   if (state.equipped) {
     Object.keys(state.equipped).forEach(slot => {
-      if (state.equipped[slot]) {
-        state.equipped[slot] = syncCardWithPool(state.equipped[slot]);
-      }
+      if (state.equipped[slot]) {state.equipped[slot] = syncCardWithPool(state.equipped[slot]);}
     });
   }
 }
@@ -6243,10 +6314,7 @@ function loadFromStorage() {
     if (data.state?.skillStacks) state.skillStacks = data.state.skillStacks;
     if (data.state?.skillMilestoneClaimed) state.skillMilestoneClaimed = data.state.skillMilestoneClaimed;
     if (data.state?.battle)    Object.assign(state.battle, data.state.battle);
-    if (data.state?.quiz) {
-      Object.assign(state.quiz, data.state.quiz);
-      state.quiz.queue = [];
-    }
+    if (data.state?.quiz) {Object.assign(state.quiz, data.state.quiz); state.quiz.queue = [];}
     if (data.state?.quiz)      Object.assign(state.quiz, data.state.quiz);
     if (data.state?.customQ)      state.customQ = data.state.customQ;
     if (data.state?.editedBuiltin) state.editedBuiltin = data.state.editedBuiltin;
@@ -6430,7 +6498,7 @@ function loadQuestionsFile(event) {
         const ans = (item.answer   || '').trim();
         const opts = (item.options || []).filter(Boolean);
         if (!q || !ans || opts.length < 2) return;  // ← 加這行
-        if (!opts.includes(ans)) opts[0] = ans;      // ← 確保答案在選項裡
+        if (!opts.includes(ans)) opts[0] = ans;     // ← 確保答案在選項裡
         const idNum = Number(item.id);
         state.customQ[sub].push({
           q, ans, opts,
@@ -6440,7 +6508,6 @@ function loadQuestionsFile(event) {
       });
       _dirty = true; doSave();
       // ★ 結束
-
       showToast(`✅ 載入 ${data.questions.length} 題成功！`);
       loadQuestion();
     } catch { showToast('❌ 檔案讀取失敗'); }
@@ -6485,7 +6552,6 @@ function importExcel(event) {
       };
       let total = 0;
       const newQ = { math:[], chinese:[], english:[], science:[], geography:[] };
-
       wb.SheetNames.forEach(name => {
         const subject = sheetMap[name.trim()];
         const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { defval:'' });
@@ -6512,10 +6578,7 @@ function importExcel(event) {
           if (!opts.includes(ans)) opts[0] = ans;
           // 判斷科目：工作表名稱 or 欄位 category/科目
           let sub = subject;
-          if (!sub) {
-            const cat = get('category','科目','分類');
-            sub = sheetMap[cat] || null;
-          }
+          if (!sub) {const cat = get('category','科目','分類');sub = sheetMap[cat] || null;}
           if (!sub) return;
           const entry = { q, ans, opts };
           if (img) entry.img = img;
@@ -6525,7 +6588,6 @@ function importExcel(event) {
           total++;
         });
       });
-
       if (total === 0) { showToast('⚠️ 找不到題目，請確認工作表名稱（數學/國文/英文/自然/社會）或欄位含「科目」'); return; }
       // 合併進 customQ：有題號的以題號比對覆蓋更新，沒題號的沿用舊的文字比對去重
       Object.keys(newQ).forEach(sub => {
@@ -6610,10 +6672,7 @@ function updateTimer() {
     const live = _sessionPaused ? 0 : Math.floor((Date.now() - _sessionStart) / 1000);
     ptEl.textContent = '📅 總時數：' + formatPlaytime((state.totalPlaySeconds || 0) + live);
   }
-  if (!_timerFired && sec >= 600) {//十分鐘
-    _timerFired = true;
-    showRestAlert();
-  }
+  if (!_timerFired && sec >= 600) { _timerFired = true;showRestAlert();}//十分鐘
 }
 
 function showRestAlert() {
@@ -6652,7 +6711,6 @@ function formatPlaytime(sec) {
   const d = Math.floor(sec / 86400);
   const h = Math.floor((sec % 86400) / 3600);
   const m = Math.floor((sec % 3600) / 60);
-  
   if (d > 0) return `${d} 天 ${h} 時 ${m} 分`;
   if (h > 0) return `${h} 時 ${m} 分`;
   return `${m} 分`;
@@ -6694,7 +6752,6 @@ function setEnemySize(val) {
   const valEl  = document.getElementById('enemySizeVal');
   if (slider) slider.value = _enemyScale;
   if (valEl)  valEl.textContent = _enemyScale + '%';
-  // 儲存
   localStorage.setItem(ENEMY_SIZE_KEY, _enemyScale);
 }
 
@@ -9095,10 +9152,7 @@ function updateActiveQuestBar() {
   const slot = state.quests.find(s => s.accepted && s.questId);
   const currentTab = document.querySelector('.tab-btn.active');
   const isQuestTab = currentTab && currentTab.getAttribute('onclick') === "showTab('quest')";
-  if (!slot || isQuestTab) {
-    bar.classList.remove('visible');
-    return;
-  }
+  if (!slot || isQuestTab) {bar.classList.remove('visible');return;}
   const quest = QUEST_POOL.find(q => q.id === slot.questId);
   if (!quest) { bar.classList.remove('visible'); return; }
   const pct = Math.min(Math.round((slot.progress || 0) / quest.target * 100), 100);
@@ -9140,8 +9194,7 @@ function refreshQuestSlots() {
   state.quests.forEach(slot => {
     if (!slot.questId && Date.now() >= (slot.cooldownUntil || 0)) {
       assignRandomQuest(slot);
-      changed = true;
-    }
+      changed = true;}
   });
   if (changed) autoSave();
 }
@@ -10279,10 +10332,7 @@ function speakText(text, volume = 0.7) {
   _speakTextTimer = setTimeout(() => { _speakTextTimer = null; }, 300);
   window.speechSynthesis.cancel();
   setTimeout(() => {
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'zh-TW';
-    utter.rate = 0.95;
-    utter.volume = volume;
+    const utter = buildUtterance(text, 'zh-TW', volume);
     window.speechSynthesis.speak(utter);
   }, 150);
 }
@@ -11198,6 +11248,52 @@ function bgmSetVolume(val) {
   }
   document.getElementById('bgm-mute-btn').textContent = bgmState.muted ? '🔇' : '🔊';
   document.getElementById('bgm-label').textContent = val + '%';
+}
+
+// ── 語音（TTS）選擇面板 ──────────────────────
+function populateVoiceSelect() {
+  const sel = document.getElementById('tts-voice-select');
+  if (!sel || !window.speechSynthesis) return;
+  const voices = window.speechSynthesis.getVoices()
+    .filter(v => v.lang && v.lang.toLowerCase().startsWith('zh'));
+  if (!voices.length) {
+    sel.innerHTML = '<option value="">（尚未偵測到中文語音，稍後再試）</option>';
+    return;
+  }
+  const current = speechCfg.voiceURI;
+  sel.innerHTML = voices.map(v => {
+    const label = `${v.name}（${v.lang}）${v.localService ? '' : '・線上'}`;
+    return `<option value="${v.voiceURI}" ${v.voiceURI === current ? 'selected' : ''}>${label}</option>`;
+  }).join('');
+  // 若使用者從未手動選過，預設選到目前自動挑選出的語音，方便使用者知道現在用的是哪一個
+  if (!current) {
+    const auto = getSelectedVoice();
+    if (auto) sel.value = auto.voiceURI;
+  }
+}
+
+function onVoiceSelected(voiceURI) {
+  speechCfg.voiceURI = voiceURI || null;
+  if (voiceURI) {
+    localStorage.setItem('tts_voice_uri', voiceURI);
+  } else {
+    localStorage.removeItem('tts_voice_uri');
+  }
+}
+
+function previewVoice() {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = buildUtterance('這是台灣話的示範，划船、垃圾應該要唸台灣腔喔。', 'zh-TW', 1);
+  window.speechSynthesis.speak(u);
+}
+
+function toggleVoicePanel() {
+  const panel = document.getElementById('tts-voice-panel');
+  if (!panel) return;
+  const willShow = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden');
+  if (willShow) populateVoiceSelect();
 }
 
 function bgmToggleMute() {
