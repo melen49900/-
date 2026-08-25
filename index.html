@@ -6,6 +6,7 @@
 <title>✨ 魔法學院大冒險</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="./quiz-engine.js"></script>
 <style>
 /* ── 基礎變數 ─────────────────────────────────────────── */
 :root {
@@ -2286,13 +2287,15 @@ const FAMILY_MOD = {// 種族加成
   whale:         { hp:1,    atk:1,    def:1.65, gold:1.35, exp:1.1  },
   guard:         { hp:1.2,  atk:1.2,  def:1.2,  gold:1.4,  exp:1.2  },
   kingdemon:     { hp:1.3,  atk:1.3,  def:1.3,  gold:1.5,  exp:1.45 },
-  octopus:       { hp:1,    atk:1.05, def:1,    gold:1.05, exp:1    },//**新增怪物**1
+  octopus:       { hp:1,    atk:1.05, def:1,    gold:1.05, exp:1    },
   sloth:         { hp:1.05, atk:1,    def:1.05, gold:1.1,  exp:1    },
   Hercules:      { hp:1,    atk:1,    def:2,    gold:1.2,  exp:1    },
   anglerfish:    { hp:1.1,  atk:1.1,  def:1,    gold:1.2,  exp:1    },
-  wild_boar:     { hp:1,    atk:1,    def:1,    gold:1,    exp:1    },
-  panda:         { hp:1,    atk:1.1,  def:1,    gold:1,    exp:1    },
+  wild_boar:     { hp:1,    atk:1,    def:1,    gold:1,    exp:1    },//**新增怪物**1
+  panda:         { hp:1,    atk:1.1,  def:1,    gold:1.1,  exp:1    },
   dog:           { hp:1,    atk:1,    def:1,    gold:1,    exp:1    },
+  toucan:        { hp:1,    atk:1,    def:1,    gold:1,    exp:1    },
+  mantis:        { hp:1.1,  atk:1.1,  def:2,    gold:1.4,  exp:1    },
 };
 
 const ENEMIES = [
@@ -2427,7 +2430,7 @@ const ENEMIES = [
   {id:'s129',name:'竹槍貓熊',    emoji:'🐼',stage:129,family:'panda',        alienMult:15.5},
   {id:'s130',name:'竹刀貓熊',    emoji:'🐼',stage:130,family:'panda',        alienMult:16.0},
   {id:'s131',name:'戰車博美',      emoji:'🐕',stage:131,family:'dog',        alienMult:16.5},
-  {id:'s132',name:'戰車雪納瑞',    emoji:'🐕',stage:132,family:'dog',        alienMult:17.0},//**新增怪物**2
+  {id:'s132',name:'戰車雪納瑞',    emoji:'🐕',stage:132,family:'dog',        alienMult:17.0},
   {id:'s133',name:'戰車貴賓狗',    emoji:'🐕',stage:133,family:'dog',        alienMult:17.5},
   {id:'s134',name:'戰艦哈士奇',    emoji:'🐕',stage:134,family:'dog',        alienMult:18.0},
   {id:'s135',name:'戰艦柴犬',      emoji:'🐕',stage:135,family:'dog',        alienMult:18.5},
@@ -2436,6 +2439,16 @@ const ENEMIES = [
   {id:'s138',name:'戰機德國牧羊犬',emoji:'🐕',stage:138,family:'dog',        alienMult:20.0},
   {id:'s139',name:'戰機秋田犬',    emoji:'🐕',stage:139,family:'dog',        alienMult:20.5},
   {id:'s140',name:'戰鬥直升機獒犬',emoji:'🐕',stage:140,family:'dog',        alienMult:21.0},
+  {id:'s141',name:'綠紋巨嘴鳥',    emoji:'🦜',stage:141,family:'toucan',     alienMult:21.5},
+  {id:'s142',name:'藍紋巨嘴鳥',    emoji:'🦜',stage:142,family:'toucan',     alienMult:22.0},
+  {id:'s143',name:'紅紋巨嘴鳥',    emoji:'🦜',stage:143,family:'toucan',     alienMult:22.5},
+  {id:'s144',name:'紫紋巨嘴鳥',    emoji:'🦜',stage:144,family:'toucan',     alienMult:23.0},
+  {id:'s145',name:'金紋巨嘴鳥',    emoji:'🦜',stage:145,family:'toucan',     alienMult:23.5},//**新增怪物**2
+  {id:'s146',name:'紫水晶螳螂',    emoji:'🦗',stage:146,family:'mantis',     alienMult:24.0},
+  {id:'s147',name:'祖母綠螳螂',    emoji:'🦗',stage:147,family:'mantis',     alienMult:24.5},
+  {id:'s148',name:'黃玉螳螂',      emoji:'🦗',stage:148,family:'mantis',     alienMult:25.0},
+  {id:'s149',name:'紅寶石螳螂',    emoji:'🦗',stage:149,family:'mantis',     alienMult:25.5},
+  {id:'s150',name:'鑽石螳螂',      emoji:'🦗',stage:150,family:'mantis',     alienMult:26.0},
 ];
 
 function enemyStats(id) {// 怪物數值計算
@@ -3173,337 +3186,54 @@ function renderHero() {
   document.getElementById('bHeroMpText').textContent = Math.floor(state.battle.heroMp) + '/' + getStats().maxMp;
 }
 
-// 答題系統
-const SUBJECTS = ['math','chinese','english','science','geography'];
+// 答題系統（出題演算法本體已搬到 quiz-engine.js，共用給其他遊戲；
+// 這裡只留「這個遊戲專屬」的部分：state.quiz / state.tier 進度資料本身、
+// 題庫資料 BUILTIN_Q，以及呼叫共用引擎的薄封裝）
+const SUBJECTS = QuizEngine.SUBJECTS;
+const TIER_SUBJECTS = QuizEngine.TIER_SUBJECTS;
+const MATH_STAGE_MAX = QuizEngine.MATH_STAGE_MAX;
+const SUBJ_LABEL = { chinese:'📖 國文', english:'🔤 英文', science:'🌿 自然', geography:'🌍 社會' }; // 畫面顯示用，跟出題邏輯無關，留在遊戲端
 
-function refillQueue() {
-  state.quiz.queue = ['math','chinese','english','science','geography'];
+// state.quiz 同時作為傳給 QuizEngine 的 progress 物件使用；
+// state.tier 是這個專案原本就有的獨立欄位（存檔相容），這裡讓它跟
+// state.quiz.tier 指向同一個物件，這樣 QuizEngine 內部讀寫 progress.tier
+// 時，state.tier（其他畫面在用的那份）也會同步更新，不用改動其他程式碼。
+function syncQuizTierRef() {
+  state.quiz.tier = state.tier;
 }
+syncQuizTierRef();
 
-function nextSubject() {
-  if (!state.quiz.queue || state.quiz.queue.length === 0) refillQueue();
-  return state.quiz.queue.shift();
-}
-
-// ── 數學難度階段系統（1~300階，統一控制自動出題難度＋固定題庫開放比例）──
-const MATH_STAGE_MAX = 300;
-
-function getMathStageCfg(stage) {
-  stage = Math.max(1, Math.min(MATH_STAGE_MAX, Number(stage) || 1));
-  const addLimit = 5 + 2 * (stage - 1);
-  const cfg = {
-    add: { enabled:true,  label:'➕ 加法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:Math.ceil(addLimit/6), bMax:Math.ceil(addLimit/3) },
-    sub: { enabled:false, label:'➖ 減法', aMin:Math.ceil(addLimit/2), aMax:addLimit, bMin:Math.ceil(addLimit/6), bMax:Math.ceil(addLimit/3) },
-    mul: { enabled:false, label:'✖️ 乘法', aMin:2, aMax:3, bMin:1, bMax:3 },
-    div: { enabled:false, label:'➗ 除法', aMin:6, aMax:Math.min(50, 6 + Math.floor((stage - 40) / 5)), dMin:2, dMax:Math.min(10, 2 + Math.floor((stage - 40) / 5)) },
-    reverseChance: 0, // 猜符號初始出現機率
-  };
-  if (stage >= 10) {cfg.sub.enabled = true;}//10階開放減法
-  if (stage >= 25) {//25階開放乘法
-    cfg.mul.enabled = true;
-    if (stage < 60) {// 60階以下：逐步逼近10
-      const mulLimit = 3 + Math.floor((stage - 25) / 5);
-      cfg.mul.aMax = mulLimit;
-      cfg.mul.bMax = mulLimit;
-    } else {// 60關以上：aMax每5+1，bMax每20關+1(上限20)
-      cfg.mul.aMax = 10 + Math.floor((stage - 60) / 5);
-      cfg.mul.bMax = Math.min(20, 10 + Math.floor((stage - 60) / 20));
-    }
-    cfg.mul.aMin = Math.ceil(cfg.mul.aMax / 6);
-    cfg.mul.bMin = Math.ceil(cfg.mul.bMax / 6);
-  }
-  if (stage >= 40) {cfg.div.enabled = true;}//40階開放除法
-  if (stage >= 70) {cfg.reverseChance = 0.3;}//70階開放猜符號
-  return cfg;
-}
-
-// 老玩家（存檔中已有 mathCorrect 歷史答對數）第一次啟用本系統時，換算起始階段；新玩家一律從第1階開始
-function ensureMathStageInit() {
-  if (state.quiz.mathStageInit) return;
-  state.quiz.mathStageInit = true;
-  const correct = (state.stats && state.stats.mathCorrect) || 0;
-  state.quiz.mathStage = Math.max(1, Math.min(MATH_STAGE_MAX, Math.floor(correct / 30)));
-}
-
-// 每次「第一次作答」數學題後呼叫：依最近視窗表現動態升降階
-function updateMathStage(firstAttemptCorrect) {
-  const q = state.quiz;
-  q.mathWindowCount = (q.mathWindowCount || 0) + 1;
-  if (firstAttemptCorrect) q.mathWindowCorrect = (q.mathWindowCorrect || 0) + 1;
-  else q.mathWindowWrong = (q.mathWindowWrong || 0) + 1;
-  if (q.mathWindowWrong >= 3) {// 降階：視窗內累積3題第一次就答錯（不用等滿6題）
-    q.mathStage = Math.max(1, (q.mathStage || 1) - 1);
-    q.mathWindowCount = 0; q.mathWindowCorrect = 0; q.mathWindowWrong = 0;
-    return;
-  }
-  if (q.mathWindowCount >= 6) {// 升階：視窗滿6題且5題以上第一次就答對
-    if (q.mathWindowCorrect >= 5) {q.mathStage = Math.min(MATH_STAGE_MAX, (q.mathStage || 1) + 1);}
-    q.mathWindowCount = 0; q.mathWindowCorrect = 0; q.mathWindowWrong = 0;
-  }
-}
-
-function generateMath(cfg) {
-  cfg = cfg || getMathStageCfg(state.quiz.mathStage || 1);
-  const activeOps = Object.keys(cfg).filter(k => cfg[k].enabled);
-  if (activeOps.length === 0) return { q:'請至少啟用一種運算！', ans:'OK', opts:['OK','好','Yes','是'] };
-  const op = activeOps[Math.floor(Math.random() * activeOps.length)];
-  const c = cfg[op];
-  let a, b, ans, q;
-  const ri = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-  if (op === 'add') {
-    a = ri(c.aMin, c.aMax); b = ri(c.bMin, c.bMax);
-    ans = a + b; q = `${a} ＋ ${b} ＝ ？`;
-  } else if (op === 'sub') {
-    a = ri(c.aMin, c.aMax); b = ri(c.bMin, Math.min(c.bMax, a));
-    ans = a - b; q = `${a} － ${b} ＝ ？`;
-  } else if (op === 'mul') {
-    a = ri(c.aMin, c.aMax); b = ri(c.bMin, c.bMax);
-    ans = a * b; q = `${a} × ${b} ＝ ？`;
-  } else {
-    b = ri(c.dMin, c.dMax);
-    const aMinAdj = Math.max(c.aMin, b);
-    const aMaxAdj = Math.max(aMinAdj, c.aMax);
-    a = ri(aMinAdj, aMaxAdj);
-    const quotient = Math.floor(a / b);
-    const remainder = a % b;
-    ans = remainder === 0 ? String(quotient) : `${quotient}...${remainder}`;
-    q = `${a} ÷ ${b} ＝ ？`;
-  }
-  const wrong = new Set();
-    if (op === 'div') {
-      const q2 = Math.floor(a / b);
-      const r2 = a % b;
-      for (let d = 1; wrong.size < 3; d++) {
-        const wq = q2 + (wrong.size % 2 === 0 ? d : -d);
-        if (wq < 0) { wrong.add(`${q2 + d}...${r2}`); continue; }
-        const candidate = r2 === 0 ? String(wq) : `${wq}...${r2}`;
-        if (candidate !== ans) wrong.add(candidate);
-      }
-    } else {
-    while (wrong.size < 3) {
-      const d = Math.floor(Math.random() * Math.max(3, Math.ceil(ans * .3))) + 1;
-      const w = Math.random() < .5 ? Number(ans) + d : Math.max(0, Number(ans) - d);
-      if (String(w) !== String(ans)) wrong.add(String(w));
-    }
-  }
-  const opts = [ans, ...wrong].sort(() => Math.random() - .5);
-  return { q, ans: String(ans), opts };
-}
-
-function calcResult(sym, a, b) {
-  if (sym === '＋') return a + b;
-  if (sym === '－') return a - b;
-  if (sym === '×') return a * b;
-  if (sym === '÷') return (b !== 0 && a % b === 0) ? a / b : null;
-  return null;
-}
-
-function generateMathReverse(cfg) {//自動數學題
-  cfg = cfg || getMathStageCfg(state.quiz.mathStage || 1);
-  const activeOps = Object.keys(cfg).filter(k => cfg[k].enabled);
-  if (activeOps.length < 2) return generateMath(cfg);
-  const op = activeOps[Math.floor(Math.random() * activeOps.length)];
-  const c = cfg[op];
-  const ri = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-  let a, b, ans, q;
-  if (op === 'add') {                                 //加法
-    a = ri(c.aMin, c.aMax);
-    b = ri(c.bMin, c.bMax);
-    ans = '＋'; q = `${a} ？ ${b} ＝ ${a + b}`;
-  } else if (op === 'sub') {                          //減法
-    a = ri(c.aMin, c.aMax);
-    b = ri(c.bMin, Math.min(c.bMax, a));
-    ans = '－'; q = `${a} ？ ${b} ＝ ${a - b}`;
-  } else if (op === 'mul') {                          //乘法
-    a = ri(c.aMin, c.aMax);
-    b = ri(c.bMin, c.bMax);
-    ans = '×'; q = `${a} ？ ${b} ＝ ${a * b}`;
-  } else {                                            //除法
-    b = ri(c.dMin, c.dMax);
-    const aMinAdj = Math.max(c.aMin, b);
-    a = ri(aMinAdj, Math.max(aMinAdj, c.aMax));
-    if (a % b !== 0) return generateMathReverse(cfg);
-    ans = '÷'; q = `${a} ？ ${b} ＝ ${a / b}`;
-  }
-  // 檢查是否有其他符號也能讓算式成立
-  const allSymbols = ['＋', '－', '×', '÷'];
-  const correctResult = calcResult(ans, a, b);
-  const isAmbiguous = allSymbols.some(sym => {
-    if (sym === ans) return false;
-    return calcResult(sym, a, b) === correctResult;
+// 組出目前題庫資料，交給 QuizEngine（imported/custom/builtin 三個來源）
+function buildQuestionBank() {
+  const builtin = {};
+  SUBJECTS.forEach(s => {
+    builtin[s] = (state.editedBuiltin && state.editedBuiltin[s]) || BUILTIN_Q[s] || [];
   });
-  if (isAmbiguous) return generateMathReverse(cfg); // 有歧義就重新出題
-  const opts = allSymbols.sort(() => Math.random() - .5);
-  return { q, ans, opts };
-}
-
-// 防重複題目──────────────────────────────────
-// 有題號（分階關卡題目）就用「科目+題號」當唯一鍵，比題目全文短很多，省存檔空間；
-// 沒題號（舊題／數學自動出題）沿用 "科目|題目文字|正確答案" 文字比對
-if (!state.quiz.recentKeys) state.quiz.recentKeys = {};
-
-function _qKey(p) {
-  if (p && p.id != null) return `${p.id}`;
-  return `${p.q}|${p.ans}`;
-}
-
-const MEMORY_RATIO = 0.6; // 記住最近6成，之後可以調整這個比例
-function _pickFromPool(subject, pool) {
-  if (pool.length === 0) return null;
-  const cap = Math.max(1, Math.ceil(pool.length * MEMORY_RATIO));
-  const list = state.quiz.recentKeys[subject] || (state.quiz.recentKeys[subject] = []);
-  const fresh = pool.filter(p => !list.includes(_qKey(p)));
-  const candidates = fresh.length > 0 ? fresh : pool;
-  const p = candidates[Math.floor(Math.random() * candidates.length)];
-  const key = _qKey(p);
-  list.unshift(key);
-  if (list.length > cap) list.length = cap;
-  return p;
-}
-
-// ── 四科（國文/英文/自然/社會）關卡系統：以題號分批解鎖 ──
-const SUBJECT_CATEGORY_MAP = { math:'數學', chinese:'國文', english:'英文', science:'自然', geography:'社會' };
-const TIER_SUBJECTS = ['chinese','english','science','geography'];
-const SUBJ_LABEL = { chinese:'📖 國文', english:'🔤 英文', science:'🌿 自然', geography:'🌍 社會' };
-
-// 彙整某科目「有題號」的題目（匯入JSON＋自訂題庫），依題號排序；沒題號的舊題目不參與關卡機制
-function getNumberedPool(subject) {
-  const cat = SUBJECT_CATEGORY_MAP[subject];
-  const toNum = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) && n > 0 ? n : null;
+  return {
+    imported: (questionsData && questionsData.questions) || [],
+    custom: state.customQ,
+    builtin: builtin,
   };
-  const importedRaw = (questionsData?.questions || []).filter(x => x.category === cat && toNum(x.id));
-  const imported = importedRaw.map(x => ({ q:x.question, ans:x.answer, opts:x.options, img:x.image || x.img, id: toNum(x.id) }));
-  const custom = (state.customQ?.[subject] || [])
-    .filter(x => toNum(x.id))
-    .map(x => ({ ...x, id: toNum(x.id) }));
-  const map = new Map();
-  imported.forEach(x => map.set(x.id, x));
-  custom.forEach(x => map.set(x.id, x)); // 持久化的自訂題庫優先覆蓋
-  return Array.from(map.values())
-    .filter(x => x.q && x.ans && Array.isArray(x.opts) && x.opts.length >= 2)
-    .sort((a, b) => a.id - b.id);
 }
 
-// 依目前解鎖上限，計算「本批（最新5題）尚未通過」的題號清單
-function recomputePendingBatch(subject, pool) {
-  pool = pool || getNumberedPool(subject);
-  const t = state.tier[subject];
-  if (!t) return;
-  const lower = Math.max(1, t.unlockedMax - 4);
-  t.pendingIds = pool.filter(p => p.id >= lower && p.id <= t.unlockedMax).map(p => p.id);
+function refillQueue() { QuizEngine.refillQueue(state.quiz); }
+function nextSubject() { return QuizEngine.nextSubject(state.quiz); }
+
+function getNumberedPool(subject) {
+  return QuizEngine.getNumberedPool(subject, buildQuestionBank());
 }
 
-// 初始化某科目關卡狀態（只會做一次）；若玩家原本就有該科目的歷史答對數，直接換算起始解鎖上限，避免老玩家從頭來過
-function ensureTierState(subject, pool) {
-  if (!state.tier) state.tier = {};
-  if (state.tier[subject]) return;
-  pool = pool || getNumberedPool(subject);
-  const correct = (state.stats && state.stats[subject + 'Correct']) || 0;
-  const maxId = pool.length ? pool[pool.length - 1].id : 0;
-  const startMax = pool.length ? Math.min(maxId, Math.max(5, 5 + 5 * Math.floor(correct / 30))) : 5;
-  state.tier[subject] = { unlockedMax: startMax, pendingIds: null, retryQueue: [] };
-  recomputePendingBatch(subject, pool);
-}
-
-function advanceTier(subject) {
-  const t = state.tier[subject];
-  const pool = getNumberedPool(subject);
-  const maxId = pool.length ? pool[pool.length - 1].id : 0;
-  if (t.unlockedMax >= maxId) { t.pendingIds = []; return; } // 已全部解鎖，沒有下一批了
-  t.unlockedMax = Math.min(maxId, t.unlockedMax + 5);
-  recomputePendingBatch(subject, pool);
-}
-
-// 答對某題號時呼叫：若該題屬於目前這一批門檻，就從待通過清單移除，全部通過後自動晉級
-function onTierCorrect(subject, id) {
-  const t = state.tier?.[subject];
-  if (!t || !Array.isArray(t.pendingIds) || id == null) return;
-  const idx = t.pendingIds.indexOf(id);
-  if (idx === -1) return; // 不在本批門檻內（可能是複習舊題），不影響進度
-  t.pendingIds.splice(idx, 1);
-  if (t.pendingIds.length === 0) advanceTier(subject);
-}
-
-// 答錯（最終確定答錯，非綠燈重答中）時呼叫：安排隨機2~4題後再重新出現，確認是否真的學會了
-function scheduleRetry(subject, id) {
-  const t = state.tier?.[subject];
-  if (!t || id == null) return;
-  if (t.retryQueue.some(e => e.id === id)) return; // 已排隊中，不重複加入
-  const wait = 2 + Math.floor(Math.random() * 3); // 2~4
-  t.retryQueue.push({ id, wait });
-}
-
-function _buildTierEntry(p) {
-  const entry = { q: p.q, ans: p.ans, opts: (p.opts || []).slice().sort(() => Math.random() - .5), id: p.id };
-  if (p.img) entry.img = p.img;
-  return entry;
-}
-
-// 依關卡狀態挑一題；若該科目完全沒有帶題號的題目，回傳 null 讓呼叫端退回舊的全隨機模式
 function pickQuestionTiered(subject) {
-  const pool = getNumberedPool(subject);
-  if (pool.length === 0) return null;
-  ensureTierState(subject, pool);
-  const t = state.tier[subject];
-  // 優先處理到期的延後重考題
-  if (t.retryQueue.length) {
-    t.retryQueue.forEach(e => e.wait--);
-    const dueIdx = t.retryQueue.findIndex(e => e.wait <= 0);
-    if (dueIdx >= 0) {
-      const due = t.retryQueue.splice(dueIdx, 1)[0];
-      const q = pool.find(p => p.id === due.id);
-      if (q) return _buildTierEntry(q);
-    }
-  }
-  const maxId = pool[pool.length - 1].id;
-  const upper = Math.min(t.unlockedMax, maxId);
-  const candidates = pool.filter(p => p.id <= upper);
-  const p = _pickFromPool(subject, candidates.length ? candidates : pool);
-  return p ? _buildTierEntry(p) : null;
+  syncQuizTierRef();
+  return QuizEngine.pickQuestionTiered(state.quiz, subject, buildQuestionBank(), (state.stats && state.stats[subject + 'Correct']) || 0);
 }
 
 function pickQuestion(subject) {
-  if (subject === 'math') {
-    ensureMathStageInit();
-    const stage = state.quiz.mathStage || 1;
-    const MATH_BANK_RATIO = 0.15;// 數學題庫占比，0全隨機、1全題庫
-    const numberedMathPool = getNumberedPool('math');
-    let mathPool;
-    if (numberedMathPool.length > 0) {
-      // 固定題庫（有題號的）每1階開放1題，並用題庫實際題數封頂
-      const openCount = Math.min(numberedMathPool.length, Math.max(1, stage));
-      mathPool = numberedMathPool.slice(0, openCount);
-    } else {
-      const mathImported = questionsData?.questions?.filter(x => x.category === '數學') || [];
-      const mathCustom   = state.customQ?.math || [];
-      const mathBuiltin  = (state.editedBuiltin?.math) || BUILTIN_Q?.math || [];
-      mathPool = [...mathImported.map(x=>({q:x.question, ans:x.answer, opts:x.options, img:x.image||x.img})),...mathCustom,...mathBuiltin];
-    }
-    if (mathPool.length > 0 && Math.random() < MATH_BANK_RATIO) {
-      const p = _pickFromPool(subject, mathPool);
-      if (p) { const e = { q: p.q, ans: p.ans, opts: (p.opts || []).slice().sort(() => Math.random()-.5) }; if (p.img) e.img = p.img; return e; }
-    }
-    const cfg = getMathStageCfg(stage);
-    return Math.random() < cfg.reverseChance ? generateMathReverse(cfg) : generateMath(cfg);
-  }
-  const tiered = pickQuestionTiered(subject);
-  if (tiered) return tiered;
-  const imported = questionsData?.questions?.filter(x => {
-    const map = { chinese:'國文', english:'英文', science:'自然', geography:'社會' };
-    return x.category === (map[subject] || subject);
-  }) || [];
-  const custom  = state.customQ[subject] || [];
-  // 若有編輯過的預設題庫就用，否則用原始 BUILTIN_Q
-  const builtin = (state.editedBuiltin && state.editedBuiltin[subject]) || BUILTIN_Q[subject] || [];
-  const rawPool = [...imported.map(x=>({q:x.question, ans:x.answer, opts:x.options, img:x.image||x.img})), ...custom, ...builtin];
-  const pool = rawPool.filter(p => p.q && p.ans && Array.isArray(p.opts) && p.opts.length >= 2);  // ← 加這行
-  if (pool.length === 0) return { q:'題庫是空的！請匯入題目。', ans:'OK', opts:['OK','好','Yes','是'] };
-  const p = _pickFromPool(subject, pool);
-  const entry = { q: p.q, ans: p.ans, opts: (p.opts || p.options || []).slice().sort(() => Math.random()-.5) };
-  if (p.img) entry.img = p.img;
-  return entry;
+  syncQuizTierRef();
+  return QuizEngine.pickQuestion(state.quiz, subject, buildQuestionBank(), {
+    historicalMathCorrect: (state.stats && state.stats.mathCorrect) || 0,
+    historicalSubjectCorrect: (state.stats && state.stats[subject + 'Correct']) || 0,
+  });
 }
 
 function loadQuestion() {
@@ -3513,6 +3243,7 @@ function loadQuestion() {
   state.quiz.answered = false;
   renderQuestion();
 }
+
 
 function renderQuestion() {
   const { subject, q } = state.quiz;
@@ -3604,8 +3335,8 @@ function checkAnswer(selected) {
     state.stats = state.stats || {};
     state.stats.totalCorrect = (state.stats.totalCorrect || 0) + 1;
     state.stats[subj + 'Correct'] = (state.stats[subj + 'Correct'] || 0) + 1;
-    if (TIER_SUBJECTS.includes(subj) && tierId != null) onTierCorrect(subj, tierId);
-    if (subj === 'math' && !isRetrying) updateMathStage(true); // 只用「第一次作答」判定，重答補考成功不算
+    syncQuizTierRef();
+    QuizEngine.recordAnswer(state.quiz, subj, state.quiz.q, { correct: true, isFirstAttempt: !isRetrying, isFinal: true }, buildQuestionBank()); // 只用「第一次作答」判定，重答補考成功不算
     checkAchievements();
     updateQuestProgress('correct');
     state.hero.gold += gold;
@@ -3620,7 +3351,8 @@ function checkAnswer(selected) {
       // 第一次答錯
       if ((state.quiz.shield ?? 3) > 0) {
         // 還有綠燈：扣1顆，允許重答
-        if (subj === 'math') updateMathStage(false); // 第一次作答就錯，不論後面補考是否成功都算一次「不會」
+        syncQuizTierRef();
+        QuizEngine.recordAnswer(state.quiz, subj, state.quiz.q, { correct: false, isFirstAttempt: true, isFinal: false }, buildQuestionBank()); // 第一次作答就錯，不論後面補考是否成功都算一次「不會」
         state.quiz.shield--;
         state.quiz.retrying = true;
         state.quiz.answered = false; // 允許再按
@@ -3640,8 +3372,8 @@ function checkAnswer(selected) {
         return; // 不進入「下一題」流程
       } else {
         // 綠燈已空：直接中斷連勝
-        if (subj === 'math') updateMathStage(false);
-        if (TIER_SUBJECTS.includes(subj) && tierId != null) scheduleRetry(subj, tierId);
+        syncQuizTierRef();
+        QuizEngine.recordAnswer(state.quiz, subj, state.quiz.q, { correct: false, isFirstAttempt: true, isFinal: true }, buildQuestionBank());
         state.quiz.streak = 0;
         state.quiz.retrying = false;
         lockAndReveal();
@@ -3652,7 +3384,8 @@ function checkAnswer(selected) {
       }
     } else {
       // 第二次（重答）也錯：中斷連勝（第一次作答時已計入數學難度視窗，這裡不重複計算）
-      if (TIER_SUBJECTS.includes(subj) && tierId != null) scheduleRetry(subj, tierId);
+      syncQuizTierRef();
+      QuizEngine.recordAnswer(state.quiz, subj, state.quiz.q, { correct: false, isFirstAttempt: false, isFinal: true }, buildQuestionBank());
       state.quiz.streak = 0;
       state.quiz.retrying = false;
       lockAndReveal();
@@ -5615,14 +5348,14 @@ function renderTierStatus() {
       html += `<div>${SUBJ_LABEL[subj]}：解鎖到第 ${t.unlockedMax} 題／共 ${pool.length} 題，本批待通過題號：${pending}</div>`;
     }
   });
-  ensureMathStageInit();
+  QuizEngine.ensureMathStageInit(state.quiz, (state.stats && state.stats.mathCorrect) || 0);
   const stage = state.quiz.mathStage || 1;
   html += `<div style="margin-top:6px">🔢 數學：第 ${stage} / ${MATH_STAGE_MAX} 階　（判定視窗：第一次答對 ${state.quiz.mathWindowCorrect||0}／答錯 ${state.quiz.mathWindowWrong||0}／共作答 ${state.quiz.mathWindowCount||0} 題）</div>`;
   box.innerHTML = html;
 }
 
 function adjustMathStage(delta) {
-  ensureMathStageInit();
+  QuizEngine.ensureMathStageInit(state.quiz, (state.stats && state.stats.mathCorrect) || 0);
   state.quiz.mathStage = Math.max(1, Math.min(MATH_STAGE_MAX, (state.quiz.mathStage || 1) + delta));
   state.quiz.mathWindowCount = 0; state.quiz.mathWindowCorrect = 0; state.quiz.mathWindowWrong = 0;
   autoSave(); renderTierStatus();
@@ -5632,6 +5365,7 @@ function adjustMathStage(delta) {
 function resetAllTierProgress() {
   if (!confirm('確定重置全部關卡進度與數學難度階段？（測試用，玩家的其他資料不受影響）')) return;
   state.tier = { chinese:null, english:null, science:null, geography:null };
+  syncQuizTierRef();
   state.quiz.mathStage = 1; state.quiz.mathStageInit = false;
   state.quiz.mathWindowCount = 0; state.quiz.mathWindowCorrect = 0; state.quiz.mathWindowWrong = 0;
   autoSave(); renderTierStatus();
@@ -6327,7 +6061,7 @@ function loadFromStorage() {
     }
     if (data.state?.achievements) state.achievements = data.state.achievements;
     if (data.state?.clearedStages) state.clearedStages = data.state.clearedStages;
-    if (data.state?.tier) state.tier = data.state.tier;
+    if (data.state?.tier) { state.tier = data.state.tier; syncQuizTierRef(); }
     if (data.state?.seenEquipIds)   state.seenEquipIds   = data.state.seenEquipIds;
     if (data.state?.defeatedEnemies) state.defeatedEnemies = data.state.defeatedEnemies;
     if (typeof data.state?.curseStones === 'number') state.curseStones = data.state.curseStones;
@@ -8634,6 +8368,32 @@ const ACHIEVEMENTS = [
     return ENEMIES.filter(e => e.family === 'dog').every(e => ids.has(e.id));
   },
 },
+{
+  id: 'kill_toucan_all', name: '巨嘴鳥獵人', desc: '擊敗所有巨嘴鳥', category: '圖鑑', icon: '🦜', _family: 'toucan',
+  reward: { gems: 2000, statBonus: { atk: 10, def: 10, mag: 10 }},
+  progress: () => {
+    const ids = new Set(state.defeatedEnemies || []);
+    return ENEMIES.filter(e => e.family === 'toucan' && ids.has(e.id)).length;
+  },
+  get goal() { return ENEMIES.filter(e => e.family === 'toucan').length; },
+  check: () => {
+    const ids = new Set(state.defeatedEnemies || []);
+    return ENEMIES.filter(e => e.family === 'toucan').every(e => ids.has(e.id));
+  },
+},
+{
+  id: 'kill_mantis_all', name: '螳螂獵人', desc: '擊敗所有螳螂', category: '圖鑑', icon: '🦗', _family: 'mantis',
+  reward: { gems: 2000, statBonus: { atk: 10, def: 10, mag: 10 }},
+  progress: () => {
+    const ids = new Set(state.defeatedEnemies || []);
+    return ENEMIES.filter(e => e.family === 'mantis' && ids.has(e.id)).length;
+  },
+  get goal() { return ENEMIES.filter(e => e.family === 'mantis').length; },
+  check: () => {
+    const ids = new Set(state.defeatedEnemies || []);
+    return ENEMIES.filter(e => e.family === 'mantis').every(e => ids.has(e.id));
+  },
+},
 {//**新增怪物**3
   id: 'kill_all_enemy', name: '獵人大師', desc: '擊敗所有敵人', category: '圖鑑', icon: '🏆', _family: 'all',
   reward: { gems: 2000, statBonus: { atk: 10, def: 10, mag: 10 }},
@@ -9342,6 +9102,8 @@ const ACHIEVEMENT_FAMILY_GROUPS = [
   { key:'wild_boar',   label:'野豬族',    color:'#a0522d', achId:'kill_wild_boar_all' },
   { key:'panda',       label:'貓熊族',    color:'#374151', achId:'kill_panda_all' },
   { key:'dog',         label:'犬族',      color:'#d2b48c', achId:'kill_dog_all' },
+  { key:'toucan',      label:'巨嘴鳥族',  color:'#f97316', achId:'kill_toucan_all' },
+  { key:'mantis',      label:'螳螂族',    color:'#16a34a', achId:'kill_mantis_all' },
 ];//**新增怪物**4
 
 // 取得成就卡片圖示：怪物類成就優先讀取圖鑑縮圖，讀不到才 fallback 成 emoji
