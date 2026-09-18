@@ -34,6 +34,25 @@ body{
   box-shadow:0 0 0 1px var(--stoneline), 0 30px 80px rgba(0,0,0,.7);
 }
 
+/* ── 開場載入題庫 ──────────────────────────── */
+#bootOverlay{
+  position:absolute;inset:0;z-index:999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;padding:34px;text-align:center;
+  background:var(--void);
+}
+#bootOverlay.hidden{display:none}
+#bootOverlay h1{font-size:22px;font-weight:900;margin:0;letter-spacing:.5px}
+.spinner{
+  width:34px;height:34px;border-radius:99px;
+  border:3px solid rgba(255,255,255,.14);border-top-color:var(--ember-hot);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+#bootStatus{font-size:13px;color:var(--bone-dim);line-height:1.8;min-height:40px;white-space:pre-line}
+#bootStatus.warn{color:#ffb37a}
+#bootContinue{display:none;max-width:220px}
+
 /* ── 頂部資源列 ────────────────────────────── */
 #topbar{
   display:flex;gap:6px;padding:10px 12px;
@@ -272,6 +291,14 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 <body>
 <div id="app">
 
+  <div id="bootOverlay">
+    <h1>烈焰試煉場</h1>
+    <div class="spinner"></div>
+    <div id="bootStatus">讀取題庫中…</div>
+    <button class="btn" id="bootContinue">進入遊戲</button>
+  </div>
+
+
   <div id="topbar">
     <div class="res gem"><span>💎</span><span id="uiGem">0</span></div>
     <div class="res gold"><span>💰</span><span id="uiGold">0</span></div>
@@ -471,58 +498,12 @@ function load(){
 }
 
 /* ── 題庫 ─────────────────────────────────── */
-// 數學由引擎自動生成、不需要題庫；其他科目給一份內建題庫，
+// 數學由引擎自動生成、不需要題庫。其他四科完全依賴 questions.json，
 // 有 id 的題目會自動進入引擎的「關卡分批解鎖」機制。
 const BUILTIN = {
-  math:[],
-  chinese:[
-    {id:1,q:'「一日千里」形容什麼？',ans:'進步非常快',opts:['進步非常快','路途很遙遠','時間過得慢','走路很費力']},
-    {id:2,q:'「揠苗助長」告訴我們什麼道理？',ans:'急躁反而壞事',opts:['急躁反而壞事','勤勞會有收穫','要孝順父母','團結力量大']},
-    {id:3,q:'「井底之蟲」下一句是？',ans:'井底之蛙',opts:['井底之蛙','坐井觀天','夜郎自大','管中窺豹']},
-    {id:4,q:'下列哪個是形容詞？',ans:'美麗',opts:['美麗','跑步','桌子','明天']},
-    {id:5,q:'「畫蛇添足」的意思是？',ans:'多此一舉',opts:['多此一舉','錦上添花','雪中送炭','畫龍點睛']},
-    {id:6,q:'「守株待兔」比喻什麼？',ans:'不勞而獲的僥倖心態',opts:['不勞而獲的僥倖心態','努力不懈','聰明機智','樂於助人']},
-    {id:7,q:'「春」的部首是？',ans:'日',opts:['日','人','三','大']},
-    {id:8,q:'哪個詞語是反義詞配對？',ans:'光明－黑暗',opts:['光明－黑暗','美麗－漂亮','高興－快樂','聰明－伶俐']},
-    {id:9,q:'「聞雞起舞」形容什麼？',ans:'勤奮努力',opts:['勤奮努力','早睡早起','愛好音樂','喜歡養雞']},
-    {id:10,q:'「亡羊補牢」的下一句是？',ans:'為時未晚',opts:['為時未晚','羊入虎口','亡命天涯','補天浴日']},
-  ],
-  english:[
-    {id:1,q:'蘋果的英文是？',ans:'apple',opts:['apple','orange','banana','grape']},
-    {id:2,q:'"Good morning" 是什麼時候說的？',ans:'早上',opts:['早上','中午','晚上','睡前']},
-    {id:3,q:'"cat" 的中文是？',ans:'貓',opts:['貓','狗','鳥','魚']},
-    {id:4,q:'數字 7 的英文是？',ans:'seven',opts:['seven','six','eight','nine']},
-    {id:5,q:'"I ___ a student." 填入？',ans:'am',opts:['am','is','are','be']},
-    {id:6,q:'星期一的英文是？',ans:'Monday',opts:['Monday','Sunday','Tuesday','Friday']},
-    {id:7,q:'"book" 的中文是？',ans:'書',opts:['書','筆','桌','椅']},
-    {id:8,q:'"red" 是什麼顏色？',ans:'紅色',opts:['紅色','藍色','綠色','黃色']},
-    {id:9,q:'"She ___ to school every day." 填入？',ans:'goes',opts:['goes','go','going','gone']},
-    {id:10,q:'"water" 的中文是？',ans:'水',opts:['水','火','風','土']},
-  ],
-  science:[
-    {id:1,q:'水在幾度會結冰？（攝氏）',ans:'0 度',opts:['0 度','10 度','100 度','50 度']},
-    {id:2,q:'植物行光合作用需要什麼？',ans:'陽光',opts:['陽光','月光','黑暗','冰塊']},
-    {id:3,q:'太陽系中最大的行星是？',ans:'木星',opts:['木星','地球','火星','金星']},
-    {id:4,q:'人體最大的器官是？',ans:'皮膚',opts:['皮膚','心臟','肝臟','肺臟']},
-    {id:5,q:'蝴蝶的幼蟲叫什麼？',ans:'毛毛蟲',opts:['毛毛蟲','蝌蚪','幼鳥','蛹']},
-    {id:6,q:'空氣中含量最多的氣體是？',ans:'氮氣',opts:['氮氣','氧氣','二氧化碳','氫氣']},
-    {id:7,q:'磁鐵的同極會怎樣？',ans:'互相排斥',opts:['互相排斥','互相吸引','沒有反應','融化']},
-    {id:8,q:'哪一個是哺乳類動物？',ans:'鯨魚',opts:['鯨魚','鯊魚','海龜','章魚']},
-    {id:9,q:'彩虹有幾種顏色？',ans:'7 種',opts:['7 種','5 種','3 種','9 種']},
-    {id:10,q:'月亮本身會發光嗎？',ans:'不會，反射陽光',opts:['不會，反射陽光','會，自己發光','只有滿月會','只有白天會']},
-  ],
-  geography:[
-    {id:1,q:'台灣最高的山是？',ans:'玉山',opts:['玉山','阿里山','雪山','合歡山']},
-    {id:2,q:'台灣的首都是？',ans:'台北',opts:['台北','高雄','台中','台南']},
-    {id:3,q:'世界最長的河流是？',ans:'尼羅河',opts:['尼羅河','長江','亞馬遜河','黃河']},
-    {id:4,q:'地球上面積最大的洲是？',ans:'亞洲',opts:['亞洲','非洲','歐洲','南美洲']},
-    {id:5,q:'台灣四面環海，屬於什麼地形？',ans:'島嶼',opts:['島嶼','半島','大陸','高原']},
-    {id:6,q:'日本的首都是？',ans:'東京',opts:['東京','大阪','京都','名古屋']},
-    {id:7,q:'世界最高的山峰是？',ans:'聖母峰',opts:['聖母峰','玉山','富士山','阿爾卑斯山']},
-    {id:8,q:'台灣位於哪一個洲？',ans:'亞洲',opts:['亞洲','歐洲','非洲','大洋洲']},
-    {id:9,q:'赤道把地球分成哪兩半？',ans:'南半球與北半球',opts:['南半球與北半球','東半球與西半球','上半球與下半球','左半球與右半球']},
-    {id:10,q:'台灣最長的河流是？',ans:'濁水溪',opts:['濁水溪','淡水河','高屏溪','大甲溪']},
-  ],
+  // 內建題庫刻意留空：所有題目一律從同目錄的 questions.json 讀取，
+  // 遊戲開場會先等這個檔案載入完成，題目系統準備好才能進入試煉。
+  math:[], chinese:[], english:[], science:[], geography:[],
 };
 let importedQuestions = [];   // 可放 questions.json 匯入的題目
 const SUBJ_NAME = { math:'數學', chinese:'國文', english:'英文', science:'自然', geography:'社會' };
@@ -535,10 +516,19 @@ function bank(){
 }
 
 // 選科目：數學永遠可出（引擎自動生成），其他科目要有題目才輪到
+// 檢查某科目在目前的 importedQuestions 裡有沒有至少一題「格式正確」的題目
+function subjectReady(subject){
+  if(subject === 'math') return true; // 數學永遠可出（引擎自動生成）
+  const cat = QuizEngine.SUBJECT_CATEGORY_MAP[subject];
+  return importedQuestions.some(q =>
+    q && q.category === cat && q.question && q.answer &&
+    Array.isArray(q.options) && q.options.length >= 2);
+}
+
 function pickSubject(){
   const pool = ['math'];
   ['chinese','english','science','geography'].forEach(s=>{
-    if((BUILTIN[s]||[]).length) pool.push(s);
+    if(subjectReady(s)) pool.push(s);
   });
   return pool[Math.floor(Math.random()*pool.length)];
 }
@@ -1276,25 +1266,67 @@ document.getElementById('pull10').onclick = ()=>doPull(10);
 
 load();
 syncUI();
-newQuestion();
 renderEquip();
 
-// 選用：若同目錄有 questions.json，載入後併入題庫（沒有就安靜跳過）
-fetch('./questions.json')
-  .then(r => r.ok ? r.json() : null)
-  .then(d => {
-    if(!d) return;
-    importedQuestions = Array.isArray(d) ? d : (d.questions || []);
-    if(importedQuestions.length) toast(`已載入 ${importedQuestions.length} 題外部題目`);
-  })
-  .catch(()=>{});
-
-if(state.seenIntro){
-  document.getElementById('ovBtn').textContent = '開始試煉';
+// 遊戲一律等 questions.json 讀取完成（成功或失敗都算完成）才會產生第一題、
+// 才讓玩家進入遊戲。內建題庫已清空，四科（國/英/自/社）完全依賴這個檔案；
+// 數學不受影響，永遠可以出題。
+function setBootStatus(text, warn){
+  const el = document.getElementById('bootStatus');
+  el.textContent = text;
+  el.classList.toggle('warn', !!warn);
 }
-document.getElementById('overlay').classList.add('on');
-resizeCanvas();
+
+async function boot(){
+  setBootStatus('讀取題庫中…');
+  let booted = false;
+  const finishOnce = ()=>{ if(booted) return; booted = true; finishBoot(); };
+
+  // 保底機制：萬一 questions.json 一直卡住（網路異常等），4 秒後讓玩家可以手動跳過等待
+  const skipBtn = document.getElementById('bootContinue');
+  const skipTimer = setTimeout(()=>{ skipBtn.style.display = 'block'; }, 4000);
+  skipBtn.onclick = () => { clearTimeout(skipTimer); finishOnce(); };
+
+  let ok = false, count = 0, failReason = '';
+  try{
+    const r = await fetch('./questions.json');
+    if(r.ok){
+      const d = await r.json();
+      importedQuestions = Array.isArray(d) ? d : (d.questions || []);
+      count = importedQuestions.length;
+      ok = true;
+    } else {
+      failReason = `找不到 questions.json（HTTP ${r.status}）`;
+    }
+  }catch(e){
+    failReason = '讀取題庫時發生錯誤：' + e.message;
+  }
+  clearTimeout(skipTimer);
+
+  const missing = ['chinese','english','science','geography'].filter(s=>!subjectReady(s));
+
+  if(!ok){
+    setBootStatus(`${failReason}\n數學仍可正常出題，但國文／英文／自然／社會目前沒有題目。`, true);
+  } else if(missing.length){
+    setBootStatus(`已載入 ${count} 題，其中 ${missing.map(s=>SUBJ_NAME[s]).join('、')} 目前沒有題目。`, true);
+  } else {
+    setBootStatus(`已載入 ${count} 題，題目系統就緒。`);
+  }
+
+  await new Promise(res=>setTimeout(res, 450)); // 讓狀態訊息至少停留一下，不會一閃即過
+  finishOnce();
+}
+
+function finishBoot(){
+  newQuestion();
+  document.getElementById('overlay').classList.add('on');
+  if(state.seenIntro) document.getElementById('ovBtn').textContent = '開始試煉';
+  resizeCanvas();
+  document.getElementById('bootOverlay').classList.add('hidden');
+}
+
 requestAnimationFrame(loop);
+boot();
 </script>
 </body>
 </html>
