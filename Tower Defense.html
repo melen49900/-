@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>烈焰試煉場</title>
+<style>
+:root{
+  --void:#0d0710;        /* 最深的背景 */
+  --stone:#1d1220;       /* 地牢石材 */
+  --stone-lit:#2e1b2e;   /* 被火光打亮的石材 */
+  --ember:#ff6a1f;       /* 主火焰橘 */
+  --ember-hot:#ffd046;   /* 火心黃 */
+  --mana:#5fd8ff;        /* 魔力藍（鑽石） */
+  --blood:#ff3b6b;       /* 危險紅 */
+  --bone:#f3e7dd;        /* 主要文字 */
+  --bone-dim:#9c8a92;    /* 次要文字 */
+  --gold:#ffc93c;
+  --stoneline:rgba(255,160,90,.18);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden}
+body{
+  background:var(--void);
+  color:var(--bone);
+  font-family:"PingFang TC","Hiragino Sans TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  display:flex;align-items:center;justify-content:center;
+  user-select:none;
+}
+#app{
+  width:100%;max-width:440px;height:100%;max-height:940px;
+  display:flex;flex-direction:column;position:relative;
+  background:var(--stone);
+  box-shadow:0 0 0 1px var(--stoneline), 0 30px 80px rgba(0,0,0,.7);
+}
+
+/* ── 頂部資源列 ────────────────────────────── */
+#topbar{
+  display:flex;gap:6px;padding:10px 12px;
+  background:linear-gradient(180deg,#25162a,#1a1020);
+  border-bottom:1px solid var(--stoneline);
+  flex-shrink:0;
+}
+.res{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
+  background:rgba(0,0,0,.35);border:1px solid var(--stoneline);
+  border-radius:9px;padding:7px 4px;
+  font-variant-numeric:tabular-nums;font-size:14px;font-weight:700;
+}
+.res span:first-child{font-size:15px;filter:saturate(1.3)}
+.res.gem{color:var(--mana)} .res.gold{color:var(--gold)} .res.stone{color:#c9a7ff}
+
+/* ── 畫面容器 ──────────────────────────────── */
+#screens{flex:1;position:relative;overflow:hidden}
+.screen{
+  position:absolute;inset:0;display:none;
+  flex-direction:column;overflow-y:auto;overscroll-behavior:contain;
+}
+.screen.on{display:flex}
+.pad{padding:14px}
+
+/* ── 戰場 ──────────────────────────────────── */
+#screen-battle{overflow:hidden}
+#stage{flex:1;position:relative;background:#0a060c}
+#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+
+#hud{
+  position:absolute;top:0;left:0;right:0;padding:9px 11px;
+  display:flex;align-items:center;gap:9px;
+  background:linear-gradient(180deg,rgba(8,4,10,.92),rgba(8,4,10,0));
+  pointer-events:none;font-size:12px;
+}
+#waveTag{
+  background:rgba(0,0,0,.5);border:1px solid var(--stoneline);
+  border-radius:7px;padding:4px 9px;font-weight:800;letter-spacing:.3px;
+}
+#timeTag{
+  background:rgba(0,0,0,.5);border:1px solid var(--stoneline);
+  border-radius:7px;padding:4px 9px;font-variant-numeric:tabular-nums;font-weight:700;
+}
+#timeTag.low{color:var(--blood);border-color:rgba(255,59,107,.5)}
+#runLoot{margin-left:auto;display:flex;gap:9px;color:var(--bone-dim);font-weight:700;font-variant-numeric:tabular-nums}
+
+#hpWrap{
+  position:absolute;left:0;right:0;bottom:0;padding:9px 12px 12px;
+  background:linear-gradient(0deg,rgba(8,4,10,.95),rgba(8,4,10,0));
+  pointer-events:none;
+}
+#hpBar{height:13px;background:rgba(0,0,0,.6);border:1px solid var(--stoneline);border-radius:99px;overflow:hidden}
+#hpFill{height:100%;width:100%;background:linear-gradient(90deg,#ff3b6b,#ff8a5b);transition:width .16s}
+#hpText{
+  text-align:center;font-size:11px;margin-top:4px;color:var(--bone-dim);
+  font-variant-numeric:tabular-nums;font-weight:700;
+}
+
+/* 開場 / 結算覆蓋層 */
+#overlay{
+  position:absolute;inset:0;display:none;
+  align-items:center;justify-content:center;padding:26px;
+  background:rgba(8,4,10,.9);backdrop-filter:blur(3px);z-index:5;
+}
+#overlay.on{display:flex}
+#ovCard{width:100%;max-width:330px;text-align:center}
+#ovTitle{font-size:30px;font-weight:900;letter-spacing:1px;margin:0 0 6px}
+#ovSub{color:var(--bone-dim);font-size:13px;line-height:1.7;margin:0 0 18px}
+#ovLoot{
+  display:none;gap:8px;flex-direction:column;margin:0 0 18px;
+  background:rgba(0,0,0,.4);border:1px solid var(--stoneline);border-radius:12px;padding:13px;
+}
+#ovLoot.on{display:flex}
+#ovLoot div{display:flex;justify-content:space-between;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+#ovLoot div span:last-child{color:var(--ember-hot)}
+
+/* ── 按鈕 ──────────────────────────────────── */
+.btn{
+  width:100%;border:0;border-radius:12px;padding:14px;
+  font-family:inherit;font-size:15px;font-weight:800;letter-spacing:.5px;
+  color:#2a0d02;cursor:pointer;
+  background:linear-gradient(180deg,var(--ember-hot),var(--ember));
+  box-shadow:0 5px 0 #a33a08, 0 9px 18px rgba(255,106,31,.3);
+  transition:transform .08s, box-shadow .08s;
+}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #a33a08}
+.btn:disabled{
+  background:#3a2a38;color:#7b6a78;box-shadow:0 4px 0 #241a24;
+  cursor:not-allowed;transform:none;
+}
+.btn.ghost{
+  background:transparent;color:var(--bone);
+  border:1px solid var(--stoneline);box-shadow:none;
+}
+.btn.ghost:active{transform:none;background:rgba(255,255,255,.05)}
+.btn.mana{
+  color:#042733;background:linear-gradient(180deg,#bff0ff,var(--mana));
+  box-shadow:0 5px 0 #1d7f9e, 0 9px 18px rgba(95,216,255,.25);
+}
+.btn.mana:active{box-shadow:0 1px 0 #1d7f9e}
+.btn.sm{padding:10px;font-size:13px;border-radius:10px}
+
+/* ── 通用區塊 ──────────────────────────────── */
+h2.sec{font-size:17px;font-weight:900;margin:0 0 3px;letter-spacing:.5px}
+p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
+.card{
+  background:rgba(0,0,0,.28);border:1px solid var(--stoneline);
+  border-radius:13px;padding:13px;margin-bottom:11px;
+}
+
+/* ── 答題 ──────────────────────────────────── */
+#qSubject{
+  display:inline-block;font-size:11px;font-weight:800;letter-spacing:1px;
+  color:var(--ember-hot);margin-bottom:9px;
+}
+#qText{font-size:21px;font-weight:800;line-height:1.5;margin:0 0 4px;min-height:60px}
+#qImg{max-width:100%;border-radius:9px;margin:8px 0;display:none}
+.opt{
+  width:100%;text-align:left;border:1px solid var(--stoneline);
+  background:rgba(0,0,0,.3);color:var(--bone);
+  border-radius:11px;padding:14px 15px;margin-bottom:9px;
+  font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;
+  transition:background .1s,border-color .1s;
+}
+.opt:active{background:rgba(255,255,255,.07)}
+.opt.right{border-color:#4ade80;background:rgba(74,222,128,.16);color:#bbf7d0}
+.opt.wrong{border-color:var(--blood);background:rgba(255,59,107,.14);color:#ffc4d2}
+.opt:disabled{cursor:default}
+#qFeed{
+  min-height:26px;font-size:14px;font-weight:800;text-align:center;
+  margin:6px 0 10px;
+}
+#qFeed.ok{color:#86efac} #qFeed.no{color:#fda4c0}
+#qMeta{
+  display:flex;gap:8px;margin-bottom:12px;font-size:11px;
+  color:var(--bone-dim);font-weight:700;
+}
+#qMeta div{
+  flex:1;text-align:center;background:rgba(0,0,0,.3);
+  border:1px solid var(--stoneline);border-radius:8px;padding:6px 3px;
+}
+#qMeta b{display:block;font-size:15px;color:var(--bone);margin-top:2px;font-variant-numeric:tabular-nums}
+
+/* ── 抽裝備 ────────────────────────────────── */
+#pullResult{display:none;margin-bottom:12px}
+#pullResult.on{display:block}
+.drop{
+  display:flex;align-items:center;gap:11px;
+  border:1px solid var(--stoneline);border-radius:11px;
+  padding:10px 12px;margin-bottom:8px;background:rgba(0,0,0,.3);
+}
+.drop .ico{font-size:26px;width:34px;text-align:center;flex-shrink:0}
+.drop .nm{font-weight:800;font-size:14px}
+.drop .st{font-size:11px;color:var(--bone-dim);margin-top:2px}
+.rar{font-size:10px;font-weight:900;letter-spacing:1px;padding:2px 6px;border-radius:5px;margin-left:auto;flex-shrink:0}
+.r-N{background:#3f3547;color:#c3b5cc} .r-R{background:#1d4e6b;color:#9fdcff}
+.r-SR{background:#5b2b74;color:#e3b5ff} .r-SSR{background:#7a4708;color:#ffd98a}
+.drop.new{border-color:var(--ember);box-shadow:0 0 16px rgba(255,106,31,.25)}
+
+/* ── 強化 ──────────────────────────────────── */
+.up{display:flex;align-items:center;gap:11px;margin-bottom:9px}
+.up .ico{font-size:21px;width:28px;text-align:center;flex-shrink:0}
+.up .info{flex:1;min-width:0}
+.up .nm{font-weight:800;font-size:14px}
+.up .val{font-size:11px;color:var(--bone-dim);margin-top:1px;font-variant-numeric:tabular-nums}
+.up button{
+  flex-shrink:0;min-width:92px;border:0;border-radius:9px;padding:9px 8px;
+  font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;
+  color:#3a2400;background:linear-gradient(180deg,#ffe08a,var(--gold));
+  box-shadow:0 3px 0 #a37400;
+}
+.up button:active{transform:translateY(2px);box-shadow:0 1px 0 #a37400}
+.up button:disabled{background:#3a2a38;color:#7b6a78;box-shadow:0 3px 0 #241a24;transform:none}
+
+/* ── 裝備 ──────────────────────────────────── */
+.slot{
+  display:flex;align-items:center;gap:11px;padding:11px;
+  border:1px dashed var(--stoneline);border-radius:11px;margin-bottom:9px;
+  background:rgba(0,0,0,.2);
+}
+.slot.filled{border-style:solid;background:rgba(0,0,0,.34)}
+.slot .ico{font-size:25px;width:33px;text-align:center;flex-shrink:0}
+.slot .info{flex:1;min-width:0}
+.slot .nm{font-weight:800;font-size:14px}
+.slot .st{font-size:11px;color:var(--bone-dim);margin-top:2px}
+.slot .empty{color:#6b5b68;font-size:13px;font-weight:700}
+.bagItem{
+  display:flex;align-items:center;gap:10px;padding:9px 11px;
+  border:1px solid var(--stoneline);border-radius:10px;margin-bottom:7px;
+  background:rgba(0,0,0,.26);cursor:pointer;
+}
+.bagItem.on{border-color:var(--ember);background:rgba(255,106,31,.11)}
+.bagItem .ico{font-size:21px;width:27px;text-align:center;flex-shrink:0}
+.bagItem .info{flex:1;min-width:0}
+.bagItem .nm{font-weight:800;font-size:13px}
+.bagItem .st{font-size:10px;color:var(--bone-dim);margin-top:1px}
+.row2{display:flex;gap:8px}
+.empty-note{color:#6b5b68;font-size:13px;text-align:center;padding:22px 10px;line-height:1.7}
+
+/* ── 分頁列 ────────────────────────────────── */
+#tabs{
+  display:flex;flex-shrink:0;
+  background:linear-gradient(0deg,#25162a,#1a1020);
+  border-top:1px solid var(--stoneline);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.tab{
+  flex:1;border:0;background:transparent;color:#7b6a78;
+  font-family:inherit;font-size:10px;font-weight:800;
+  padding:9px 2px 10px;cursor:pointer;position:relative;
+}
+.tab i{display:block;font-size:20px;font-style:normal;margin-bottom:3px;filter:grayscale(1) opacity(.55)}
+.tab.on{color:var(--ember-hot)}
+.tab.on i{filter:none}
+.tab .dot{
+  position:absolute;top:6px;right:50%;margin-right:-19px;
+  width:8px;height:8px;border-radius:99px;background:var(--blood);
+  display:none;box-shadow:0 0 7px var(--blood);
+}
+.tab .dot.on{display:block}
+
+/* ── 提示 ──────────────────────────────────── */
+#toast{
+  position:absolute;left:50%;bottom:86px;transform:translateX(-50%) translateY(14px);
+  background:rgba(12,6,14,.96);border:1px solid var(--stoneline);
+  border-radius:10px;padding:10px 17px;font-size:13px;font-weight:700;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+  z-index:50;white-space:nowrap;max-width:88%;
+}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="topbar">
+    <div class="res gem"><span>💎</span><span id="uiGem">0</span></div>
+    <div class="res gold"><span>💰</span><span id="uiGold">0</span></div>
+    <div class="res stone"><span>🔮</span><span id="uiStone">0</span></div>
+  </div>
+
+  <div id="screens">
+
+    <!-- 戰場 -->
+    <section class="screen on" id="screen-battle">
+      <div id="stage">
+        <canvas id="cv"></canvas>
+        <div id="hud">
+          <div id="waveTag">第 1 / 20 波</div>
+          <div id="timeTag">3:00</div>
+          <div id="runLoot"><span id="runKill">☠ 0</span><span id="runGold">💰 0</span></div>
+        </div>
+        <div id="hpWrap">
+          <div id="hpBar"><div id="hpFill"></div></div>
+          <div id="hpText">100 / 100</div>
+        </div>
+        <div id="overlay">
+          <div id="ovCard">
+            <h1 id="ovTitle">烈焰試煉場</h1>
+            <p id="ovSub">怪物會從上方壓下來。拖曳畫面移動法師，攻擊會自動施放。<br>撐過 3 分鐘，或戰到倒下為止。</p>
+            <div id="ovLoot"></div>
+            <button class="btn" id="ovBtn">進入試煉</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 答題 -->
+    <section class="screen" id="screen-quiz">
+      <div class="pad">
+        <h2 class="sec">魔力結晶</h2>
+        <p class="sub">答對題目凝聚鑽石。連續答對越多，單題給的鑽石越多。</p>
+        <div id="qMeta">
+          <div>連續答對<b id="qStreak">0</b></div>
+          <div>累計答對<b id="qTotal">0</b></div>
+          <div>數學階級<b id="qStage">1</b></div>
+        </div>
+        <div class="card">
+          <div id="qSubject">數學</div>
+          <p id="qText">載入中…</p>
+          <img id="qImg" alt="">
+        </div>
+        <div id="qOpts"></div>
+        <div id="qFeed"></div>
+        <button class="btn" id="qNext" style="display:none">下一題</button>
+      </div>
+    </section>
+
+    <!-- 抽裝備 -->
+    <section class="screen" id="screen-gacha">
+      <div class="pad">
+        <h2 class="sec">熔爐召喚</h2>
+        <p class="sub">投入鑽石，從熔爐中拉出一件裝備。重複的裝備會自動熔成強化石。</p>
+        <div id="pullResult"></div>
+        <button class="btn mana" id="pull1" style="margin-bottom:9px">召喚 1 次 · 100 💎</button>
+        <button class="btn mana" id="pull10">召喚 10 次 · 900 💎</button>
+        <div class="card" style="margin-top:14px">
+          <div style="font-size:12px;color:var(--bone-dim);line-height:1.9">
+            <div>出現機率　普通 50%　精良 30%　稀有 15%　傳說 5%</div>
+            <div style="margin-top:6px">重複裝備熔解：普通 +1　精良 +3　稀有 +8　傳說 +20 🔮</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 強化 -->
+    <section class="screen" id="screen-upgrade">
+      <div class="pad">
+        <h2 class="sec">鍛造台</h2>
+        <p class="sub">用金幣鍛鍊本體能力。每級費用會隨等級提高。</p>
+        <div class="card" id="upList"></div>
+        <h2 class="sec" style="margin-top:18px">裝備精煉</h2>
+        <p class="sub">用強化石精煉已裝備的物品，每次精煉提升該裝備 8% 全能力。</p>
+        <div class="card" id="refineList"></div>
+      </div>
+    </section>
+
+    <!-- 裝備 -->
+    <section class="screen" id="screen-equip">
+      <div class="pad">
+        <h2 class="sec">裝備</h2>
+        <p class="sub">點下方背包中的裝備即可穿戴，同部位會自動替換。</p>
+        <div id="slots"></div>
+        <h2 class="sec" style="margin-top:18px">背包</h2>
+        <p class="sub" id="bagCount">尚無收藏</p>
+        <div id="bag"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <nav id="tabs">
+    <button class="tab on" data-s="battle"><i>⚔️</i>試煉</button>
+    <button class="tab" data-s="quiz"><i>💎</i>答題<span class="dot" id="dotQuiz"></span></button>
+    <button class="tab" data-s="gacha"><i>🔥</i>召喚</button>
+    <button class="tab" data-s="upgrade"><i>🔨</i>鍛造</button>
+    <button class="tab" data-s="equip"><i>🎒</i>裝備</button>
+  </nav>
+
+  <div id="toast"></div>
+</div>
+
+<script src="./quiz-engine.js"></script>
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════════════════
+   烈焰試煉場
+   答題邏輯全部委託給 quiz-engine.js（QuizEngine），
+   這個檔案只負責：戰鬥、經濟、裝備、存檔。
+   ══════════════════════════════════════════════════════════ */
+
+const SAVE_KEY = 'emberTrial_v1';
+const RUN_SECONDS = 180;   // 一局 3 分鐘
+const TOTAL_WAVES  = 20;
+
+/* ── 裝備資料 ─────────────────────────────── */
+const RARITY = {
+  N:   { label:'普通', mult:1.0,  dust:1  },
+  R:   { label:'精良', mult:1.55, dust:3  },
+  SR:  { label:'稀有', mult:2.4,  dust:8  },
+  SSR: { label:'傳說', mult:3.8,  dust:20 },
+};
+const RARITY_ODDS = [['N',.50],['R',.30],['SR',.15],['SSR',.05]];
+
+// base 為「普通」品質的數值，實際數值 = base × 稀有度倍率
+const EQUIP_POOL = [
+  // 武器：主要給攻擊力與攻速
+  { id:'w1', slot:'weapon', name:'裂石火杖',   icon:'🔥', atk:7,  spd:0.10 },
+  { id:'w2', slot:'weapon', name:'霜牙短弩',   icon:'🏹', atk:5,  spd:0.26 },
+  { id:'w3', slot:'weapon', name:'雷紋長槍',   icon:'⚡', atk:9,  spd:0.04 },
+  { id:'w4', slot:'weapon', name:'虛空之刃',   icon:'🗡️', atk:6,  spd:0.18, crit:3 },
+  { id:'w5', slot:'weapon', name:'熔心巨錘',   icon:'🔨', atk:12, spd:-0.05 },
+  { id:'w6', slot:'weapon', name:'星塵法典',   icon:'📖', atk:4,  spd:0.14, multi:1 },
+  // 防具：主要給生命值
+  { id:'a1', slot:'armor',  name:'旅者皮甲',   icon:'🧥', hp:26 },
+  { id:'a2', slot:'armor',  name:'秘銀鎖環',   icon:'🛡️', hp:20, atk:2 },
+  { id:'a3', slot:'armor',  name:'龍鱗胸甲',   icon:'🐉', hp:40 },
+  { id:'a4', slot:'armor',  name:'灰燼斗篷',   icon:'🌫️', hp:16, spd:0.08 },
+  { id:'a5', slot:'armor',  name:'聖岩護心',   icon:'⛰️', hp:33, crit:2 },
+  // 飾品：主要給暴擊與特殊效果
+  { id:'c1', slot:'trinket', name:'幸運骨符',  icon:'🍀', crit:6 },
+  { id:'c2', slot:'trinket', name:'魔力指環',  icon:'💍', atk:3, spd:0.10 },
+  { id:'c3', slot:'trinket', name:'雙生水晶',  icon:'💠', multi:1, crit:2 },
+  { id:'c4', slot:'trinket', name:'嗜血項鍊',  icon:'📿', crit:9, hp:-8 },
+  { id:'c5', slot:'trinket', name:'流星碎片',  icon:'☄️', atk:4, crit:4, spd:0.06 },
+];
+const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品' };
+
+/* ── 本體強化 ─────────────────────────────── */
+const UPGRADES = [
+  { key:'atk',  icon:'🗡️', name:'攻擊力',  base:60,  grow:1.17, per:3,    fmt:v=>'+'+v },
+  { key:'hp',   icon:'❤️', name:'生命值',  base:55,  grow:1.16, per:18,   fmt:v=>'+'+v },
+  { key:'spd',  icon:'💨', name:'攻擊速度', base:90,  grow:1.21, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒' },
+  { key:'crit', icon:'✨', name:'暴擊率',  base:110, grow:1.23, per:1.4,  fmt:v=>'+'+v.toFixed(1)+'%' },
+  { key:'multi',icon:'🎯', name:'額外彈道', base:800, grow:2.05, per:1,   fmt:v=>'+'+v+' 道', max:6 },
+];
+
+/* ── 存檔狀態 ─────────────────────────────── */
+let state = freshState();
+
+function freshState(){
+  return {
+    gem:0, gold:0, stone:0,
+    up:{ atk:0, hp:0, spd:0, crit:0, multi:0 },
+    bag:[],                                   // [{uid,id,rarity,refine}]
+    equipped:{ weapon:null, armor:null, trinket:null },
+    quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
+    qs:{ correct:0, wrong:0, streak:0, best:0 },
+    best:{ wave:0, kills:0 },
+    seenIntro:false,
+  };
+}
+
+function save(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return;
+    const d = JSON.parse(raw);
+    const f = freshState();
+    state = Object.assign(f, d);
+    state.up       = Object.assign(f.up, d.up||{});
+    state.equipped = Object.assign(f.equipped, d.equipped||{});
+    state.qs       = Object.assign(f.qs, d.qs||{});
+    state.best     = Object.assign(f.best, d.best||{});
+    // 進度資料還原：補上舊存檔可能缺少的欄位，避免引擎讀到 undefined
+    state.quiz     = Object.assign(QuizEngine.createProgress(), d.quiz||{});
+  }catch(e){}
+}
+
+/* ── 題庫 ─────────────────────────────────── */
+// 數學由引擎自動生成、不需要題庫；其他科目給一份內建題庫，
+// 有 id 的題目會自動進入引擎的「關卡分批解鎖」機制。
+const BUILTIN = {
+  math:[],
+  chinese:[
+    {id:1,q:'「一日千里」形容什麼？',ans:'進步非常快',opts:['進步非常快','路途很遙遠','時間過得慢','走路很費力']},
+    {id:2,q:'「揠苗助長」告訴我們什麼道理？',ans:'急躁反而壞事',opts:['急躁反而壞事','勤勞會有收穫','要孝順父母','團結力量大']},
+    {id:3,q:'「井底之蟲」下一句是？',ans:'井底之蛙',opts:['井底之蛙','坐井觀天','夜郎自大','管中窺豹']},
+    {id:4,q:'下列哪個是形容詞？',ans:'美麗',opts:['美麗','跑步','桌子','明天']},
+    {id:5,q:'「畫蛇添足」的意思是？',ans:'多此一舉',opts:['多此一舉','錦上添花','雪中送炭','畫龍點睛']},
+    {id:6,q:'「守株待兔」比喻什麼？',ans:'不勞而獲的僥倖心態',opts:['不勞而獲的僥倖心態','努力不懈','聰明機智','樂於助人']},
+    {id:7,q:'「春」的部首是？',ans:'日',opts:['日','人','三','大']},
+    {id:8,q:'哪個詞語是反義詞配對？',ans:'光明－黑暗',opts:['光明－黑暗','美麗－漂亮','高興－快樂','聰明－伶俐']},
+    {id:9,q:'「聞雞起舞」形容什麼？',ans:'勤奮努力',opts:['勤奮努力','早睡早起','愛好音樂','喜歡養雞']},
+    {id:10,q:'「亡羊補牢」的下一句是？',ans:'為時未晚',opts:['為時未晚','羊入虎口','亡命天涯','補天浴日']},
+  ],
+  english:[
+    {id:1,q:'蘋果的英文是？',ans:'apple',opts:['apple','orange','banana','grape']},
+    {id:2,q:'"Good morning" 是什麼時候說的？',ans:'早上',opts:['早上','中午','晚上','睡前']},
+    {id:3,q:'"cat" 的中文是？',ans:'貓',opts:['貓','狗','鳥','魚']},
+    {id:4,q:'數字 7 的英文是？',ans:'seven',opts:['seven','six','eight','nine']},
+    {id:5,q:'"I ___ a student." 填入？',ans:'am',opts:['am','is','are','be']},
+    {id:6,q:'星期一的英文是？',ans:'Monday',opts:['Monday','Sunday','Tuesday','Friday']},
+    {id:7,q:'"book" 的中文是？',ans:'書',opts:['書','筆','桌','椅']},
+    {id:8,q:'"red" 是什麼顏色？',ans:'紅色',opts:['紅色','藍色','綠色','黃色']},
+    {id:9,q:'"She ___ to school every day." 填入？',ans:'goes',opts:['goes','go','going','gone']},
+    {id:10,q:'"water" 的中文是？',ans:'水',opts:['水','火','風','土']},
+  ],
+  science:[
+    {id:1,q:'水在幾度會結冰？（攝氏）',ans:'0 度',opts:['0 度','10 度','100 度','50 度']},
+    {id:2,q:'植物行光合作用需要什麼？',ans:'陽光',opts:['陽光','月光','黑暗','冰塊']},
+    {id:3,q:'太陽系中最大的行星是？',ans:'木星',opts:['木星','地球','火星','金星']},
+    {id:4,q:'人體最大的器官是？',ans:'皮膚',opts:['皮膚','心臟','肝臟','肺臟']},
+    {id:5,q:'蝴蝶的幼蟲叫什麼？',ans:'毛毛蟲',opts:['毛毛蟲','蝌蚪','幼鳥','蛹']},
+    {id:6,q:'空氣中含量最多的氣體是？',ans:'氮氣',opts:['氮氣','氧氣','二氧化碳','氫氣']},
+    {id:7,q:'磁鐵的同極會怎樣？',ans:'互相排斥',opts:['互相排斥','互相吸引','沒有反應','融化']},
+    {id:8,q:'哪一個是哺乳類動物？',ans:'鯨魚',opts:['鯨魚','鯊魚','海龜','章魚']},
+    {id:9,q:'彩虹有幾種顏色？',ans:'7 種',opts:['7 種','5 種','3 種','9 種']},
+    {id:10,q:'月亮本身會發光嗎？',ans:'不會，反射陽光',opts:['不會，反射陽光','會，自己發光','只有滿月會','只有白天會']},
+  ],
+  geography:[
+    {id:1,q:'台灣最高的山是？',ans:'玉山',opts:['玉山','阿里山','雪山','合歡山']},
+    {id:2,q:'台灣的首都是？',ans:'台北',opts:['台北','高雄','台中','台南']},
+    {id:3,q:'世界最長的河流是？',ans:'尼羅河',opts:['尼羅河','長江','亞馬遜河','黃河']},
+    {id:4,q:'地球上面積最大的洲是？',ans:'亞洲',opts:['亞洲','非洲','歐洲','南美洲']},
+    {id:5,q:'台灣四面環海，屬於什麼地形？',ans:'島嶼',opts:['島嶼','半島','大陸','高原']},
+    {id:6,q:'日本的首都是？',ans:'東京',opts:['東京','大阪','京都','名古屋']},
+    {id:7,q:'世界最高的山峰是？',ans:'聖母峰',opts:['聖母峰','玉山','富士山','阿爾卑斯山']},
+    {id:8,q:'台灣位於哪一個洲？',ans:'亞洲',opts:['亞洲','歐洲','非洲','大洋洲']},
+    {id:9,q:'赤道把地球分成哪兩半？',ans:'南半球與北半球',opts:['南半球與北半球','東半球與西半球','上半球與下半球','左半球與右半球']},
+    {id:10,q:'台灣最長的河流是？',ans:'濁水溪',opts:['濁水溪','淡水河','高屏溪','大甲溪']},
+  ],
+};
+let importedQuestions = [];   // 可放 questions.json 匯入的題目
+const SUBJ_NAME = { math:'數學', chinese:'國文', english:'英文', science:'自然', geography:'社會' };
+
+// 交給 QuizEngine 的題庫物件
+function bank(){
+  // 引擎的「關卡分批解鎖」只認 imported 與 custom 這兩個來源的題號，
+  // 所以內建題庫要掛在 custom，這些題目才會進入關卡系統。
+  return { imported: importedQuestions, custom: BUILTIN, builtin:{} };
+}
+
+// 選科目：數學永遠可出（引擎自動生成），其他科目要有題目才輪到
+function pickSubject(){
+  const pool = ['math'];
+  ['chinese','english','science','geography'].forEach(s=>{
+    if((BUILTIN[s]||[]).length) pool.push(s);
+  });
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+/* ══════════════════════════════════════════
+   答題畫面
+   ══════════════════════════════════════════ */
+let curQ = null, curSubj = 'math', answered = false, firstTry = true;
+
+function newQuestion(){
+  curSubj = pickSubject();
+  curQ = QuizEngine.pickQuestion(state.quiz, curSubj, bank(), {
+    historicalMathCorrect: state.qs.correct,
+    historicalSubjectCorrect: state.qs.correct,
+  });
+  answered = false; firstTry = true;
+  renderQuestion();
+}
+
+function renderQuestion(){
+  document.getElementById('qSubject').textContent = SUBJ_NAME[curSubj] || curSubj;
+  document.getElementById('qText').textContent = curQ.q;
+  const img = document.getElementById('qImg');
+  if(curQ.img){ img.src = curQ.img; img.style.display='block'; } else img.style.display='none';
+
+  const box = document.getElementById('qOpts');
+  box.innerHTML = '';
+  (curQ.opts||[]).forEach(o=>{
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.textContent = o;
+    b.onclick = ()=>answer(o, b);
+    box.appendChild(b);
+  });
+  document.getElementById('qFeed').textContent = '';
+  document.getElementById('qFeed').className = '';
+  document.getElementById('qNext').style.display = 'none';
+  syncQuizMeta();
+}
+
+function answer(choice, btn){
+  if(answered) return;
+  const right = String(choice) === String(curQ.ans);
+  const feed = document.getElementById('qFeed');
+
+  if(right){
+    answered = true;
+    btn.classList.add('right');
+    document.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+
+    // ── 把結果回報給出題引擎（推進數學階級／關卡解鎖）──
+    QuizEngine.recordAnswer(state.quiz, curSubj, curQ,
+      { correct:true, isFirstAttempt:firstTry, isFinal:true }, bank());
+
+    state.qs.correct++;
+    state.qs.streak++;
+    state.qs.best = Math.max(state.qs.best, state.qs.streak);
+
+    // 鑽石獎勵：底 12，連勝每 1 次 +2（上限 +40），第一次就答對再 +5
+    const bonus = Math.min(40, state.qs.streak * 2);
+    const gain  = 12 + bonus + (firstTry ? 5 : 0);
+    state.gem += gain;
+
+    feed.className = 'ok';
+    feed.textContent = `答對　+${gain} 💎　連續 ${state.qs.streak}`;
+    document.getElementById('qNext').style.display = 'block';
+    save(); syncUI();
+  } else {
+    btn.classList.add('wrong');
+    btn.disabled = true;
+
+    if(firstTry){
+      // 第一次答錯：記錄「不會」但還給一次機會（isFinal:false）
+      QuizEngine.recordAnswer(state.quiz, curSubj, curQ,
+        { correct:false, isFirstAttempt:true, isFinal:false }, bank());
+      firstTry = false;
+      state.qs.streak = 0;
+      feed.className = 'no';
+      feed.textContent = '再想一次，還有一次機會';
+      save(); syncQuizMeta();
+    } else {
+      // 第二次也錯：確定答錯，排入補考佇列
+      answered = true;
+      QuizEngine.recordAnswer(state.quiz, curSubj, curQ,
+        { correct:false, isFirstAttempt:false, isFinal:true }, bank());
+      state.qs.wrong++;
+      document.querySelectorAll('.opt').forEach(b=>{
+        b.disabled = true;
+        if(b.textContent === String(curQ.ans)) b.classList.add('right');
+      });
+      feed.className = 'no';
+      feed.textContent = `正確答案是「${curQ.ans}」`;
+      document.getElementById('qNext').style.display = 'block';
+      save(); syncQuizMeta();
+    }
+  }
+}
+
+function syncQuizMeta(){
+  document.getElementById('qStreak').textContent = state.qs.streak;
+  document.getElementById('qTotal').textContent  = state.qs.correct;
+  document.getElementById('qStage').textContent  = state.quiz.mathStage || 1;
+}
+
+/* ══════════════════════════════════════════
+   角色能力
+   ══════════════════════════════════════════ */
+function equipStat(card, key){
+  if(!card) return 0;
+  const base = EQUIP_POOL.find(e=>e.id===card.id);
+  if(!base || !base[key]) return 0;
+  const rar = RARITY[card.rarity].mult;
+  const ref = 1 + (card.refine||0) * 0.08;
+  const raw = base[key] * rar * ref;
+  // 彈道是整數，不隨稀有度放大到奇怪的小數
+  if(key === 'multi') return Math.floor(base[key] * (card.rarity==='SSR'?2:1));
+  return raw;
+}
+function sumEquip(key){
+  let t = 0;
+  ['weapon','armor','trinket'].forEach(s=>{ t += equipStat(state.equipped[s], key); });
+  return t;
+}
+function stats(){
+  const u = state.up;
+  return {
+    atk:   Math.round(14 + u.atk*3.4 + sumEquip('atk')),
+    maxHp: Math.round(100 + u.hp*18   + sumEquip('hp')),
+    spd:   Math.max(0.5, 2.3 + u.spd*0.13 + sumEquip('spd')),
+    crit:  Math.min(80, 5 + u.crit*1.4 + sumEquip('crit')),
+    multi: 1 + u.multi + Math.round(sumEquip('multi')),
+  };
+}
+
+/* ══════════════════════════════════════════
+   戰鬥
+   ══════════════════════════════════════════ */
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+// 邏輯座標系：寬固定 400，高依實際容器比例算，避免畫面被拉伸
+const W = 400;
+let H = 700, hScale = 1;
+let dpr = 1;
+
+function resizeCanvas(){
+  const r = cv.getBoundingClientRect();
+  if(!r.width || !r.height) return;
+  dpr = Math.min(window.devicePixelRatio||1, 2);
+  cv.width  = Math.round(r.width  * dpr);
+  cv.height = Math.round(r.height * dpr);
+  H = Math.round(W * (r.height / r.width));
+  hScale = H / 700;           // 場地變高時，怪物速度等比放大，維持相同的壓迫節奏
+}
+window.addEventListener('resize', resizeCanvas);
+
+const MONSTERS = [
+  { emoji:'👾', hp:1.0,  spd:1.00, r:15, gold:1.0 },
+  { emoji:'🐀', hp:0.65, spd:1.75, r:13, gold:0.8 },
+  { emoji:'🦇', hp:0.55, spd:2.10, r:12, gold:0.8 },
+  { emoji:'🧟', hp:1.9,  spd:0.62, r:18, gold:1.6 },
+  { emoji:'👹', hp:1.45, spd:1.10, r:17, gold:1.4 },
+  { emoji:'🕷️', hp:0.8,  spd:1.45, r:14, gold:1.0 },
+];
+const BOSSES = ['👺','🐲','💀','👿'];
+
+const run = {
+  active:false, over:false,
+  t:0, wave:1, spawned:0, waveQuota:0, spawnTimer:0,
+  hp:100, maxHp:100,
+  heroX:W/2, targetX:W/2,
+  fireTimer:0,
+  kills:0, gold:0,
+  enemies:[], shots:[], bits:[], pops:[],
+  shake:0,
+};
+
+function waveQuotaFor(w){ return 3 + Math.floor(w*1.15); }
+function enemyHpFor(w){ return 17 * Math.pow(1.255, w-1); }
+
+function startRun(){
+  const s = stats();
+  run.active=true; run.over=false;
+  run.t=0; run.wave=1; run.spawned=0; run.waveQuota=waveQuotaFor(1); run.spawnTimer=0;
+  run.maxHp=s.maxHp; run.hp=s.maxHp;
+  run.heroX=W/2; run.targetX=W/2; run.fireTimer=0;
+  run.kills=0; run.gold=0;
+  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.shake=0;
+  document.getElementById('overlay').classList.remove('on');
+  resizeCanvas();
+  syncBattleHud();
+}
+
+function endRun(win){
+  run.active=false; run.over=true;
+
+  const goldGain  = Math.round(run.gold);
+  const stoneGain = Math.floor(run.wave/3) + (win?3:0);
+  const gemGain   = Math.floor(run.kills/25) + (win?15:0);
+  state.gold  += goldGain;
+  state.stone += stoneGain;
+  state.gem   += gemGain;
+  state.best.wave  = Math.max(state.best.wave, run.wave);
+  state.best.kills = Math.max(state.best.kills, run.kills);
+  save(); syncUI();
+
+  document.getElementById('ovTitle').textContent = win ? '試煉完成' : '倒下了';
+  document.getElementById('ovSub').innerHTML = win
+    ? `撐過了全部 ${TOTAL_WAVES} 波，擊倒 ${run.kills} 隻。`
+    : `在第 ${run.wave} 波倒下，擊倒 ${run.kills} 隻。<br>去答題換鑽石、抽裝備再來一次。`;
+
+  const loot = document.getElementById('ovLoot');
+  loot.className = 'on';
+  loot.innerHTML =
+    `<div><span>💰 金幣</span><span>+${goldGain}</span></div>` +
+    `<div><span>🔮 強化石</span><span>+${stoneGain}</span></div>` +
+    (gemGain ? `<div><span>💎 鑽石</span><span>+${gemGain}</span></div>` : '');
+  document.getElementById('ovBtn').textContent = '再挑戰一次';
+  document.getElementById('overlay').classList.add('on');
+}
+
+/* 輸入：拖曳移動 */
+function pointerX(e){
+  const r = cv.getBoundingClientRect();
+  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  return Math.max(24, Math.min(W-24, cx / r.width * W));
+}
+let dragging = false;
+cv.addEventListener('pointerdown', e=>{ if(!run.active) return; dragging=true; run.targetX=pointerX(e); cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e=>{ if(dragging && run.active) run.targetX=pointerX(e); });
+cv.addEventListener('pointerup',   ()=>{ dragging=false; });
+cv.addEventListener('pointercancel',()=>{ dragging=false; });
+
+/* 生怪 */
+function spawnEnemy(){
+  const w = run.wave;
+  const isBoss = (w % 5 === 0) && run.spawned === run.waveQuota-1;
+  const base = MONSTERS[Math.floor(Math.random()*MONSTERS.length)];
+  const hp = enemyHpFor(w) * base.hp * (isBoss ? 14 : 1);
+  run.enemies.push({
+    x: 32 + Math.random()*(W-64),
+    y: -30,
+    vx: (Math.random()-0.5) * 12,
+    hp, maxHp:hp,
+    spd: (isBoss ? 11 : 17 * base.spd) * (1 + w*0.012) * hScale,
+    r: isBoss ? 34 : base.r,
+    emoji: isBoss ? BOSSES[Math.floor(Math.random()*BOSSES.length)] : base.emoji,
+    gold: base.gold * (isBoss ? 22 : 1) * (1 + w*0.35),
+    boss: isBoss,
+    hit: 0,
+  });
+  run.spawned++;
+}
+
+/* 開火：自動鎖定「壓得最深」的那隻怪，多彈道以扇形散開 */
+const SHOT_SPEED_BASE = 620;
+function fire(){
+  const s = stats();
+  const ox = run.heroX, oy = H - 96;
+
+  let target = null, deepest = -Infinity;
+  for(const e of run.enemies){
+    if(e.y > -10 && e.y > deepest){ deepest = e.y; target = e; }
+  }
+  // 沒有目標就往正上方打
+  const aim = target ? Math.atan2(target.y - oy, target.x - ox) : -Math.PI/2;
+
+  const n = s.multi;
+  const spread = 0.14;
+  for(let i=0;i<n;i++){
+    const a = aim + (i - (n-1)/2) * spread;
+    run.shots.push({
+      x: ox, y: oy,
+      vx: Math.cos(a) * SHOT_SPEED_BASE * hScale,
+      vy: Math.sin(a) * SHOT_SPEED_BASE * hScale,
+      dmg: s.atk,
+      crit: Math.random()*100 < s.crit,
+      r: 6,
+    });
+  }
+}
+
+/* 爆點與傷害數字 */
+function burst(x,y,color,count){
+  for(let i=0;i<count;i++){
+    const a = Math.random()*Math.PI*2, sp = 40 + Math.random()*150;
+    run.bits.push({ x,y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:.45+Math.random()*.3, age:0, c:color, r:1.5+Math.random()*2.5 });
+  }
+}
+function popText(x,y,txt,crit){
+  run.pops.push({ x,y, txt, crit, age:0, life:.7, vy:-46 });
+}
+
+/* 主迴圈 */
+let last = performance.now();
+function loop(now){
+  const dt = Math.min(0.05, (now-last)/1000);
+  last = now;
+  if(run.active) step(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function step(dt){
+  run.t += dt;
+
+  // 時間到 → 勝利
+  if(run.t >= RUN_SECONDS){ endRun(true); return; }
+
+  // 依時間推進波數
+  const wantWave = Math.min(TOTAL_WAVES, 1 + Math.floor(run.t / (RUN_SECONDS/TOTAL_WAVES)));
+  if(wantWave > run.wave){
+    run.wave = wantWave;
+    run.spawned = 0;
+    run.waveQuota = waveQuotaFor(run.wave);
+  }
+
+  // 生怪
+  run.spawnTimer -= dt;
+  if(run.spawnTimer <= 0 && run.spawned < run.waveQuota){
+    spawnEnemy();
+    run.spawnTimer = (RUN_SECONDS/TOTAL_WAVES) / (run.waveQuota + 1.5);
+  }
+
+  // 主角移動（平滑跟隨）
+  run.heroX += (run.targetX - run.heroX) * Math.min(1, dt*13);
+
+  // 開火
+  const s = stats();
+  run.fireTimer -= dt;
+  if(run.fireTimer <= 0){ fire(); run.fireTimer = 1 / s.spd; }
+
+  // 子彈
+  for(let i=run.shots.length-1;i>=0;i--){
+    const b = run.shots[i];
+    b.x += b.vx*dt; b.y += b.vy*dt;
+    if(b.y < -20 || b.y > H+20 || b.x < -20 || b.x > W+20){ run.shots.splice(i,1); continue; }
+    for(let j=0;j<run.enemies.length;j++){
+      const e = run.enemies[j];
+      const dx=b.x-e.x, dy=b.y-e.y;
+      if(dx*dx+dy*dy < (e.r+b.r)*(e.r+b.r)){
+        const dmg = b.crit ? b.dmg*2 : b.dmg;
+        e.hp -= dmg; e.hit = 0.12;
+        popText(e.x, e.y-e.r-4, Math.round(dmg), b.crit);
+        burst(b.x, b.y, b.crit ? '#ffd046' : '#ff8a3d', b.crit?9:5);
+        run.shots.splice(i,1);
+        break;
+      }
+    }
+  }
+
+  // 怪物
+  const heroLine = H - 74;
+  for(let i=run.enemies.length-1;i>=0;i--){
+    const e = run.enemies[i];
+    e.y += e.spd*dt;
+    e.x += e.vx*dt;
+    if(e.x < e.r || e.x > W-e.r) e.vx *= -1;
+    if(e.hit > 0) e.hit -= dt;
+
+    if(e.hp <= 0){
+      run.kills++;
+      run.gold += e.gold;
+      burst(e.x, e.y, e.boss ? '#ff3b6b' : '#ffb347', e.boss ? 38 : 13);
+      if(e.boss) run.shake = 0.35;
+      run.enemies.splice(i,1);
+      continue;
+    }
+    // 壓到主角 → 扣血
+    if(e.y >= heroLine){
+      const dmg = e.boss ? 28 : 9;
+      run.hp -= dmg;
+      run.shake = Math.max(run.shake, e.boss ? 0.3 : 0.16);
+      burst(e.x, heroLine, '#ff3b6b', 16);
+      run.enemies.splice(i,1);
+      if(run.hp <= 0){ run.hp = 0; syncBattleHud(); endRun(false); return; }
+    }
+  }
+
+  // 粒子
+  for(let i=run.bits.length-1;i>=0;i--){
+    const p = run.bits[i];
+    p.age += dt;
+    if(p.age >= p.life){ run.bits.splice(i,1); continue; }
+    p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 260*hScale*dt; p.vx *= 0.97;
+  }
+  for(let i=run.pops.length-1;i>=0;i--){
+    const p = run.pops[i];
+    p.age += dt;
+    if(p.age >= p.life){ run.pops.splice(i,1); continue; }
+    p.y += p.vy*dt; p.vy *= 0.94;
+  }
+
+  if(run.shake > 0) run.shake = Math.max(0, run.shake - dt*1.8);
+  syncBattleHud();
+}
+
+function syncBattleHud(){
+  document.getElementById('waveTag').textContent = `第 ${run.wave} / ${TOTAL_WAVES} 波`;
+  const left = Math.max(0, RUN_SECONDS - run.t);
+  const m = Math.floor(left/60), sec = Math.floor(left%60);
+  const tt = document.getElementById('timeTag');
+  tt.textContent = `${m}:${String(sec).padStart(2,'0')}`;
+  tt.classList.toggle('low', left <= 30);
+  document.getElementById('runKill').textContent = `☠ ${run.kills}`;
+  document.getElementById('runGold').textContent = `💰 ${Math.round(run.gold)}`;
+  const pct = run.maxHp ? Math.max(0, run.hp/run.maxHp*100) : 0;
+  document.getElementById('hpFill').style.width = pct + '%';
+  document.getElementById('hpText').textContent = `${Math.max(0,Math.ceil(run.hp))} / ${run.maxHp}`;
+}
+
+/* 繪製 */
+function draw(){
+  const rw = cv.width, rh = cv.height;
+  if(!rw || !rh) return;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,rw,rh);
+
+  const sx = rw / W, sy = rh / H;
+  ctx.setTransform(sx,0,0,sy,0,0);
+
+  // 震動
+  if(run.shake > 0){
+    ctx.translate((Math.random()-0.5)*run.shake*16, (Math.random()-0.5)*run.shake*16);
+  }
+
+  // 背景：地牢深處
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#2a0f18'); g.addColorStop(0.45,'#140a14'); g.addColorStop(1,'#0a060c');
+  ctx.fillStyle = g; ctx.fillRect(-30,-30,W+60,H+60);
+
+  // 遠處火光
+  const glow = ctx.createRadialGradient(W/2, H-70, 8, W/2, H-70, 240);
+  glow.addColorStop(0,'rgba(255,120,40,.22)'); glow.addColorStop(1,'rgba(255,120,40,0)');
+  ctx.fillStyle = glow; ctx.fillRect(-30,-30,W+60,H+60);
+
+  // 地面石階
+  ctx.fillStyle = '#1b1020';
+  ctx.fillRect(-30, H-58, W+60, 88);
+  ctx.strokeStyle = 'rgba(255,160,90,.15)'; ctx.lineWidth = 1;
+  for(let x=-10;x<W+20;x+=44){
+    ctx.beginPath(); ctx.moveTo(x, H-58); ctx.lineTo(x, H); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.moveTo(-30,H-58); ctx.lineTo(W+30,H-58); ctx.stroke();
+
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+
+  // 怪物
+  run.enemies.forEach(e=>{
+    ctx.save();
+    if(e.hit > 0){ ctx.globalAlpha = 0.55; }
+    ctx.font = `${e.r*2}px serif`;
+    ctx.fillText(e.emoji, e.x, e.y);
+    ctx.restore();
+    // 血條
+    if(e.hp < e.maxHp){
+      const bw = e.r*2, bx = e.x-e.r, by = e.y-e.r-8;
+      ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(bx,by,bw,3.5);
+      ctx.fillStyle = e.boss ? '#ff3b6b' : '#ff8a5b';
+      ctx.fillRect(bx,by,bw*Math.max(0,e.hp/e.maxHp),3.5);
+    }
+  });
+
+  // 子彈
+  run.shots.forEach(b=>{
+    ctx.save();
+    ctx.shadowBlur = 14; ctx.shadowColor = b.crit ? '#ffd046' : '#ff6a1f';
+    const bg = ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r*1.6);
+    bg.addColorStop(0,'#fff3c4'); bg.addColorStop(0.5, b.crit?'#ffd046':'#ff9b3d'); bg.addColorStop(1,'rgba(255,90,20,0)');
+    ctx.fillStyle = bg;
+    ctx.beginPath(); ctx.arc(b.x,b.y,b.r*1.6,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+
+  // 主角
+  if(run.active || run.over){
+    const hx = run.heroX, hy = H - 74;
+    const hg = ctx.createRadialGradient(hx,hy,2,hx,hy,40);
+    hg.addColorStop(0,'rgba(255,170,60,.42)'); hg.addColorStop(1,'rgba(255,120,30,0)');
+    ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(hx,hy,40,0,Math.PI*2); ctx.fill();
+    ctx.font = '38px serif';
+    ctx.fillText('🧙', hx, hy);
+  }
+
+  // 粒子
+  run.bits.forEach(p=>{
+    const a = 1 - p.age/p.life;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = p.c;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*a,0,Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+
+  // 傷害數字
+  run.pops.forEach(p=>{
+    const a = 1 - p.age/p.life;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = p.crit ? '#ffd046' : '#ffe9d6';
+    ctx.font = `800 ${p.crit?19:14}px system-ui, sans-serif`;
+    ctx.fillText(p.txt, p.x, p.y);
+  });
+  ctx.globalAlpha = 1;
+}
+
+/* ══════════════════════════════════════════
+   召喚（抽裝備）
+   ══════════════════════════════════════════ */
+function rollRarity(){
+  let r = Math.random();
+  for(const [key,p] of RARITY_ODDS){ if((r -= p) < 0) return key; }
+  return 'N';
+}
+function pullOnce(){
+  const base = EQUIP_POOL[Math.floor(Math.random()*EQUIP_POOL.length)];
+  const rarity = rollRarity();
+  // 背包已有「同裝備同稀有度」→ 熔成強化石
+  const dup = state.bag.find(c=>c.id===base.id && c.rarity===rarity);
+  if(dup){
+    const dust = RARITY[rarity].dust;
+    state.stone += dust;
+    return { base, rarity, dup:true, dust };
+  }
+  const card = { uid:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), id:base.id, rarity, refine:0 };
+  state.bag.push(card);
+  // 該部位還沒裝備 → 自動裝上
+  if(!state.equipped[base.slot]) state.equipped[base.slot] = card;
+  return { base, rarity, dup:false, card };
+}
+function doPull(n){
+  const cost = n===10 ? 900 : 100;
+  if(state.gem < cost){ toast('鑽石不足，去答題凝聚更多'); return; }
+  state.gem -= cost;
+  const out = [];
+  for(let i=0;i<n;i++) out.push(pullOnce());
+  save(); syncUI(); renderEquip();
+
+  const box = document.getElementById('pullResult');
+  box.className = 'on';
+  box.innerHTML = out.map(o=>{
+    const st = statLine(o.base, o.rarity);
+    return `<div class="drop${o.dup?'':' new'}">
+      <div class="ico">${o.base.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div class="nm">${o.base.name}</div>
+        <div class="st">${o.dup ? `重複 · 熔成 +${o.dust} 🔮` : st}</div>
+      </div>
+      <div class="rar r-${o.rarity}">${RARITY[o.rarity].label}</div>
+    </div>`;
+  }).join('');
+}
+
+// 數值有可能是負的（例如巨錘犧牲攻速、項鍊犧牲生命），正負號要正確顯示
+function signed(v, digits){
+  const n = digits ? v.toFixed(digits) : String(Math.round(v));
+  return (v >= 0 ? '+' : '') + n;
+}
+function statLine(base, rarity, refine){
+  const m = RARITY[rarity].mult * (1 + (refine||0)*0.08);
+  const parts = [];
+  if(base.atk)  parts.push('攻擊 ' + signed(base.atk*m));
+  if(base.hp)   parts.push('生命 ' + signed(base.hp*m));
+  if(base.spd)  parts.push('攻速 ' + signed(base.spd*m, 2));
+  if(base.crit) parts.push('暴擊 ' + signed(base.crit*m, 1) + '%');
+  if(base.multi)parts.push('彈道 +' + Math.floor(base.multi*(rarity==='SSR'?2:1)));
+  return SLOT_LABEL[base.slot] + ' · ' + parts.join('　');
+}
+
+/* ══════════════════════════════════════════
+   鍛造
+   ══════════════════════════════════════════ */
+function upCost(u){ return Math.round(u.base * Math.pow(u.grow, state.up[u.key])); }
+
+function renderUpgrades(){
+  const box = document.getElementById('upList');
+  box.innerHTML = UPGRADES.map(u=>{
+    const lv = state.up[u.key];
+    const maxed = u.max != null && lv >= u.max;
+    const cost = upCost(u);
+    const cur = u.fmt(u.per * lv);
+    return `<div class="up">
+      <div class="ico">${u.icon}</div>
+      <div class="info">
+        <div class="nm">${u.name}　<span style="color:var(--bone-dim);font-size:12px">Lv.${lv}${maxed?' 已滿':''}</span></div>
+        <div class="val">目前 ${cur}　→　下一級 ${u.fmt(u.per*(lv+1))}</div>
+      </div>
+      <button data-up="${u.key}" ${maxed||state.gold<cost?'disabled':''}>
+        ${maxed ? '已滿級' : '💰 '+cost}
+      </button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-up]').forEach(b=>{
+    b.onclick = ()=>{
+      const u = UPGRADES.find(x=>x.key===b.dataset.up);
+      const cost = upCost(u);
+      if(state.gold < cost) return;
+      if(u.max != null && state.up[u.key] >= u.max) return;
+      state.gold -= cost;
+      state.up[u.key]++;
+      save(); syncUI(); renderUpgrades();
+      toast(`${u.name} 提升到 Lv.${state.up[u.key]}`);
+    };
+  });
+}
+
+function refineCost(card){ return 5 + (card.refine||0)*4; }
+
+function renderRefine(){
+  const box = document.getElementById('refineList');
+  const slots = ['weapon','armor','trinket'].filter(s=>state.equipped[s]);
+  if(!slots.length){
+    box.innerHTML = '<div class="empty-note">先到召喚取得裝備，裝備後才能精煉。</div>';
+    return;
+  }
+  box.innerHTML = slots.map(s=>{
+    const c = state.equipped[s];
+    const base = EQUIP_POOL.find(e=>e.id===c.id);
+    const cost = refineCost(c);
+    return `<div class="up">
+      <div class="ico">${base.icon}</div>
+      <div class="info">
+        <div class="nm">${base.name}　<span style="color:var(--bone-dim);font-size:12px">精煉 +${c.refine||0}</span></div>
+        <div class="val">${statLine(base, c.rarity, c.refine)}</div>
+      </div>
+      <button data-ref="${s}" ${state.stone<cost?'disabled':''}>🔮 ${cost}</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-ref]').forEach(b=>{
+    b.onclick = ()=>{
+      const c = state.equipped[b.dataset.ref];
+      const cost = refineCost(c);
+      if(state.stone < cost) return;
+      state.stone -= cost;
+      c.refine = (c.refine||0) + 1;
+      save(); syncUI(); renderRefine(); renderEquip();
+      toast(`精煉成功 +${c.refine}`);
+    };
+  });
+}
+
+/* ══════════════════════════════════════════
+   裝備
+   ══════════════════════════════════════════ */
+function renderEquip(){
+  const sBox = document.getElementById('slots');
+  sBox.innerHTML = ['weapon','armor','trinket'].map(s=>{
+    const c = state.equipped[s];
+    if(!c) return `<div class="slot"><div class="ico">➕</div>
+      <div class="info"><div class="empty">${SLOT_LABEL[s]}　尚未裝備</div></div></div>`;
+    const base = EQUIP_POOL.find(e=>e.id===c.id);
+    return `<div class="slot filled">
+      <div class="ico">${base.icon}</div>
+      <div class="info">
+        <div class="nm">${base.name}${c.refine?` +${c.refine}`:''}</div>
+        <div class="st">${statLine(base, c.rarity, c.refine)}</div>
+      </div>
+      <div class="rar r-${c.rarity}">${RARITY[c.rarity].label}</div>
+    </div>`;
+  }).join('');
+
+  const bBox = document.getElementById('bag');
+  document.getElementById('bagCount').textContent =
+    state.bag.length ? `共 ${state.bag.length} 件` : '尚無收藏';
+  if(!state.bag.length){
+    bBox.innerHTML = '<div class="empty-note">背包是空的。<br>到召喚頁面用鑽石拉出第一件裝備。</div>';
+    return;
+  }
+  const order = { SSR:0, SR:1, R:2, N:3 };
+  const sorted = state.bag.slice().sort((a,b)=>
+    (order[a.rarity]-order[b.rarity]) || a.id.localeCompare(b.id));
+  bBox.innerHTML = sorted.map(c=>{
+    const base = EQUIP_POOL.find(e=>e.id===c.id);
+    const on = state.equipped[base.slot] && state.equipped[base.slot].uid === c.uid;
+    return `<div class="bagItem${on?' on':''}" data-uid="${c.uid}">
+      <div class="ico">${base.icon}</div>
+      <div class="info">
+        <div class="nm">${base.name}${c.refine?` +${c.refine}`:''}${on?'　<span style="color:var(--ember-hot);font-size:11px">使用中</span>':''}</div>
+        <div class="st">${statLine(base, c.rarity, c.refine)}</div>
+      </div>
+      <div class="rar r-${c.rarity}">${RARITY[c.rarity].label}</div>
+    </div>`;
+  }).join('');
+  bBox.querySelectorAll('.bagItem').forEach(el=>{
+    el.onclick = ()=>{
+      const c = state.bag.find(x=>x.uid===el.dataset.uid);
+      if(!c) return;
+      const base = EQUIP_POOL.find(e=>e.id===c.id);
+      state.equipped[base.slot] = c;
+      save(); renderEquip(); renderRefine();
+      toast(`裝備了 ${base.name}`);
+    };
+  });
+}
+
+/* ══════════════════════════════════════════
+   介面共用
+   ══════════════════════════════════════════ */
+function syncUI(){
+  document.getElementById('uiGem').textContent   = state.gem;
+  document.getElementById('uiGold').textContent  = state.gold;
+  document.getElementById('uiStone').textContent = state.stone;
+  document.getElementById('pull1').disabled  = state.gem < 100;
+  document.getElementById('pull10').disabled = state.gem < 900;
+  // 鑽石不夠抽時，提醒去答題
+  document.getElementById('dotQuiz').classList.toggle('on', state.gem < 100);
+  syncQuizMeta();
+}
+
+let toastTimer = null;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('on'), 1700);
+}
+
+function show(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById('screen-'+name).classList.add('on');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.s===name));
+  if(name==='upgrade'){ renderUpgrades(); renderRefine(); }
+  if(name==='equip')  renderEquip();
+  if(name==='battle') resizeCanvas();
+}
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=>show(t.dataset.s);
+});
+
+/* ══════════════════════════════════════════
+   啟動
+   ══════════════════════════════════════════ */
+document.getElementById('ovBtn').onclick = ()=>{ state.seenIntro = true; save(); startRun(); };
+document.getElementById('qNext').onclick = newQuestion;
+document.getElementById('pull1').onclick  = ()=>doPull(1);
+document.getElementById('pull10').onclick = ()=>doPull(10);
+
+load();
+syncUI();
+newQuestion();
+renderEquip();
+
+// 選用：若同目錄有 questions.json，載入後併入題庫（沒有就安靜跳過）
+fetch('./questions.json')
+  .then(r => r.ok ? r.json() : null)
+  .then(d => {
+    if(!d) return;
+    importedQuestions = Array.isArray(d) ? d : (d.questions || []);
+    if(importedQuestions.length) toast(`已載入 ${importedQuestions.length} 題外部題目`);
+  })
+  .catch(()=>{});
+
+if(state.seenIntro){
+  document.getElementById('ovBtn').textContent = '開始試煉';
+}
+document.getElementById('overlay').classList.add('on');
+resizeCanvas();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
