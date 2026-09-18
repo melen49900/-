@@ -57,6 +57,21 @@
   .msg.error { background: #FCEBEB; color: #A32D2D; }
   .msg.success { background: #EAF3DE; color: #3B6D11; }
   .pw-gate { display: flex; gap: 8px; margin-bottom: 0; }
+  .quick-section { margin-bottom: 1.25rem; }
+  .quick-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #bbb; margin-bottom: 0.55rem; }
+  .quick-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .quick-chip { font-family: 'Syne', sans-serif; font-size: 13px; padding: 8px 13px; border-radius: 20px; border: 1px solid #ddd; background: #fff; color: #1a1a1a; cursor: pointer; transition: transform 0.1s, background 0.15s, color 0.15s, border-color 0.15s; }
+  .quick-chip:active { transform: scale(0.93); }
+  .quick-chip.plus:hover { background: #EAF3DE; color: #3B6D11; border-color: #97C459; }
+  .quick-chip.minus:hover { background: #FCEBEB; color: #A32D2D; border-color: #F09595; }
+  .quick-chip .qc-delta { font-family: 'DM Mono', monospace; margin-left: 6px; opacity: 0.55; }
+  .quick-empty { font-size: 12px; color: #ccc; padding: 2px 0; }
+  .admin-subrow { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .admin-subrow input[type="text"] { flex: 1; font-family: 'Syne', sans-serif; font-size: 13px; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px; color: #1a1a1a; outline: none; background: #fff; }
+  .admin-subrow input[type="number"] { width: 70px; flex: none; font-family: 'DM Mono', monospace; font-size: 13px; padding: 7px 8px; border: 1px solid #ddd; border-radius: 8px; outline: none; background: #fff; }
+  .qa-chip { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; background: #fff; border: 1px solid #eee; font-size: 13px; margin-bottom: 6px; }
+  .qa-chip input[type="text"] { flex: 1; font-size: 13px; font-family: 'Syne', sans-serif; border: none; background: transparent; color: #1a1a1a; outline: none; }
+  .qa-chip input[type="number"] { width: 62px; font-size: 13px; font-family: 'DM Mono', monospace; border: 1px solid #eee; border-radius: 6px; padding: 4px 6px; background: transparent; color: #1a1a1a; outline: none; }
 </style>
 </head>
 <body>
@@ -75,6 +90,19 @@
     <select id="nameSelect"></select>
   </div>
 
+  <div class="quick-section">
+    <div class="quick-label">快速加分</div>
+    <div class="quick-grid" id="quickPlusGrid"></div>
+  </div>
+
+  <div class="quick-section">
+    <div class="quick-label">快速扣分</div>
+    <div class="quick-grid" id="quickMinusGrid"></div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="quick-label">自訂數值</div>
   <div class="btn-grid" id="btnGrid"></div>
 
   <div class="note-row">
@@ -126,6 +154,25 @@
         <button class="btn-small success" onclick="addName()">新增</button>
       </div>
       <div id="adminFeedback"></div>
+
+      <hr class="divider" style="margin:1rem 0 0.75rem">
+      <h3>快速加分項目</h3>
+      <div id="quickPlusChips"></div>
+      <div class="admin-subrow">
+        <input type="text" id="newQuickPlusNote" placeholder="備註文字..." maxlength="20">
+        <input type="number" id="newQuickPlusDelta" placeholder="數值" step="0.5" min="0.5">
+        <button class="btn-small success" onclick="addQuickAction('plus')">新增</button>
+      </div>
+
+      <hr class="divider" style="margin:1rem 0 0.75rem">
+      <h3>快速扣分項目</h3>
+      <div id="quickMinusChips"></div>
+      <div class="admin-subrow">
+        <input type="text" id="newQuickMinusNote" placeholder="備註文字..." maxlength="20">
+        <input type="number" id="newQuickMinusDelta" placeholder="數值" step="0.5" min="0.5">
+        <button class="btn-small success" onclick="addQuickAction('minus')">新增</button>
+      </div>
+
       <hr class="divider" style="margin:1rem 0 0.75rem">
       <h3>修改管理員密碼</h3>
       <div class="admin-row">
@@ -156,6 +203,26 @@ const DELTAS = [0.5, 1, 2, 3, 4, 5];
 let names = ['孟霖', '涴琇'];
 let adminPassword = 'admin1234';
 
+// 快速動作預設值（第一次使用時寫入 Firebase，之後以雲端資料為準）
+let quickPlus = [
+  { note: '游泳課', delta: 1 },
+  { note: '寫作業', delta: 1 },
+  { note: '踩背', delta: 1 },
+  { note: '回答問題', delta: 0.5 }
+];
+let quickMinus = [
+  { note: '做錯事', delta: 1 },
+  { note: '看巧虎', delta: 1 },
+  { note: '玩遊戲', delta: 1 },
+  { note: '奇樂多', delta: 1 }
+];
+
+function esc(str) {
+  return String(str).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
 function buildButtons() {
   const grid = document.getElementById('btnGrid');
   grid.innerHTML = '';
@@ -175,6 +242,28 @@ function buildButtons() {
   });
 }
 
+function buildQuickGrids() {
+  [['plus', quickPlus, 'quickPlusGrid'], ['minus', quickMinus, 'quickMinusGrid']].forEach(
+    ([kind, list, gridId]) => {
+      const grid = document.getElementById(gridId);
+      grid.innerHTML = '';
+      if (!list.length) {
+        grid.innerHTML = '<div class="quick-empty">尚未設定，請至管理員設定新增</div>';
+        return;
+      }
+      list.forEach(item => {
+        const sign = kind === 'plus' ? 1 : -1;
+        const btn = document.createElement('button');
+        btn.className = 'quick-chip ' + kind;
+        btn.innerHTML = esc(item.note) +
+          '<span class="qc-delta">' + (sign > 0 ? '+' : '-') + item.delta + '</span>';
+        btn.onclick = () => applyDelta(sign * item.delta, item.note);
+        grid.appendChild(btn);
+      });
+    }
+  );
+}
+
 function buildSelect() {
   const sel = document.getElementById('nameSelect');
   const prev = sel.value;
@@ -187,15 +276,17 @@ function buildSelect() {
   });
 }
 
-function applyDelta(delta) {
+function applyDelta(delta, presetNote) {
   const name = document.getElementById('nameSelect').value;
-  const note = document.getElementById('noteInput').value.trim();
+  const note = presetNote !== undefined
+    ? presetNote
+    : document.getElementById('noteInput').value.trim();
   if (!name) return;
   db.ref('counter').transaction(current => (current || 0) + delta);
   const entry = { name, delta, time: Date.now() };
   if (note) entry.note = note;
   db.ref('logs').push(entry);
-  document.getElementById('noteInput').value = '';
+  if (presetNote === undefined) document.getElementById('noteInput').value = '';
   const disp = document.getElementById('counterDisplay');
   disp.classList.add('bump');
   setTimeout(() => disp.classList.remove('bump'), 150);
@@ -220,9 +311,9 @@ function renderLogs(items) {
     const dStr = item.delta > 0 ? '+' + item.delta : String(item.delta);
     const cls = item.delta > 0 ? 'log-delta-pos' : 'log-delta-neg';
     row.innerHTML =
-      '<span class="log-name">' + item.name + '</span>' +
+      '<span class="log-name">' + esc(item.name) + '</span>' +
       '<span class="' + cls + '">' + dStr + '</span>' +
-      '<span class="log-note">' + (item.note || '') + '</span>' +
+      '<span class="log-note">' + esc(item.note || '') + '</span>' +
       '<span class="log-time">' + formatTime(item.time) + '</span>';
     list.appendChild(row);
   });
@@ -258,11 +349,15 @@ db.ref('config').on('value', snap => {
   const cfg = snap.val();
   if (cfg && Array.isArray(cfg.names)) names = cfg.names;
   if (cfg && cfg.adminPassword) adminPassword = cfg.adminPassword;
+  if (cfg && Array.isArray(cfg.quickPlus)) quickPlus = cfg.quickPlus;
+  if (cfg && Array.isArray(cfg.quickMinus)) quickMinus = cfg.quickMinus;
   buildSelect();
+  buildQuickGrids();
+  if (document.getElementById('adminPanel').style.display === 'block') renderQuickChips();
 });
 
 function saveConfig() {
-  db.ref('config').set({ names, adminPassword });
+  db.ref('config').set({ names, adminPassword, quickPlus, quickMinus });
 }
 
 function toggleAdminGate() {
@@ -278,6 +373,7 @@ function unlockAdmin() {
     document.getElementById('adminGate').style.display = 'none';
     document.getElementById('adminPanel').style.display = 'block';
     renderChips();
+    renderQuickChips();
   } else {
     msg.innerHTML = '<div class="msg error">密碼錯誤</div>';
     setTimeout(() => msg.innerHTML = '', 2000);
@@ -291,10 +387,79 @@ function renderChips() {
     const chip = document.createElement('div');
     chip.className = 'name-chip';
     chip.innerHTML =
-      '<input type="text" value="' + n + '" data-idx="' + i + '" onchange="editName(this)">' +
+      '<input type="text" value="' + esc(n) + '" data-idx="' + i + '" onchange="editName(this)">' +
       '<button class="btn-small danger" onclick="deleteName(' + i + ')">刪除</button>';
     c.appendChild(chip);
   });
+}
+
+function renderQuickChips() {
+  [['plus', quickPlus, 'quickPlusChips'], ['minus', quickMinus, 'quickMinusChips']].forEach(
+    ([kind, list, containerId]) => {
+      const c = document.getElementById(containerId);
+      c.innerHTML = '';
+      list.forEach((item, i) => {
+        const chip = document.createElement('div');
+        chip.className = 'qa-chip';
+        chip.innerHTML =
+          '<input type="text" value="' + esc(item.note) + '" data-kind="' + kind +
+            '" data-idx="' + i + '" data-field="note" onchange="editQuickAction(this)">' +
+          '<input type="number" value="' + item.delta + '" step="0.5" min="0.5" data-kind="' + kind +
+            '" data-idx="' + i + '" data-field="delta" onchange="editQuickAction(this)">' +
+          '<button class="btn-small danger" onclick="deleteQuickAction(\'' + kind + '\', ' + i + ')">刪除</button>';
+        c.appendChild(chip);
+      });
+    }
+  );
+}
+
+function quickListOf(kind) {
+  return kind === 'plus' ? quickPlus : quickMinus;
+}
+
+function editQuickAction(input) {
+  const list = quickListOf(input.dataset.kind);
+  const idx = parseInt(input.dataset.idx);
+  if (!list[idx]) return;
+  if (input.dataset.field === 'note') {
+    const v = input.value.trim();
+    if (!v) { renderQuickChips(); return; }
+    list[idx].note = v;
+  } else {
+    const v = parseFloat(input.value);
+    if (!(v > 0)) { renderQuickChips(); return; }
+    list[idx].delta = v;
+  }
+  buildQuickGrids(); saveConfig();
+}
+
+function deleteQuickAction(kind, idx) {
+  quickListOf(kind).splice(idx, 1);
+  renderQuickChips(); buildQuickGrids(); saveConfig();
+}
+
+function addQuickAction(kind) {
+  const noteInp = document.getElementById(kind === 'plus' ? 'newQuickPlusNote' : 'newQuickMinusNote');
+  const deltaInp = document.getElementById(kind === 'plus' ? 'newQuickPlusDelta' : 'newQuickMinusDelta');
+  const fb = document.getElementById('adminFeedback');
+  const note = noteInp.value.trim();
+  const delta = parseFloat(deltaInp.value);
+  if (!note || !(delta > 0)) {
+    fb.innerHTML = '<div class="msg error">請填寫備註文字與大於 0 的數值</div>';
+    setTimeout(() => fb.innerHTML = '', 2500);
+    return;
+  }
+  const list = quickListOf(kind);
+  if (list.some(x => x.note === note && x.delta === delta)) {
+    fb.innerHTML = '<div class="msg error">項目已存在</div>';
+    setTimeout(() => fb.innerHTML = '', 2000);
+    return;
+  }
+  list.push({ note, delta });
+  noteInp.value = ''; deltaInp.value = '';
+  renderQuickChips(); buildQuickGrids(); saveConfig();
+  fb.innerHTML = '<div class="msg success">已新增</div>';
+  setTimeout(() => fb.innerHTML = '', 2000);
 }
 
 function editName(input) {
@@ -335,6 +500,7 @@ function changePw() {
 
 buildButtons();
 buildSelect();
+buildQuickGrids();
 </script>
 </body>
 </html>
