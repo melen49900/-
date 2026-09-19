@@ -81,7 +81,25 @@ body{
 /* ── 戰場 ──────────────────────────────────── */
 #screen-battle{overflow:hidden}
 #stage{flex:1;position:relative;background:#0a060c}
+#stage.hidden{display:none}
 #cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+
+/* ── 選關畫面 ──────────────────────────────── */
+#levelSelectPanel{flex:1;overflow-y:auto;overscroll-behavior:contain}
+#levelSelectPanel.hidden{display:none}
+#levelGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:6px}
+.lvCard{
+  position:relative;aspect-ratio:1/1;border-radius:13px;border:1px solid var(--stoneline);
+  background:rgba(0,0,0,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;cursor:pointer;font-family:inherit;color:var(--bone);padding:4px;
+}
+.lvCard:active{transform:translateY(2px)}
+.lvCard .lvChip{width:13px;height:13px;border-radius:99px;box-shadow:0 0 9px currentColor}
+.lvCard .lvNum{font-size:18px;font-weight:900}
+.lvCard .lvStar{font-size:9px;color:#86efac;font-weight:800}
+.lvCard.locked{opacity:.4;cursor:not-allowed}
+.lvCard.locked .lvNum{filter:grayscale(1)}
+.lvCard.current{border-color:var(--ember);box-shadow:0 0 0 1px var(--ember),0 0 14px rgba(255,106,31,.35)}
 
 #hud{
   position:absolute;top:0;left:0;right:0;padding:9px 11px;
@@ -129,6 +147,7 @@ body{
 #ovLoot.on{display:flex}
 #ovLoot div{display:flex;justify-content:space-between;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
 #ovLoot div span:last-child{color:var(--ember-hot)}
+#ovCard .btn + .btn{margin-top:9px}
 
 /* ── 按鈕 ──────────────────────────────────── */
 .btn{
@@ -309,10 +328,17 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 
     <!-- 戰場 -->
     <section class="screen on" id="screen-battle">
-      <div id="stage">
+
+      <div id="levelSelectPanel" class="pad">
+        <h2 class="sec">烈焰試煉場</h2>
+        <p class="sub">共 20 關，每關 20 波。關內怪物只會小幅變強，換關卡才是難度大跳升的地方。</p>
+        <div id="levelGrid"></div>
+      </div>
+
+      <div id="stage" class="hidden">
         <canvas id="cv"></canvas>
         <div id="hud">
-          <div id="waveTag">第 1 / 20 波</div>
+          <div id="waveTag">第 1 關 · 第 1/20 波</div>
           <div id="timeTag">3:00</div>
           <div id="runLoot"><span id="runKill">☠ 0</span><span id="runGold">💰 0</span></div>
         </div>
@@ -322,13 +348,15 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
         </div>
         <div id="overlay">
           <div id="ovCard">
-            <h1 id="ovTitle">烈焰試煉場</h1>
-            <p id="ovSub">怪物會從上方壓下來。拖曳畫面移動法師，攻擊會自動施放。<br>撐過 3 分鐘，或戰到倒下為止。</p>
+            <h1 id="ovTitle">第 1 關</h1>
+            <p id="ovSub">怪物會從上方壓下來。拖曳畫面移動法師，攻擊會自動施放。</p>
             <div id="ovLoot"></div>
-            <button class="btn" id="ovBtn">進入試煉</button>
+            <button class="btn" id="ovBtn">開始挑戰</button>
+            <button class="btn ghost" id="ovBtn2" style="display:none">返回選關</button>
           </div>
         </div>
       </div>
+
     </section>
 
     <!-- 答題 -->
@@ -417,8 +445,13 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
    ══════════════════════════════════════════════════════════ */
 
 const SAVE_KEY = 'emberTrial_v1';
-const RUN_SECONDS = 180;   // 一局 3 分鐘
-const TOTAL_WAVES  = 20;
+const RUN_SECONDS = 180;          // 每一關 3 分鐘
+const WAVES_PER_LEVEL = 20;       // 每關 20 波
+const LEVEL_COUNT = 20;           // 共 20 關
+
+const LEVEL_HP_GROWTH = 1.255;                                 // 關卡之間的血量倍率（沿用原本單局的成長率）
+const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內 20 波，血量只差 3 倍
+const WAVE_SPD_GROWTH = 0.1;                                    // 關內 20 波，移速大約多 10%（≈1.1倍）
 
 /* ── 裝備資料 ─────────────────────────────── */
 const RARITY = {
@@ -474,6 +507,8 @@ function freshState(){
     quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
     qs:{ correct:0, wrong:0, streak:0, best:0 },
     best:{ wave:0, kills:0 },
+    unlockedLevel:1,                          // 目前解鎖到第幾關
+    levelRecords:{},                          // { [level]: {cleared, bestWave, bestKills} }
     seenIntro:false,
   };
 }
@@ -492,6 +527,8 @@ function load(){
     state.equipped = Object.assign(f.equipped, d.equipped||{});
     state.qs       = Object.assign(f.qs, d.qs||{});
     state.best     = Object.assign(f.best, d.best||{});
+    state.levelRecords = Object.assign({}, d.levelRecords||{});
+    state.unlockedLevel = Math.max(1, Math.min(LEVEL_COUNT, d.unlockedLevel || 1));
     // 進度資料還原：補上舊存檔可能缺少的欄位，避免引擎讀到 undefined
     state.quiz     = Object.assign(QuizEngine.createProgress(), d.quiz||{});
   }catch(e){}
@@ -693,6 +730,19 @@ function resizeCanvas(){
 }
 window.addEventListener('resize', resizeCanvas);
 
+// 每關一個色相，讓玩家能感覺到「換關卡」了
+function levelTheme(level){
+  const hue = Math.round(((level-1) * (360/LEVEL_COUNT)) % 360);
+  return {
+    top:  `hsl(${hue} 55% 15%)`,
+    mid:  `hsl(${hue} 40% 8%)`,
+    glow: `hsla(${hue}, 85%, 55%, .22)`,
+    chip: `hsl(${hue} 80% 55%)`,
+  };
+}
+let currentTheme = levelTheme(1);
+function applyLevelTheme(level){ currentTheme = levelTheme(level); }
+
 const MONSTERS = [
   { emoji:'👾', hp:1.0,  spd:1.00, r:15, gold:1.0 },
   { emoji:'🐀', hp:0.65, spd:1.75, r:13, gold:0.8 },
@@ -705,6 +755,7 @@ const BOSSES = ['👺','🐲','💀','👿'];
 
 const run = {
   active:false, over:false,
+  level:1,
   t:0, wave:1, spawned:0, waveQuota:0, spawnTimer:0,
   hp:100, maxHp:100,
   heroX:W/2, targetX:W/2,
@@ -714,18 +765,90 @@ const run = {
   shake:0,
 };
 
-function waveQuotaFor(w){ return 3 + Math.floor(w*1.15); }
-function enemyHpFor(w){ return 17 * Math.pow(1.255, w-1); }
+// 每關第 1 波 10 隻、第 20 波 20 隻，線性增加
+function waveQuotaFor(w){
+  return Math.round(10 + (w-1) * 10 / (WAVES_PER_LEVEL-1));
+}
+// 怪物血量 = 關卡基礎值（每關 ×1.255）× 關內波數成長（20 波內只差 3 倍）
+function enemyHpFor(level, w){
+  return 17 * Math.pow(LEVEL_HP_GROWTH, level-1) * Math.pow(WAVE_HP_GROWTH, w-1);
+}
+// 移速倍率：關內 20 波線性提升到約 1.1 倍
+function waveSpeedMulFor(w){
+  return 1 + (w-1) * WAVE_SPD_GROWTH / (WAVES_PER_LEVEL-1);
+}
 
-function startRun(){
+/* ── 選關畫面 ⇄ 戰鬥畫面 切換 ──────────────────── */
+function openLevelSelect(){
+  document.getElementById('overlay').classList.remove('on');
+  document.getElementById('levelSelectPanel').classList.remove('hidden');
+  document.getElementById('stage').classList.add('hidden');
+  renderLevelSelect();
+}
+function openStage(){
+  document.getElementById('levelSelectPanel').classList.add('hidden');
+  document.getElementById('stage').classList.remove('hidden');
+}
+
+function renderLevelSelect(){
+  const grid = document.getElementById('levelGrid');
+  const nextLevel = Math.min(LEVEL_COUNT, state.unlockedLevel);
+  let html = '';
+  for(let lv=1; lv<=LEVEL_COUNT; lv++){
+    const locked = lv > state.unlockedLevel;
+    const rec = state.levelRecords[lv];
+    const cleared = !!(rec && rec.cleared);
+    const isNext = (lv === nextLevel && !cleared);
+    const theme = levelTheme(lv);
+    html += `<button class="lvCard${locked?' locked':''}${isNext?' current':''}" data-lv="${lv}" ${locked?'disabled':''}>
+      <span class="lvChip" style="background:${theme.chip}"></span>
+      <span class="lvNum">${locked?'🔒':lv}</span>
+      ${cleared?'<span class="lvStar">✓ 已過關</span>':''}
+    </button>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('.lvCard').forEach(el=>{
+    if(el.disabled) return;
+    el.onclick = ()=> openLevelConfirm(Number(el.dataset.lv));
+  });
+}
+
+// 開始前的確認畫面：顯示這關大概多硬，畫布背景也先換成該關主題色
+function openLevelConfirm(level){
+  applyLevelTheme(level);
+  openStage();
+  resizeCanvas();
+
+  const hpMul = Math.pow(LEVEL_HP_GROWTH, level-1);
+  document.getElementById('ovTitle').textContent = `第 ${level} 關`;
+  document.getElementById('ovSub').innerHTML =
+    `本關共 ${WAVES_PER_LEVEL} 波，怪物基礎血量約為第 1 關的 ${hpMul.toFixed(1)} 倍。<br>拖曳畫面移動法師，攻擊會自動施放。`;
+  const loot = document.getElementById('ovLoot');
+  loot.className = ''; loot.innerHTML = '';
+
+  const ovBtn = document.getElementById('ovBtn');
+  const ovBtn2 = document.getElementById('ovBtn2');
+  ovBtn.textContent = '開始挑戰';
+  ovBtn.onclick = ()=>{ state.seenIntro = true; save(); startRun(level); };
+  ovBtn2.style.display = 'block';
+  ovBtn2.textContent = '取消';
+  ovBtn2.onclick = ()=>{ openLevelSelect(); };
+
+  document.getElementById('overlay').classList.add('on');
+}
+
+function startRun(level){
   const s = stats();
   run.active=true; run.over=false;
+  run.level = level || run.level || 1;
   run.t=0; run.wave=1; run.spawned=0; run.waveQuota=waveQuotaFor(1); run.spawnTimer=0;
   run.maxHp=s.maxHp; run.hp=s.maxHp;
   run.heroX=W/2; run.targetX=W/2; run.fireTimer=0;
   run.kills=0; run.gold=0;
   run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.shake=0;
+  applyLevelTheme(run.level);
   document.getElementById('overlay').classList.remove('on');
+  openStage();
   resizeCanvas();
   syncBattleHud();
 }
@@ -741,12 +864,32 @@ function endRun(win){
   state.gem   += gemGain;
   state.best.wave  = Math.max(state.best.wave, run.wave);
   state.best.kills = Math.max(state.best.kills, run.kills);
+
+  const rec = state.levelRecords[run.level] || (state.levelRecords[run.level] = { cleared:false, bestWave:0, bestKills:0 });
+  rec.bestWave  = Math.max(rec.bestWave, run.wave);
+  rec.bestKills = Math.max(rec.bestKills, run.kills);
+  if(win){
+    rec.cleared = true;
+    state.unlockedLevel = Math.max(state.unlockedLevel, Math.min(LEVEL_COUNT, run.level+1));
+  }
   save(); syncUI();
 
-  document.getElementById('ovTitle').textContent = win ? '試煉完成' : '倒下了';
-  document.getElementById('ovSub').innerHTML = win
-    ? `撐過了全部 ${TOTAL_WAVES} 波，擊倒 ${run.kills} 隻。`
-    : `在第 ${run.wave} 波倒下，擊倒 ${run.kills} 隻。<br>去答題換鑽石、抽裝備再來一次。`;
+  const isLast = run.level >= LEVEL_COUNT;
+  const ovTitle = document.getElementById('ovTitle');
+  const ovSub   = document.getElementById('ovSub');
+  const ovBtn   = document.getElementById('ovBtn');
+  const ovBtn2  = document.getElementById('ovBtn2');
+
+  if(win && isLast){
+    ovTitle.textContent = '全 20 關　通關！';
+    ovSub.innerHTML = `你已經撐過全部 ${LEVEL_COUNT} 關，擊倒 ${run.kills} 隻。`;
+  } else if(win){
+    ovTitle.textContent = `第 ${run.level} 關　過關`;
+    ovSub.innerHTML = `撐過了本關全部 ${WAVES_PER_LEVEL} 波，擊倒 ${run.kills} 隻。`;
+  } else {
+    ovTitle.textContent = '倒下了';
+    ovSub.innerHTML = `在第 ${run.level} 關・第 ${run.wave} 波倒下，擊倒 ${run.kills} 隻。<br>去答題換鑽石、抽裝備再來一次。`;
+  }
 
   const loot = document.getElementById('ovLoot');
   loot.className = 'on';
@@ -754,7 +897,21 @@ function endRun(win){
     `<div><span>💰 金幣</span><span>+${goldGain}</span></div>` +
     `<div><span>🔮 強化石</span><span>+${stoneGain}</span></div>` +
     (gemGain ? `<div><span>💎 鑽石</span><span>+${gemGain}</span></div>` : '');
-  document.getElementById('ovBtn').textContent = '再挑戰一次';
+
+  if(win && !isLast){
+    ovBtn.textContent = `前往第 ${run.level+1} 關`;
+    ovBtn.onclick = ()=>{ startRun(run.level+1); };
+  } else if(win && isLast){
+    ovBtn.textContent = '重玩本關';
+    ovBtn.onclick = ()=>{ startRun(run.level); };
+  } else {
+    ovBtn.textContent = '重新挑戰';
+    ovBtn.onclick = ()=>{ startRun(run.level); };
+  }
+  ovBtn2.style.display = 'block';
+  ovBtn2.textContent = '返回選關';
+  ovBtn2.onclick = ()=>{ openLevelSelect(); };
+
   document.getElementById('overlay').classList.add('on');
 }
 
@@ -775,13 +932,13 @@ function spawnEnemy(){
   const w = run.wave;
   const isBoss = (w % 5 === 0) && run.spawned === run.waveQuota-1;
   const base = MONSTERS[Math.floor(Math.random()*MONSTERS.length)];
-  const hp = enemyHpFor(w) * base.hp * (isBoss ? 14 : 1);
+  const hp = enemyHpFor(run.level, w) * base.hp * (isBoss ? 14 : 1);
   run.enemies.push({
     x: 32 + Math.random()*(W-64),
     y: -30,
     vx: (Math.random()-0.5) * 12,
     hp, maxHp:hp,
-    spd: (isBoss ? 11 : 17 * base.spd) * (1 + w*0.012) * hScale,
+    spd: (isBoss ? 11 : 17 * base.spd) * waveSpeedMulFor(w) * hScale,
     r: isBoss ? 34 : base.r,
     emoji: isBoss ? BOSSES[Math.floor(Math.random()*BOSSES.length)] : base.emoji,
     gold: base.gold * (isBoss ? 22 : 1) * (1 + w*0.35),
@@ -847,7 +1004,7 @@ function step(dt){
   if(run.t >= RUN_SECONDS){ endRun(true); return; }
 
   // 依時間推進波數
-  const wantWave = Math.min(TOTAL_WAVES, 1 + Math.floor(run.t / (RUN_SECONDS/TOTAL_WAVES)));
+  const wantWave = Math.min(WAVES_PER_LEVEL, 1 + Math.floor(run.t / (RUN_SECONDS/WAVES_PER_LEVEL)));
   if(wantWave > run.wave){
     run.wave = wantWave;
     run.spawned = 0;
@@ -858,7 +1015,7 @@ function step(dt){
   run.spawnTimer -= dt;
   if(run.spawnTimer <= 0 && run.spawned < run.waveQuota){
     spawnEnemy();
-    run.spawnTimer = (RUN_SECONDS/TOTAL_WAVES) / (run.waveQuota + 1.5);
+    run.spawnTimer = (RUN_SECONDS/WAVES_PER_LEVEL) / (run.waveQuota + 1.5);
   }
 
   // 主角移動（平滑跟隨）
@@ -935,7 +1092,7 @@ function step(dt){
 }
 
 function syncBattleHud(){
-  document.getElementById('waveTag').textContent = `第 ${run.wave} / ${TOTAL_WAVES} 波`;
+  document.getElementById('waveTag').textContent = `第 ${run.level} 關 · 第 ${run.wave}/${WAVES_PER_LEVEL} 波`;
   const left = Math.max(0, RUN_SECONDS - run.t);
   const m = Math.floor(left/60), sec = Math.floor(left%60);
   const tt = document.getElementById('timeTag');
@@ -963,14 +1120,14 @@ function draw(){
     ctx.translate((Math.random()-0.5)*run.shake*16, (Math.random()-0.5)*run.shake*16);
   }
 
-  // 背景：地牢深處
+  // 背景：地牢深處（隨關卡變色）
   const g = ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'#2a0f18'); g.addColorStop(0.45,'#140a14'); g.addColorStop(1,'#0a060c');
+  g.addColorStop(0,currentTheme.top); g.addColorStop(0.45,currentTheme.mid); g.addColorStop(1,'#0a060c');
   ctx.fillStyle = g; ctx.fillRect(-30,-30,W+60,H+60);
 
-  // 遠處火光
+  // 遠處火光（隨關卡變色）
   const glow = ctx.createRadialGradient(W/2, H-70, 8, W/2, H-70, 240);
-  glow.addColorStop(0,'rgba(255,120,40,.22)'); glow.addColorStop(1,'rgba(255,120,40,0)');
+  glow.addColorStop(0,currentTheme.glow); glow.addColorStop(1,'rgba(255,120,40,0)');
   ctx.fillStyle = glow; ctx.fillRect(-30,-30,W+60,H+60);
 
   // 地面石階
@@ -1268,7 +1425,6 @@ document.querySelectorAll('.tab').forEach(t=>{
 /* ══════════════════════════════════════════
    啟動
    ══════════════════════════════════════════ */
-document.getElementById('ovBtn').onclick = ()=>{ state.seenIntro = true; save(); startRun(); };
 document.getElementById('qNext').onclick = newQuestion;
 document.getElementById('pull1').onclick  = ()=>doPull(1);
 document.getElementById('pull10').onclick = ()=>doPull(10);
@@ -1339,8 +1495,7 @@ async function boot(){
 
 function finishBoot(){
   newQuestion();
-  document.getElementById('overlay').classList.add('on');
-  if(state.seenIntro) document.getElementById('ovBtn').textContent = '開始試煉';
+  openLevelSelect();
   resizeCanvas();
   document.getElementById('bootOverlay').classList.add('hidden');
 }
