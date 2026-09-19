@@ -506,6 +506,14 @@ const BUILTIN = {
   math:[], chinese:[], english:[], science:[], geography:[],
 };
 let importedQuestions = [];   // 可放 questions.json 匯入的題目
+let imageMap = {};            // 圖片對照表（images.json）：檔名 → base64 data URI
+
+// 題目的 image 欄位可能是完整網址/data URI，也可能只是檔名（要去 imageMap 查）
+function resolveImageSrc(ref){
+  if(!ref) return null;
+  if(/^(data:|https?:\/\/|\.\/|\/)/.test(ref)) return ref; // 已經是完整路徑，直接用
+  return imageMap[ref] || null; // 否則當檔名查 images.json
+}
 const SUBJ_NAME = { math:'數學', chinese:'國文', english:'英文', science:'自然', geography:'社會' };
 
 // 交給 QuizEngine 的題庫物件
@@ -552,7 +560,8 @@ function renderQuestion(){
   document.getElementById('qSubject').textContent = SUBJ_NAME[curSubj] || curSubj;
   document.getElementById('qText').textContent = curQ.q;
   const img = document.getElementById('qImg');
-  if(curQ.img){ img.src = curQ.img; img.style.display='block'; } else img.style.display='none';
+  const src = resolveImageSrc(curQ.img);
+  if(src){ img.src = src; img.style.display='block'; } else img.style.display='none';
 
   const box = document.getElementById('qOpts');
   box.innerHTML = '';
@@ -1282,7 +1291,7 @@ async function boot(){
   let booted = false;
   const finishOnce = ()=>{ if(booted) return; booted = true; finishBoot(); };
 
-  // 保底機制：萬一 questions.json 一直卡住（網路異常等），4 秒後讓玩家可以手動跳過等待
+  // 保底機制：萬一檔案一直卡住（網路異常等），4 秒後讓玩家可以手動跳過等待
   const skipBtn = document.getElementById('bootContinue');
   const skipTimer = setTimeout(()=>{ skipBtn.style.display = 'block'; }, 4000);
   skipBtn.onclick = () => { clearTimeout(skipTimer); finishOnce(); };
@@ -1301,6 +1310,17 @@ async function boot(){
   }catch(e){
     failReason = '讀取題庫時發生錯誤：' + e.message;
   }
+
+  // images.json 是選用的圖片對照表（檔名 → 圖片資料），沒有也不影響文字題正常運作
+  let imageCount = 0;
+  try{
+    const ri = await fetch('./images.json');
+    if(ri.ok){
+      imageMap = await ri.json();
+      imageCount = Object.keys(imageMap).length;
+    }
+  }catch(e){ /* 沒有這個檔案就當作沒有圖片題，安靜跳過 */ }
+
   clearTimeout(skipTimer);
 
   const missing = ['chinese','english','science','geography'].filter(s=>!subjectReady(s));
@@ -1308,9 +1328,9 @@ async function boot(){
   if(!ok){
     setBootStatus(`${failReason}\n數學仍可正常出題，但國文／英文／自然／社會目前沒有題目。`, true);
   } else if(missing.length){
-    setBootStatus(`已載入 ${count} 題，其中 ${missing.map(s=>SUBJ_NAME[s]).join('、')} 目前沒有題目。`, true);
+    setBootStatus(`已載入 ${count} 題（含 ${imageCount} 張圖片），其中 ${missing.map(s=>SUBJ_NAME[s]).join('、')} 目前沒有題目。`, true);
   } else {
-    setBootStatus(`已載入 ${count} 題，題目系統就緒。`);
+    setBootStatus(`已載入 ${count} 題（含 ${imageCount} 張圖片），題目系統就緒。`);
   }
 
   await new Promise(res=>setTimeout(res, 450)); // 讓狀態訊息至少停留一下，不會一閃即過
