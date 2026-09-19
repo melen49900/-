@@ -69,6 +69,36 @@ body{
 .res span:first-child{font-size:15px;filter:saturate(1.3)}
 .res.gem{color:var(--mana)} .res.gold{color:var(--gold)} .res.stone{color:#c9a7ff}
 
+/* ── 語音（TTS）選擇按鈕與面板 ─────────────── */
+#ttsVoiceBtn{
+  flex:0 0 auto;background:rgba(0,0,0,.35);border:1px solid var(--stoneline);
+  border-radius:9px;padding:7px 11px;font-size:15px;color:var(--bone);cursor:pointer;
+}
+#ttsVoiceBtn:active{background:rgba(255,255,255,.08)}
+#ttsVoicePanel{
+  position:absolute;top:54px;right:10px;z-index:80;
+  background:rgba(20,10,24,.97);backdrop-filter:blur(8px);
+  border:1px solid var(--stoneline);border-radius:14px;
+  padding:11px 12px;box-shadow:0 6px 20px rgba(0,0,0,.5);
+  width:210px;
+}
+#ttsVoicePanel.hidden{display:none}
+#ttsVoicePanel .tvp-title{font-size:12px;font-weight:800;color:var(--gold);margin-bottom:7px}
+#ttsVoicePanel select{
+  width:100%;font-size:12px;font-weight:700;padding:6px 7px;border-radius:8px;
+  border:1px solid var(--stoneline);background:rgba(255,255,255,.08);color:var(--bone);
+  margin-bottom:8px;font-family:inherit;
+}
+#ttsVoicePanel select option{color:#1a0a2e}
+#ttsVoicePanel .tvp-btns{display:flex;gap:6px}
+#ttsVoicePanel button.tvp-btn{
+  flex:1;padding:7px 4px;border:none;border-radius:8px;font-family:inherit;
+  font-size:11px;font-weight:800;cursor:pointer;
+}
+#ttsVoicePanel .tvp-test{background:rgba(255,255,255,.15);color:var(--bone)}
+#ttsVoicePanel .tvp-close{background:linear-gradient(135deg,var(--gold),var(--ember));color:#2a0f18}
+#ttsVoicePanel .tvp-hint{font-size:10px;color:var(--bone-dim);margin-top:7px;line-height:1.4}
+
 /* ── 畫面容器 ──────────────────────────────── */
 #screens{flex:1;position:relative;overflow:hidden}
 .screen{
@@ -193,14 +223,29 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 .opt{
   width:100%;text-align:left;border:1px solid var(--stoneline);
   background:rgba(0,0,0,.3);color:var(--bone);
-  border-radius:11px;padding:14px 15px;margin-bottom:9px;
+  border-radius:11px 0 0 11px;border-right:none;padding:14px 15px;
   font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;
-  transition:background .1s,border-color .1s;
+  transition:background .1s,border-color .1s;flex:1;min-width:0;
 }
 .opt:active{background:rgba(255,255,255,.07)}
 .opt.right{border-color:#4ade80;background:rgba(74,222,128,.16);color:#bbf7d0}
 .opt.wrong{border-color:var(--blood);background:rgba(255,59,107,.14);color:#ffc4d2}
 .opt:disabled{cursor:default}
+.ans-wrap{position:relative;display:flex;align-items:stretch;margin-bottom:9px}
+.opt-speak-btn{
+  flex:0 0 auto;padding:0 13px;border:1px solid var(--stoneline);border-left:none;
+  border-radius:0 11px 11px 0;background:rgba(0,0,0,.3);color:var(--bone-dim);
+  font-size:14px;cursor:pointer;font-family:inherit;
+}
+.opt-speak-btn:active{background:rgba(255,255,255,.08)}
+.opt-speak-btn:disabled{opacity:.4;cursor:default}
+.q-speak-btn{
+  display:block;margin:8px auto 0;padding:5px 16px;
+  background:rgba(255,255,255,.08);border:1px solid var(--stoneline);
+  border-radius:16px;color:var(--bone);font-family:inherit;
+  font-size:12px;font-weight:800;cursor:pointer;
+}
+.q-speak-btn:active{background:rgba(255,255,255,.16)}
 #qFeed{
   min-height:26px;font-size:14px;font-weight:800;text-align:center;
   margin:6px 0 10px;
@@ -322,6 +367,17 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
     <div class="res gem"><span>💎</span><span id="uiGem">0</span></div>
     <div class="res gold"><span>💰</span><span id="uiGold">0</span></div>
     <div class="res stone"><span>🔮</span><span id="uiStone">0</span></div>
+    <button id="ttsVoiceBtn" onclick="toggleVoicePanel()" title="選擇朗讀語音">🗣️</button>
+  </div>
+
+  <div id="ttsVoicePanel" class="hidden">
+    <div class="tvp-title">🗣️ 選擇朗讀語音</div>
+    <select id="ttsVoiceSelect" onchange="onVoiceSelected(this.value)"></select>
+    <div class="tvp-btns">
+      <button type="button" class="tvp-btn tvp-test" onclick="previewVoice()">▶️ 試聽</button>
+      <button type="button" class="tvp-btn tvp-close" onclick="toggleVoicePanel()">關閉</button>
+    </div>
+    <div class="tvp-hint">朗讀語音由裝置／瀏覽器提供。清單中若有「台灣」或「Taiwan」字樣，建議優先選用，發音會比較準確。</div>
   </div>
 
   <div id="screens">
@@ -368,11 +424,13 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
           <div>連續答對<b id="qStreak">0</b></div>
           <div>累計答對<b id="qTotal">0</b></div>
           <div>數學階級<b id="qStage">1</b></div>
+          <div title="綠燈保險：第一次答錯扣1顆可以重答，連勝不會中斷；燈空了才會斷連勝，答對會慢慢補回">🛡️綠燈<b id="qShield">🟢🟢🟢</b></div>
         </div>
         <div class="card">
           <div id="qSubject">數學</div>
           <p id="qText">載入中…</p>
           <img id="qImg" alt="">
+          <button type="button" class="q-speak-btn" onclick="speakQuestion()">🔊 朗讀題目</button>
         </div>
         <div id="qOpts"></div>
         <div id="qFeed"></div>
@@ -505,7 +563,7 @@ function freshState(){
     bag:[],                                   // [{uid,id,rarity,refine}]
     equipped:{ weapon:null, armor:null, trinket:null },
     quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
-    qs:{ correct:0, wrong:0, streak:0, best:0 },
+    qs:{ correct:0, wrong:0, streak:0, best:0, shield:3, shieldProgress:0 },
     best:{ wave:0, kills:0 },
     unlockedLevel:1,                          // 目前解鎖到第幾關
     levelRecords:{},                          // { [level]: {cleared, bestWave, bestKills} }
@@ -579,6 +637,135 @@ function pickSubject(){
 }
 
 /* ══════════════════════════════════════════
+   語音朗讀（TTS）－參考舊遊戲的語音系統移植
+   ══════════════════════════════════════════ */
+const speechCfg = {
+  rate: 0.95, lang: 'zh-TW', enabled: true,
+  voiceURI: localStorage.getItem('tts_voice_uri') || null, // 使用者指定的語音，存起來下次自動套用
+};
+
+// Web Speech API 唸中文時實際用的「聲音」由裝置/瀏覽器提供，
+// 所以額外讓使用者從裝置已有的語音清單中手動指定要用哪一個。
+function getSelectedVoice(){
+  if(!window.speechSynthesis) return null;
+  const voices = window.speechSynthesis.getVoices();
+  if(!voices.length) return null;
+  if(speechCfg.voiceURI){
+    const v = voices.find(v=>v.voiceURI === speechCfg.voiceURI);
+    if(v) return v;
+  }
+  // 沒指定或找不到時，優先挑名稱/語言看起來像台灣的語音
+  const twMatch = voices.find(v=>v.lang==='zh-TW' && /台灣|taiwan|zh-tw/i.test(v.name+v.lang));
+  if(twMatch) return twMatch;
+  return voices.find(v=>v.lang==='zh-TW') || voices.find(v=>v.lang && v.lang.startsWith('zh')) || null;
+}
+
+// 台灣／中國破音字唸法修正：只影響朗讀用的文字，不影響畫面上顯示的文字
+const TW_PRONOUNCE_FIX = [
+  [/划/g, '滑'],      // 划船 應唸 huá；預設語音容易唸成 huà
+  [/垃圾/g, '拉基'],   // 台灣唸 lèsè，用同音字讓引擎接近唸出台灣讀音
+];
+function applyPronounceFix(text){
+  let r = text;
+  for(const [pattern, replacement] of TW_PRONOUNCE_FIX) r = r.replace(pattern, replacement);
+  return r;
+}
+
+function buildUtterance(text, lang){
+  const isZh = typeof lang === 'string' && lang.toLowerCase().startsWith('zh');
+  const u = new SpeechSynthesisUtterance(isZh ? applyPronounceFix(text) : text);
+  u.lang = lang; u.rate = speechCfg.rate; u.pitch = 1.1; u.volume = 1;
+  if(isZh){ const v = getSelectedVoice(); if(v) u.voice = v; }
+  return u;
+}
+
+let _speakDebounce = null;
+function _doSpeak(text, lang){
+  if(!speechCfg.enabled || !window.speechSynthesis || !text) return;
+  if(_speakDebounce) return; // 短時間內重複觸發（例如連點）就忽略，避免語音疊在一起
+  _speakDebounce = setTimeout(()=>{ _speakDebounce = null; }, 300);
+  window.speechSynthesis.cancel();
+  const doIt = ()=>{ window.speechSynthesis.speak(buildUtterance(text, lang)); };
+  const voices = window.speechSynthesis.getVoices();
+  if(voices.length){
+    setTimeout(doIt, 100);
+  } else {
+    // 有些瀏覽器要等 voiceschanged 事件才有語音清單
+    window.speechSynthesis.onvoiceschanged = ()=>{ window.speechSynthesis.onvoiceschanged = null; setTimeout(doIt, 100); };
+  }
+}
+
+// 朗讀目前題目：依科目把符號轉成國字，數學把「？」唸成「多少」、運算符號唸成加減乘除
+function speakQuestion(){
+  if(!speechCfg.enabled || !window.speechSynthesis || !curQ) return;
+  let text = curQ.q || '';
+  if(curSubj === 'math'){
+    text = text
+      .replace(/[?？]\s*$/, '多少').replace(/[?？]/g, '多少')
+      .replace(/\+/g,'加').replace(/－/g,'減').replace(/×/g,'乘以').replace(/÷/g,'除以')
+      .replace(/＋/g,'加').replace(/＝/g,'等於').replace(/=/g,'等於');
+    text = text.replace(/_+/g, '空格');
+    _doSpeak(text, speechCfg.lang);
+  } else if(curSubj === 'english'){
+    text = text.replace(/[?？]/g, '').replace(/[“”‘’"']/g, '');
+    text = text.replace(/_+/g, ' blank ');
+    const isEnglishSentence = /^[A-Za-z0-9\s\-.,! ]+$/.test(text.trim());
+    _doSpeak(text, isEnglishSentence ? 'en-US' : speechCfg.lang);
+  } else {
+    text = text
+      .replace(/[?？]/g, '')
+      .replace(/[=＝]/g, '等於').replace(/[<＜]/g, '小於').replace(/[>＞]/g, '大於');
+    text = text.replace(/_+/g, '空格');
+    _doSpeak(text, speechCfg.lang);
+  }
+}
+
+// 朗讀單一選項：英文科目且看起來是英文的選項用英文語音唸，其他一律用中文語音
+function speakOption(opt){
+  if(!speechCfg.enabled || !window.speechSynthesis) return;
+  const text = String(opt);
+  const isEnglish = curSubj === 'english' && /^[A-Za-z\s\-'.,!?]+$/.test(text.trim());
+  _doSpeak(text, isEnglish ? 'en-US' : speechCfg.lang);
+}
+
+// ── 語音（發音者）選擇面板 ──────────────────────
+function populateVoiceSelect(){
+  const sel = document.getElementById('ttsVoiceSelect');
+  if(!sel || !window.speechSynthesis) return;
+  const voices = window.speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith('zh'));
+  if(!voices.length){
+    sel.innerHTML = '<option value="">（尚未偵測到中文語音，稍後再試）</option>';
+    return;
+  }
+  const current = speechCfg.voiceURI;
+  sel.innerHTML = voices.map(v=>{
+    const label = `${v.name}（${v.lang}）${v.localService ? '' : '・線上'}`;
+    return `<option value="${v.voiceURI}" ${v.voiceURI===current?'selected':''}>${label}</option>`;
+  }).join('');
+  if(!current){
+    const auto = getSelectedVoice();
+    if(auto) sel.value = auto.voiceURI;
+  }
+}
+function onVoiceSelected(voiceURI){
+  speechCfg.voiceURI = voiceURI || null;
+  if(voiceURI) localStorage.setItem('tts_voice_uri', voiceURI);
+  else localStorage.removeItem('tts_voice_uri');
+}
+function previewVoice(){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(buildUtterance('這是語音示範，答對題目就能得到鑽石！', 'zh-TW'));
+}
+function toggleVoicePanel(){
+  const panel = document.getElementById('ttsVoicePanel');
+  if(!panel) return;
+  const willShow = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden');
+  if(willShow) populateVoiceSelect();
+}
+
+/* ══════════════════════════════════════════
    答題畫面
    ══════════════════════════════════════════ */
 let curQ = null, curSubj = 'math', answered = false, firstTry = true;
@@ -603,16 +790,27 @@ function renderQuestion(){
   const box = document.getElementById('qOpts');
   box.innerHTML = '';
   (curQ.opts||[]).forEach(o=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'ans-wrap';
     const b = document.createElement('button');
     b.className = 'opt';
     b.textContent = o;
     b.onclick = ()=>answer(o, b);
-    box.appendChild(b);
+    const spk = document.createElement('button');
+    spk.type = 'button';
+    spk.className = 'opt-speak-btn';
+    spk.textContent = '🔊';
+    spk.title = '朗讀這個選項';
+    spk.onclick = (e)=>{ e.stopPropagation(); speakOption(o); };
+    wrap.appendChild(b);
+    wrap.appendChild(spk);
+    box.appendChild(wrap);
   });
   document.getElementById('qFeed').textContent = '';
   document.getElementById('qFeed').className = '';
   document.getElementById('qNext').style.display = 'none';
   syncQuizMeta();
+  speakQuestion(); // 進入新題目時自動朗讀一次題目
 }
 
 function answer(choice, btn){
@@ -629,6 +827,15 @@ function answer(choice, btn){
     QuizEngine.recordAnswer(state.quiz, curSubj, curQ,
       { correct:true, isFirstAttempt:firstTry, isFinal:true }, bank());
 
+    // 綠燈保險：只有「第一次就答對」才會累積進度，每 2 題補 1 顆（上限 3）
+    if(firstTry){
+      state.qs.shieldProgress = (state.qs.shieldProgress||0) + 1;
+      if(state.qs.shieldProgress >= 2){
+        state.qs.shield = Math.min(3, (state.qs.shield ?? 3) + 1);
+        state.qs.shieldProgress = 0;
+      }
+    }
+
     state.qs.correct++;
     state.qs.streak++;
     state.qs.best = Math.max(state.qs.best, state.qs.streak);
@@ -641,42 +848,70 @@ function answer(choice, btn){
     feed.className = 'ok';
     feed.textContent = `答對　+${gain} 💎　連續 ${state.qs.streak}`;
     document.getElementById('qNext').style.display = 'block';
-    save(); syncUI();
+    save(); syncUI(); syncQuizMeta();
   } else {
     btn.classList.add('wrong');
     btn.disabled = true;
 
     if(firstTry){
-      // 第一次答錯：記錄「不會」但還給一次機會（isFinal:false）
-      QuizEngine.recordAnswer(state.quiz, curSubj, curQ,
-        { correct:false, isFirstAttempt:true, isFinal:false }, bank());
-      firstTry = false;
-      state.qs.streak = 0;
-      feed.className = 'no';
-      feed.textContent = '再想一次，還有一次機會';
-      save(); syncQuizMeta();
+      if((state.qs.shield ?? 0) > 0){
+        // 第一次答錯，但還有綠燈：扣1顆、允許重答，連勝不中斷
+        QuizEngine.recordAnswer(state.quiz, curSubj, curQ,
+          { correct:false, isFirstAttempt:true, isFinal:false }, bank());
+        state.qs.shield--;
+        firstTry = false;
+        feed.className = 'no';
+        feed.textContent = `⚠️ 答錯了！還有 ${state.qs.shield} 顆綠燈保護，再試一次！`;
+        save(); syncQuizMeta();
+      } else {
+        // 綠燈已空：直接中斷連勝
+        answered = true;
+        QuizEngine.recordAnswer(state.quiz, curSubj, curQ,
+          { correct:false, isFirstAttempt:true, isFinal:true }, bank());
+        state.qs.wrong++;
+        state.qs.streak = 0;
+        document.querySelectorAll('.opt').forEach(b=>{
+          b.disabled = true;
+          if(b.textContent === String(curQ.ans)) b.classList.add('right');
+        });
+        feed.className = 'no';
+        feed.textContent = `綠燈已用完，正確答案是「${curQ.ans}」，連勝中斷！`;
+        document.getElementById('qNext').style.display = 'block';
+        save(); syncQuizMeta();
+      }
     } else {
-      // 第二次也錯：確定答錯，排入補考佇列
+      // 重答也錯：確定答錯，中斷連勝
       answered = true;
       QuizEngine.recordAnswer(state.quiz, curSubj, curQ,
         { correct:false, isFirstAttempt:false, isFinal:true }, bank());
       state.qs.wrong++;
+      state.qs.streak = 0;
       document.querySelectorAll('.opt').forEach(b=>{
         b.disabled = true;
         if(b.textContent === String(curQ.ans)) b.classList.add('right');
       });
       feed.className = 'no';
-      feed.textContent = `正確答案是「${curQ.ans}」`;
+      feed.textContent = `正確答案是「${curQ.ans}」，連勝中斷！`;
       document.getElementById('qNext').style.display = 'block';
       save(); syncQuizMeta();
     }
   }
 }
 
+function renderShieldLights(){
+  const el = document.getElementById('qShield');
+  if(!el) return;
+  const shield = state.qs.shield ?? 3;
+  let html = '';
+  for(let i=0;i<3;i++) html += (i < shield ? '🟢' : '⚫');
+  el.textContent = html;
+}
+
 function syncQuizMeta(){
   document.getElementById('qStreak').textContent = state.qs.streak;
   document.getElementById('qTotal').textContent  = state.qs.correct;
   document.getElementById('qStage').textContent  = state.quiz.mathStage || 1;
+  renderShieldLights();
 }
 
 /* ══════════════════════════════════════════
@@ -972,6 +1207,7 @@ function fire(){
       dmg: s.atk,
       crit: Math.random()*100 < s.crit,
       r: 6,
+      target,   // 鎖定同一個目標，讓每道彈道之後能各自修正角度飛過去
     });
   }
 }
@@ -1026,9 +1262,27 @@ function step(dt){
   run.fireTimer -= dt;
   if(run.fireTimer <= 0){ fire(); run.fireTimer = 1 / s.spd; }
 
-  // 子彈
+  // 子彈：扇形散開的彈道會朝各自鎖定的目標自動修正角度，
+  // 避免「多彈道數不是奇數」時，因為初始夾角讓每一發都偏在目標兩側、永遠沒有一發是對準的
+  const SHOT_TURN_RATE = 10; // 每秒最多修正的弧度
   for(let i=run.shots.length-1;i>=0;i--){
     const b = run.shots[i];
+
+    if(b.target && b.target.hp > 0 && run.enemies.includes(b.target)){
+      const desired = Math.atan2(b.target.y - b.y, b.target.x - b.x);
+      const speed = Math.hypot(b.vx, b.vy);
+      let cur = Math.atan2(b.vy, b.vx);
+      let diff = desired - cur;
+      while(diff > Math.PI) diff -= Math.PI*2;
+      while(diff < -Math.PI) diff += Math.PI*2;
+      const maxTurn = SHOT_TURN_RATE * dt;
+      cur += Math.max(-maxTurn, Math.min(maxTurn, diff));
+      b.vx = Math.cos(cur) * speed;
+      b.vy = Math.sin(cur) * speed;
+    } else {
+      b.target = null; // 目標已消失，維持原本直線飛行
+    }
+
     b.x += b.vx*dt; b.y += b.vy*dt;
     if(b.y < -20 || b.y > H+20 || b.x < -20 || b.x > W+20){ run.shots.splice(i,1); continue; }
     for(let j=0;j<run.enemies.length;j++){
