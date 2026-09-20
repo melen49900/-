@@ -517,9 +517,9 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 160;        // 第20波所有怪物出完的時間點（2:40），之後靠清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 20;           // 共 20 關
+const LEVEL_COUNT = 30;           // 共 20 關
 
-const LEVEL_HP_GROWTH = 1.255;                                 // 關卡之間的血量倍率（沿用原本單局的成長率）
+const LEVEL_HP_GROWTH = 1.305;                                 // 關卡之間的血量倍率（沿用原本單局的成長率）
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內 20 波，血量只差 3 倍
 const WAVE_SPD_GROWTH = 0.1;                                    // 關內 20 波，移速大約多 10%（≈1.1倍）
 
@@ -601,9 +601,9 @@ const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品' };
 
 /* ── 本體強化 ─────────────────────────────── */
 const UPGRADES = [
-  { key:'atk',  icon:'🗡️', name:'攻擊力',  base:60,  grow:1.17, per:3,    fmt:v=>'+'+v },
-  { key:'hp',   icon:'❤️', name:'生命值',  base:55,  grow:1.16, per:18,   fmt:v=>'+'+v },
-  { key:'spd',  icon:'💨', name:'攻擊速度', base:90,  grow:1.21, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒' },
+  { key:'atk',  icon:'🗡️', name:'攻擊力',  base:45,  grow:1.17, per:3,    fmt:v=>'+'+v },
+  { key:'hp',   icon:'❤️', name:'生命值',  base:85,  grow:1.15, per:15,   fmt:v=>'+'+v },
+  { key:'spd',  icon:'💨', name:'攻擊速度', base:40,  grow:1.21, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒' },
   { key:'crit', icon:'✨', name:'暴擊率',  base:110, grow:1.23, per:1.4,  fmt:v=>'+'+v.toFixed(1)+'%' },
 ];
 
@@ -722,7 +722,6 @@ function getSelectedVoice(){
 // 台灣／中國破音字唸法修正：只影響朗讀用的文字，不影響畫面上顯示的文字
 const TW_PRONOUNCE_FIX = [
   [/划/g, '滑'],      // 划船 應唸 huá；預設語音容易唸成 huà
-  [/垃圾/g, '拉基'],   // 台灣唸 lèsè，用同音字讓引擎接近唸出台灣讀音
 ];
 function applyPronounceFix(text){
   let r = text;
@@ -1063,7 +1062,7 @@ const run = {
 function waveQuotaFor(w){
   return Math.round(10 + (w-1) * 10 / (WAVES_PER_LEVEL-1));
 }
-// 怪物血量 = 關卡基礎值（每關 ×1.255）× 關內波數成長（20 波內只差 3 倍）
+// 怪物血量 = 關卡基礎值（每關 ×1.305）× 關內波數成長（20 波內只差 3 倍）
 function enemyHpFor(level, w){
   return 17 * Math.pow(LEVEL_HP_GROWTH, level-1) * Math.pow(WAVE_HP_GROWTH, w-1);
 }
