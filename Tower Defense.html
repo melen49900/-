@@ -600,11 +600,17 @@ const EQUIP_POOL = [
 const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品' };
 
 /* ── 本體強化 ─────────────────────────────── */
+// body(lv)：該項目在鍛造等級 lv 時，角色「本體」的實際數值（不含裝備），對應 stats() 裡的公式
+// bodyFmt：本體數值的顯示格式（不加正負號，純數值）
 const UPGRADES = [
-  { key:'atk',  icon:'🗡️', name:'攻擊力',  base:45,  grow:1.17, per:3,    fmt:v=>'+'+v },
-  { key:'hp',   icon:'❤️', name:'生命值',  base:85,  grow:1.15, per:15,   fmt:v=>'+'+v },
-  { key:'spd',  icon:'💨', name:'攻擊速度', base:40,  grow:1.21, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒' },
-  { key:'crit', icon:'✨', name:'暴擊率',  base:110, grow:1.23, per:1.4,  fmt:v=>'+'+v.toFixed(1)+'%' },
+  { key:'atk',  icon:'🗡️', name:'攻擊力',  base:45,  grow:1.17, per:3,    fmt:v=>'+'+v,
+    body:lv=>14 + lv*3.4,               bodyFmt:v=>String(Math.round(v)) },
+  { key:'hp',   icon:'❤️', name:'生命值',  base:85,  grow:1.15, per:15,   fmt:v=>'+'+v,
+    body:lv=>100 + lv*18,               bodyFmt:v=>String(Math.round(v)) },
+  { key:'spd',  icon:'💨', name:'攻擊速度', base:40,  grow:1.21, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
+    body:lv=>Math.max(0.5, 2.3 + lv*0.13), bodyFmt:v=>v.toFixed(2)+' 發/秒' },
+  { key:'crit', icon:'✨', name:'暴擊率',  base:110, grow:1.23, per:1.4,  fmt:v=>'+'+v.toFixed(1)+'%',
+    body:lv=>Math.min(80, 5 + lv*1.4),  bodyFmt:v=>v.toFixed(1)+'%' },
 ];
 
 /* ── 存檔狀態 ─────────────────────────────── */
@@ -1024,7 +1030,7 @@ window.addEventListener('resize', resizeCanvas);
 
 // 每關一個色相，讓玩家能感覺到「換關卡」了
 function levelTheme(level){
-  const hue = Math.round(((level-1) * (360/LEVEL_COUNT)) % 360);
+  const hue = Math.round(((level-1) * (360/20)) % 360);
   return {
     top:  `hsl(${hue} 55% 15%)`,
     mid:  `hsl(${hue} 40% 8%)`,
@@ -1149,9 +1155,10 @@ function startRun(level){
 function endRun(win){
   run.active=false; run.over=true;
 
-  const goldGain  = Math.round(run.gold);
-  const stoneGain = Math.floor(run.wave/3) + (win?3:0);
-  const gemGain   = Math.floor(run.kills/25) + (win?15:0);
+  const levelMul  = Math.pow(1.15, run.level-1);   // 金幣／強化石每關 ×1.15（怪物血量沿用原本 1.305，不動）
+  const goldGain  = Math.round(run.gold * levelMul);
+  const stoneGain = Math.round((Math.floor(run.wave/3) + (win?3:0)) * levelMul);
+  const gemGain   = 10 + run.level*2;              // 鑽石固定為 10 + 關卡數 ×2
   state.gold  += goldGain;
   state.stone += stoneGain;
   state.gem   += gemGain;
@@ -1530,8 +1537,8 @@ function draw(){
     }
     ctx.save();
     if(e.hit > 0){ ctx.globalAlpha = 0.55; }
-    ctx.font = `${e.r*2}px serif`;
-    ctx.fillText(e.emoji, e.x, e.y);
+    ctx.font = `${e.r*2}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif`;
+    ctx.fillText(e.emoji + '\uFE0F', e.x, e.y);
     ctx.restore();
     // 血條
     if(e.hp < e.maxHp){
@@ -1572,8 +1579,8 @@ function draw(){
     const hg = ctx.createRadialGradient(hx,hy,2,hx,hy,40);
     hg.addColorStop(0,'rgba(255,170,60,.42)'); hg.addColorStop(1,'rgba(255,120,30,0)');
     ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(hx,hy,40,0,Math.PI*2); ctx.fill();
-    ctx.font = '38px serif';
-    ctx.fillText('🧙', hx, hy);
+    ctx.font = '38px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif';
+    ctx.fillText('🧙\uFE0F', hx, hy);
   }
 
   // 粒子
@@ -1693,12 +1700,15 @@ function renderUpgrades(){
     const lv = state.up[u.key];
     const maxed = u.max != null && lv >= u.max;
     const cost = upCost(u);
-    const cur = u.fmt(u.per * lv);
+    const curBody  = u.bodyFmt(u.body(lv));
+    const nextBody = u.bodyFmt(u.body(lv+1));
+    const curPer   = u.fmt(u.per * lv);
+    const nextPer  = u.fmt(u.per * (lv+1));
     return `<div class="up">
       <div class="ico">${u.icon}</div>
       <div class="info">
         <div class="nm">${u.name}　<span style="color:var(--bone-dim);font-size:12px">Lv.${lv}${maxed?' 已滿':''}</span></div>
-        <div class="val">目前 ${cur}　→　下一級 ${u.fmt(u.per*(lv+1))}</div>
+        <div class="val">目前 ${curBody}(${curPer})　→　下一級 ${nextBody}(${nextPer})</div>
       </div>
       <button data-up="${u.key}" ${maxed||state.gold<cost?'disabled':''}>
         ${maxed ? '已滿級' : '💰 '+cost}
