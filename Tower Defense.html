@@ -275,6 +275,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 .rar{font-size:10px;font-weight:900;letter-spacing:1px;padding:2px 6px;border-radius:5px;margin-left:auto;flex-shrink:0}
 .r-N{background:#3f3547;color:#c3b5cc} .r-R{background:#1d4e6b;color:#9fdcff}
 .r-SR{background:#5b2b74;color:#e3b5ff} .r-SSR{background:#7a4708;color:#ffd98a}
+.r-skill{background:#1f5c3d;color:#9dffc0}
 .drop.new{border-color:var(--ember);box-shadow:0 0 16px rgba(255,106,31,.25)}
 
 /* ── 強化 ──────────────────────────────────── */
@@ -395,7 +396,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
         <canvas id="cv"></canvas>
         <div id="hud">
           <div id="waveTag">第 1 關 · 第 1/20 波</div>
-          <div id="timeTag">3:00</div>
+          <div id="timeTag">2:40</div>
           <div id="runLoot"><span id="runKill">☠ 0</span><span id="runGold">💰 0</span></div>
         </div>
         <div id="hpWrap">
@@ -438,17 +439,18 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
       </div>
     </section>
 
-    <!-- 抽裝備 -->
+    <!-- 抽裝備／技能 -->
     <section class="screen" id="screen-gacha">
       <div class="pad">
         <h2 class="sec">熔爐召喚</h2>
-        <p class="sub">投入鑽石，從熔爐中拉出一件裝備。重複的裝備會自動熔成強化石。</p>
+        <p class="sub">投入鑽石，從熔爐中拉出裝備或技能。重複的裝備會自動熔成強化石。</p>
         <div id="pullResult"></div>
         <button class="btn mana" id="pull1" style="margin-bottom:9px">召喚 1 次 · 100 💎</button>
         <button class="btn mana" id="pull10">召喚 10 次 · 900 💎</button>
         <div class="card" style="margin-top:14px">
           <div style="font-size:12px;color:var(--bone-dim);line-height:1.9">
-            <div>出現機率　普通 50%　精良 30%　稀有 15%　傳說 5%</div>
+            <div>技能機率　合計 30%（目前 2 種技能，每種各 15%）</div>
+            <div>裝備機率　合計 70%　普通 35%　精良 21%　稀有 10.5%　傳說 3.5%</div>
             <div style="margin-top:6px">重複裝備熔解：普通 +1　精良 +3　稀有 +8　傳說 +20 🔮</div>
           </div>
         </div>
@@ -479,6 +481,15 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
       </div>
     </section>
 
+    <!-- 技能 -->
+    <section class="screen" id="screen-skills">
+      <div class="pad">
+        <h2 class="sec">技能</h2>
+        <p class="sub">技能等級由「召喚」抽取，跟裝備共用同一個池子（技能合計 30% 機率）。每抽疊加威力，滿 +6 之後改成疊加傷害百分比。</p>
+        <div class="card" id="skillList"></div>
+      </div>
+    </section>
+
   </div>
 
   <nav id="tabs">
@@ -487,6 +498,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
     <button class="tab" data-s="gacha"><i>🔥</i>召喚</button>
     <button class="tab" data-s="upgrade"><i>🔨</i>鍛造</button>
     <button class="tab" data-s="equip"><i>🎒</i>裝備</button>
+    <button class="tab" data-s="skills"><i>🎇</i>技能</button>
   </nav>
 
   <div id="toast"></div>
@@ -503,7 +515,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
    ══════════════════════════════════════════════════════════ */
 
 const SAVE_KEY = 'emberTrial_v1';
-const RUN_SECONDS = 180;          // 每一關 3 分鐘
+const SPAWN_SECONDS = 160;        // 第20波所有怪物出完的時間點（2:40），之後靠清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
 const LEVEL_COUNT = 20;           // 共 20 關
 
@@ -519,6 +531,49 @@ const RARITY = {
   SSR: { label:'傳說', mult:3.8,  dust:20 },
 };
 const RARITY_ODDS = [['N',.50],['R',.30],['SR',.15],['SSR',.05]];
+
+/* ── 技能 ─────────────────────────────────── */
+// 彈道/發射數每抽疊加 1，抽到第 6 次之後改成疊加「基礎傷害的百分比」
+const SKILL_STACK_CAP = 6;
+const SKILL_DEFS = {
+  fireball: {
+    name:'火球術', icon:'🔥', innate:true,
+    desc:'自動鎖定場上最深處的敵人並追蹤命中，每抽疊加 1 道彈道；滿 +6 道之後每抽改為傷害 +0.8%。基礎傷害為角色攻擊的 80%。',
+  },
+  icespike: {
+    name:'冰椎術', icon:'🔺', innate:false,
+    desc:'不會追蹤，直接從角色所在位置往正上方發射；每抽多發射 1 枚，每枚間隔 0.1 秒；滿 +6 枚之後每抽改為傷害 +0.5%。基礎傷害為角色攻擊的 60%，命中會減速目標 20%、持續 1 秒，最多疊加 3 層（最高減速 60%）。',
+  },
+};
+// 抽到技能的總機率固定 30%，平均分攤給所有技能（目前 2 種＝各 15%）
+const SKILL_PULL_CHANCE = 0.30;
+function rollSkill(){
+  const keys = Object.keys(SKILL_DEFS);
+  return keys[Math.floor(Math.random()*keys.length)];
+}
+// 彈道/發射數（兩個技能算法相同：每抽 +1，上限 +6）
+function skillStacks(key){
+  return Math.min(SKILL_STACK_CAP, state.skills[key].draws);
+}
+function skillOverCap(key){
+  return Math.max(0, state.skills[key].draws - SKILL_STACK_CAP);
+}
+function fireballBullets(){
+  // 1 發基礎彈道 + 技能疊加 + 舊版鍛造「額外彈道」的既有等級（保留玩家已投入的強化，只是不再開放購買）+ 裝備的彈道加成
+  return 1 + skillStacks('fireball') + (state.up.multi||0) + Math.round(sumEquip('multi'));
+}
+function icespikeBullets(){
+  return skillStacks('icespike'); // 還沒抽到過就是 0，不會發射
+}
+// 傷害＝角色攻擊力 × 百分比。基礎 80%／60%，抽滿 +6 之後每抽再疊加 0.8%／0.5%
+function fireballPct(){ return 80 + skillOverCap('fireball') * 0.8; }
+function icespikePct(){ return 60 + skillOverCap('icespike') * 0.5; }
+function fireballAtk(s){ return s.atk * fireballPct() / 100; }
+function icespikeAtk(s){ return s.atk * icespikePct() / 100; }
+// 冰椎減速：每次命中疊加一層，每層獨立倒數，最多 3 層
+const ICESPIKE_SLOW_PCT = 0.20;
+const ICESPIKE_SLOW_MAX_STACKS = 3;
+const ICESPIKE_SLOW_DURATION = 1; // 秒
 
 // base 為「普通」品質的數值，實際數值 = base × 稀有度倍率
 const EQUIP_POOL = [
@@ -550,7 +605,6 @@ const UPGRADES = [
   { key:'hp',   icon:'❤️', name:'生命值',  base:55,  grow:1.16, per:18,   fmt:v=>'+'+v },
   { key:'spd',  icon:'💨', name:'攻擊速度', base:90,  grow:1.21, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒' },
   { key:'crit', icon:'✨', name:'暴擊率',  base:110, grow:1.23, per:1.4,  fmt:v=>'+'+v.toFixed(1)+'%' },
-  { key:'multi',icon:'🎯', name:'額外彈道', base:800, grow:2.05, per:1,   fmt:v=>'+'+v+' 道', max:6 },
 ];
 
 /* ── 存檔狀態 ─────────────────────────────── */
@@ -559,9 +613,10 @@ let state = freshState();
 function freshState(){
   return {
     gem:0, gold:0, stone:0,
-    up:{ atk:0, hp:0, spd:0, crit:0, multi:0 },
+    up:{ atk:0, hp:0, spd:0, crit:0, multi:0 }, // multi 是舊版「額外彈道」的既有等級，保留給老存檔，已不開放繼續升級
     bag:[],                                   // [{uid,id,rarity,refine}]
     equipped:{ weapon:null, armor:null, trinket:null },
+    skills:{ fireball:{draws:0}, icespike:{draws:0} }, // 技能召喚抽到的次數
     quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
     qs:{ correct:0, wrong:0, streak:0, best:0, shield:3, shieldProgress:0 },
     best:{ wave:0, kills:0 },
@@ -585,6 +640,10 @@ function load(){
     state.equipped = Object.assign(f.equipped, d.equipped||{});
     state.qs       = Object.assign(f.qs, d.qs||{});
     state.best     = Object.assign(f.best, d.best||{});
+    state.skills = {
+      fireball: Object.assign({draws:0}, (d.skills&&d.skills.fireball)||{}),
+      icespike: Object.assign({draws:0}, (d.skills&&d.skills.icespike)||{}),
+    };
     state.levelRecords = Object.assign({}, d.levelRecords||{});
     state.unlockedLevel = Math.max(1, Math.min(LEVEL_COUNT, d.unlockedLevel || 1));
     // 進度資料還原：補上舊存檔可能缺少的欄位，避免引擎讀到 undefined
@@ -940,7 +999,6 @@ function stats(){
     maxHp: Math.round(100 + u.hp*18   + sumEquip('hp')),
     spd:   Math.max(0.5, 2.3 + u.spd*0.13 + sumEquip('spd')),
     crit:  Math.min(80, 5 + u.crit*1.4 + sumEquip('crit')),
-    multi: 1 + u.multi + Math.round(sumEquip('multi')),
   };
 }
 
@@ -997,6 +1055,7 @@ const run = {
   fireTimer:0,
   kills:0, gold:0,
   enemies:[], shots:[], bits:[], pops:[],
+  iceQueue:[],   // 冰椎術待發射佇列（每個元素是還剩多少秒才發射）
   shake:0,
 };
 
@@ -1080,7 +1139,7 @@ function startRun(level){
   run.maxHp=s.maxHp; run.hp=s.maxHp;
   run.heroX=W/2; run.targetX=W/2; run.fireTimer=0;
   run.kills=0; run.gold=0;
-  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.shake=0;
+  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.shake=0;
   applyLevelTheme(run.level);
   document.getElementById('overlay').classList.remove('on');
   openStage();
@@ -1120,7 +1179,7 @@ function endRun(win){
     ovSub.innerHTML = `你已經撐過全部 ${LEVEL_COUNT} 關，擊倒 ${run.kills} 隻。`;
   } else if(win){
     ovTitle.textContent = `第 ${run.level} 關　過關`;
-    ovSub.innerHTML = `撐過了本關全部 ${WAVES_PER_LEVEL} 波，擊倒 ${run.kills} 隻。`;
+    ovSub.innerHTML = `清空了本關全部 ${WAVES_PER_LEVEL} 波的怪物，擊倒 ${run.kills} 隻。`;
   } else {
     ovTitle.textContent = '倒下了';
     ovSub.innerHTML = `在第 ${run.level} 關・第 ${run.wave} 波倒下，擊倒 ${run.kills} 隻。<br>去答題換鑽石、抽裝備再來一次。`;
@@ -1179,6 +1238,7 @@ function spawnEnemy(){
     gold: base.gold * (isBoss ? 22 : 1) * (1 + w*0.35),
     boss: isBoss,
     hit: 0,
+    slowStacks: [],  // 冰椎術減速層數：陣列每個元素是該層還剩多少秒
   });
   run.spawned++;
 }
@@ -1196,20 +1256,44 @@ function fire(){
   // 沒有目標就往正上方打
   const aim = target ? Math.atan2(target.y - oy, target.x - ox) : -Math.PI/2;
 
-  const n = s.multi;
+  const n = fireballBullets();
+  const dmg = fireballAtk(s);
   const spread = 0.14;
   for(let i=0;i<n;i++){
     const a = aim + (i - (n-1)/2) * spread;
     run.shots.push({
+      kind:'fire',
       x: ox, y: oy,
       vx: Math.cos(a) * SHOT_SPEED_BASE * hScale,
       vy: Math.sin(a) * SHOT_SPEED_BASE * hScale,
-      dmg: s.atk,
+      dmg,
       crit: Math.random()*100 < s.crit,
       r: 6,
       target,   // 鎖定同一個目標，讓每道彈道之後能各自修正角度飛過去
+      age: 0,
     });
   }
+}
+
+// 冰椎術：不追蹤、不鎖定目標，單純從角色「當下」位置往正上方發射。
+// 一次觸發會排出 n 枚的佇列，每枚間隔 0.1 秒才真正生成，
+// 這樣每一枚冰椎的出發點都是它實際發射那一刻的角色位置，而不是排隊當下的位置。
+function queueIceSpikes(){
+  const n = icespikeBullets();
+  for(let i=0;i<n;i++) run.iceQueue.push(i * 0.1);
+}
+function spawnIceSpike(){
+  const s = stats();
+  run.shots.push({
+    kind:'ice',
+    x: run.heroX, y: H - 96,
+    vx: 0, vy: -SHOT_SPEED_BASE * hScale,
+    dmg: icespikeAtk(s),
+    crit: Math.random()*100 < s.crit,
+    r: 7,
+    target: null,
+    age: 0,
+  });
 }
 
 /* 爆點與傷害數字 */
@@ -1236,11 +1320,8 @@ function loop(now){
 function step(dt){
   run.t += dt;
 
-  // 時間到 → 勝利
-  if(run.t >= RUN_SECONDS){ endRun(true); return; }
-
-  // 依時間推進波數
-  const wantWave = Math.min(WAVES_PER_LEVEL, 1 + Math.floor(run.t / (RUN_SECONDS/WAVES_PER_LEVEL)));
+  // 依時間推進波數（第20波所有怪物會在 SPAWN_SECONDS 出完，之後不再依時間推進）
+  const wantWave = Math.min(WAVES_PER_LEVEL, 1 + Math.floor(run.t / (SPAWN_SECONDS/WAVES_PER_LEVEL)));
   if(wantWave > run.wave){
     run.wave = wantWave;
     run.spawned = 0;
@@ -1251,7 +1332,7 @@ function step(dt){
   run.spawnTimer -= dt;
   if(run.spawnTimer <= 0 && run.spawned < run.waveQuota){
     spawnEnemy();
-    run.spawnTimer = (RUN_SECONDS/WAVES_PER_LEVEL) / (run.waveQuota + 1.5);
+    run.spawnTimer = (SPAWN_SECONDS/WAVES_PER_LEVEL) / (run.waveQuota + 1.5);
   }
 
   // 主角移動（平滑跟隨）
@@ -1260,15 +1341,27 @@ function step(dt){
   // 開火
   const s = stats();
   run.fireTimer -= dt;
-  if(run.fireTimer <= 0){ fire(); run.fireTimer = 1 / s.spd; }
+  if(run.fireTimer <= 0){ fire(); queueIceSpikes(); run.fireTimer = 1 / s.spd; }
+
+  // 冰椎術佇列：各自倒數，時間到才真正生成（見 queueIceSpikes 的說明）
+  for(let i=run.iceQueue.length-1;i>=0;i--){
+    run.iceQueue[i] -= dt;
+    if(run.iceQueue[i] <= 0){ spawnIceSpike(); run.iceQueue.splice(i,1); }
+  }
 
   // 子彈：扇形散開的彈道會朝各自鎖定的目標自動修正角度，
-  // 避免「多彈道數不是奇數」時，因為初始夾角讓每一發都偏在目標兩側、永遠沒有一發是對準的
-  const SHOT_TURN_RATE = 10; // 每秒最多修正的弧度
+  // 避免「多彈道數不是奇數」時，因為初始夾角讓每一發都偏在目標兩側、永遠沒有一發是對準的。
+  // 先直飛一小段時間再開始修正，讓扇形散開的視覺效果保留久一點，不會一有目標就整把瞬間黏成一條線。
+  const SHOT_HOMING_DELAY = 0.12; // 秒：出膛後多久才開始自動修正
+  const SHOT_TURN_RATE = 6;       // 每秒最多修正的弧度
   for(let i=run.shots.length-1;i>=0;i--){
     const b = run.shots[i];
+    b.age += dt;
 
-    if(b.target && b.target.hp > 0 && run.enemies.includes(b.target)){
+    const targetValid = b.target && b.target.hp > 0 && run.enemies.includes(b.target);
+    if(!targetValid){
+      b.target = null; // 目標已消失，維持原本直線飛行
+    } else if(b.age > SHOT_HOMING_DELAY){
       const desired = Math.atan2(b.target.y - b.y, b.target.x - b.x);
       const speed = Math.hypot(b.vx, b.vy);
       let cur = Math.atan2(b.vy, b.vx);
@@ -1279,8 +1372,6 @@ function step(dt){
       cur += Math.max(-maxTurn, Math.min(maxTurn, diff));
       b.vx = Math.cos(cur) * speed;
       b.vy = Math.sin(cur) * speed;
-    } else {
-      b.target = null; // 目標已消失，維持原本直線飛行
     }
 
     b.x += b.vx*dt; b.y += b.vy*dt;
@@ -1292,7 +1383,15 @@ function step(dt){
         const dmg = b.crit ? b.dmg*2 : b.dmg;
         e.hp -= dmg; e.hit = 0.12;
         popText(e.x, e.y-e.r-4, Math.round(dmg), b.crit);
-        burst(b.x, b.y, b.crit ? '#ffd046' : '#ff8a3d', b.crit?9:5);
+        if(b.kind === 'ice'){
+          // 冰凍減速：每次命中疊加一層（1秒獨立倒數），最多3層
+          if(!e.slowStacks) e.slowStacks = [];
+          if(e.slowStacks.length < ICESPIKE_SLOW_MAX_STACKS) e.slowStacks.push(ICESPIKE_SLOW_DURATION);
+          else e.slowStacks[0] = ICESPIKE_SLOW_DURATION; // 已滿層時刷新最舊的一層
+          burst(b.x, b.y, b.crit ? '#d6faff' : '#7fe3ff', b.crit?9:5);
+        } else {
+          burst(b.x, b.y, b.crit ? '#ffd046' : '#ff8a3d', b.crit?9:5);
+        }
         run.shots.splice(i,1);
         break;
       }
@@ -1303,8 +1402,16 @@ function step(dt){
   const heroLine = H - 74;
   for(let i=run.enemies.length-1;i>=0;i--){
     const e = run.enemies[i];
-    e.y += e.spd*dt;
-    e.x += e.vx*dt;
+    // 冰凍減速：每層各自倒數，到期就移除
+    if(e.slowStacks && e.slowStacks.length){
+      for(let k=e.slowStacks.length-1;k>=0;k--){
+        e.slowStacks[k] -= dt;
+        if(e.slowStacks[k] <= 0) e.slowStacks.splice(k,1);
+      }
+    }
+    const slowMul = 1 - Math.min(ICESPIKE_SLOW_MAX_STACKS, e.slowStacks ? e.slowStacks.length : 0) * ICESPIKE_SLOW_PCT;
+    e.y += e.spd*dt*slowMul;
+    e.x += e.vx*dt*slowMul;
     if(e.x < e.r || e.x > W-e.r) e.vx *= -1;
     if(e.hit > 0) e.hit -= dt;
 
@@ -1327,6 +1434,13 @@ function step(dt){
     }
   }
 
+  // 通關條件：第20波的怪物已經全部生完，而且畫面上一隻都不剩
+  if(run.wave >= WAVES_PER_LEVEL && run.spawned >= run.waveQuota && run.enemies.length === 0){
+    syncBattleHud();
+    endRun(true);
+    return;
+  }
+
   // 粒子
   for(let i=run.bits.length-1;i>=0;i--){
     const p = run.bits[i];
@@ -1347,11 +1461,20 @@ function step(dt){
 
 function syncBattleHud(){
   document.getElementById('waveTag').textContent = `第 ${run.level} 關 · 第 ${run.wave}/${WAVES_PER_LEVEL} 波`;
-  const left = Math.max(0, RUN_SECONDS - run.t);
-  const m = Math.floor(left/60), sec = Math.floor(left%60);
+
   const tt = document.getElementById('timeTag');
-  tt.textContent = `${m}:${String(sec).padStart(2,'0')}`;
-  tt.classList.toggle('low', left <= 30);
+  const allSpawned = (run.wave >= WAVES_PER_LEVEL && run.spawned >= run.waveQuota);
+  if(allSpawned){
+    // 怪物出完了，改顯示還剩幾隻要清，呼應「清空過關」的規則
+    tt.textContent = `剩 ${run.enemies.length} 隻`;
+    tt.classList.toggle('low', run.enemies.length <= 3);
+  } else {
+    const left = Math.max(0, SPAWN_SECONDS - run.t);
+    const m = Math.floor(left/60), sec = Math.floor(left%60);
+    tt.textContent = `${m}:${String(sec).padStart(2,'0')}`;
+    tt.classList.toggle('low', left <= 30);
+  }
+
   document.getElementById('runKill').textContent = `☠ ${run.kills}`;
   document.getElementById('runGold').textContent = `💰 ${Math.round(run.gold)}`;
   const pct = run.maxHp ? Math.max(0, run.hp/run.maxHp*100) : 0;
@@ -1397,6 +1520,15 @@ function draw(){
 
   // 怪物
   run.enemies.forEach(e=>{
+    const slowed = e.slowStacks && e.slowStacks.length;
+    if(slowed){
+      // 冰凍減速視覺：腳下一圈淡藍光環，層數越多越亮
+      ctx.save();
+      ctx.globalAlpha = 0.25 + e.slowStacks.length*0.12;
+      ctx.strokeStyle = '#7fe3ff'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.r+4, 0, Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
     ctx.save();
     if(e.hit > 0){ ctx.globalAlpha = 0.55; }
     ctx.font = `${e.r*2}px serif`;
@@ -1414,11 +1546,24 @@ function draw(){
   // 子彈
   run.shots.forEach(b=>{
     ctx.save();
-    ctx.shadowBlur = 14; ctx.shadowColor = b.crit ? '#ffd046' : '#ff6a1f';
-    const bg = ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r*1.6);
-    bg.addColorStop(0,'#fff3c4'); bg.addColorStop(0.5, b.crit?'#ffd046':'#ff9b3d'); bg.addColorStop(1,'rgba(255,90,20,0)');
-    ctx.fillStyle = bg;
-    ctx.beginPath(); ctx.arc(b.x,b.y,b.r*1.6,0,Math.PI*2); ctx.fill();
+    if(b.kind === 'ice'){
+      // 冰椎術：藍色錐形，尖端朝上（飛行方向固定往上，不用另外算角度）
+      ctx.shadowBlur = 12; ctx.shadowColor = b.crit ? '#d6faff' : '#5fd8ff';
+      ctx.fillStyle = b.crit ? '#e8fdff' : '#7fe3ff';
+      const cw = b.r*1.5, ch = b.r*3.4;
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y - ch*0.6);
+      ctx.lineTo(b.x - cw/2, b.y + ch*0.4);
+      ctx.lineTo(b.x + cw/2, b.y + ch*0.4);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.shadowBlur = 14; ctx.shadowColor = b.crit ? '#ffd046' : '#ff6a1f';
+      const bg = ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r*1.6);
+      bg.addColorStop(0,'#fff3c4'); bg.addColorStop(0.5, b.crit?'#ffd046':'#ff9b3d'); bg.addColorStop(1,'rgba(255,90,20,0)');
+      ctx.fillStyle = bg;
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.r*1.6,0,Math.PI*2); ctx.fill();
+    }
     ctx.restore();
   });
 
@@ -1460,7 +1605,16 @@ function rollRarity(){
   for(const [key,p] of RARITY_ODDS){ if((r -= p) < 0) return key; }
   return 'N';
 }
+function skillPullOnce(){
+  const key = rollSkill();
+  state.skills[key].draws++;
+  const draws = state.skills[key].draws;
+  return { kind:'skill', key, def: SKILL_DEFS[key], draws, gotPct: draws > SKILL_STACK_CAP };
+}
 function pullOnce(){
+  // 30% 機率抽到技能（平均分攤給所有技能），其餘 70% 抽裝備
+  if(Math.random() < SKILL_PULL_CHANCE) return skillPullOnce();
+
   const base = EQUIP_POOL[Math.floor(Math.random()*EQUIP_POOL.length)];
   const rarity = rollRarity();
   // 背包已有「同裝備同稀有度」→ 熔成強化石
@@ -1468,13 +1622,13 @@ function pullOnce(){
   if(dup){
     const dust = RARITY[rarity].dust;
     state.stone += dust;
-    return { base, rarity, dup:true, dust };
+    return { kind:'equip', base, rarity, dup:true, dust };
   }
   const card = { uid:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), id:base.id, rarity, refine:0 };
   state.bag.push(card);
   // 該部位還沒裝備 → 自動裝上
   if(!state.equipped[base.slot]) state.equipped[base.slot] = card;
-  return { base, rarity, dup:false, card };
+  return { kind:'equip', base, rarity, dup:false, card };
 }
 function doPull(n){
   const cost = n===10 ? 900 : 100;
@@ -1482,11 +1636,25 @@ function doPull(n){
   state.gem -= cost;
   const out = [];
   for(let i=0;i<n;i++) out.push(pullOnce());
-  save(); syncUI(); renderEquip();
+  save(); syncUI(); renderEquip(); renderSkills();
 
   const box = document.getElementById('pullResult');
   box.className = 'on';
   box.innerHTML = out.map(o=>{
+    if(o.kind === 'skill'){
+      const stackLabel = o.key==='fireball' ? '彈道' : '發射數';
+      const line = o.gotPct
+        ? `傷害提升（累計抽到 ${o.draws} 次）`
+        : `${stackLabel} +1（累計抽到 ${o.draws} 次）`;
+      return `<div class="drop new">
+        <div class="ico">${o.def.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div class="nm">${o.def.name}</div>
+          <div class="st">${line}</div>
+        </div>
+        <div class="rar r-skill">技能</div>
+      </div>`;
+    }
     const st = statLine(o.base, o.rarity);
     return `<div class="drop${o.dup?'':' new'}">
       <div class="ico">${o.base.icon}</div>
@@ -1553,6 +1721,33 @@ function renderUpgrades(){
 }
 
 function refineCost(card){ return 5 + (card.refine||0)*4; }
+
+/* ══════════════════════════════════════════
+   技能
+   ══════════════════════════════════════════ */
+function renderSkills(){
+  const box = document.getElementById('skillList');
+  if(!box) return;
+  box.innerHTML = Object.entries(SKILL_DEFS).map(([key,def])=>{
+    const draws = state.skills[key].draws;
+    const owned = def.innate || draws > 0;
+    const stackLabel = key==='fireball' ? '彈道' : '發射枚數';
+    const stacks = key==='fireball' ? fireballBullets() : icespikeBullets();
+    const pct = key==='fireball' ? fireballPct() : icespikePct();
+    const statusText = owned
+      ? `${stackLabel} ${stacks}　傷害 ${pct.toFixed(1)}% 攻擊`
+      : '尚未習得，去「召喚」試試手氣';
+    return `<div class="up">
+      <div class="ico">${def.icon}</div>
+      <div class="info">
+        <div class="nm">${def.name}　<span style="color:var(--bone-dim);font-size:12px">${owned?`累計抽到 ${draws} 次`:'未習得'}</span></div>
+        <div class="val">${statusText}</div>
+        <div class="val" style="color:var(--bone-dim);font-size:11px;margin-top:2px">${def.desc}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 
 function renderRefine(){
   const box = document.getElementById('refineList');
@@ -1670,6 +1865,7 @@ function show(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.s===name));
   if(name==='upgrade'){ renderUpgrades(); renderRefine(); }
   if(name==='equip')  renderEquip();
+  if(name==='skills') renderSkills();
   if(name==='battle') resizeCanvas();
 }
 document.querySelectorAll('.tab').forEach(t=>{
@@ -1686,6 +1882,7 @@ document.getElementById('pull10').onclick = ()=>doPull(10);
 load();
 syncUI();
 renderEquip();
+renderSkills();
 
 // 遊戲一律等 questions.json 讀取完成（成功或失敗都算完成）才會產生第一題、
 // 才讓玩家進入遊戲。內建題庫已清空，四科（國/英/自/社）完全依賴這個檔案；
