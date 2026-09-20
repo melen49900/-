@@ -604,12 +604,12 @@ const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品' };
 // bodyFmt：本體數值的顯示格式（不加正負號，純數值）
 const UPGRADES = [
   { key:'atk',  icon:'🗡️', name:'攻擊力',  base:45,  grow:1.17, per:3,    fmt:v=>'+'+v,
-    body:lv=>14 + lv*3.4,               bodyFmt:v=>String(Math.round(v)) },
+    body:lv=>14 + lv*3,                 bodyFmt:v=>String(Math.round(v)) },
   { key:'hp',   icon:'❤️', name:'生命值',  base:85,  grow:1.15, per:15,   fmt:v=>'+'+v,
-    body:lv=>100 + lv*18,               bodyFmt:v=>String(Math.round(v)) },
+    body:lv=>100 + lv*15,               bodyFmt:v=>String(Math.round(v)) },
   { key:'spd',  icon:'💨', name:'攻擊速度', base:40,  grow:1.21, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
-    body:lv=>Math.max(2, 0.3 + lv*0.13), bodyFmt:v=>v.toFixed(2)+' 發/秒' },
-  { key:'crit', icon:'✨', name:'暴擊率',  base:110, grow:1.23, per:1.4,  fmt:v=>'+'+v.toFixed(1)+'%',
+    body:lv=>Math.max(0.4, 0.3 + lv*0.12), bodyFmt:v=>v.toFixed(2)+' 發/秒' },
+  { key:'crit', icon:'✨', name:'暴擊率',  base:110, grow:1.23, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
     body:lv=>Math.min(80, 5 + lv*1.2),  bodyFmt:v=>v.toFixed(1)+'%' },
 ];
 
@@ -1000,10 +1000,10 @@ function sumEquip(key){
 function stats(){
   const u = state.up;
   return {
-    atk:   Math.round(14 + u.atk*3.4 + sumEquip('atk')),
-    maxHp: Math.round(100 + u.hp*18   + sumEquip('hp')),
-    spd:   Math.max(0.5, 2.3 + u.spd*0.13 + sumEquip('spd')),
-    crit:  Math.min(80, 5 + u.crit*1.4 + sumEquip('crit')),
+    atk:   Math.round(14 + u.atk*3 + sumEquip('atk')),
+    maxHp: Math.round(100 + u.hp*15   + sumEquip('hp')),
+    spd:   Math.max(0.4, 0.3 + u.spd*0.12 + sumEquip('spd')),
+    crit:  Math.min(80, 5 + u.crit*1.2 + sumEquip('crit')),
   };
 }
 
@@ -1358,8 +1358,8 @@ function step(dt){
   // 子彈：扇形散開的彈道會朝各自鎖定的目標自動修正角度，
   // 避免「多彈道數不是奇數」時，因為初始夾角讓每一發都偏在目標兩側、永遠沒有一發是對準的。
   // 先直飛一小段時間再開始修正，讓扇形散開的視覺效果保留久一點，不會一有目標就整把瞬間黏成一條線。
-  const SHOT_HOMING_DELAY = 0.12; // 秒：出膛後多久才開始自動修正
-  const SHOT_TURN_RATE = 6;       // 每秒最多修正的弧度
+  const SHOT_HOMING_DELAY = 0.15; // 秒：出膛後多久才開始自動修正
+  const SHOT_TURN_RATE = 5;       // 每秒最多修正的弧度
   for(let i=run.shots.length-1;i>=0;i--){
     const b = run.shots[i];
     b.age += dt;
