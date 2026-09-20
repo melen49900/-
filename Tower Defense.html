@@ -578,24 +578,24 @@ const ICESPIKE_SLOW_DURATION = 1; // 秒
 // base 為「普通」品質的數值，實際數值 = base × 稀有度倍率
 const EQUIP_POOL = [
   // 武器：主要給攻擊力與攻速
-  { id:'w1', slot:'weapon', name:'裂石火杖',   icon:'🔥', atk:7,  spd:0.10 },
-  { id:'w2', slot:'weapon', name:'霜牙短弩',   icon:'🏹', atk:5,  spd:0.26 },
-  { id:'w3', slot:'weapon', name:'雷紋長槍',   icon:'⚡', atk:9,  spd:0.04 },
-  { id:'w4', slot:'weapon', name:'虛空之刃',   icon:'🗡️', atk:6,  spd:0.18, crit:3 },
-  { id:'w5', slot:'weapon', name:'熔心巨錘',   icon:'🔨', atk:12, spd:-0.05 },
-  { id:'w6', slot:'weapon', name:'星塵法典',   icon:'📖', atk:4,  spd:0.14, multi:1 },
+  { id:'w1', slot:'weapon', name:'裂石火杖',   icon:'🔥', atk:7, crit:2.8 },
+  { id:'w2', slot:'weapon', name:'霜牙短弩',   icon:'🏹', atk:8, crit:2.6 },
+  { id:'w3', slot:'weapon', name:'雷紋長槍',   icon:'⚡', atk:9, crit:2.4 },
+  { id:'w4', slot:'weapon', name:'虛空之刃',   icon:'🗡️', atk:10, crit:2.2 },
+  { id:'w5', slot:'weapon', name:'熔心巨錘',   icon:'🔨', atk:11, crit:2 },
+  { id:'w6', slot:'weapon', name:'星塵法典',   icon:'📖', atk:6, crit:3 },
   // 防具：主要給生命值
   { id:'a1', slot:'armor',  name:'旅者皮甲',   icon:'🧥', hp:26 },
   { id:'a2', slot:'armor',  name:'秘銀鎖環',   icon:'🛡️', hp:20, atk:2 },
   { id:'a3', slot:'armor',  name:'龍鱗胸甲',   icon:'🐉', hp:40 },
-  { id:'a4', slot:'armor',  name:'灰燼斗篷',   icon:'🌫️', hp:16, spd:0.08 },
-  { id:'a5', slot:'armor',  name:'聖岩護心',   icon:'⛰️', hp:33, crit:2 },
+  { id:'a4', slot:'armor',  name:'灰燼斗篷',   icon:'🌫️', hp:25 },
+  { id:'a5', slot:'armor',  name:'聖岩護心',   icon:'⛰️', hp:33, crit:1.5 },
   // 飾品：主要給暴擊與特殊效果
   { id:'c1', slot:'trinket', name:'幸運骨符',  icon:'🍀', crit:6 },
-  { id:'c2', slot:'trinket', name:'魔力指環',  icon:'💍', atk:3, spd:0.10 },
-  { id:'c3', slot:'trinket', name:'雙生水晶',  icon:'💠', multi:1, crit:2 },
+  { id:'c2', slot:'trinket', name:'魔力指環',  icon:'💍', atk:3, crit:4 },
+  { id:'c3', slot:'trinket', name:'雙生水晶',  icon:'💠', atk:3, hp:10 },
   { id:'c4', slot:'trinket', name:'嗜血項鍊',  icon:'📿', crit:9, hp:-8 },
-  { id:'c5', slot:'trinket', name:'流星碎片',  icon:'☄️', atk:4, crit:4, spd:0.06 },
+  { id:'c5', slot:'trinket', name:'流星碎片',  icon:'☄️', atk:4, crit:4, spd:0.01 },
 ];
 const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品' };
 
@@ -608,9 +608,9 @@ const UPGRADES = [
   { key:'hp',   icon:'❤️', name:'生命值',  base:85,  grow:1.15, per:15,   fmt:v=>'+'+v,
     body:lv=>100 + lv*18,               bodyFmt:v=>String(Math.round(v)) },
   { key:'spd',  icon:'💨', name:'攻擊速度', base:40,  grow:1.21, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
-    body:lv=>Math.max(0.5, 2.3 + lv*0.13), bodyFmt:v=>v.toFixed(2)+' 發/秒' },
+    body:lv=>Math.max(2, 0.3 + lv*0.13), bodyFmt:v=>v.toFixed(2)+' 發/秒' },
   { key:'crit', icon:'✨', name:'暴擊率',  base:110, grow:1.23, per:1.4,  fmt:v=>'+'+v.toFixed(1)+'%',
-    body:lv=>Math.min(80, 5 + lv*1.4),  bodyFmt:v=>v.toFixed(1)+'%' },
+    body:lv=>Math.min(80, 5 + lv*1.2),  bodyFmt:v=>v.toFixed(1)+'%' },
 ];
 
 /* ── 存檔狀態 ─────────────────────────────── */
