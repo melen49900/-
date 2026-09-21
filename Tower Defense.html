@@ -517,10 +517,10 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 160;        // 第20波所有怪物出完的時間點（2:40），之後靠清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 30;           // 共 20 關
+const LEVEL_COUNT = 40;           // 共 40 關
 
-const LEVEL_HP_GROWTH = 1.305;                                 // 關卡之間的血量倍率（沿用原本單局的成長率）
-const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內 20 波，血量只差 3 倍
+const LEVEL_HP_GROWTH = 1.305;                                  // 關卡之間的血量倍率
+const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內 20 波，血量差 3 倍
 const WAVE_SPD_GROWTH = 0.1;                                    // 關內 20 波，移速大約多 10%（≈1.1倍）
 
 /* ── 裝備資料 ─────────────────────────────── */
@@ -577,7 +577,7 @@ const ICESPIKE_SLOW_DURATION = 1; // 秒
 
 // base 為「普通」品質的數值，實際數值 = base × 稀有度倍率
 const EQUIP_POOL = [
-  // 武器：主要給攻擊力與攻速
+  // 武器：主要給攻擊力
   { id:'w1', slot:'weapon', name:'裂石火杖',   icon:'🔥', atk:7, crit:2.8 },
   { id:'w2', slot:'weapon', name:'霜牙短弩',   icon:'🏹', atk:8, crit:2.6 },
   { id:'w3', slot:'weapon', name:'雷紋長槍',   icon:'⚡', atk:9, crit:2.4 },
@@ -601,16 +601,21 @@ const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品' };
 
 /* ── 本體強化 ─────────────────────────────── */
 // body(lv)：該項目在鍛造等級 lv 時，角色「本體」的實際數值（不含裝備），對應 stats() 裡的公式
-// bodyFmt：本體數值的顯示格式（不加正負號，純數值）
+// full(lv)：本體 + 目前已裝備裝備的加成（含裝備），套用跟 stats() 相同的封頂/下限
+// bodyFmt：數值的顯示格式（不加正負號，純數值）
 const UPGRADES = [
-  { key:'atk',  icon:'🗡️', name:'攻擊力',  base:45,  grow:1.17, per:3,    fmt:v=>'+'+v,
-    body:lv=>14 + lv*3,                 bodyFmt:v=>String(Math.round(v)) },
-  { key:'hp',   icon:'❤️', name:'生命值',  base:85,  grow:1.15, per:15,   fmt:v=>'+'+v,
-    body:lv=>100 + lv*15,               bodyFmt:v=>String(Math.round(v)) },
-  { key:'spd',  icon:'💨', name:'攻擊速度', base:40,  grow:1.21, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
-    body:lv=>Math.max(0.4, 0.3 + lv*0.12), bodyFmt:v=>v.toFixed(2)+' 發/秒' },
-  { key:'crit', icon:'✨', name:'暴擊率',  base:110, grow:1.23, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
-    body:lv=>Math.min(80, 5 + lv*1.2),  bodyFmt:v=>v.toFixed(1)+'%' },
+  { key:'atk',  icon:'🗡️', name:'攻擊力',  base:40,  grow:1.15, per:3,    fmt:v=>'+'+v,
+    body:lv=>14 + lv*3,                    full:lv=>14 + lv*3 + sumEquip('atk'),
+    bodyFmt:v=>String(Math.round(v)) },
+  { key:'hp',   icon:'❤️', name:'生命值',  base:40,  grow:1.15, per:15,   fmt:v=>'+'+v,
+    body:lv=>100 + lv*15,                  full:lv=>100 + lv*15 + sumEquip('hp'),
+    bodyFmt:v=>String(Math.round(v)) },
+  { key:'spd',  icon:'💨', name:'攻擊速度', base:80,  grow:1.25, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
+    body:lv=>Math.max(0.4, 0.3 + lv*0.12), full:lv=>Math.max(0.4, 0.3 + lv*0.12 + sumEquip('spd')),
+    bodyFmt:v=>v.toFixed(2)+' 發/秒' },
+  { key:'crit', icon:'✨', name:'暴擊率',  base:90, grow:1.22, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
+    body:lv=>Math.min(80, 5 + lv*1.2),     full:lv=>Math.min(80, 5 + lv*1.2 + sumEquip('crit')),
+    bodyFmt:v=>v.toFixed(1)+'%' },
 ];
 
 /* ── 存檔狀態 ─────────────────────────────── */
@@ -904,9 +909,9 @@ function answer(choice, btn){
     state.qs.streak++;
     state.qs.best = Math.max(state.qs.best, state.qs.streak);
 
-    // 鑽石獎勵：底 12，連勝每 1 次 +2（上限 +40），第一次就答對再 +5
-    const bonus = Math.min(40, state.qs.streak * 2);
-    const gain  = 12 + bonus + (firstTry ? 5 : 0);
+    // 鑽石獎勵：底 15，連勝每 1 次 +1（上限 +100），第一次就答對再 +10
+    const bonus = Math.min(100, state.qs.streak * 1);
+    const gain  = 15 + bonus + (firstTry ? 10 : 0);
     state.gem += gain;
 
     feed.className = 'ok';
@@ -999,11 +1004,12 @@ function sumEquip(key){
 }
 function stats(){
   const u = state.up;
+  const get = key => UPGRADES.find(x=>x.key===key).full(u[key]);
   return {
-    atk:   Math.round(14 + u.atk*3 + sumEquip('atk')),
-    maxHp: Math.round(100 + u.hp*15   + sumEquip('hp')),
-    spd:   Math.max(0.4, 0.3 + u.spd*0.12 + sumEquip('spd')),
-    crit:  Math.min(80, 5 + u.crit*1.2 + sumEquip('crit')),
+    atk:   Math.round(get('atk')),
+    maxHp: Math.round(get('hp')),
+    spd:   get('spd'),
+    crit:  get('crit'),
   };
 }
 
@@ -1155,7 +1161,7 @@ function startRun(level){
 function endRun(win){
   run.active=false; run.over=true;
 
-  const levelMul  = Math.pow(1.15, run.level-1);   // 金幣／強化石每關 ×1.15（怪物血量沿用原本 1.305，不動）
+  const levelMul  = Math.pow(1.15, run.level-1);   // 金幣／強化石每關 ×1.15
   const goldGain  = Math.round(run.gold * levelMul);
   const stoneGain = Math.round((Math.floor(run.wave/3) + (win?3:0)) * levelMul);
   const gemGain   = 10 + run.level*2;              // 鑽石固定為 10 + 關卡數 ×2
@@ -1358,8 +1364,8 @@ function step(dt){
   // 子彈：扇形散開的彈道會朝各自鎖定的目標自動修正角度，
   // 避免「多彈道數不是奇數」時，因為初始夾角讓每一發都偏在目標兩側、永遠沒有一發是對準的。
   // 先直飛一小段時間再開始修正，讓扇形散開的視覺效果保留久一點，不會一有目標就整把瞬間黏成一條線。
-  const SHOT_HOMING_DELAY = 0.15; // 秒：出膛後多久才開始自動修正
-  const SHOT_TURN_RATE = 5;       // 每秒最多修正的弧度
+  const SHOT_HOMING_DELAY = 0.17; // 秒：出膛後多久才開始自動修正
+  const SHOT_TURN_RATE = 4;       // 每秒最多修正的弧度
   for(let i=run.shots.length-1;i>=0;i--){
     const b = run.shots[i];
     b.age += dt;
@@ -1700,8 +1706,8 @@ function renderUpgrades(){
     const lv = state.up[u.key];
     const maxed = u.max != null && lv >= u.max;
     const cost = upCost(u);
-    const curBody  = u.bodyFmt(u.body(lv));
-    const nextBody = u.bodyFmt(u.body(lv+1));
+    const curBody  = u.bodyFmt(u.full(lv));
+    const nextBody = u.bodyFmt(u.full(lv+1));
     const curPer   = u.fmt(u.per * lv);
     const nextPer  = u.fmt(u.per * (lv+1));
     return `<div class="up">
@@ -1785,7 +1791,7 @@ function renderRefine(){
       if(state.stone < cost) return;
       state.stone -= cost;
       c.refine = (c.refine||0) + 1;
-      save(); syncUI(); renderRefine(); renderEquip();
+      save(); syncUI(); renderRefine(); renderEquip(); renderUpgrades();
       toast(`精煉成功 +${c.refine}`);
     };
   });
@@ -1839,7 +1845,7 @@ function renderEquip(){
       if(!c) return;
       const base = EQUIP_POOL.find(e=>e.id===c.id);
       state.equipped[base.slot] = c;
-      save(); renderEquip(); renderRefine();
+      save(); renderEquip(); renderRefine(); renderUpgrades();
       toast(`裝備了 ${base.name}`);
     };
   });
