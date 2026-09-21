@@ -652,8 +652,8 @@ function skillOverCap(key){
   return Math.max(0, state.skills[key].draws - SKILL_STACK_CAP);
 }
 function fireballBullets(){
-  // 1 發基礎彈道 + 技能疊加 + 舊版鍛造「額外彈道」的既有等級（保留玩家已投入的強化，只是不再開放購買）+ 裝備的彈道加成
-  return 1 + skillStacks('fireball') + (state.up.multi||0) + Math.round(sumEquip('multi'));
+  // 1 發基礎彈道 + 技能疊加 + 裝備的彈道加成，總數上限 7 道（已移除舊版存檔的額外彈道加成）
+  return Math.min(7, 1 + skillStacks('fireball') + Math.round(sumEquip('multi')));
 }
 function icespikeBullets(){
   return skillStacks('icespike'); // 還沒抽到過就是 0，不會發射
@@ -722,7 +722,7 @@ let state = freshState();
 function freshState(){
   return {
     gem:0, gold:0, stone:0,
-    up:{ atk:0, hp:0, spd:0, crit:0, multi:0 }, // multi 是舊版「額外彈道」的既有等級，保留給老存檔，已不開放繼續升級
+    up:{ atk:0, hp:0, spd:0, crit:0 },
     bag:[],                                   // [{uid,id,rarity,refine}]
     equipped:{ weapon:null, armor:null, trinket:null },
     skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0} }, // 技能召喚抽到的次數
@@ -1387,17 +1387,23 @@ function fire(){
 }
 
 // 冰椎術：不追蹤、不鎖定目標，單純從角色「當下」位置往正上方發射。
-// 一次觸發會排出 n 枚的佇列，每枚間隔 0.1 秒才真正生成，
+// 一次觸發會排出 n 枚的佇列，每枚間隔 0.05 秒才真正生成，
 // 這樣每一枚冰椎的出發點都是它實際發射那一刻的角色位置，而不是排隊當下的位置。
 function queueIceSpikes(){
   const n = icespikeBullets();
-  for(let i=0;i<n;i++) run.iceQueue.push(i * 0.1);
+  for(let i=0;i<n;i++) run.iceQueue.push(i * 0.05);
 }
 function spawnIceSpike(){
   const s = stats();
   run.shots.push({
     kind:'ice',
-    x: run.heroX, y: H - 96,
+    // 發射點改成跟主角實際站位同高（H-74，即 heroLine），
+    // 而不是原本更靠上方的 H-96：
+    // 原本冰椎從 H-96 往正上方（y 遞減）飛，若敵人已壓到主角、卡在 heroLine(H-74)，
+    // 敵人的 y 反而比發射點還大（在發射點下方），冰椎往上飛永遠不會經過那個位置，
+    // 導致敵人貼臉之後冰椎完全打不到。改成從 heroLine 發射，往上飛的路徑就會經過
+    // 貼臉敵人所在的位置，同時仍然能命中上方靠近中的敵人。
+    x: run.heroX, y: H - 74,
     vx: 0, vy: -SHOT_SPEED_BASE * hScale,
     dmg: icespikeAtk(s),
     crit: Math.random()*100 < s.crit,
