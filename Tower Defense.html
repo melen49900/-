@@ -1090,7 +1090,7 @@ function equipStat(card, key){
   const base = EQUIP_POOL.find(e=>e.id===card.id);
   if(!base || !base[key]) return 0;
   const rar = RARITY[card.rarity].mult;
-  const ref = 1 + (card.refine||0) * 0.08;
+  const ref = 1 + (card.refine||0) * 0.1;//強化石1
   const raw = base[key] * rar * ref;
   // 彈道是整數，不隨稀有度放大到奇怪的小數
   if(key === 'multi') return Math.floor(base[key] * (card.rarity==='SSR'?2:1));
@@ -1858,7 +1858,7 @@ function signed(v, digits){
   return (v >= 0 ? '+' : '') + n;
 }
 function statLine(base, rarity, refine){
-  const m = RARITY[rarity].mult * (1 + (refine||0)*0.08);
+  const m = RARITY[rarity].mult * (1 + (refine||0)*0.1);//強化石2
   const parts = [];
   if(base.atk)  parts.push('攻擊 ' + signed(base.atk*m));
   if(base.hp)   parts.push('生命 ' + signed(base.hp*m));
@@ -1908,7 +1908,7 @@ function renderUpgrades(){
   });
 }
 
-function refineCost(card){ return 5 + (card.refine||0)*4; }
+function refineCost(card){ return 4 + (card.refine||0)*1; }//強化石費用
 
 /* ══════════════════════════════════════════
    技能
