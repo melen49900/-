@@ -449,7 +449,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
         <button class="btn mana" id="pull10">召喚 10 次 · 900 💎</button>
         <div class="card" style="margin-top:14px">
           <div style="font-size:12px;color:var(--bone-dim);line-height:1.9">
-            <div>技能機率　合計 30%（目前 2 種技能，每種各 15%）</div>
+            <div id="skillOddsInfo">技能機率　合計 30%</div>
             <div>裝備機率　合計 70%　普通 35%　精良 21%　稀有 10.5%　傳說 3.5%</div>
             <div style="margin-top:6px">重複裝備熔解：普通 +1　精良 +3　稀有 +8　傳說 +20 🔮</div>
           </div>
@@ -533,25 +533,38 @@ const RARITY = {
 const RARITY_ODDS = [['N',.50],['R',.30],['SR',.15],['SSR',.05]];
 
 /* ── 技能 ─────────────────────────────────── */
-// 彈道/發射數每抽疊加 1，抽到第 6 次之後改成疊加「基礎傷害的百分比」
+// 彈道/發射數/連鎖數每抽疊加 1，抽到第 6 次之後改成疊加「基礎傷害的百分比」
 const SKILL_STACK_CAP = 6;
 const SKILL_DEFS = {
   fireball: {
     name:'火球術', icon:'🔥', innate:true,
+    stackLabel:'彈道',
+    stacksFn: ()=>fireballBullets(),
+    pctFn: ()=>fireballPct(),
     desc:'自動鎖定場上最深處的敵人並追蹤命中，每抽疊加 1 道彈道；滿 +6 道之後每抽改為傷害 +0.8%。基礎傷害為角色攻擊的 80%。',
   },
   icespike: {
-    name:'冰椎術', icon:'🔺', innate:false,
+    name:'冰椎術', icon:'🔷', innate:false,
+    stackLabel:'發射枚數',
+    stacksFn: ()=>icespikeBullets(),
+    pctFn: ()=>icespikePct(),
     desc:'不會追蹤，直接從角色所在位置往正上方發射；每抽多發射 1 枚，每枚間隔 0.1 秒；滿 +6 枚之後每抽改為傷害 +0.5%。基礎傷害為角色攻擊的 60%，命中會減速目標 20%、持續 1 秒，最多疊加 3 層（最高減速 60%）。',
   },
+  lightning: {
+    name:'閃電術', icon:'⚡', innate:false,
+    stackLabel:'連鎖敵人數',
+    stacksFn: ()=>lightningChain(),
+    pctFn: ()=>lightningPct(),
+    desc:'隨機選擇場上一位敵人給予電擊；滿 +6 前每抽多連鎖 1 位敵人，一起遭到電擊（角色與每個目標之間會出現閃電連線）；滿 +6 之後每抽改為傷害 +1%。基礎傷害為角色攻擊的 75%。',
+  },
 };
-// 抽到技能的總機率固定 30%，平均分攤給所有技能（目前 2 種＝各 15%）
+// 抽到技能的總機率固定 30%，平均分攤給所有技能（目前 3 種＝各 10%）
 const SKILL_PULL_CHANCE = 0.30;
 function rollSkill(){
   const keys = Object.keys(SKILL_DEFS);
   return keys[Math.floor(Math.random()*keys.length)];
 }
-// 彈道/發射數（兩個技能算法相同：每抽 +1，上限 +6）
+// 彈道/發射數/連鎖數（三個技能算法相同：每抽 +1，上限 +6）
 function skillStacks(key){
   return Math.min(SKILL_STACK_CAP, state.skills[key].draws);
 }
@@ -565,11 +578,16 @@ function fireballBullets(){
 function icespikeBullets(){
   return skillStacks('icespike'); // 還沒抽到過就是 0，不會發射
 }
-// 傷害＝角色攻擊力 × 百分比。基礎 80%／60%，抽滿 +6 之後每抽再疊加 0.8%／0.5%
+function lightningChain(){
+  return skillStacks('lightning'); // 還沒抽到過就是 0，不會連鎖電擊
+}
+// 傷害＝角色攻擊力 × 百分比。基礎 80%／60%／75%，抽滿 +6 之後每抽再疊加 0.8%／0.5%／1%
 function fireballPct(){ return 80 + skillOverCap('fireball') * 0.8; }
 function icespikePct(){ return 60 + skillOverCap('icespike') * 0.5; }
+function lightningPct(){ return 75 + skillOverCap('lightning') * 1; }
 function fireballAtk(s){ return s.atk * fireballPct() / 100; }
 function icespikeAtk(s){ return s.atk * icespikePct() / 100; }
+function lightningAtk(s){ return s.atk * lightningPct() / 100; }
 // 冰椎減速：每次命中疊加一層，每層獨立倒數，最多 3 層
 const ICESPIKE_SLOW_PCT = 0.20;
 const ICESPIKE_SLOW_MAX_STACKS = 3;
@@ -627,7 +645,7 @@ function freshState(){
     up:{ atk:0, hp:0, spd:0, crit:0, multi:0 }, // multi 是舊版「額外彈道」的既有等級，保留給老存檔，已不開放繼續升級
     bag:[],                                   // [{uid,id,rarity,refine}]
     equipped:{ weapon:null, armor:null, trinket:null },
-    skills:{ fireball:{draws:0}, icespike:{draws:0} }, // 技能召喚抽到的次數
+    skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0} }, // 技能召喚抽到的次數
     quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
     qs:{ correct:0, wrong:0, streak:0, best:0, shield:3, shieldProgress:0 },
     best:{ wave:0, kills:0 },
@@ -654,6 +672,7 @@ function load(){
     state.skills = {
       fireball: Object.assign({draws:0}, (d.skills&&d.skills.fireball)||{}),
       icespike: Object.assign({draws:0}, (d.skills&&d.skills.icespike)||{}),
+      lightning: Object.assign({draws:0}, (d.skills&&d.skills.lightning)||{}),
     };
     state.levelRecords = Object.assign({}, d.levelRecords||{});
     state.unlockedLevel = Math.max(1, Math.min(LEVEL_COUNT, d.unlockedLevel || 1));
@@ -991,7 +1010,7 @@ function equipStat(card, key){
   const base = EQUIP_POOL.find(e=>e.id===card.id);
   if(!base || !base[key]) return 0;
   const rar = RARITY[card.rarity].mult;
-  const ref = 1 + (card.refine||0) * 0.1;//強化石係數1/2
+  const ref = 1 + (card.refine||0) * 0.08;
   const raw = base[key] * rar * ref;
   // 彈道是整數，不隨稀有度放大到奇怪的小數
   if(key === 'multi') return Math.floor(base[key] * (card.rarity==='SSR'?2:1));
@@ -1065,7 +1084,7 @@ const run = {
   heroX:W/2, targetX:W/2,
   fireTimer:0,
   kills:0, gold:0,
-  enemies:[], shots:[], bits:[], pops:[],
+  enemies:[], shots:[], bits:[], pops:[], bolts:[],
   iceQueue:[],   // 冰椎術待發射佇列（每個元素是還剩多少秒才發射）
   shake:0,
 };
@@ -1150,7 +1169,7 @@ function startRun(level){
   run.maxHp=s.maxHp; run.hp=s.maxHp;
   run.heroX=W/2; run.targetX=W/2; run.fireTimer=0;
   run.kills=0; run.gold=0;
-  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.shake=0;
+  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.shake=0;
   applyLevelTheme(run.level);
   document.getElementById('overlay').classList.remove('on');
   openStage();
@@ -1308,6 +1327,36 @@ function spawnIceSpike(){
   });
 }
 
+// 閃電術：隨機選一位場上敵人當起點，再隨機多連鎖 (n-1) 位不重複的敵人。
+// 不是彈道，是瞬間命中：直接扣血 + 記錄一條「角色→敵人→敵人→…」的閃電連線給 draw() 畫。
+function castLightning(){
+  const n = lightningChain();
+  if(n <= 0 || run.enemies.length === 0) return;
+  const s = stats();
+  const dmg = lightningAtk(s);
+  const crit = Math.random()*100 < s.crit;
+
+  // 從場上敵人隨機抽出最多 n 位、不重複
+  const pool = run.enemies.slice();
+  const targets = [];
+  while(targets.length < n && pool.length){
+    const idx = Math.floor(Math.random()*pool.length);
+    targets.push(pool.splice(idx,1)[0]);
+  }
+  if(!targets.length) return;
+
+  targets.forEach(e=>{
+    e.hp -= dmg; e.hit = 0.12;
+    popText(e.x, e.y-e.r-4, Math.round(dmg), crit);
+  });
+  burst(targets[0].x, targets[0].y, crit ? '#fff9c4' : '#ffe066', crit?9:5);
+
+  // 連線點：角色 → 第一位敵人 → 第二位敵人 → …
+  const points = [{x:run.heroX, y:H-96}, ...targets.map(e=>({x:e.x, y:e.y}))];
+  run.bolts.push({ points, age:0, life:0.22, crit });
+}
+
+
 /* 爆點與傷害數字 */
 function burst(x,y,color,count){
   for(let i=0;i<count;i++){
@@ -1317,6 +1366,23 @@ function burst(x,y,color,count){
 }
 function popText(x,y,txt,crit){
   run.pops.push({ x,y, txt, crit, age:0, life:.7, vy:-46 });
+}
+// 閃電連線：在兩點之間畫出鋸齒狀線段，模擬電擊視覺效果
+function drawBoltSegment(x1,y1,x2,y2){
+  const segs = 6;
+  const dx = x2-x1, dy = y2-y1;
+  const len = Math.hypot(dx,dy) || 1;
+  const nx = -dy/len, ny = dx/len; // 垂直於線段方向的法向量，用來做鋸齒偏移
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  for(let i=1;i<segs;i++){
+    const t = i/segs;
+    const px = x1 + dx*t + nx*(Math.random()-0.5)*14;
+    const py = y1 + dy*t + ny*(Math.random()-0.5)*14;
+    ctx.lineTo(px,py);
+  }
+  ctx.lineTo(x2,y2);
+  ctx.stroke();
 }
 
 /* 主迴圈 */
@@ -1353,7 +1419,7 @@ function step(dt){
   // 開火
   const s = stats();
   run.fireTimer -= dt;
-  if(run.fireTimer <= 0){ fire(); queueIceSpikes(); run.fireTimer = 1 / s.spd; }
+  if(run.fireTimer <= 0){ fire(); queueIceSpikes(); castLightning(); run.fireTimer = 1 / s.spd; }
 
   // 冰椎術佇列：各自倒數，時間到才真正生成（見 queueIceSpikes 的說明）
   for(let i=run.iceQueue.length-1;i>=0;i--){
@@ -1471,6 +1537,11 @@ function step(dt){
     if(p.age >= p.life){ run.pops.splice(i,1); continue; }
     p.y += p.vy*dt; p.vy *= 0.94;
   }
+  for(let i=run.bolts.length-1;i>=0;i--){
+    const b = run.bolts[i];
+    b.age += dt;
+    if(b.age >= b.life) run.bolts.splice(i,1);
+  }
 
   if(run.shake > 0) run.shake = Math.max(0, run.shake - dt*1.8);
   syncBattleHud();
@@ -1584,6 +1655,23 @@ function draw(){
     ctx.restore();
   });
 
+  // 閃電連線：角色 → 敵人 → 敵人 → …，鋸齒狀連線，命中瞬間亮起、快速淡出
+  run.bolts.forEach(b=>{
+    const a = Math.max(0, 1 - b.age/b.life);
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.lineCap = 'round';
+    ctx.lineWidth = b.crit ? 3.2 : 2.2;
+    ctx.shadowBlur = 16;
+    ctx.shadowColor = b.crit ? '#fff9c4' : '#ffe066';
+    ctx.strokeStyle = b.crit ? '#fffbe0' : '#ffe066';
+    for(let i=0;i<b.points.length-1;i++){
+      drawBoltSegment(b.points[i].x, b.points[i].y, b.points[i+1].x, b.points[i+1].y);
+    }
+    ctx.restore();
+  });
+  ctx.globalAlpha = 1;
+
   // 主角
   if(run.active || run.over){
     const hx = run.heroX, hy = H - 74;
@@ -1659,7 +1747,7 @@ function doPull(n){
   box.className = 'on';
   box.innerHTML = out.map(o=>{
     if(o.kind === 'skill'){
-      const stackLabel = o.key==='fireball' ? '彈道' : '發射數';
+      const stackLabel = o.def.stackLabel;
       const line = o.gotPct
         ? `傷害提升（累計抽到 ${o.draws} 次）`
         : `${stackLabel} +1（累計抽到 ${o.draws} 次）`;
@@ -1690,7 +1778,7 @@ function signed(v, digits){
   return (v >= 0 ? '+' : '') + n;
 }
 function statLine(base, rarity, refine){
-  const m = RARITY[rarity].mult * (1 + (refine||0)*0.1);//強化石係數2/2
+  const m = RARITY[rarity].mult * (1 + (refine||0)*0.08);
   const parts = [];
   if(base.atk)  parts.push('攻擊 ' + signed(base.atk*m));
   if(base.hp)   parts.push('生命 ' + signed(base.hp*m));
@@ -1740,7 +1828,7 @@ function renderUpgrades(){
   });
 }
 
-function refineCost(card){ return 4 + (card.refine||0)*1; }//強化石花費1/1
+function refineCost(card){ return 5 + (card.refine||0)*4; }
 
 /* ══════════════════════════════════════════
    技能
@@ -1751,11 +1839,10 @@ function renderSkills(){
   box.innerHTML = Object.entries(SKILL_DEFS).map(([key,def])=>{
     const draws = state.skills[key].draws;
     const owned = def.innate || draws > 0;
-    const stackLabel = key==='fireball' ? '彈道' : '發射枚數';
-    const stacks = key==='fireball' ? fireballBullets() : icespikeBullets();
-    const pct = key==='fireball' ? fireballPct() : icespikePct();
+    const stacks = def.stacksFn();
+    const pct = def.pctFn();
     const statusText = owned
-      ? `${stackLabel} ${stacks}　傷害 ${pct.toFixed(1)}% 攻擊`
+      ? `${def.stackLabel} ${stacks}　傷害 ${pct.toFixed(1)}% 攻擊`
       : '尚未習得，去「召喚」試試手氣';
     return `<div class="up">
       <div class="ico">${def.icon}</div>
@@ -1867,6 +1954,12 @@ function syncUI(){
   document.getElementById('pull10').disabled = state.gem < 900;
   // 鑽石不夠抽時，提醒去答題
   document.getElementById('dotQuiz').classList.toggle('on', state.gem < 100);
+  const skillCount = Object.keys(SKILL_DEFS).length;
+  const skillOddsEl = document.getElementById('skillOddsInfo');
+  if(skillOddsEl){
+    const each = (SKILL_PULL_CHANCE*100/skillCount);
+    skillOddsEl.textContent = `技能機率　合計 ${Math.round(SKILL_PULL_CHANCE*100)}%（目前 ${skillCount} 種技能，每種各 ${each.toFixed(1)}%）`;
+  }
   syncQuizMeta();
 }
 
