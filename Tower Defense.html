@@ -99,6 +99,63 @@ body{
 #ttsVoicePanel .tvp-close{background:linear-gradient(135deg,var(--gold),var(--ember));color:#2a0f18}
 #ttsVoicePanel .tvp-hint{font-size:10px;color:var(--bone-dim);margin-top:7px;line-height:1.4}
 
+/* ── 管理後台 ──────────────────────────────── */
+#admGateBtn{
+  flex:0 0 auto;background:rgba(0,0,0,.35);border:1px solid var(--stoneline);
+  border-radius:9px;padding:7px 10px;font-size:14px;color:var(--bone-dim);cursor:pointer;
+}
+#admGateBtn:active{background:rgba(255,255,255,.08)}
+
+#admGate,#admPanel{
+  position:absolute;inset:0;z-index:300;display:none;
+  padding:20px;background:rgba(8,4,10,.94);backdrop-filter:blur(4px);
+}
+#admGate{align-items:center;justify-content:center}
+#admGate.on{display:flex}
+#admPanel{flex-direction:column;padding:0}
+#admPanel.on{display:flex}
+
+.adm-card{
+  width:100%;max-width:340px;background:var(--stone-lit);
+  border:1px solid var(--stoneline);border-radius:16px;padding:22px 20px;text-align:center;
+}
+.adm-card h3{margin:0 0 6px;font-size:18px;font-weight:900}
+.adm-card p.hint{color:var(--bone-dim);font-size:12px;margin:0 0 14px}
+.adm-input{
+  width:100%;padding:13px;border-radius:10px;border:1px solid var(--stoneline);
+  background:rgba(0,0,0,.35);color:var(--bone);font-size:18px;text-align:center;
+  font-family:inherit;margin-bottom:8px;letter-spacing:3px;
+}
+.adm-err{color:var(--blood);font-size:12px;min-height:16px;margin-bottom:8px}
+
+.adm-head{
+  display:flex;align-items:center;gap:8px;padding:12px 14px;flex-shrink:0;
+  background:linear-gradient(180deg,#25162a,#1a1020);border-bottom:1px solid var(--stoneline);
+}
+.adm-head h3{flex:1;margin:0;font-size:16px;font-weight:900}
+.adm-body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:14px;display:flex;flex-direction:column;gap:12px}
+
+.adm-sec{background:rgba(0,0,0,.3);border:1px solid var(--stoneline);border-radius:14px;padding:13px}
+.adm-sec h4{margin:0 0 8px;font-size:13px;font-weight:900;color:var(--gold)}
+.adm-stat{font-size:12px;color:var(--bone-dim);line-height:1.8}
+.adm-stat b{color:var(--bone);font-variant-numeric:tabular-nums}
+.adm-row{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.adm-row:last-child{margin-bottom:0}
+.adm-row label{font-size:12px;color:var(--bone-dim);flex:0 0 78px}
+.adm-row input[type=number],.adm-row input[type=password],.adm-row input[type=text]{
+  flex:1;min-width:0;padding:9px 8px;border-radius:8px;border:1px solid var(--stoneline);
+  background:rgba(255,255,255,.06);color:var(--bone);font-size:13px;font-family:inherit;
+}
+.adm-stepbtn{
+  flex:0 0 auto;padding:8px 10px;border-radius:8px;border:1px solid var(--stoneline);
+  background:rgba(255,255,255,.08);color:var(--bone);font-size:12px;font-weight:800;
+  cursor:pointer;font-family:inherit;
+}
+.adm-stepbtn:active{background:rgba(255,255,255,.18)}
+.adm-actionrow{display:flex;gap:8px;margin-top:8px}
+.adm-actionrow .btn{flex:1;width:auto}
+.adm-msg{font-size:11px;min-height:14px;margin-top:6px}
+
 /* ── 畫面容器 ──────────────────────────────── */
 #screens{flex:1;position:relative;overflow:hidden}
 .screen{
@@ -369,6 +426,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
     <div class="res gold"><span>💰</span><span id="uiGold">0</span></div>
     <div class="res stone"><span>🔮</span><span id="uiStone">0</span></div>
     <button id="ttsVoiceBtn" onclick="toggleVoicePanel()" title="選擇朗讀語音">🗣️</button>
+    <button id="admGateBtn" onclick="admOpenGate()" title="管理後台">⚙️</button>
   </div>
 
   <div id="ttsVoicePanel" class="hidden">
@@ -502,6 +560,28 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
   </nav>
 
   <div id="toast"></div>
+
+  <!-- 管理後台：密碼驗證 -->
+  <div id="admGate">
+    <div class="adm-card">
+      <h3>🔒 管理後台</h3>
+      <p class="hint">請輸入管理密碼</p>
+      <input type="password" id="admPwInput" class="adm-input" inputmode="numeric"
+        placeholder="密碼" maxlength="20" onkeydown="if(event.key==='Enter')admCheckPw()">
+      <div class="adm-err" id="admGateErr"></div>
+      <button class="btn" onclick="admCheckPw()">進入</button>
+      <button class="btn ghost" style="margin-top:9px" onclick="admCloseGate()">取消</button>
+    </div>
+  </div>
+
+  <!-- 管理後台：主面板 -->
+  <div id="admPanel">
+    <div class="adm-head">
+      <h3>⚙️ 管理後台</h3>
+      <button class="btn ghost sm" style="width:auto;padding:8px 12px" onclick="admClosePanel()">關閉</button>
+    </div>
+    <div class="adm-body" id="admBody"></div>
+  </div>
 </div>
 
 <script src="./quiz-engine.js"></script>
@@ -1984,6 +2064,211 @@ function show(name){
 document.querySelectorAll('.tab').forEach(t=>{
   t.onclick = ()=>show(t.dataset.s);
 });
+
+/* ══════════════════════════════════════════
+   管理後台
+   ── 這是單機／單一裝置用的簡易管理面板，密碼只存在這台裝置的
+      localStorage，目的是防止小朋友自己亂改，不是真正的帳號系統。
+   ══════════════════════════════════════════ */
+const ADM_PW_KEY = 'td_admin_pw_v1';
+function admGetPw(){ return localStorage.getItem(ADM_PW_KEY) || '1234'; }
+function admSetPw(pw){ try{ localStorage.setItem(ADM_PW_KEY, pw); }catch(e){} }
+
+function admOpenGate(){
+  document.getElementById('admPwInput').value = '';
+  document.getElementById('admGateErr').textContent = '';
+  document.getElementById('admGate').classList.add('on');
+  setTimeout(()=>document.getElementById('admPwInput').focus(), 60);
+}
+function admCloseGate(){
+  document.getElementById('admGate').classList.remove('on');
+}
+function admCheckPw(){
+  const v = document.getElementById('admPwInput').value;
+  if(v === admGetPw()){
+    admCloseGate();
+    admOpenPanel();
+  } else {
+    document.getElementById('admGateErr').textContent = '密碼錯誤，請再試一次。';
+  }
+}
+function admOpenPanel(){
+  admRender();
+  document.getElementById('admPanel').classList.add('on');
+}
+function admClosePanel(){
+  document.getElementById('admPanel').classList.remove('on');
+}
+
+// ── 鑽石 ──
+function admAddGem(amount){
+  amount = Math.round(Number(amount));
+  if(!Number.isFinite(amount) || amount === 0) return;
+  state.gem = Math.max(0, state.gem + amount);
+  save(); syncUI(); admRender();
+  toast(`鑽石 ${amount>0?'+':''}${amount}`);
+}
+
+// ── 數學：難度階層（1～MATH_STAGE_MAX）──
+function admSetMathStage(stage){
+  stage = Math.max(1, Math.min(QuizEngine.MATH_STAGE_MAX, Math.round(Number(stage)||1)));
+  state.quiz.mathStage = stage;
+  state.quiz.mathStageInit = true;
+  // 重設視窗計數，避免用舊的答題視窗資料立刻又把階層推回去
+  state.quiz.mathWindowCount = 0;
+  state.quiz.mathWindowCorrect = 0;
+  state.quiz.mathWindowWrong = 0;
+  save(); syncUI(); syncQuizMeta(); admRender();
+  toast(`數學階層已設定為 ${stage}`);
+}
+function admStepMathStage(delta){
+  admSetMathStage((state.quiz.mathStage||1) + delta);
+}
+
+// ── 國文／英文／自然／社會：出題範圍（tier.unlockedMax）──
+function admTierPoolMax(subject){
+  const pool = QuizEngine.getNumberedPool(subject, bank());
+  return pool.length ? pool[pool.length-1].id : 0;
+}
+function admEnsureTier(subject){
+  QuizEngine.ensureTierState(state.quiz, subject, bank(), state.qs.correct);
+  save();
+}
+function admSetTierRange(subject, newMax){
+  admEnsureTier(subject);
+  const pool = QuizEngine.getNumberedPool(subject, bank());
+  const maxId = pool.length ? pool[pool.length-1].id : 0;
+  if(maxId === 0){ toast('這一科目前沒有題目可調整範圍'); return; }
+  newMax = Math.max(1, Math.min(maxId, Math.round(Number(newMax)||1)));
+  const t = state.quiz.tier[subject];
+  t.unlockedMax = newMax;
+  // 與引擎內部 recomputePendingBatch 相同的算法，保持狀態一致
+  const lower = Math.max(1, newMax - 4);
+  t.pendingIds = pool.filter(p=>p.id>=lower && p.id<=newMax).map(p=>p.id);
+  save(); admRender();
+  toast(`${SUBJ_NAME[subject]} 範圍已設定為 第 1～${newMax} 題`);
+}
+function admStepTierRange(subject, delta){
+  admEnsureTier(subject);
+  const cur = state.quiz.tier[subject].unlockedMax;
+  admSetTierRange(subject, cur + delta);
+}
+function admInitTier(subject){
+  admEnsureTier(subject);
+  admRender();
+}
+
+// ── 修改後台密碼 ──
+function admChangePw(){
+  const cur = document.getElementById('admPwCur').value;
+  const n1  = document.getElementById('admPwNew1').value;
+  const n2  = document.getElementById('admPwNew2').value;
+  const msg = document.getElementById('admPwMsg');
+  if(cur !== admGetPw()){ msg.style.color='var(--blood)'; msg.textContent='目前密碼不正確。'; return; }
+  if(!n1 || n1.length < 4){ msg.style.color='var(--blood)'; msg.textContent='新密碼至少需要 4 碼。'; return; }
+  if(n1 !== n2){ msg.style.color='var(--blood)'; msg.textContent='兩次輸入的新密碼不一致。'; return; }
+  admSetPw(n1);
+  msg.style.color = '#86efac';
+  msg.textContent = '密碼已更新，下次進入請使用新密碼。';
+  document.getElementById('admPwCur').value = '';
+  document.getElementById('admPwNew1').value = '';
+  document.getElementById('admPwNew2').value = '';
+}
+
+// ── 畫面渲染 ──
+function admRender(){
+  const body = document.getElementById('admBody');
+  const q = state.qs;
+  const stage = state.quiz.mathStage || 1;
+  const cfg = QuizEngine.getMathStageCfg(stage);
+  const opsOn = Object.values(cfg).filter(v=>v && v.enabled && v.label).map(v=>v.label);
+
+  let html = '';
+
+  html += `<div class="adm-sec">
+    <h4>📊 本裝置目前答題狀況（整體）</h4>
+    <div class="adm-stat">
+      答對 <b>${q.correct}</b>　答錯 <b>${q.wrong}</b>　連勝 <b>${q.streak}</b>（最佳 <b>${q.best}</b>）<br>
+      綠燈保護 <b>${q.shield ?? 3}</b>／3<br>
+      鑽石 <b>${state.gem}</b>　金幣 <b>${state.gold}</b>　強化石 <b>${state.stone}</b>
+    </div>
+    <div class="adm-stat" style="margin-top:6px;opacity:.75">
+      ※ 答對／答錯是五科合計的總數，遊戲目前不會分科分別記錄「正確／錯誤題數」，
+      下面每一科顯示的是各科各自的「難度進度」，可以看出該科目前練到哪裡。
+    </div>
+  </div>`;
+
+  html += `<div class="adm-sec">
+    <h4>💎 增加鑽石</h4>
+    <div class="adm-row">
+      <input type="number" id="admGemAmt" placeholder="輸入數量，例如 1000" value="1000">
+      <button class="adm-stepbtn" onclick="admAddGem(document.getElementById('admGemAmt').value)">增加</button>
+    </div>
+    <div class="adm-actionrow">
+      <button class="btn mana sm" onclick="admAddGem(5000)">⚡ 快捷 +5000</button>
+    </div>
+  </div>`;
+
+  html += `<div class="adm-sec">
+    <h4>➗ 數學・難度階層（1～${QuizEngine.MATH_STAGE_MAX}）</h4>
+    <div class="adm-stat">
+      目前階層 <b>${stage}</b>　最近視窗 <b>${state.quiz.mathWindowCorrect||0}</b> 對／<b>${state.quiz.mathWindowWrong||0}</b> 錯（累計 ${state.quiz.mathWindowCount||0}/6 題）<br>
+      此階層會出現：${opsOn.join('、') || '（無，請調高階層）'}
+    </div>
+    <div class="adm-row" style="margin-top:8px">
+      <button class="adm-stepbtn" onclick="admStepMathStage(-10)">-10</button>
+      <button class="adm-stepbtn" onclick="admStepMathStage(-1)">-1</button>
+      <input type="number" id="admMathStageInput" value="${stage}" style="text-align:center">
+      <button class="adm-stepbtn" onclick="admStepMathStage(1)">+1</button>
+      <button class="adm-stepbtn" onclick="admStepMathStage(10)">+10</button>
+    </div>
+    <div class="adm-actionrow">
+      <button class="btn ghost sm" onclick="admSetMathStage(document.getElementById('admMathStageInput').value)">套用輸入的數字</button>
+    </div>
+  </div>`;
+
+  ['chinese','english','science','geography'].forEach(subj=>{
+    const maxId = admTierPoolMax(subj);
+    const t = state.quiz.tier && state.quiz.tier[subj];
+    const ready = subjectReady(subj);
+    html += `<div class="adm-sec"><h4>📘 ${SUBJ_NAME[subj]}・出題範圍</h4>`;
+    if(!ready || maxId === 0){
+      html += `<div class="adm-stat">目前沒有題目（questions.json 尚未提供這一科的題目），無法調整範圍。</div>`;
+    } else if(!t){
+      html += `<div class="adm-stat">尚未初始化（這台裝置還沒答過這一科）。題庫共 <b>${maxId}</b> 題。</div>
+      <div class="adm-actionrow">
+        <button class="btn ghost sm" onclick="admInitTier('${subj}')">立即初始化</button>
+      </div>`;
+    } else {
+      html += `<div class="adm-stat">
+        已開放範圍　第 1～<b>${t.unlockedMax}</b> 題（題庫共 <b>${maxId}</b> 題）<br>
+        本批待過關 <b>${(t.pendingIds||[]).length}</b> 題　排隊重考 <b>${(t.retryQueue||[]).length}</b> 題
+      </div>
+      <div class="adm-row" style="margin-top:8px">
+        <button class="adm-stepbtn" onclick="admStepTierRange('${subj}',-20)">-20</button>
+        <button class="adm-stepbtn" onclick="admStepTierRange('${subj}',-5)">-5</button>
+        <input type="number" id="admTierInput_${subj}" value="${t.unlockedMax}" style="text-align:center">
+        <button class="adm-stepbtn" onclick="admStepTierRange('${subj}',5)">+5</button>
+        <button class="adm-stepbtn" onclick="admStepTierRange('${subj}',20)">+20</button>
+      </div>
+      <div class="adm-actionrow">
+        <button class="btn ghost sm" onclick="admSetTierRange('${subj}',document.getElementById('admTierInput_${subj}').value)">套用輸入的數字</button>
+      </div>`;
+    }
+    html += `</div>`;
+  });
+
+  html += `<div class="adm-sec">
+    <h4>🔑 修改後台密碼</h4>
+    <div class="adm-row"><label>目前密碼</label><input type="password" id="admPwCur"></div>
+    <div class="adm-row"><label>新密碼</label><input type="password" id="admPwNew1"></div>
+    <div class="adm-row"><label>確認新密碼</label><input type="password" id="admPwNew2"></div>
+    <div class="adm-actionrow"><button class="btn sm" onclick="admChangePw()">更新密碼</button></div>
+    <div class="adm-msg" id="admPwMsg"></div>
+  </div>`;
+
+  body.innerHTML = html;
+}
 
 /* ══════════════════════════════════════════
    啟動
