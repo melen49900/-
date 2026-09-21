@@ -604,10 +604,10 @@ const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品' };
 // full(lv)：本體 + 目前已裝備裝備的加成（含裝備），套用跟 stats() 相同的封頂/下限
 // bodyFmt：數值的顯示格式（不加正負號，純數值）
 const UPGRADES = [
-  { key:'atk',  icon:'🗡️', name:'攻擊力',  base:40,  grow:1.15, per:3,    fmt:v=>'+'+v,
+  { key:'atk',  icon:'🗡️', name:'攻擊力',  base:40,  grow:1.12, per:3,    fmt:v=>'+'+v,
     body:lv=>14 + lv*3,                    full:lv=>14 + lv*3 + sumEquip('atk'),
     bodyFmt:v=>String(Math.round(v)) },
-  { key:'hp',   icon:'❤️', name:'生命值',  base:40,  grow:1.15, per:15,   fmt:v=>'+'+v,
+  { key:'hp',   icon:'❤️', name:'生命值',  base:40,  grow:1.12, per:15,   fmt:v=>'+'+v,
     body:lv=>100 + lv*15,                  full:lv=>100 + lv*15 + sumEquip('hp'),
     bodyFmt:v=>String(Math.round(v)) },
   { key:'spd',  icon:'💨', name:'攻擊速度', base:80,  grow:1.25, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
@@ -991,7 +991,7 @@ function equipStat(card, key){
   const base = EQUIP_POOL.find(e=>e.id===card.id);
   if(!base || !base[key]) return 0;
   const rar = RARITY[card.rarity].mult;
-  const ref = 1 + (card.refine||0) * 0.08;
+  const ref = 1 + (card.refine||0) * 0.1;//強化石係數1/2
   const raw = base[key] * rar * ref;
   // 彈道是整數，不隨稀有度放大到奇怪的小數
   if(key === 'multi') return Math.floor(base[key] * (card.rarity==='SSR'?2:1));
@@ -1435,13 +1435,18 @@ function step(dt){
       run.enemies.splice(i,1);
       continue;
     }
-    // 壓到主角 → 扣血
+    // 壓到主角 → 停在原地，持續扣血，直到被攻擊打死才會消失
     if(e.y >= heroLine){
-      const dmg = e.boss ? 28 : 9;
-      run.hp -= dmg;
-      run.shake = Math.max(run.shake, e.boss ? 0.3 : 0.16);
-      burst(e.x, heroLine, '#ff3b6b', 16);
-      run.enemies.splice(i,1);
+      e.y = heroLine; // 卡在防線上，不再往下擠
+      e.touching = true;
+      const dps = e.boss ? 28 : 9;
+      run.hp -= dps*dt;
+      e.hitTimer = (e.hitTimer||0) + dt;
+      if(e.hitTimer >= 0.4){ // 每 0.4 秒一次視覺回饋，避免每幀爆量特效
+        e.hitTimer = 0;
+        burst(e.x, heroLine, '#ff3b6b', e.boss ? 12 : 6);
+        run.shake = Math.max(run.shake, e.boss ? 0.3 : 0.12);
+      }
       if(run.hp <= 0){ run.hp = 0; syncBattleHud(); endRun(false); return; }
     }
   }
@@ -1685,7 +1690,7 @@ function signed(v, digits){
   return (v >= 0 ? '+' : '') + n;
 }
 function statLine(base, rarity, refine){
-  const m = RARITY[rarity].mult * (1 + (refine||0)*0.08);
+  const m = RARITY[rarity].mult * (1 + (refine||0)*0.1);//強化石係數2/2
   const parts = [];
   if(base.atk)  parts.push('攻擊 ' + signed(base.atk*m));
   if(base.hp)   parts.push('生命 ' + signed(base.hp*m));
@@ -1735,7 +1740,7 @@ function renderUpgrades(){
   });
 }
 
-function refineCost(card){ return 5 + (card.refine||0)*4; }
+function refineCost(card){ return 4 + (card.refine||0)*1; }//強化石花費1/1
 
 /* ══════════════════════════════════════════
    技能
