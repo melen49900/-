@@ -1140,14 +1140,22 @@ function sumEquip(key){
   ['weapon','armor','trinket'].forEach(s=>{ t += equipStat(state.equipped[s], key); });
   return t;
 }
+// 暴擊率上限，stats() 跟鍛造台面板顯示都要用同一個值，避免兩邊算出不同結果
+const CRIT_CAP = 80;
+// 目前「暴擊率超過上限、轉成暴擊傷害」的溢出量。抽成共用函式，
+// 這樣鍛造台面板（renderUpgrades）顯示的暴擊傷害才能跟實際戰鬥用的 stats() 對得上，
+// 不然面板會一直顯示沒加溢出的數字，看起來像是升級/裝備沒同步生效。
+function critOverflowAmount(){
+  const rawCrit = UPGRADES.find(x=>x.key==='crit').full(state.up.crit);
+  return Math.max(0, rawCrit - CRIT_CAP);
+}
 function stats(){
   const u = state.up;
   const get = key => UPGRADES.find(x=>x.key===key).full(u[key]);
   // 暴擊率上限 80%：等級 + 裝備疊加後若超過 80%，超出的部分 1:1 轉成暴擊傷害
   // （例如合計 81% 暴擊率，會變成 80% 暴擊率 + 額外 1% 暴擊傷害），暴擊率本身不會再往上超過 80%。
-  const CRIT_CAP = 80;
   const rawCrit = get('crit');
-  const critOverflow = Math.max(0, rawCrit - CRIT_CAP);
+  const critOverflow = critOverflowAmount();
   return {
     atk:     Math.round(fin(get('atk'), 14)),
     maxHp:   Math.round(fin(get('hp'), 100)),
@@ -1952,8 +1960,12 @@ function renderUpgrades(){
     const lv = state.up[u.key];
     const maxed = u.max != null && lv >= u.max;
     const cost = upCost(u);
-    const curBody  = u.bodyFmt(u.full(lv));
-    const nextBody = u.bodyFmt(u.full(lv+1));
+    // 暴擊傷害這一項要額外加上「暴擊率溢出轉換」的量，
+    // 否則面板顯示的數字會跟 stats() 實際算給戰鬥用的暴擊傷害對不起來
+    // （溢出量只跟目前暴擊率等級+裝備有關，跟暴擊傷害自己升幾級無關，所以目前級/下一級都加同一份）
+    const overflow  = u.key === 'critdmg' ? critOverflowAmount() : 0;
+    const curBody  = u.bodyFmt(u.full(lv) + overflow);
+    const nextBody = u.bodyFmt(u.full(lv+1) + overflow);
     const curPer   = u.fmt(u.per * lv);
     const nextPer  = u.fmt(u.per * (lv+1));
     return `<div class="up">
