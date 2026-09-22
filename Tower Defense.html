@@ -204,6 +204,16 @@ body{
 }
 #timeTag.low{color:var(--blood);border-color:rgba(255,59,107,.5)}
 #runLoot{margin-left:auto;display:flex;gap:9px;color:var(--bone-dim);font-weight:700;font-variant-numeric:tabular-nums}
+#speedBtn{
+  pointer-events:auto;cursor:pointer;
+  background:rgba(0,0,0,.5);border:1px solid var(--stoneline);color:var(--bone-dim);
+  border-radius:7px;padding:4px 9px;font-weight:800;letter-spacing:.3px;
+  font-family:inherit;font-size:12px;
+}
+#speedBtn.on{
+  background:rgba(255,106,31,.28);border-color:var(--ember);color:var(--ember-hot);
+  box-shadow:0 0 10px rgba(255,106,31,.35);
+}
 
 #hpWrap{
   position:absolute;left:0;right:0;bottom:0;padding:9px 12px 12px;
@@ -455,6 +465,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
         <div id="hud">
           <div id="waveTag">第 1 關 · 第 1/20 波</div>
           <div id="timeTag">2:40</div>
+          <button id="speedBtn" onclick="toggleBattleSpeed()" title="切換戰鬥速度">1x</button>
           <div id="runLoot"><span id="runKill">☠ 0</span><span id="runGold">💰 0</span></div>
         </div>
         <div id="hpWrap">
@@ -597,7 +608,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 160;        // 第20波所有怪物出完的時間點（2:40），之後靠清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 40;           // 共 40 關
+const LEVEL_COUNT = 45;           // 共 40 關
 
 const LEVEL_HP_GROWTH = 1.305;                                  // 關卡之間的血量倍率
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內 20 波，血量差 3 倍
@@ -621,23 +632,26 @@ const SKILL_DEFS = {
     stackLabel:'彈道',
     stacksFn: ()=>fireballBullets(),
     pctFn: ()=>fireballPct(),
-    desc:'自動鎖定場上最深處的敵人並追蹤命中，每抽疊加 1 道彈道；滿 +6 道之後每抽改為傷害 +0.8%。基礎傷害為角色攻擊的 80%。',
+    desc:'自動鎖定場上最深處的敵人並追蹤命中，每抽疊加 1 道彈道（上限 7 道）；滿 +6 道之後每抽改為傷害 +0.8%。基礎傷害為角色攻擊的 80%，施放頻率與角色攻速一致（x1）。',
   },
   icespike: {
     name:'冰椎術', icon:'🔷', innate:false,
     stackLabel:'發射枚數',
     stacksFn: ()=>icespikeBullets(),
     pctFn: ()=>icespikePct(),
-    desc:'不會追蹤，直接從角色所在位置往正上方發射；每抽多發射 1 枚，每枚間隔 0.1 秒；滿 +6 枚之後每抽改為傷害 +0.5%。基礎傷害為角色攻擊的 60%，命中會減速目標 20%、持續 1 秒，最多疊加 3 層（最高減速 60%）。',
+    desc:'不會追蹤，直接從角色所在位置往正上方發射；每抽多發射 1 枚，每枚間隔 0.05 秒；滿 +6 枚之後每抽改為傷害 +1.2%。基礎傷害為角色攻擊的 110%，命中會減速目標 20%、持續 1 秒，最多疊加 3 層（最高減速 60%）。施放頻率為角色攻速的 0.5 倍。',
   },
   lightning: {
     name:'閃電術', icon:'⚡', innate:false,
     stackLabel:'連鎖敵人數',
     stacksFn: ()=>lightningChain(),
     pctFn: ()=>lightningPct(),
-    desc:'隨機選擇場上一位敵人給予電擊；滿 +6 前每抽多連鎖 1 位敵人，一起遭到電擊（角色與每個目標之間會出現閃電連線）；滿 +6 之後每抽改為傷害 +1%。基礎傷害為角色攻擊的 75%。',
+    desc:'隨機選擇場上一位敵人給予電擊；滿 +6 前每抽多連鎖 1 位敵人，一起遭到電擊（角色與每個目標之間會出現閃電連線）；滿 +6 之後每抽改為傷害 +1.5%。基礎傷害為角色攻擊的 90%，施放頻率為角色攻速的 0.9 倍。',
   },
 };
+// 各技能施放頻率＝角色攻速 × 對應倍率（各自獨立計時，不是三個技能綁在同一顆計時器上）：
+// 火球術 x1（跟角色攻速一致）、冰椎術 x0.5（角色攻速的一半）、閃電術 x0.9。
+const SKILL_SPD_MULT = { fireball:1, icespike:0.5, lightning:0.9 };
 // 抽到技能的總機率固定 30%，平均分攤給所有技能（目前 3 種＝各 10%）
 const SKILL_PULL_CHANCE = 0.30;
 function rollSkill(){
@@ -661,10 +675,10 @@ function icespikeBullets(){
 function lightningChain(){
   return skillStacks('lightning'); // 還沒抽到過就是 0，不會連鎖電擊
 }
-// 傷害＝角色攻擊力 × 百分比。基礎 80%／60%／75%，抽滿 +6 之後每抽再疊加 0.8%／0.5%／1%
+// 傷害＝角色攻擊力 × 百分比。基礎 80%／110%／90%，抽滿 +6 之後每抽再疊加 0.8%／1.2%／1.5%
 function fireballPct(){ return 80 + skillOverCap('fireball') * 0.8; }
-function icespikePct(){ return 60 + skillOverCap('icespike') * 0.5; }
-function lightningPct(){ return 75 + skillOverCap('lightning') * 1; }
+function icespikePct(){ return 110 + skillOverCap('icespike') * 1.2; }
+function lightningPct(){ return 90 + skillOverCap('lightning') * 1.5; }
 function fireballAtk(s){ return s.atk * fireballPct() / 100; }
 function icespikeAtk(s){ return s.atk * icespikePct() / 100; }
 function lightningAtk(s){ return s.atk * lightningPct() / 100; }
@@ -714,6 +728,11 @@ const UPGRADES = [
   { key:'crit', icon:'✨', name:'暴擊率',  base:90, grow:1.22, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
     body:lv=>Math.min(80, 5 + lv*1.2),     full:lv=>Math.min(80, 5 + lv*1.2 + sumEquip('crit')),
     bodyFmt:v=>v.toFixed(1)+'%' },
+  // 暴擊傷害：基礎倍率 200%（也就是原本寫死的暴擊 x2），每級 +1%。
+  // 暴擊率（等級+裝備疊加後）超過 80% 上限的部分，會在 stats() 裡 1:1 轉成額外暴擊傷害疊加在這裡。
+  { key:'critdmg', icon:'💥', name:'暴擊傷害', base:150, grow:1.25, per:1, fmt:v=>'+'+v.toFixed(0)+'%',
+    body:lv=>200 + lv*1,                   full:lv=>200 + lv*1 + sumEquip('critdmg'),
+    bodyFmt:v=>v.toFixed(0)+'%' },
 ];
 
 /* ── 存檔狀態 ─────────────────────────────── */
@@ -722,7 +741,7 @@ let state = freshState();
 function freshState(){
   return {
     gem:0, gold:0, stone:0,
-    up:{ atk:0, hp:0, spd:0, crit:0 },
+    up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0 },
     bag:[],                                   // [{uid,id,rarity,refine}]
     equipped:{ weapon:null, armor:null, trinket:null },
     skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0} }, // 技能召喚抽到的次數
@@ -1104,11 +1123,17 @@ function sumEquip(key){
 function stats(){
   const u = state.up;
   const get = key => UPGRADES.find(x=>x.key===key).full(u[key]);
+  // 暴擊率上限 80%：等級 + 裝備疊加後若超過 80%，超出的部分 1:1 轉成暴擊傷害
+  // （例如合計 81% 暴擊率，會變成 80% 暴擊率 + 額外 1% 暴擊傷害），暴擊率本身不會再往上超過 80%。
+  const CRIT_CAP = 80;
+  const rawCrit = get('crit');
+  const critOverflow = Math.max(0, rawCrit - CRIT_CAP);
   return {
-    atk:   Math.round(get('atk')),
-    maxHp: Math.round(get('hp')),
-    spd:   get('spd'),
-    crit:  get('crit'),
+    atk:     Math.round(get('atk')),
+    maxHp:   Math.round(get('hp')),
+    spd:     get('spd'),
+    crit:    Math.min(CRIT_CAP, rawCrit),
+    critDmg: get('critdmg') + critOverflow,
   };
 }
 
@@ -1162,7 +1187,7 @@ const run = {
   t:0, wave:1, spawned:0, waveQuota:0, spawnTimer:0,
   hp:100, maxHp:100,
   heroX:W/2, targetX:W/2,
-  fireTimer:0,
+  fireTimer:0, iceTimer:0, lightningTimer:0,
   kills:0, gold:0,
   enemies:[], shots:[], bits:[], pops:[], bolts:[],
   iceQueue:[],   // 冰椎術待發射佇列（每個元素是還剩多少秒才發射）
@@ -1247,7 +1272,7 @@ function startRun(level){
   run.level = level || run.level || 1;
   run.t=0; run.wave=1; run.spawned=0; run.waveQuota=waveQuotaFor(1); run.spawnTimer=0;
   run.maxHp=s.maxHp; run.hp=s.maxHp;
-  run.heroX=W/2; run.targetX=W/2; run.fireTimer=0;
+  run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0;
   run.kills=0; run.gold=0;
   run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.shake=0;
   applyLevelTheme(run.level);
@@ -1419,8 +1444,10 @@ function castLightning(){
   const n = lightningChain();
   if(n <= 0 || run.enemies.length === 0) return;
   const s = stats();
-  const dmg = lightningAtk(s);
+  const baseDmg = lightningAtk(s);
   const crit = Math.random()*100 < s.crit;
+  // 修正：原本 crit 只影響顯示顏色跟字級，沒有真的加傷害，這裡補上暴擊傷害倍率
+  const dmg = crit ? baseDmg * (s.critDmg/100) : baseDmg;
 
   // 從場上敵人隨機抽出最多 n 位、不重複
   const pool = run.enemies.slice();
@@ -1471,12 +1498,23 @@ function drawBoltSegment(x1,y1,x2,y2){
   ctx.stroke();
 }
 
+/* 戰鬥倍速：預設關閉(1x)，玩家可自行切換為 2x */
+let battleSpeed = 1;
+function toggleBattleSpeed(){
+  battleSpeed = (battleSpeed === 1) ? 2 : 1;
+  const btn = document.getElementById('speedBtn');
+  if(btn){
+    btn.textContent = battleSpeed + 'x';
+    btn.classList.toggle('on', battleSpeed === 2);
+  }
+}
+
 /* 主迴圈 */
 let last = performance.now();
 function loop(now){
   const dt = Math.min(0.05, (now-last)/1000);
   last = now;
-  if(run.active) step(dt);
+  if(run.active) step(dt * battleSpeed);
   draw();
   requestAnimationFrame(loop);
 }
@@ -1502,10 +1540,15 @@ function step(dt){
   // 主角移動（平滑跟隨）
   run.heroX += (run.targetX - run.heroX) * Math.min(1, dt*13);
 
-  // 開火
+  // 開火：三個技能各自獨立計時，頻率＝角色攻速 × SKILL_SPD_MULT（見該常數定義處的說明），
+  // 不再綁在同一顆計時器上一起觸發。
   const s = stats();
   run.fireTimer -= dt;
-  if(run.fireTimer <= 0){ fire(); queueIceSpikes(); castLightning(); run.fireTimer = 1 / s.spd; }
+  if(run.fireTimer <= 0){ fire(); run.fireTimer = 1 / (s.spd * SKILL_SPD_MULT.fireball); }
+  run.iceTimer -= dt;
+  if(run.iceTimer <= 0){ queueIceSpikes(); run.iceTimer = 1 / (s.spd * SKILL_SPD_MULT.icespike); }
+  run.lightningTimer -= dt;
+  if(run.lightningTimer <= 0){ castLightning(); run.lightningTimer = 1 / (s.spd * SKILL_SPD_MULT.lightning); }
 
   // 冰椎術佇列：各自倒數，時間到才真正生成（見 queueIceSpikes 的說明）
   for(let i=run.iceQueue.length-1;i>=0;i--){
@@ -1544,7 +1587,8 @@ function step(dt){
       const e = run.enemies[j];
       const dx=b.x-e.x, dy=b.y-e.y;
       if(dx*dx+dy*dy < (e.r+b.r)*(e.r+b.r)){
-        const dmg = b.crit ? b.dmg*2 : b.dmg;
+        // 暴擊傷害改用鍛造台的「暴擊傷害」數值（含暴擊率溢出轉換），不再寫死 x2
+        const dmg = b.crit ? b.dmg * (s.critDmg/100) : b.dmg;
         e.hp -= dmg; e.hit = 0.12;
         popText(e.x, e.y-e.r-4, Math.round(dmg), b.crit);
         if(b.kind === 'ice'){
