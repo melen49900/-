@@ -726,8 +726,12 @@ const UPGRADES = [
     body:lv=>Math.max(0.4, 0.3 + lv*0.12), full:lv=>Math.max(0.4, 0.3 + lv*0.12 + sumEquip('spd')),
     bodyFmt:v=>v.toFixed(2)+' 發/秒' },
   { key:'crit', icon:'✨', name:'暴擊率',  base:90, grow:1.22, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
-    body:lv=>Math.min(80, 5 + lv*1.2),     full:lv=>Math.min(80, 5 + lv*1.2 + sumEquip('crit')),
-    bodyFmt:v=>v.toFixed(1)+'%' },
+    // 修正：full() 原本自己先用 Math.min(80,...) 把數值卡死，
+    // 導致 stats() 裡「暴擊率超過 80% 的部分轉暴擊傷害」的 critOverflow 永遠算出 0。
+    // 這裡改成回傳未封頂的原始值，封頂與溢出換算統一交給 stats() 處理；
+    // 顯示用的 bodyFmt 再自行封頂在 80%，畫面上暴擊率一樣不會顯示超過 80%。
+    body:lv=>Math.min(80, 5 + lv*1.2),     full:lv=>5 + lv*1.2 + sumEquip('crit'),
+    bodyFmt:v=>Math.min(80, v).toFixed(1)+'%' },
   // 暴擊傷害：基礎倍率 200%（也就是原本寫死的暴擊 x2），每級 +1%。
   // 暴擊率（等級+裝備疊加後）超過 80% 上限的部分，會在 stats() 裡 1:1 轉成額外暴擊傷害疊加在這裡。
   { key:'critdmg', icon:'💥', name:'暴擊傷害', base:150, grow:1.25, per:1, fmt:v=>'+'+v.toFixed(0)+'%',
