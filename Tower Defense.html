@@ -754,6 +754,18 @@ function freshState(){
   };
 }
 
+// 數值防護：任何非有限數字（undefined／null／NaN／字串壞值）一律退回預設值，
+// 避免存檔或運算中一旦出現一個壞數字，透過 += 之類的運算「感染」到金幣、暴傷等其他數值。
+function fin(v, def){ return Number.isFinite(v) ? v : def; }
+function sanitizeState(){
+  state.gem   = Math.max(0, fin(state.gem, 0));
+  state.gold  = Math.max(0, fin(state.gold, 0));
+  state.stone = Math.max(0, fin(state.stone, 0));
+  UPGRADES.forEach(u=>{ state.up[u.key] = Math.max(0, Math.round(fin(state.up[u.key], 0))); });
+  state.best.wave  = Math.max(0, fin(state.best.wave, 0));
+  state.best.kills = Math.max(0, fin(state.best.kills, 0));
+  (state.bag||[]).forEach(c=>{ c.refine = Math.max(0, fin(c.refine, 0)); });
+}
 function save(){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
 }
@@ -778,6 +790,10 @@ function load(){
     // 進度資料還原：補上舊存檔可能缺少的欄位，避免引擎讀到 undefined
     state.quiz     = Object.assign(QuizEngine.createProgress(), d.quiz||{});
   }catch(e){}
+  // 修復壞掉的存檔：把任何已經變成 NaN／undefined 的數值拉回正常值，
+  // 這樣舊的壞存檔載入後就會自動恢復，不會一直卡在 NaN。
+  sanitizeState();
+  save();
 }
 
 /* ── 題庫 ─────────────────────────────────── */
@@ -1113,7 +1129,7 @@ function equipStat(card, key){
   const raw = base[key] * rar * ref;
   // 彈道是整數，不隨稀有度放大到奇怪的小數
   if(key === 'multi') return Math.floor(base[key] * (card.rarity==='SSR'?2:1));
-  return raw;
+  return fin(raw, 0);
 }
 function sumEquip(key){
   let t = 0;
@@ -1129,11 +1145,11 @@ function stats(){
   const rawCrit = get('crit');
   const critOverflow = Math.max(0, rawCrit - CRIT_CAP);
   return {
-    atk:     Math.round(get('atk')),
-    maxHp:   Math.round(get('hp')),
-    spd:     get('spd'),
-    crit:    Math.min(CRIT_CAP, rawCrit),
-    critDmg: get('critdmg') + critOverflow,
+    atk:     Math.round(fin(get('atk'), 14)),
+    maxHp:   Math.round(fin(get('hp'), 100)),
+    spd:     fin(get('spd'), 0.4),
+    crit:    fin(Math.min(CRIT_CAP, rawCrit), 5),
+    critDmg: fin(get('critdmg') + critOverflow, 200),
   };
 }
 
@@ -1285,13 +1301,13 @@ function startRun(level){
 function endRun(win){
   run.active=false; run.over=true;
 
-  const levelMul  = Math.pow(1.15, run.level-1);   // 金幣／強化石每關 ×1.15
-  const goldGain  = Math.round(run.gold * levelMul);
+  const levelMul  = fin(Math.pow(1.15, run.level-1), 1);   // 金幣／強化石每關 ×1.15
+  const goldGain  = Math.round(fin(run.gold, 0) * levelMul);
   const stoneGain = Math.round((Math.floor(run.wave/3) + (win?3:0)) * levelMul);
   const gemGain   = 10 + run.level*2;              // 鑽石固定為 10 + 關卡數 ×2
-  state.gold  += goldGain;
-  state.stone += stoneGain;
-  state.gem   += gemGain;
+  state.gold  = Math.max(0, fin(state.gold, 0) + fin(goldGain, 0));
+  state.stone = Math.max(0, fin(state.stone, 0) + fin(stoneGain, 0));
+  state.gem   = Math.max(0, fin(state.gem, 0) + fin(gemGain, 0));
   state.best.wave  = Math.max(state.best.wave, run.wave);
   state.best.kills = Math.max(state.best.kills, run.kills);
 
@@ -1625,7 +1641,7 @@ function step(dt){
 
     if(e.hp <= 0){
       run.kills++;
-      run.gold += e.gold;
+      run.gold += fin(e.gold, 0);
       burst(e.x, e.y, e.boss ? '#ff3b6b' : '#ffb347', e.boss ? 38 : 13);
       if(e.boss) run.shake = 0.35;
       run.enemies.splice(i,1);
@@ -1921,7 +1937,10 @@ function statLine(base, rarity, refine){
 /* ══════════════════════════════════════════
    鍛造
    ══════════════════════════════════════════ */
-function upCost(u){ return Math.round(u.base * Math.pow(u.grow, state.up[u.key])); }
+function upCost(u){
+  const lv = fin(state.up[u.key], 0);
+  return Math.round(u.base * Math.pow(u.grow, lv));
+}
 
 function renderUpgrades(){
   const box = document.getElementById('upList');
@@ -1948,7 +1967,8 @@ function renderUpgrades(){
     b.onclick = ()=>{
       const u = UPGRADES.find(x=>x.key===b.dataset.up);
       const cost = upCost(u);
-      if(state.gold < cost) return;
+      if(!Number.isFinite(cost)) return; // 費用算不出來就不放行，避免把金幣扣成 NaN
+      if(!(state.gold >= cost)) return;  // 用 >= 反向判斷，NaN 一律擋下（NaN 比較永遠是 false）
       if(u.max != null && state.up[u.key] >= u.max) return;
       state.gold -= cost;
       state.up[u.key]++;
