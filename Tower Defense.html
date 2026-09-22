@@ -478,6 +478,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
             <p id="ovSub">怪物會從上方壓下來。拖曳畫面移動法師，攻擊會自動施放。</p>
             <div id="ovLoot"></div>
             <button class="btn" id="ovBtn">開始挑戰</button>
+            <button class="btn ghost" id="ovBtn3" style="display:none">再打一次</button>
             <button class="btn ghost" id="ovBtn2" style="display:none">返回選關</button>
           </div>
         </div>
@@ -608,9 +609,9 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 160;        // 第20波所有怪物出完的時間點（2:40），之後靠清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 45;           // 共 40 關
+const LEVEL_COUNT = 50;           // 共 50 關
 
-const LEVEL_HP_GROWTH = 1.305;                                  // 關卡之間的血量倍率
+const LEVEL_HP_GROWTH = 1.295;                                  // 血量成長係數
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內 20 波，血量差 3 倍
 const WAVE_SPD_GROWTH = 0.1;                                    // 關內 20 波，移速大約多 10%（≈1.1倍）
 
@@ -648,14 +649,28 @@ const SKILL_DEFS = {
     pctFn: ()=>lightningPct(),
     desc:'隨機選擇場上一位敵人給予電擊；滿 +6 前每抽多連鎖 1 位敵人，一起遭到電擊（角色與每個目標之間會出現閃電連線）；滿 +6 之後每抽改為傷害 +1.5%。基礎傷害為角色攻擊的 90%，施放頻率為角色攻速的 0.9 倍。',
   },
+  whirlwind: {
+    name:'旋風術', icon:'🌪️', innate:false,
+    requiresLevel:20,   // 過關進度（unlockedLevel）需超過此關卡數才會自動解鎖
+    stackLabel:'旋風強化',
+    stacksFn: ()=>skillStacks('whirlwind'),
+    pctFn: ()=>whirlwindPct(),
+    lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 20 關時會自動習得 1 等，之後也能從「召喚」抽到並疊加。`,
+    desc:'解鎖到第 21 關後自動習得 1 等，之後也能從「召喚」抽到、機率與其他技能平均分攤。召喚出一個龍捲風，生成在場上隨機一名敵人的位置，之後自動朝最近的敵人移動（移動速度約為火球術彈道的 20%），對半徑 40 範圍內的敵人每 0.4 秒造成一次傷害，持續 2.8 秒（共 7 次）。基礎傷害為角色攻擊的 50%；+1~+6 等會讓傷害直接乘上 2~7 倍，滿 +6 之後每抽改為傷害 +3%。施放頻率為角色攻速的 0.1 倍。',
+  },
 };
 // 各技能施放頻率＝角色攻速 × 對應倍率（各自獨立計時，不是三個技能綁在同一顆計時器上）：
 // 火球術 x1（跟角色攻速一致）、冰椎術 x0.5（角色攻速的一半）、閃電術 x0.9。
-const SKILL_SPD_MULT = { fireball:1, icespike:0.5, lightning:0.9 };
-// 抽到技能的總機率固定 30%，平均分攤給所有技能（目前 3 種＝各 10%）
+const SKILL_SPD_MULT = { fireball:1, icespike:0.5, lightning:0.9, whirlwind:0.1 };
+// 抽到技能的總機率固定 30%，平均分攤給「目前已可抽到」的技能種類
+// （旋風術在 unlockedLevel 超過 20 之前不會出現在召喚池，解鎖後才加入均分）
 const SKILL_PULL_CHANCE = 0.30;
+function skillAvailableForPull(key){
+  if(key === 'whirlwind') return state.unlockedLevel > WHIRLWIND_UNLOCK_LEVEL;
+  return true;
+}
 function rollSkill(){
-  const keys = Object.keys(SKILL_DEFS);
+  const keys = Object.keys(SKILL_DEFS).filter(skillAvailableForPull);
   return keys[Math.floor(Math.random()*keys.length)];
 }
 // 彈道/發射數/連鎖數（三個技能算法相同：每抽 +1，上限 +6）
@@ -679,9 +694,28 @@ function lightningChain(){
 function fireballPct(){ return 80 + skillOverCap('fireball') * 0.8; }
 function icespikePct(){ return 110 + skillOverCap('icespike') * 1.2; }
 function lightningPct(){ return 90 + skillOverCap('lightning') * 1.5; }
+// 旋風術：基礎傷害 50%，+1~+6 等會直接把傷害乘上 2~7 倍（stacks=1→x2 … stacks=6→x7），
+// 滿 +6 之後每抽改為線性疊加傷害 +3%（不再繼續乘倍率）。
+function whirlwindPct(){ return 50 * (1 + skillStacks('whirlwind')) + skillOverCap('whirlwind') * 3; }
 function fireballAtk(s){ return s.atk * fireballPct() / 100; }
 function icespikeAtk(s){ return s.atk * icespikePct() / 100; }
 function lightningAtk(s){ return s.atk * lightningPct() / 100; }
+function whirlwindAtk(s){ return s.atk * whirlwindPct() / 100; }
+// 旋風術解鎖條件：過關進度（unlockedLevel）超過第 20 關時自動習得 1 等
+const WHIRLWIND_UNLOCK_LEVEL = 20;
+// 旋風術龍捲風的戰鬥參數：範圍半徑 40、每 0.4 秒 tick 一次、共存活 2.8 秒（=7 次 tick）、
+// 移動速度為火球術彈道基礎速度的 20%
+const WHIRLWIND_RADIUS = 40;
+const WHIRLWIND_TICK = 0.4;
+const WHIRLWIND_LIFE = 2.8;
+const WHIRLWIND_SPEED_MULT = 0.2;
+// 若 unlockedLevel 已超過門檻但尚未自動給過 1 等，補發（新關卡解鎖、讀檔等情境都會呼叫到這裡）
+function checkWhirlwindUnlock(){
+  if(state.unlockedLevel > WHIRLWIND_UNLOCK_LEVEL && state.skills.whirlwind.draws < 1){
+    state.skills.whirlwind.draws = 1;
+    save();
+  }
+}
 // 冰椎減速：每次命中疊加一層，每層獨立倒數，最多 3 層
 const ICESPIKE_SLOW_PCT = 0.20;
 const ICESPIKE_SLOW_MAX_STACKS = 3;
@@ -722,20 +756,17 @@ const UPGRADES = [
   { key:'hp',   icon:'❤️', name:'生命值',  base:40,  grow:1.12, per:15,   fmt:v=>'+'+v,
     body:lv=>100 + lv*15,                  full:lv=>100 + lv*15 + sumEquip('hp'),
     bodyFmt:v=>String(Math.round(v)) },
-  { key:'spd',  icon:'💨', name:'攻擊速度', base:80,  grow:1.25, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
+  { key:'spd',  icon:'💨', name:'攻擊速度', base:90,  grow:1.28, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
     body:lv=>Math.max(0.4, 0.3 + lv*0.12), full:lv=>Math.max(0.4, 0.3 + lv*0.12 + sumEquip('spd')),
     bodyFmt:v=>v.toFixed(2)+' 發/秒' },
-  { key:'crit', icon:'✨', name:'暴擊率',  base:90, grow:1.22, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
-    // 修正：full() 原本自己先用 Math.min(80,...) 把數值卡死，
-    // 導致 stats() 裡「暴擊率超過 80% 的部分轉暴擊傷害」的 critOverflow 永遠算出 0。
-    // 這裡改成回傳未封頂的原始值，封頂與溢出換算統一交給 stats() 處理；
+  { key:'crit', icon:'✨', name:'暴擊率',  base:100, grow:1.2, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
     // 顯示用的 bodyFmt 再自行封頂在 80%，畫面上暴擊率一樣不會顯示超過 80%。
     body:lv=>Math.min(80, 5 + lv*1.2),     full:lv=>5 + lv*1.2 + sumEquip('crit'),
     bodyFmt:v=>Math.min(80, v).toFixed(1)+'%' },
-  // 暴擊傷害：基礎倍率 200%（也就是原本寫死的暴擊 x2），每級 +1%。
+  // 暴擊傷害：基礎倍率 200%，每級 +1%。
   // 暴擊率（等級+裝備疊加後）超過 80% 上限的部分，會在 stats() 裡 1:1 轉成額外暴擊傷害疊加在這裡。
-  { key:'critdmg', icon:'💥', name:'暴擊傷害', base:150, grow:1.25, per:1, fmt:v=>'+'+v.toFixed(0)+'%',
-    body:lv=>200 + lv*1,                   full:lv=>200 + lv*1 + sumEquip('critdmg'),
+  { key:'critdmg', icon:'💥', name:'暴擊傷害', base:100, grow:1.2, per:1.2, fmt:v=>'+'+v.toFixed(0)+'%',
+    body:lv=>200 + lv*1.2,                   full:lv=>200 + lv*1.2 + sumEquip('critdmg'),
     bodyFmt:v=>v.toFixed(0)+'%' },
 ];
 
@@ -748,7 +779,7 @@ function freshState(){
     up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0 },
     bag:[],                                   // [{uid,id,rarity,refine}]
     equipped:{ weapon:null, armor:null, trinket:null },
-    skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0} }, // 技能召喚抽到的次數
+    skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0}, whirlwind:{draws:0} }, // 技能召喚抽到的次數（旋風術另外會在 unlockedLevel > 20 時自動補發 1 等）
     quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
     qs:{ correct:0, wrong:0, streak:0, best:0, shield:3, shieldProgress:0 },
     best:{ wave:0, kills:0 },
@@ -788,9 +819,11 @@ function load(){
       fireball: Object.assign({draws:0}, (d.skills&&d.skills.fireball)||{}),
       icespike: Object.assign({draws:0}, (d.skills&&d.skills.icespike)||{}),
       lightning: Object.assign({draws:0}, (d.skills&&d.skills.lightning)||{}),
+      whirlwind: Object.assign({draws:0}, (d.skills&&d.skills.whirlwind)||{}),
     };
     state.levelRecords = Object.assign({}, d.levelRecords||{});
     state.unlockedLevel = Math.max(1, Math.min(LEVEL_COUNT, d.unlockedLevel || 1));
+    checkWhirlwindUnlock(); // 舊存檔若過關進度早已超過 20 關，補發旋風術 1 等
     // 進度資料還原：補上舊存檔可能缺少的欄位，避免引擎讀到 undefined
     state.quiz     = Object.assign(QuizEngine.createProgress(), d.quiz||{});
   }catch(e){}
@@ -1215,9 +1248,9 @@ const run = {
   t:0, wave:1, spawned:0, waveQuota:0, spawnTimer:0,
   hp:100, maxHp:100,
   heroX:W/2, targetX:W/2,
-  fireTimer:0, iceTimer:0, lightningTimer:0,
+  fireTimer:0, iceTimer:0, lightningTimer:0, whirlwindTimer:0,
   kills:0, gold:0,
-  enemies:[], shots:[], bits:[], pops:[], bolts:[],
+  enemies:[], shots:[], bits:[], pops:[], bolts:[], tornadoes:[],
   iceQueue:[],   // 冰椎術待發射佇列（每個元素是還剩多少秒才發射）
   shake:0,
 };
@@ -1226,7 +1259,7 @@ const run = {
 function waveQuotaFor(w){
   return Math.round(10 + (w-1) * 10 / (WAVES_PER_LEVEL-1));
 }
-// 怪物血量 = 關卡基礎值（每關 ×1.305）× 關內波數成長（20 波內只差 3 倍）
+// 怪物血量 = 關卡基礎值（每關 × 係數）× 關內波數成長（20 波內只差 3 倍）
 function enemyHpFor(level, w){
   return 17 * Math.pow(LEVEL_HP_GROWTH, level-1) * Math.pow(WAVE_HP_GROWTH, w-1);
 }
@@ -1285,8 +1318,10 @@ function openLevelConfirm(level){
 
   const ovBtn = document.getElementById('ovBtn');
   const ovBtn2 = document.getElementById('ovBtn2');
+  const ovBtn3 = document.getElementById('ovBtn3');
   ovBtn.textContent = '開始挑戰';
   ovBtn.onclick = ()=>{ state.seenIntro = true; save(); startRun(level); };
+  ovBtn3.style.display = 'none'; // 出戰前的確認畫面不需要「再打一次」
   ovBtn2.style.display = 'block';
   ovBtn2.textContent = '取消';
   ovBtn2.onclick = ()=>{ openLevelSelect(); };
@@ -1300,9 +1335,9 @@ function startRun(level){
   run.level = level || run.level || 1;
   run.t=0; run.wave=1; run.spawned=0; run.waveQuota=waveQuotaFor(1); run.spawnTimer=0;
   run.maxHp=s.maxHp; run.hp=s.maxHp;
-  run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0;
+  run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0; run.whirlwindTimer=0;
   run.kills=0; run.gold=0;
-  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.shake=0;
+  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.tornadoes=[]; run.shake=0;
   applyLevelTheme(run.level);
   document.getElementById('overlay').classList.remove('on');
   openStage();
@@ -1313,7 +1348,7 @@ function startRun(level){
 function endRun(win){
   run.active=false; run.over=true;
 
-  const levelMul  = fin(Math.pow(1.15, run.level-1), 1);   // 金幣／強化石每關 ×1.15
+  const levelMul  = fin(Math.pow(1.21, run.level-1), 1);   // 金幣／強化石增加係數
   const goldGain  = Math.round(fin(run.gold, 0) * levelMul);
   const stoneGain = Math.round((Math.floor(run.wave/3) + (win?3:0)) * levelMul);
   const gemGain   = 10 + run.level*2;              // 鑽石固定為 10 + 關卡數 ×2
@@ -1337,6 +1372,7 @@ function endRun(win){
   const ovSub   = document.getElementById('ovSub');
   const ovBtn   = document.getElementById('ovBtn');
   const ovBtn2  = document.getElementById('ovBtn2');
+  const ovBtn3  = document.getElementById('ovBtn3');
 
   if(win && isLast){
     ovTitle.textContent = '全 20 關　通關！';
@@ -1359,12 +1395,18 @@ function endRun(win){
   if(win && !isLast){
     ovBtn.textContent = `前往第 ${run.level+1} 關`;
     ovBtn.onclick = ()=>{ startRun(run.level+1); };
+    // 過關但還有下一關：在「下一關」跟「返回選關」中間加「再打一次」，方便留在原關卡刷寶或衝波數
+    ovBtn3.style.display = 'block';
+    ovBtn3.textContent = '再打一次';
+    ovBtn3.onclick = ()=>{ startRun(run.level); };
   } else if(win && isLast){
     ovBtn.textContent = '重玩本關';
     ovBtn.onclick = ()=>{ startRun(run.level); };
+    ovBtn3.style.display = 'none'; // 已經是「重玩本關」了，不用再放重複按鈕
   } else {
     ovBtn.textContent = '重新挑戰';
     ovBtn.onclick = ()=>{ startRun(run.level); };
+    ovBtn3.style.display = 'none'; // 「重新挑戰」已經等同再打一次，不重複放
   }
   ovBtn2.style.display = 'block';
   ovBtn2.textContent = '返回選關';
@@ -1497,6 +1539,24 @@ function castLightning(){
   run.bolts.push({ points, age:0, life:0.22, crit });
 }
 
+// 旋風術：尚未習得，或場上沒有敵人時不生成。
+// 生成位置＝場上隨機一位敵人的所在位置，之後每一幀都會朝「當下最近的敵人」移動；
+// tickTimer 從 0 開始，代表出生當下立刻造成第一次範圍傷害，之後每 WHIRLWIND_TICK 秒再一次，
+// 直到 age 達到 WHIRLWIND_LIFE（2.8 秒＝共 7 次）才消失。
+function castWhirlwind(){
+  if(state.skills.whirlwind.draws < 1) return; // 尚未解鎖
+  if(run.enemies.length === 0) return;
+  const s = stats();
+  const origin = run.enemies[Math.floor(Math.random()*run.enemies.length)];
+  run.tornadoes.push({
+    x: origin.x, y: origin.y,
+    dmg: whirlwindAtk(s),
+    age: 0,
+    tickTimer: 0,
+    rot: 0,
+  });
+}
+
 
 /* 爆點與傷害數字 */
 function burst(x,y,color,count){
@@ -1577,6 +1637,8 @@ function step(dt){
   if(run.iceTimer <= 0){ queueIceSpikes(); run.iceTimer = 1 / (s.spd * SKILL_SPD_MULT.icespike); }
   run.lightningTimer -= dt;
   if(run.lightningTimer <= 0){ castLightning(); run.lightningTimer = 1 / (s.spd * SKILL_SPD_MULT.lightning); }
+  run.whirlwindTimer -= dt;
+  if(run.whirlwindTimer <= 0){ castWhirlwind(); run.whirlwindTimer = 1 / (s.spd * SKILL_SPD_MULT.whirlwind); }
 
   // 冰椎術佇列：各自倒數，時間到才真正生成（見 queueIceSpikes 的說明）
   for(let i=run.iceQueue.length-1;i>=0;i--){
@@ -1631,6 +1693,46 @@ function step(dt){
         run.shots.splice(i,1);
         break;
       }
+    }
+  }
+
+  // 旋風術：龍捲風持續朝最近的敵人移動，並每 WHIRLWIND_TICK 秒對範圍內敵人造成一次傷害
+  // （放在「怪物」迴圈之前，讓被龍捲風打死的敵人能在同一幀就被下面的迴圈清掉）
+  for(let i=run.tornadoes.length-1;i>=0;i--){
+    const t = run.tornadoes[i];
+    t.age += dt;
+    t.rot += dt * 6; // 純視覺：持續旋轉
+    if(t.age >= WHIRLWIND_LIFE){ run.tornadoes.splice(i,1); continue; }
+
+    // 朝場上「當下」最近的敵人移動；沒有敵人時原地不動
+    let nearest = null, nd = Infinity;
+    for(const e of run.enemies){
+      const dx = e.x-t.x, dy = e.y-t.y, d = dx*dx+dy*dy;
+      if(d < nd){ nd = d; nearest = e; }
+    }
+    if(nearest){
+      const dx = nearest.x-t.x, dy = nearest.y-t.y;
+      const dist = Math.hypot(dx,dy) || 1;
+      const spd = SHOT_SPEED_BASE * WHIRLWIND_SPEED_MULT * hScale;
+      t.x += (dx/dist) * spd * dt;
+      t.y += (dy/dist) * spd * dt;
+    }
+
+    t.tickTimer -= dt;
+    if(t.tickTimer <= 0){
+      t.tickTimer = WHIRLWIND_TICK;
+      let hitAny = false;
+      for(const e of run.enemies){
+        const dx = e.x-t.x, dy = e.y-t.y;
+        if(dx*dx+dy*dy <= WHIRLWIND_RADIUS*WHIRLWIND_RADIUS){
+          const crit = Math.random()*100 < s.crit;
+          const dmg = crit ? t.dmg * (s.critDmg/100) : t.dmg;
+          e.hp -= dmg; e.hit = 0.12;
+          popText(e.x, e.y-e.r-4, Math.round(dmg), crit);
+          hitAny = true;
+        }
+      }
+      if(hitAny) burst(t.x, t.y, '#9cffc4', 8);
     }
   }
 
@@ -1830,6 +1932,25 @@ function draw(){
   });
   ctx.globalAlpha = 1;
 
+  // 旋風術：持續旋轉的龍捲風，並用一圈淡綠色範圍線提示傷害半徑
+  run.tornadoes.forEach(t=>{
+    ctx.save();
+    ctx.globalAlpha = 0.16;
+    ctx.strokeStyle = '#8affb0';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(t.x, t.y, WHIRLWIND_RADIUS, 0, Math.PI*2); ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(t.x, t.y);
+    ctx.rotate(t.rot);
+    ctx.shadowBlur = 10; ctx.shadowColor = '#9cffc4';
+    ctx.font = '30px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('🌪️\uFE0F', 0, 0);
+    ctx.restore();
+  });
+
   // 主角
   if(run.active || run.over){
     const hx = run.heroX, hy = H - 74;
@@ -2009,7 +2130,7 @@ function renderSkills(){
     const pct = def.pctFn();
     const statusText = owned
       ? `${def.stackLabel} ${stacks}　傷害 ${pct.toFixed(1)}% 攻擊`
-      : '尚未習得，去「召喚」試試手氣';
+      : (def.lockHintFn ? def.lockHintFn() : '尚未習得，去「召喚」試試手氣');
     return `<div class="up">
       <div class="ico">${def.icon}</div>
       <div class="info">
@@ -2113,6 +2234,7 @@ function renderEquip(){
    介面共用
    ══════════════════════════════════════════ */
 function syncUI(){
+  checkWhirlwindUnlock(); // 過關進度一旦超過門檻就自動補發旋風術 1 等
   document.getElementById('uiGem').textContent   = state.gem;
   document.getElementById('uiGold').textContent  = state.gold;
   document.getElementById('uiStone').textContent = state.stone;
@@ -2120,7 +2242,7 @@ function syncUI(){
   document.getElementById('pull10').disabled = state.gem < 900;
   // 鑽石不夠抽時，提醒去答題
   document.getElementById('dotQuiz').classList.toggle('on', state.gem < 100);
-  const skillCount = Object.keys(SKILL_DEFS).length;
+  const skillCount = Object.keys(SKILL_DEFS).filter(skillAvailableForPull).length;
   const skillOddsEl = document.getElementById('skillOddsInfo');
   if(skillOddsEl){
     const each = (SKILL_PULL_CHANCE*100/skillCount);
