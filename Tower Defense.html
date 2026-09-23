@@ -1932,7 +1932,8 @@ function draw(){
   });
   ctx.globalAlpha = 1;
 
-  // 旋風術：持續旋轉的龍捲風，並用一圈淡綠色範圍線提示傷害半徑
+  // 旋風術：不用 emoji，改用多層橢圓堆疊出漏斗狀龍捲風本體，
+  // 每層各自轉動速度不同、加上底部塵土光暈與環繞塵屑小點，營造持續扭轉的動態感
   run.tornadoes.forEach(t=>{
     ctx.save();
     ctx.globalAlpha = 0.16;
@@ -1943,11 +1944,41 @@ function draw(){
 
     ctx.save();
     ctx.translate(t.x, t.y);
-    ctx.rotate(t.rot);
-    ctx.shadowBlur = 10; ctx.shadowColor = '#9cffc4';
-    ctx.font = '30px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('🌪️\uFE0F', 0, 0);
+
+    // 底部塵土光暈
+    const dust = ctx.createRadialGradient(0,10,2,0,10,26);
+    dust.addColorStop(0,'rgba(170,230,190,.35)');
+    dust.addColorStop(1,'rgba(170,230,190,0)');
+    ctx.fillStyle = dust;
+    ctx.beginPath(); ctx.ellipse(0,10,26,10,0,0,Math.PI*2); ctx.fill();
+
+    // 漏斗本體：由下而上堆疊多層橢圓環，底部寬、頂部窄，各層轉速不同，看起來像持續扭轉
+    const TORNADO_LAYERS = 8;
+    for(let i=0;i<TORNADO_LAYERS;i++){
+      const f = i/(TORNADO_LAYERS-1);        // 0=底 1=頂
+      const y = 14 - f*46;                   // 由下往上
+      const rx = 4 + (1-f)*16;               // 底部寬、頂部窄
+      const ry = rx*0.42;
+      const spin = t.rot*(1.6+f*1.2) + i*0.9;
+      const wob = Math.sin(t.rot*2.4+i)*2*(1-f*0.5);
+      ctx.save();
+      ctx.translate(wob, y);
+      ctx.rotate(spin);
+      ctx.strokeStyle = `rgba(200,255,214,${0.55-f*0.25})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
+
+    // 環繞漏斗旋轉的塵屑小點
+    for(let i=0;i<5;i++){
+      const a = t.rot*3 + i*(Math.PI*2/5);
+      const rr = 14 + (i%3)*5;
+      const px = Math.cos(a)*rr, py = -6 + Math.sin(a)*rr*0.4;
+      ctx.fillStyle = 'rgba(210,255,224,.8)';
+      ctx.beginPath(); ctx.arc(px,py,1.6,0,Math.PI*2); ctx.fill();
+    }
+
     ctx.restore();
   });
 
