@@ -1605,16 +1605,21 @@ function castWhirlwind(){
 }
 
 // 土牆術：生成一道橫向的土牆，高度（距底部）在 200～500 隨機，寬度依疊加等級決定，
+// 水平位置隨機偏左或偏右（不再固定在正中間），並確保整道牆仍在畫面範圍內；
 // 沒有存在時間限制，直到血量歸零才會消失，敵人壓到會停下來持續攻擊土牆。
 function castEarthwall(){
   if(state.skills.earthwall.draws < 1) return; // 尚未解鎖
   const s = stats();
   const hp = earthwallHp(s);
   const offset = EARTHWALL_MIN_OFFSET + Math.random()*(EARTHWALL_MAX_OFFSET-EARTHWALL_MIN_OFFSET);
+  const width = earthwallWidth();
+  const maxShift = Math.max(0, (W - width) / 2); // 牆中心最多能偏離正中間多少，才不會超出畫面
+  const side = Math.random() < 0.5 ? -1 : 1;      // 隨機偏左或偏右
+  const x = W/2 + side * Math.random() * maxShift;
   run.walls.push({
-    x: W/2,
+    x,
     y: Math.max(50, H - offset),
-    width: earthwallWidth(),
+    width,
     hp, maxHp: hp,
     hit: 0,
   });
@@ -1817,10 +1822,11 @@ function step(dt){
     }
     const slowMul = 1 - Math.min(ICESPIKE_SLOW_MAX_STACKS, e.slowStacks ? e.slowStacks.length : 0) * ICESPIKE_SLOW_PCT;
 
-    // 尋找路徑上（在敵人下方、水平範圍內）血量還在的最近土牆，擋住敵人前進
+    // 尋找路徑上（在敵人下方、水平範圍內）的最近土牆，擋住敵人前進；
+    // 這裡不篩掉本影格內剛好被打到 hp<=0 的牆，讓「摧毀那一下」也還是能稍微擋住敵人
+    // （包含同一影格內還有其他敵人正壓在同一道牆上的情況），下個影格才真正移除、放行。
     let blockWall = null, blockY = Infinity;
     for(const w of run.walls){
-      if(w.hp <= 0) continue;
       if(w.y <= e.y) continue; // 牆已經在敵人上方（已通過），不再擋
       if(Math.abs(e.x - w.x) > w.width/2 + e.r) continue;
       if(w.y < blockY){ blockY = w.y; blockWall = w; }
@@ -2285,7 +2291,7 @@ function renderUpgrades(){
         <div class="val">目前 ${curBody}(${curPer})　→　下一級 ${nextBody}(${nextPer})</div>
       </div>
       <button data-up="${u.key}" ${maxed||state.gold<cost?'disabled':''}>
-        ${maxed ? '已滿級' : '💰 '+cost}
+        ${maxed ? '已滿級' : '💰 '+fmtNum(cost)}
       </button>
     </div>`;
   }).join('');
@@ -2354,7 +2360,7 @@ function renderRefine(){
         <div class="nm">${base.name}　<span style="color:var(--bone-dim);font-size:12px">精煉 +${c.refine||0}</span></div>
         <div class="val">${statLine(base, c.rarity, c.refine)}</div>
       </div>
-      <button data-ref="${s}" ${state.stone<cost?'disabled':''}>🔮 ${cost}</button>
+      <button data-ref="${s}" ${state.stone<cost?'disabled':''}>🔮 ${fmtNum(cost)}</button>
     </div>`;
   }).join('');
   box.querySelectorAll('[data-ref]').forEach(b=>{
