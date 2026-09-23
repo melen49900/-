@@ -607,9 +607,9 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
    ══════════════════════════════════════════════════════════ */
 
 const SAVE_KEY = 'emberTrial_v1';
-const SPAWN_SECONDS = 160;        // 第20波所有怪物出完的時間點（2:40），之後靠清空怪物過關
+const SPAWN_SECONDS = 160;        // 所有怪物出完的時間點（2:40），清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 50;           // 共 50 關
+const LEVEL_COUNT = 60;           // 共 60 關
 
 const LEVEL_HP_GROWTH = 1.295;                                  // 血量成長係數
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內 20 波，血量差 3 倍
@@ -633,21 +633,21 @@ const SKILL_DEFS = {
     stackLabel:'彈道',
     stacksFn: ()=>fireballBullets(),
     pctFn: ()=>fireballPct(),
-    desc:'自動鎖定場上最深處的敵人並追蹤命中，每抽疊加 1 道彈道（上限 7 道）；滿 +6 道之後每抽改為傷害 +0.8%。基礎傷害為角色攻擊的 80%，施放頻率與角色攻速一致（x1）。',
+    desc:'自動鎖定場上最接近的敵人並追蹤，每抽 1 次多 1 彈道，上限 7 道。',
   },
   icespike: {
     name:'冰椎術', icon:'🔷', innate:false,
     stackLabel:'發射枚數',
     stacksFn: ()=>icespikeBullets(),
     pctFn: ()=>icespikePct(),
-    desc:'不會追蹤，直接從角色所在位置往正上方發射；每抽多發射 1 枚，每枚間隔 0.05 秒；滿 +6 枚之後每抽改為傷害 +1.2%。基礎傷害為角色攻擊的 110%，命中會減速目標 20%、持續 1 秒，最多疊加 3 層（最高減速 60%）。施放頻率為角色攻速的 0.5 倍。',
+    desc:'正上方直線發射；每抽 1 次多發射 1 枚，最多 6 枚，每枚間隔 0.05 秒，命中會使目標緩速。',
   },
   lightning: {
     name:'閃電術', icon:'⚡', innate:false,
     stackLabel:'連鎖敵人數',
     stacksFn: ()=>lightningChain(),
     pctFn: ()=>lightningPct(),
-    desc:'隨機選擇場上一位敵人給予電擊；滿 +6 前每抽多連鎖 1 位敵人，一起遭到電擊（角色與每個目標之間會出現閃電連線）；滿 +6 之後每抽改為傷害 +1.5%。基礎傷害為角色攻擊的 90%，施放頻率為角色攻速的 0.9 倍。',
+    desc:'隨機選擇場上一位敵人給予電擊；每抽 1 次多連鎖 1 位敵人，最多 6 位。',
   },
   whirlwind: {
     name:'旋風術', icon:'🌪️', innate:false,
@@ -656,17 +656,27 @@ const SKILL_DEFS = {
     stacksFn: ()=>skillStacks('whirlwind'),
     pctFn: ()=>whirlwindPct(),
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 20 關時會自動習得 1 等，之後也能從「召喚」抽到並疊加。`,
-    desc:'解鎖到第 21 關後自動習得 1 等，之後也能從「召喚」抽到、機率與其他技能平均分攤。召喚出一個龍捲風，生成在場上隨機一名敵人的位置，之後自動朝最近的敵人移動（移動速度約為火球術彈道的 20%），對半徑 40 範圍內的敵人每 0.4 秒造成一次傷害，持續 2.8 秒（共 7 次）。基礎傷害為角色攻擊的 50%；+1~+6 等會讓傷害直接乘上 2~7 倍，滿 +6 之後每抽改為傷害 +3%。施放頻率為角色攻速的 0.1 倍。',
+    desc:'召喚龍捲風，之後自動朝最近的敵人移動，對範圍內的敵人造成持續傷害。',
+  },
+  earthwall: {
+    name:'土牆術', icon:'🧱', innate:false,
+    requiresLevel:40,   // 過關進度（unlockedLevel）需超過此關卡數才會自動解鎖
+    stackLabel:'城牆寬度',
+    stacksFn: ()=>skillStacks('earthwall'),
+    pctFn: ()=>earthwallPct(),
+    lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 40 關時會自動習得 1 等，之後也能從「召喚」抽到並疊加。`,
+    desc:'召喚一道土牆，吸引敵人攻擊。',
   },
 };
 // 各技能施放頻率＝角色攻速 × 對應倍率（各自獨立計時，不是三個技能綁在同一顆計時器上）：
 // 火球術 x1（跟角色攻速一致）、冰椎術 x0.5（角色攻速的一半）、閃電術 x0.9。
-const SKILL_SPD_MULT = { fireball:1, icespike:0.5, lightning:0.9, whirlwind:0.1 };
+const SKILL_SPD_MULT = { fireball:1, icespike:0.5, lightning:0.9, whirlwind:0.1, earthwall:0.1 };
 // 抽到技能的總機率固定 30%，平均分攤給「目前已可抽到」的技能種類
-// （旋風術在 unlockedLevel 超過 20 之前不會出現在召喚池，解鎖後才加入均分）
+// （旋風術在 unlockedLevel 超過 20 之前、土牆術在 unlockedLevel 超過 40 之前不會出現在召喚池，解鎖後才加入均分）
 const SKILL_PULL_CHANCE = 0.30;
 function skillAvailableForPull(key){
   if(key === 'whirlwind') return state.unlockedLevel > WHIRLWIND_UNLOCK_LEVEL;
+  if(key === 'earthwall') return state.unlockedLevel > EARTHWALL_UNLOCK_LEVEL;
   return true;
 }
 function rollSkill(){
@@ -701,20 +711,35 @@ function fireballAtk(s){ return s.atk * fireballPct() / 100; }
 function icespikeAtk(s){ return s.atk * icespikePct() / 100; }
 function lightningAtk(s){ return s.atk * lightningPct() / 100; }
 function whirlwindAtk(s){ return s.atk * whirlwindPct() / 100; }
-// 旋風術解鎖條件：過關進度（unlockedLevel）超過第 20 關時自動習得 1 等
-const WHIRLWIND_UNLOCK_LEVEL = 20;
-// 旋風術龍捲風的戰鬥參數：範圍半徑 40、每 0.4 秒 tick 一次、共存活 2.8 秒（=7 次 tick）、
-// 移動速度為火球術彈道基礎速度的 20%
-const WHIRLWIND_RADIUS = 40;
-const WHIRLWIND_TICK = 0.4;
-const WHIRLWIND_LIFE = 2.8;
-const WHIRLWIND_SPEED_MULT = 0.2;
+const WHIRLWIND_UNLOCK_LEVEL = 20;// 旋風術解鎖條件：過關進度（unlockedLevel）超過第 20 關時自動習得 1 等
+const WHIRLWIND_RADIUS = 45;//旋風術半徑
+const WHIRLWIND_TICK = 0.5;//旋風術傷害CD
+const WHIRLWIND_LIFE = 3.5;//旋風術持續時間
+const WHIRLWIND_SPEED_MULT = 0.2;//旋風術移動速度
 // 若 unlockedLevel 已超過門檻但尚未自動給過 1 等，補發（新關卡解鎖、讀檔等情境都會呼叫到這裡）
 function checkWhirlwindUnlock(){
   if(state.unlockedLevel > WHIRLWIND_UNLOCK_LEVEL && state.skills.whirlwind.draws < 1){
     state.skills.whirlwind.draws = 1;
     save();
   }
+}
+// 土牆術：過關進度（unlockedLevel）超過第 40 關時自動習得 1 等
+const EARTHWALL_UNLOCK_LEVEL = 40;
+const EARTHWALL_MIN_OFFSET = 200; // 生成位置距離底部最小高度
+const EARTHWALL_MAX_OFFSET = 500; // 生成位置距離底部最大高度
+function checkEarthwallUnlock(){
+  if(state.unlockedLevel > EARTHWALL_UNLOCK_LEVEL && state.skills.earthwall.draws < 1){
+    state.skills.earthwall.draws = 1;
+    save();
+  }
+}
+// 寬度：前 6 等每抽 1 次寬度 +30（120 + 30×1~6），滿 6 等後寬度不再增加
+function earthwallWidth(){ return 120 + 30 * skillStacks('earthwall'); }
+// 土牆係數：前 6 等固定 30%，滿 6 等後每抽 1 次再 +1%
+function earthwallPct(){ return 30 + skillOverCap('earthwall') * 1; }
+// 血量＝基礎攻擊 ×（1+暴擊率）× 暴擊傷害 × 土牆係數
+function earthwallHp(s){
+  return s.atk * (1 + s.crit/100) * (s.critDmg/100) * (earthwallPct()/100);
 }
 // 冰椎減速：每次命中疊加一層，每層獨立倒數，最多 3 層
 const ICESPIKE_SLOW_PCT = 0.20;
@@ -760,11 +785,10 @@ const UPGRADES = [
     body:lv=>Math.max(0.4, 0.3 + lv*0.12), full:lv=>Math.max(0.4, 0.3 + lv*0.12 + sumEquip('spd')),
     bodyFmt:v=>v.toFixed(2)+' 發/秒' },
   { key:'crit', icon:'✨', name:'暴擊率',  base:100, grow:1.2, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
-    // 顯示用的 bodyFmt 再自行封頂在 80%，畫面上暴擊率一樣不會顯示超過 80%。
+    // 暴擊率（等級+裝備疊加後）超過 80% 上限的部分，會在 stats() 裡 1:1 轉成額外暴擊傷害疊加。
     body:lv=>Math.min(80, 5 + lv*1.2),     full:lv=>5 + lv*1.2 + sumEquip('crit'),
     bodyFmt:v=>Math.min(80, v).toFixed(1)+'%' },
   // 暴擊傷害：基礎倍率 200%，每級 +1%。
-  // 暴擊率（等級+裝備疊加後）超過 80% 上限的部分，會在 stats() 裡 1:1 轉成額外暴擊傷害疊加在這裡。
   { key:'critdmg', icon:'💥', name:'暴擊傷害', base:100, grow:1.2, per:1.2, fmt:v=>'+'+v.toFixed(0)+'%',
     body:lv=>200 + lv*1.2,                   full:lv=>200 + lv*1.2 + sumEquip('critdmg'),
     bodyFmt:v=>v.toFixed(0)+'%' },
@@ -779,7 +803,7 @@ function freshState(){
     up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0 },
     bag:[],                                   // [{uid,id,rarity,refine}]
     equipped:{ weapon:null, armor:null, trinket:null },
-    skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0}, whirlwind:{draws:0} }, // 技能召喚抽到的次數（旋風術另外會在 unlockedLevel > 20 時自動補發 1 等）
+    skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0}, whirlwind:{draws:0}, earthwall:{draws:0} }, // 技能召喚抽到的次數（旋風術另外會在 unlockedLevel > 20、土牆術在 unlockedLevel > 40 時自動補發 1 等）
     quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
     qs:{ correct:0, wrong:0, streak:0, best:0, shield:3, shieldProgress:0 },
     best:{ wave:0, kills:0 },
@@ -820,10 +844,12 @@ function load(){
       icespike: Object.assign({draws:0}, (d.skills&&d.skills.icespike)||{}),
       lightning: Object.assign({draws:0}, (d.skills&&d.skills.lightning)||{}),
       whirlwind: Object.assign({draws:0}, (d.skills&&d.skills.whirlwind)||{}),
+      earthwall: Object.assign({draws:0}, (d.skills&&d.skills.earthwall)||{}),
     };
     state.levelRecords = Object.assign({}, d.levelRecords||{});
     state.unlockedLevel = Math.max(1, Math.min(LEVEL_COUNT, d.unlockedLevel || 1));
     checkWhirlwindUnlock(); // 舊存檔若過關進度早已超過 20 關，補發旋風術 1 等
+    checkEarthwallUnlock(); // 舊存檔若過關進度早已超過 40 關，補發土牆術 1 等
     // 進度資料還原：補上舊存檔可能缺少的欄位，避免引擎讀到 undefined
     state.quiz     = Object.assign(QuizEngine.createProgress(), d.quiz||{});
   }catch(e){}
@@ -1248,9 +1274,9 @@ const run = {
   t:0, wave:1, spawned:0, waveQuota:0, spawnTimer:0,
   hp:100, maxHp:100,
   heroX:W/2, targetX:W/2,
-  fireTimer:0, iceTimer:0, lightningTimer:0, whirlwindTimer:0,
+  fireTimer:0, iceTimer:0, lightningTimer:0, whirlwindTimer:0, earthwallTimer:0,
   kills:0, gold:0,
-  enemies:[], shots:[], bits:[], pops:[], bolts:[], tornadoes:[],
+  enemies:[], shots:[], bits:[], pops:[], bolts:[], tornadoes:[], walls:[],
   iceQueue:[],   // 冰椎術待發射佇列（每個元素是還剩多少秒才發射）
   shake:0,
 };
@@ -1335,9 +1361,9 @@ function startRun(level){
   run.level = level || run.level || 1;
   run.t=0; run.wave=1; run.spawned=0; run.waveQuota=waveQuotaFor(1); run.spawnTimer=0;
   run.maxHp=s.maxHp; run.hp=s.maxHp;
-  run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0; run.whirlwindTimer=0;
+  run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0; run.whirlwindTimer=0; run.earthwallTimer=0;
   run.kills=0; run.gold=0;
-  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.tornadoes=[]; run.shake=0;
+  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.tornadoes=[]; run.walls=[]; run.shake=0;
   applyLevelTheme(run.level);
   document.getElementById('overlay').classList.remove('on');
   openStage();
@@ -1433,6 +1459,7 @@ function spawnEnemy(){
   const isBoss = (w % 5 === 0) && run.spawned === run.waveQuota-1;
   const base = MONSTERS[Math.floor(Math.random()*MONSTERS.length)];
   const hp = enemyHpFor(run.level, w) * base.hp * (isBoss ? 14 : 1);
+  const dps = (isBoss ? 28 : 9) * Math.pow(LEVEL_HP_GROWTH, run.level-1);
   run.enemies.push({
     x: 32 + Math.random()*(W-64),
     y: -30,
@@ -1443,6 +1470,7 @@ function spawnEnemy(){
     emoji: isBoss ? BOSSES[Math.floor(Math.random()*BOSSES.length)] : base.emoji,
     gold: base.gold * (isBoss ? 22 : 1) * (1 + w*0.35),
     boss: isBoss,
+    dps,
     hit: 0,
     slowStacks: [],  // 冰椎術減速層數：陣列每個元素是該層還剩多少秒
   });
@@ -1557,6 +1585,22 @@ function castWhirlwind(){
   });
 }
 
+// 土牆術：生成一道橫向的土牆，高度（距底部）在 200～500 隨機，寬度依疊加等級決定，
+// 沒有存在時間限制，直到血量歸零才會消失，敵人壓到會停下來持續攻擊土牆。
+function castEarthwall(){
+  if(state.skills.earthwall.draws < 1) return; // 尚未解鎖
+  const s = stats();
+  const hp = earthwallHp(s);
+  const offset = EARTHWALL_MIN_OFFSET + Math.random()*(EARTHWALL_MAX_OFFSET-EARTHWALL_MIN_OFFSET);
+  run.walls.push({
+    x: W/2,
+    y: Math.max(50, H - offset),
+    width: earthwallWidth(),
+    hp, maxHp: hp,
+    hit: 0,
+  });
+}
+
 
 /* 爆點與傷害數字 */
 function burst(x,y,color,count){
@@ -1639,6 +1683,8 @@ function step(dt){
   if(run.lightningTimer <= 0){ castLightning(); run.lightningTimer = 1 / (s.spd * SKILL_SPD_MULT.lightning); }
   run.whirlwindTimer -= dt;
   if(run.whirlwindTimer <= 0){ castWhirlwind(); run.whirlwindTimer = 1 / (s.spd * SKILL_SPD_MULT.whirlwind); }
+  run.earthwallTimer -= dt;
+  if(run.earthwallTimer <= 0){ castEarthwall(); run.earthwallTimer = 1 / (s.spd * SKILL_SPD_MULT.earthwall); }
 
   // 冰椎術佇列：各自倒數，時間到才真正生成（見 queueIceSpikes 的說明）
   for(let i=run.iceQueue.length-1;i>=0;i--){
@@ -1736,6 +1782,9 @@ function step(dt){
     }
   }
 
+  // 土牆術：牆本身不會消失，只有被打壞（hp<=0）才移除；受擊的紅光回饋計時器倒數
+  for(const w of run.walls){ if(w.hit > 0) w.hit -= dt; }
+
   // 怪物
   const heroLine = H - 74;
   for(let i=run.enemies.length-1;i>=0;i--){
@@ -1748,6 +1797,16 @@ function step(dt){
       }
     }
     const slowMul = 1 - Math.min(ICESPIKE_SLOW_MAX_STACKS, e.slowStacks ? e.slowStacks.length : 0) * ICESPIKE_SLOW_PCT;
+
+    // 尋找路徑上（在敵人下方、水平範圍內）血量還在的最近土牆，擋住敵人前進
+    let blockWall = null, blockY = Infinity;
+    for(const w of run.walls){
+      if(w.hp <= 0) continue;
+      if(w.y <= e.y) continue; // 牆已經在敵人上方（已通過），不再擋
+      if(Math.abs(e.x - w.x) > w.width/2 + e.r) continue;
+      if(w.y < blockY){ blockY = w.y; blockWall = w; }
+    }
+
     e.y += e.spd*dt*slowMul;
     e.x += e.vx*dt*slowMul;
     if(e.x < e.r || e.x > W-e.r) e.vx *= -1;
@@ -1761,12 +1820,24 @@ function step(dt){
       run.enemies.splice(i,1);
       continue;
     }
+    // 土牆吸引敵人攻擊：壓到土牆 → 停在牆前，持續攻擊土牆直到牆被打壞才會繼續前進
+    if(blockWall && e.y >= blockWall.y){
+      e.y = blockWall.y;
+      e.touching = true;
+      blockWall.hp -= e.dps*dt;
+      blockWall.hit = 0.12;
+      e.hitTimer = (e.hitTimer||0) + dt;
+      if(e.hitTimer >= 0.4){
+        e.hitTimer = 0;
+        burst(e.x, blockWall.y, '#c99a5b', e.boss ? 12 : 6);
+      }
+      continue;
+    }
     // 壓到主角 → 停在原地，持續扣血，直到被攻擊打死才會消失
     if(e.y >= heroLine){
       e.y = heroLine; // 卡在防線上，不再往下擠
       e.touching = true;
-      const dps = e.boss ? 28 : 9;
-      run.hp -= dps*dt;
+      run.hp -= e.dps*dt;
       e.hitTimer = (e.hitTimer||0) + dt;
       if(e.hitTimer >= 0.4){ // 每 0.4 秒一次視覺回饋，避免每幀爆量特效
         e.hitTimer = 0;
@@ -1774,6 +1845,15 @@ function step(dt){
         run.shake = Math.max(run.shake, e.boss ? 0.3 : 0.12);
       }
       if(run.hp <= 0){ run.hp = 0; syncBattleHud(); endRun(false); return; }
+    }
+  }
+
+  // 清掉已經被打壞的土牆
+  for(let i=run.walls.length-1;i>=0;i--){
+    if(run.walls[i].hp <= 0){
+      const w = run.walls[i];
+      burst(w.x, w.y, '#c99a5b', 16);
+      run.walls.splice(i,1);
     }
   }
 
@@ -1897,6 +1977,35 @@ function draw(){
   ctx.beginPath(); ctx.moveTo(-30,H-58); ctx.lineTo(W+30,H-58); ctx.stroke();
 
   ctx.textAlign='center'; ctx.textBaseline='middle';
+
+  // 土牆術：磚牆造型的橫向柵欄，受擊時短暫泛紅
+  run.walls.forEach(w=>{
+    const bw = w.width, bh = 22, bx = w.x - bw/2, by = w.y - bh/2;
+    ctx.save();
+    ctx.fillStyle = w.hit > 0 ? '#e0a374' : '#a9764a';
+    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 4); else ctx.rect(bx, by, bw, bh);
+    ctx.fill(); ctx.stroke();
+    // 磚紋
+    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1;
+    const rows = 2, brickW = 26;
+    for(let r=0;r<rows;r++){
+      const ry = by + (bh/rows)*r;
+      ctx.beginPath(); ctx.moveTo(bx, ry); ctx.lineTo(bx+bw, ry); ctx.stroke();
+      const offset = (r%2===0) ? 0 : brickW/2;
+      for(let bx2 = bx+offset; bx2 < bx+bw; bx2 += brickW){
+        ctx.beginPath(); ctx.moveTo(bx2, ry); ctx.lineTo(bx2, ry+bh/rows); ctx.stroke();
+      }
+    }
+    ctx.restore();
+    // 血條
+    if(w.hp < w.maxHp){
+      ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(bx, by-7, bw, 3.5);
+      ctx.fillStyle = '#c99a5b';
+      ctx.fillRect(bx, by-7, bw*Math.max(0,w.hp/w.maxHp), 3.5);
+    }
+  });
 
   // 怪物
   run.enemies.forEach(e=>{
@@ -2189,9 +2298,14 @@ function renderSkills(){
     const owned = def.innate || draws > 0;
     const stacks = def.stacksFn();
     const pct = def.pctFn();
-    const statusText = owned
-      ? `${def.stackLabel} ${stacks}　傷害 ${pct.toFixed(1)}% 攻擊`
-      : (def.lockHintFn ? def.lockHintFn() : '尚未習得，去「召喚」試試手氣');
+    let statusText;
+    if(!owned){
+      statusText = def.lockHintFn ? def.lockHintFn() : '尚未習得，去「召喚」試試手氣';
+    } else if(key === 'earthwall'){
+      statusText = `寬度 ${earthwallWidth()}　土牆係數 ${pct.toFixed(1)}%　血量約 ${Math.round(earthwallHp(stats()))}`;
+    } else {
+      statusText = `${def.stackLabel} ${stacks}　傷害 ${pct.toFixed(1)}% 攻擊`;
+    }
     return `<div class="up">
       <div class="ico">${def.icon}</div>
       <div class="info">
@@ -2296,6 +2410,7 @@ function renderEquip(){
    ══════════════════════════════════════════ */
 function syncUI(){
   checkWhirlwindUnlock(); // 過關進度一旦超過門檻就自動補發旋風術 1 等
+  checkEarthwallUnlock(); // 過關進度一旦超過門檻就自動補發土牆術 1 等
   document.getElementById('uiGem').textContent   = state.gem;
   document.getElementById('uiGold').textContent  = state.gold;
   document.getElementById('uiStone').textContent = state.stone;
