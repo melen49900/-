@@ -1831,6 +1831,38 @@ function syncBattleHud(){
 }
 
 /* 繪製 */
+// emoji 用 textAlign='center' 置中時，是用「前進寬度」平分，
+// 但彩色 emoji 字型（尤其平板上的 Apple/Noto Color Emoji）實際圖形常常沒有
+// 對稱畫在前進寬度正中間，導致視覺位置跟真實座標（e.x, e.y）有落差，
+// 在某些裝置上看起來像是整體偏右。改用 measureText 的
+// actualBoundingBoxLeft/Right（真實視覺邊界）算出偏移量來手動置中，
+// 才能讓圖示真正對齊邏輯座標。用 Map 快取避免每幀重算。
+const emojiOffsetCache = new Map();
+function getEmojiCenterOffset(text, font){
+  const key = font + '::' + text;
+  let off = emojiOffsetCache.get(key);
+  if(off !== undefined) return off;
+  const prevFont = ctx.font, prevAlign = ctx.textAlign;
+  ctx.font = font;
+  ctx.textAlign = 'left';
+  const m = ctx.measureText(text);
+  const left = m.actualBoundingBoxLeft || 0;
+  const right = (m.actualBoundingBoxRight != null && isFinite(m.actualBoundingBoxRight)) ? m.actualBoundingBoxRight : m.width;
+  off = (right - left) / 2;
+  if(!isFinite(off)) off = 0;
+  emojiOffsetCache.set(key, off);
+  ctx.font = prevFont; ctx.textAlign = prevAlign;
+  return off;
+}
+function fillEmojiCentered(text, x, y, font){
+  const off = getEmojiCenterOffset(text, font);
+  const prevFont = ctx.font, prevAlign = ctx.textAlign;
+  ctx.font = font;
+  ctx.textAlign = 'left';
+  ctx.fillText(text, x - off, y);
+  ctx.font = prevFont; ctx.textAlign = prevAlign;
+}
+
 function draw(){
   const rw = cv.width, rh = cv.height;
   if(!rw || !rh) return;
@@ -1879,8 +1911,7 @@ function draw(){
     }
     ctx.save();
     if(e.hit > 0){ ctx.globalAlpha = 0.55; }
-    ctx.font = `${e.r*2}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif`;
-    ctx.fillText(e.emoji + '\uFE0F', e.x, e.y);
+    fillEmojiCentered(e.emoji + '\uFE0F', e.x, e.y, `${e.r*2}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif`);
     ctx.restore();
     // 血條
     if(e.hp < e.maxHp){
@@ -1988,8 +2019,7 @@ function draw(){
     const hg = ctx.createRadialGradient(hx,hy,2,hx,hy,40);
     hg.addColorStop(0,'rgba(255,170,60,.42)'); hg.addColorStop(1,'rgba(255,120,30,0)');
     ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(hx,hy,40,0,Math.PI*2); ctx.fill();
-    ctx.font = '38px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif';
-    ctx.fillText('🧙\uFE0F', hx, hy);
+    fillEmojiCentered('🧙\uFE0F', hx, hy, '38px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif');
   }
 
   // 粒子
