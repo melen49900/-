@@ -727,6 +727,7 @@ function checkWhirlwindUnlock(){
 const EARTHWALL_UNLOCK_LEVEL = 40;
 const EARTHWALL_MIN_OFFSET = 200; // 生成位置距離底部最小高度
 const EARTHWALL_MAX_OFFSET = 500; // 生成位置距離底部最大高度
+const EARTHWALL_BREAK_STAGGER = 0.15; // 牆被打壞後，敵人還會停頓幾秒才繼續前進（可自行調整 0.1～0.2 之間的數值）
 function checkEarthwallUnlock(){
   if(state.unlockedLevel > EARTHWALL_UNLOCK_LEVEL && state.skills.earthwall.draws < 1){
     state.skills.earthwall.draws = 1;
@@ -1822,6 +1823,15 @@ function step(dt){
     }
     const slowMul = 1 - Math.min(ICESPIKE_SLOW_MAX_STACKS, e.slowStacks ? e.slowStacks.length : 0) * ICESPIKE_SLOW_PCT;
 
+    if(e.hp <= 0){
+      run.kills++;
+      run.gold += fin(e.gold, 0);
+      burst(e.x, e.y, e.boss ? '#ff3b6b' : '#ffb347', e.boss ? 38 : 13);
+      if(e.boss) run.shake = 0.35;
+      run.enemies.splice(i,1);
+      continue;
+    }
+
     // 尋找路徑上（在敵人下方、水平範圍內）的最近土牆，擋住敵人前進；
     // 這裡不篩掉本影格內剛好被打到 hp<=0 的牆，讓「摧毀那一下」也還是能稍微擋住敵人
     // （包含同一影格內還有其他敵人正壓在同一道牆上的情況），下個影格才真正移除、放行。
@@ -1832,25 +1842,27 @@ function step(dt){
       if(w.y < blockY){ blockY = w.y; blockWall = w; }
     }
 
+    // 破牆停頓：牆被打壞的瞬間還不會立刻放行，讓敵人原地停頓一小段時間（可觀察的停頓感）再繼續前進
+    if(e.wallStagger > 0){
+      e.wallStagger -= dt;
+      e.touching = true;
+      if(e.hit > 0) e.hit -= dt;
+      continue;
+    }
+
     e.y += e.spd*dt*slowMul;
     e.x += e.vx*dt*slowMul;
     if(e.x < e.r || e.x > W-e.r) e.vx *= -1;
     if(e.hit > 0) e.hit -= dt;
 
-    if(e.hp <= 0){
-      run.kills++;
-      run.gold += fin(e.gold, 0);
-      burst(e.x, e.y, e.boss ? '#ff3b6b' : '#ffb347', e.boss ? 38 : 13);
-      if(e.boss) run.shake = 0.35;
-      run.enemies.splice(i,1);
-      continue;
-    }
-    // 土牆吸引敵人攻擊：壓到土牆 → 停在牆前，持續攻擊土牆直到牆被打壞才會繼續前進
+    // 土牆吸引敵人攻擊：壓到土牆 → 停在牆前，持續攻擊土牆直到牆被打壞才會繼續前進，
+    // 牆被打壞的那一下額外進入 wallStagger 停頓，停頓結束才真正恢復前進
     if(blockWall && e.y >= blockWall.y){
       e.y = blockWall.y;
       e.touching = true;
       blockWall.hp -= e.dps*dt;
       blockWall.hit = 0.12;
+      if(blockWall.hp <= 0) e.wallStagger = EARTHWALL_BREAK_STAGGER;
       e.hitTimer = (e.hitTimer||0) + dt;
       if(e.hitTimer >= 0.4){
         e.hitTimer = 0;
