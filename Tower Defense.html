@@ -816,6 +816,25 @@ function freshState(){
 // 數值防護：任何非有限數字（undefined／null／NaN／字串壞值）一律退回預設值，
 // 避免存檔或運算中一旦出現一個壞數字，透過 += 之類的運算「感染」到金幣、暴傷等其他數值。
 function fin(v, def){ return Number.isFinite(v) ? v : def; }
+// 數字簡化顯示：千(K)／百萬(M)／十億(B)，四捨五入到小數點後1位
+function fmtNum(n){
+  n = fin(n, 0);
+  const sign = n < 0 ? '-' : '';
+  n = Math.abs(n);
+  const units = [ {v:1e9, s:'B'}, {v:1e6, s:'M'}, {v:1e3, s:'K'} ];
+  for(const u of units){
+    if(n >= u.v){
+      let val = Math.round(n / u.v * 10) / 10;
+      // 四捨五入後若剛好湊滿 1000，進位到上一個單位（例如 999999 → 1.0M 而非 1000.0K）
+      if(val >= 1000){
+        const next = units[units.indexOf(u) - 1];
+        if(next) return sign + (val / 1000).toFixed(1) + next.s;
+      }
+      return sign + val.toFixed(1) + u.s;
+    }
+  }
+  return sign + Math.round(n).toString();
+}
 function sanitizeState(){
   state.gem   = Math.max(0, fin(state.gem, 0));
   state.gold  = Math.max(0, fin(state.gold, 0));
@@ -1414,9 +1433,9 @@ function endRun(win){
   const loot = document.getElementById('ovLoot');
   loot.className = 'on';
   loot.innerHTML =
-    `<div><span>💰 金幣</span><span>+${goldGain}</span></div>` +
-    `<div><span>🔮 強化石</span><span>+${stoneGain}</span></div>` +
-    (gemGain ? `<div><span>💎 鑽石</span><span>+${gemGain}</span></div>` : '');
+    `<div><span>💰 金幣</span><span>+${fmtNum(goldGain)}</span></div>` +
+    `<div><span>🔮 強化石</span><span>+${fmtNum(stoneGain)}</span></div>` +
+    (gemGain ? `<div><span>💎 鑽石</span><span>+${fmtNum(gemGain)}</span></div>` : '');
 
   if(win && !isLast){
     ovBtn.textContent = `前往第 ${run.level+1} 關`;
@@ -1558,7 +1577,7 @@ function castLightning(){
 
   targets.forEach(e=>{
     e.hp -= dmg; e.hit = 0.12;
-    popText(e.x, e.y-e.r-4, Math.round(dmg), crit);
+    popText(e.x, e.y-e.r-4, fmtNum(dmg), crit);
   });
   burst(targets[0].x, targets[0].y, crit ? '#fff9c4' : '#ffe066', crit?9:5);
 
@@ -1726,7 +1745,7 @@ function step(dt){
         // 暴擊傷害改用鍛造台的「暴擊傷害」數值（含暴擊率溢出轉換），不再寫死 x2
         const dmg = b.crit ? b.dmg * (s.critDmg/100) : b.dmg;
         e.hp -= dmg; e.hit = 0.12;
-        popText(e.x, e.y-e.r-4, Math.round(dmg), b.crit);
+        popText(e.x, e.y-e.r-4, fmtNum(dmg), b.crit);
         if(b.kind === 'ice'){
           // 冰凍減速：每次命中疊加一層（1秒獨立倒數），最多3層
           if(!e.slowStacks) e.slowStacks = [];
@@ -1774,7 +1793,7 @@ function step(dt){
           const crit = Math.random()*100 < s.crit;
           const dmg = crit ? t.dmg * (s.critDmg/100) : t.dmg;
           e.hp -= dmg; e.hit = 0.12;
-          popText(e.x, e.y-e.r-4, Math.round(dmg), crit);
+          popText(e.x, e.y-e.r-4, fmtNum(dmg), crit);
           hitAny = true;
         }
       }
@@ -1904,7 +1923,7 @@ function syncBattleHud(){
   }
 
   document.getElementById('runKill').textContent = `☠ ${run.kills}`;
-  document.getElementById('runGold').textContent = `💰 ${Math.round(run.gold)}`;
+  document.getElementById('runGold').textContent = `💰 ${fmtNum(run.gold)}`;
   const pct = run.maxHp ? Math.max(0, run.hp/run.maxHp*100) : 0;
   document.getElementById('hpFill').style.width = pct + '%';
   document.getElementById('hpText').textContent = `${Math.max(0,Math.ceil(run.hp))} / ${run.maxHp}`;
@@ -2412,8 +2431,8 @@ function syncUI(){
   checkWhirlwindUnlock(); // 過關進度一旦超過門檻就自動補發旋風術 1 等
   checkEarthwallUnlock(); // 過關進度一旦超過門檻就自動補發土牆術 1 等
   document.getElementById('uiGem').textContent   = state.gem;
-  document.getElementById('uiGold').textContent  = state.gold;
-  document.getElementById('uiStone').textContent = state.stone;
+  document.getElementById('uiGold').textContent  = fmtNum(state.gold);
+  document.getElementById('uiStone').textContent = fmtNum(state.stone);
   document.getElementById('pull1').disabled  = state.gem < 100;
   document.getElementById('pull10').disabled = state.gem < 900;
   // 鑽石不夠抽時，提醒去答題
@@ -2574,7 +2593,7 @@ function admRender(){
     <div class="adm-stat">
       答對 <b>${q.correct}</b>　答錯 <b>${q.wrong}</b>　連勝 <b>${q.streak}</b>（最佳 <b>${q.best}</b>）<br>
       綠燈保護 <b>${q.shield ?? 3}</b>／3<br>
-      鑽石 <b>${state.gem}</b>　金幣 <b>${state.gold}</b>　強化石 <b>${state.stone}</b>
+      鑽石 <b>${fmtNum(state.gem)}</b>　金幣 <b>${fmtNum(state.gold)}</b>　強化石 <b>${fmtNum(state.stone)}</b>
     </div>
     <div class="adm-stat" style="margin-top:6px;opacity:.75">
       ※ 答對／答錯是五科合計的總數，遊戲目前不會分科分別記錄「正確／錯誤題數」，
