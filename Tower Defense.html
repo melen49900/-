@@ -725,19 +725,18 @@ function checkWhirlwindUnlock(){
 }
 // 土牆術：過關進度（unlockedLevel）超過第 40 關時自動習得 1 等
 const EARTHWALL_UNLOCK_LEVEL = 40;
-const EARTHWALL_MIN_OFFSET = 200; // 生成位置距離底部最小高度
-const EARTHWALL_MAX_OFFSET = 500; // 生成位置距離底部最大高度
-const EARTHWALL_BREAK_STAGGER = 0.15; // 牆被打壞後，敵人還會停頓幾秒才繼續前進（可自行調整 0.1～0.2 之間的數值）
+const EARTHWALL_MIN_OFFSET = 200; // 土牆生成位置距底部Min
+const EARTHWALL_MAX_OFFSET = 600; // 土牆生成位置距底部Max
+const EARTHWALL_BREAK_STAGGER = 0.2; // 牆被打壞後，敵人還會停頓幾秒才繼續前進（可自行調整 0.1～0.2 之間的數值）
 function checkEarthwallUnlock(){
   if(state.unlockedLevel > EARTHWALL_UNLOCK_LEVEL && state.skills.earthwall.draws < 1){
     state.skills.earthwall.draws = 1;
     save();
   }
 }
-// 寬度：前 6 等每抽 1 次寬度 +30（120 + 30×1~6），滿 6 等後寬度不再增加
-function earthwallWidth(){ return 120 + 30 * skillStacks('earthwall'); }
-// 土牆係數：前 6 等固定 30%，滿 6 等後每抽 1 次再 +1%
-function earthwallPct(){ return 30 + skillOverCap('earthwall') * 1; }
+
+function earthwallWidth(){ return 100 + 20 * skillStacks('earthwall'); }// 土牆寬度
+function earthwallPct(){ return 50 + skillOverCap('earthwall') * 2; }// 土牆係數
 // 血量＝基礎攻擊 ×（1+暴擊率）× 暴擊傷害 × 土牆係數
 function earthwallHp(s){
   return s.atk * (1 + s.crit/100) * (s.critDmg/100) * (earthwallPct()/100);
@@ -1479,7 +1478,7 @@ function spawnEnemy(){
   const isBoss = (w % 5 === 0) && run.spawned === run.waveQuota-1;
   const base = MONSTERS[Math.floor(Math.random()*MONSTERS.length)];
   const hp = enemyHpFor(run.level, w) * base.hp * (isBoss ? 14 : 1);
-  const dps = (isBoss ? 28 : 9) * Math.pow(LEVEL_HP_GROWTH, run.level-1);
+  const dps = (isBoss ? 12 : 3) * Math.pow(LEVEL_HP_GROWTH, run.level-1);
   run.enemies.push({
     x: 32 + Math.random()*(W-64),
     y: -30,
@@ -1605,7 +1604,7 @@ function castWhirlwind(){
   });
 }
 
-// 土牆術：生成一道橫向的土牆，高度（距底部）在 200～500 隨機，寬度依疊加等級決定，
+// 土牆術：生成一道橫向的土牆，高度隨機，寬度依疊加等級決定，
 // 水平位置隨機偏左或偏右（不再固定在正中間），並確保整道牆仍在畫面範圍內；
 // 沒有存在時間限制，直到血量歸零才會消失，敵人壓到會停下來持續攻擊土牆。
 function castEarthwall(){
