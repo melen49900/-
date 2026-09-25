@@ -1856,7 +1856,11 @@ function step(dt){
     // 結果直接穿牆跑到牆後面（尤其開 2x 加速、每幀移動量變大時特別容易發生）。
     let blockWall = null, blockY = Infinity;
     for(const w of run.walls){
-      if(w.y <= preY) continue; // 牆已經在敵人上方（已通過），不再擋
+      // 用「小於」而不是「小於等於」：怪物被夾到剛好貼在牆上時 w.y 會跟 preY 完全相等，
+      // 這種情況這道牆仍然在擋（還沒被打壞），不能當成「已經通過」而放行，
+      // 不然牆疊很多層時，怪物會在貼牆的下一幀突然被判定成「沒有牆擋了」，
+      // 直接一口氣衝去攻擊疊在後面的下一道牆（跳過原本還活著的這一道）。
+      if(w.y < preY) continue; // 牆已經在敵人上方（已通過），不再擋
       if(Math.abs(e.x - w.x) > w.width/2 + e.r) continue;
       if(w.y < blockY){ blockY = w.y; blockWall = w; }
     }
