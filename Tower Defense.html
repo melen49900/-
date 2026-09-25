@@ -531,10 +531,10 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
     <section class="screen" id="screen-upgrade">
       <div class="pad">
         <h2 class="sec">鍛造台</h2>
-        <p class="sub">用金幣鍛鍊本體能力。每級費用會隨等級提高。</p>
+        <p class="sub">用金幣增強角色能力。每級費用會隨等級提高。</p>
         <div class="card" id="upList"></div>
         <h2 class="sec" style="margin-top:18px">裝備精煉</h2>
-        <p class="sub">用強化石精煉已裝備的物品，每次精煉提升該裝備 8% 全能力。</p>
+        <p class="sub">用強化石精煉已裝備的物品，每次精煉提升該裝備 10% 全能力。</p>
         <div class="card" id="refineList"></div>
       </div>
     </section>
@@ -607,11 +607,11 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
    ══════════════════════════════════════════════════════════ */
 
 const SAVE_KEY = 'emberTrial_v1';
-const SPAWN_SECONDS = 160;        // 所有怪物出完的時間點（2:40），清空怪物過關
+const SPAWN_SECONDS = 155;        // 所有怪物出完的時間點（2:35），清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 60;           // 共 60 關
-
-const LEVEL_HP_GROWTH = 1.295;                                  // 血量成長係數
+const LEVEL_COUNT = 80;           // 共 80 關
+const LEVEL_HP_GROWTH = 1.287;                                  // 血量成長係數
+const LEVEL_ATK_GROWTH = 1.19;                                  // 攻擊成長係數
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內 20 波，血量差 3 倍
 const WAVE_SPD_GROWTH = 0.1;                                    // 關內 20 波，移速大約多 10%（≈1.1倍）
 
@@ -813,8 +813,7 @@ function freshState(){
   };
 }
 
-// 數值防護：任何非有限數字（undefined／null／NaN／字串壞值）一律退回預設值，
-// 避免存檔或運算中一旦出現一個壞數字，透過 += 之類的運算「感染」到金幣、暴傷等其他數值。
+// 數值防護：任何非數字一律退回預設，避免存檔或運算影響其他數值。
 function fin(v, def){ return Number.isFinite(v) ? v : def; }
 // 數字簡化顯示：千(K)／百萬(M)／十億(B)，四捨五入到小數點後1位
 function fmtNum(n){
@@ -871,6 +870,21 @@ function load(){
     checkEarthwallUnlock(); // 舊存檔若過關進度早已超過 40 關，補發土牆術 1 等
     // 進度資料還原：補上舊存檔可能缺少的欄位，避免引擎讀到 undefined
     state.quiz     = Object.assign(QuizEngine.createProgress(), d.quiz||{});
+    // 修復「精煉等級跑掉」的 bug：JSON 存檔/讀檔會讓 state.equipped[slot] 和
+    // state.bag 裡對應的物品變成兩個不同的物件（就算 uid 相同），
+    // 導致精煉時只更新其中一份、背包卡在舊的 +等級，重新穿上又打回原形。
+    // 這裡強制讓 equipped 指回背包裡「同一個」物件，兩邊資料重新同步成一份。
+    ['weapon','armor','trinket'].forEach(s=>{
+      const eq = state.equipped[s];
+      if(eq && eq.uid){
+        const inBag = state.bag.find(b=>b.uid===eq.uid);
+        if(inBag){
+          // 背包裡若剛好是舊資料、精煉值比目前裝備的低，以較高的為準，避免玩家精煉進度被吃掉
+          inBag.refine = Math.max(inBag.refine||0, eq.refine||0);
+          state.equipped[s] = inBag;
+        }
+      }
+    });
   }catch(e){}
   // 修復壞掉的存檔：把任何已經變成 NaN／undefined 的數值拉回正常值，
   // 這樣舊的壞存檔載入後就會自動恢復，不會一直卡在 NaN。
@@ -1220,9 +1234,7 @@ function sumEquip(key){
 }
 // 暴擊率上限，stats() 跟鍛造台面板顯示都要用同一個值，避免兩邊算出不同結果
 const CRIT_CAP = 80;
-// 目前「暴擊率超過上限、轉成暴擊傷害」的溢出量。抽成共用函式，
-// 這樣鍛造台面板（renderUpgrades）顯示的暴擊傷害才能跟實際戰鬥用的 stats() 對得上，
-// 不然面板會一直顯示沒加溢出的數字，看起來像是升級/裝備沒同步生效。
+// 計算暴擊率溢出量，抽成共用函式。
 function critOverflowAmount(){
   const rawCrit = UPGRADES.find(x=>x.key==='crit').full(state.up.crit);
   return Math.max(0, rawCrit - CRIT_CAP);
@@ -1230,8 +1242,7 @@ function critOverflowAmount(){
 function stats(){
   const u = state.up;
   const get = key => UPGRADES.find(x=>x.key===key).full(u[key]);
-  // 暴擊率上限 80%：等級 + 裝備疊加後若超過 80%，超出的部分 1:1 轉成暴擊傷害
-  // （例如合計 81% 暴擊率，會變成 80% 暴擊率 + 額外 1% 暴擊傷害），暴擊率本身不會再往上超過 80%。
+  // 暴擊率上限 80%：等級 + 裝備疊加後若超過 80%，超出的部分 1:1 轉成暴擊傷害，暴擊率本身不會再往上超過 80%。
   const rawCrit = get('crit');
   const critOverflow = critOverflowAmount();
   return {
@@ -1478,7 +1489,7 @@ function spawnEnemy(){
   const isBoss = (w % 5 === 0) && run.spawned === run.waveQuota-1;
   const base = MONSTERS[Math.floor(Math.random()*MONSTERS.length)];
   const hp = enemyHpFor(run.level, w) * base.hp * (isBoss ? 14 : 1);
-  const dps = (isBoss ? 12 : 3) * Math.pow(LEVEL_HP_GROWTH, run.level-1);
+  const dps = (isBoss ? 13 : 4) * Math.pow(LEVEL_ATK_GROWTH, run.level-1);
   run.enemies.push({
     x: 32 + Math.random()*(W-64),
     y: -30,
