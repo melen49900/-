@@ -1979,6 +1979,67 @@ function fillEmojiCentered(text, x, y, font){
   ctx.font = prevFont; ctx.textAlign = prevAlign;
 }
 
+// ── emoji 渲染防呆 ──────────────────────────
+// 有些裝置（尤其部分平板／舊版 WebKit）系統字型裡缺某個 emoji 的彩色字圖，
+// measureText 量得到寬度、但 fillText 實際畫出來是完全透明的一片空白，
+// 導致「角色消失但座標邏輯正常」。這裡用一塊 1x1 的離線 canvas 實際畫一次，
+// 檢查像素是否真的有內容，藉此判斷這個 emoji 在這台裝置上「畫不畫得出來」。
+// 一旦偵測到畫不出來，就改用手繪圖形當備援，確保任何裝置都看得到主角。
+const glyphSupportCache = new Map();
+function canvasCanRenderGlyph(text, font){
+  const key = font + '::' + text;
+  if(glyphSupportCache.has(key)) return glyphSupportCache.get(key);
+  let ok = true;
+  try{
+    const size = 48;
+    const c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    const tctx = c.getContext('2d');
+    tctx.clearRect(0,0,size,size);
+    tctx.font = font;
+    tctx.textAlign = 'center';
+    tctx.textBaseline = 'middle';
+    tctx.fillText(text, size/2, size/2);
+    const data = tctx.getImageData(0,0,size,size).data;
+    ok = false;
+    for(let i=3;i<data.length;i+=4){ if(data[i] !== 0){ ok = true; break; } }
+  }catch(e){ ok = true; } // 量測失敗時保守地當作「畫得出來」，走原本流程
+  glyphSupportCache.set(key, ok);
+  return ok;
+}
+
+// 手繪版藍帽法師：當裝置畫不出 🧙 這個 emoji 時使用，確保主角一定看得見。
+function drawHeroFallback(x, y, size){
+  ctx.save();
+  ctx.translate(x, y);
+  const s = size/38; // 以原本 38px emoji 大小為基準做等比縮放
+  ctx.scale(s, s);
+  // 斗篷／身體
+  ctx.fillStyle = '#3b6fd6';
+  ctx.beginPath();
+  ctx.moveTo(0, -6);
+  ctx.lineTo(11, 15);
+  ctx.quadraticCurveTo(0, 20, -11, 15);
+  ctx.closePath();
+  ctx.fill();
+  // 臉
+  ctx.fillStyle = '#ffd9b3';
+  ctx.beginPath(); ctx.arc(0, -8, 7, 0, Math.PI*2); ctx.fill();
+  // 帽子
+  ctx.fillStyle = '#2f5fc4';
+  ctx.beginPath();
+  ctx.moveTo(-9, -12);
+  ctx.lineTo(9, -12);
+  ctx.lineTo(0, -30);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillRect(-10, -13, 20, 3);
+  // 帽尖上的小星星
+  ctx.fillStyle = '#ffe066';
+  ctx.beginPath(); ctx.arc(0, -29, 2, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
 function draw(){
   const rw = cv.width, rh = cv.height;
   if(!rw || !rh) return;
@@ -2056,7 +2117,14 @@ function draw(){
     }
     ctx.save();
     if(e.hit > 0){ ctx.globalAlpha = 0.55; }
-    fillEmojiCentered(e.emoji + '\uFE0F', e.x, e.y, `${e.r*2}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif`);
+    const enemyFont = `${e.r*2}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif`;
+    if(canvasCanRenderGlyph(e.emoji + '\uFE0F', enemyFont)){
+      fillEmojiCentered(e.emoji + '\uFE0F', e.x, e.y, enemyFont);
+    } else {
+      // 備援：畫不出這個怪物 emoji 時，至少畫一顆有辨識度的色塊，不要整隻消失
+      ctx.fillStyle = e.boss ? '#ff3b6b' : '#c9663a';
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI*2); ctx.fill();
+    }
     ctx.restore();
     // 血條
     if(e.hp < e.maxHp){
@@ -2164,7 +2232,12 @@ function draw(){
     const hg = ctx.createRadialGradient(hx,hy,2,hx,hy,40);
     hg.addColorStop(0,'rgba(255,170,60,.42)'); hg.addColorStop(1,'rgba(255,120,30,0)');
     ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(hx,hy,40,0,Math.PI*2); ctx.fill();
-    fillEmojiCentered('🧙\uFE0F', hx, hy, '38px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif');
+    const heroFont = '38px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif';
+    if(canvasCanRenderGlyph('🧙\uFE0F', heroFont)){
+      fillEmojiCentered('🧙\uFE0F', hx, hy, heroFont);
+    } else {
+      drawHeroFallback(hx, hy, 38);
+    }
   }
 
   // 粒子
