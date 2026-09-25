@@ -2008,35 +2008,63 @@ function canvasCanRenderGlyph(text, font){
   return ok;
 }
 
-// 手繪版藍帽法師：當裝置畫不出 🧙 這個 emoji 時使用，確保主角一定看得見。
+// 法師角色圖案：不依賴系統 emoji 字型（不同裝置的彩色 emoji 字型是多圖層疊出來的，
+// 曾發生平板只畫出其中一層、變成裁切過的半透明殘影的狀況），改成完全用 canvas
+// 向量圖形手繪，確保任何裝置、瀏覽器畫出來都是同一個樣子，不會缺圖層或跑位。
 function drawHeroFallback(x, y, size){
   ctx.save();
   ctx.translate(x, y);
   const s = size/38; // 以原本 38px emoji 大小為基準做等比縮放
   ctx.scale(s, s);
+
   // 斗篷／身體
   ctx.fillStyle = '#3b6fd6';
   ctx.beginPath();
-  ctx.moveTo(0, -6);
-  ctx.lineTo(11, 15);
-  ctx.quadraticCurveTo(0, 20, -11, 15);
+  ctx.moveTo(0, -4);
+  ctx.lineTo(12, 17);
+  ctx.quadraticCurveTo(0, 22, -12, 17);
   ctx.closePath();
   ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // 斗篷滾邊
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(-9, 6); ctx.lineTo(-7, 17); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(9, 6); ctx.lineTo(7, 17); ctx.stroke();
+
   // 臉
   ctx.fillStyle = '#ffd9b3';
-  ctx.beginPath(); ctx.arc(0, -8, 7, 0, Math.PI*2); ctx.fill();
-  // 帽子
-  ctx.fillStyle = '#2f5fc4';
+  ctx.beginPath(); ctx.arc(0, -7, 7.5, 0, Math.PI*2); ctx.fill();
+
+  // 鬍子
+  ctx.fillStyle = '#e8e8ee';
   ctx.beginPath();
-  ctx.moveTo(-9, -12);
-  ctx.lineTo(9, -12);
-  ctx.lineTo(0, -30);
+  ctx.moveTo(-5, -3);
+  ctx.quadraticCurveTo(0, 6, 5, -3);
+  ctx.quadraticCurveTo(0, 1, -5, -3);
   ctx.closePath();
   ctx.fill();
-  ctx.fillRect(-10, -13, 20, 3);
+
+  // 帽子（尖頂巫師帽 + 帽簷）
+  ctx.fillStyle = '#2f5fc4';
+  ctx.beginPath();
+  ctx.moveTo(-10, -12);
+  ctx.lineTo(10, -12);
+  ctx.lineTo(1, -32);
+  ctx.quadraticCurveTo(3, -20, 0, -12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(0, -12, 12, 3.2, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1;
+  ctx.stroke();
+
   // 帽尖上的小星星
   ctx.fillStyle = '#ffe066';
-  ctx.beginPath(); ctx.arc(0, -29, 2, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(1, -31, 2.2, 0, Math.PI*2); ctx.fill();
+
   ctx.restore();
 }
 
@@ -2232,12 +2260,7 @@ function draw(){
     const hg = ctx.createRadialGradient(hx,hy,2,hx,hy,40);
     hg.addColorStop(0,'rgba(255,170,60,.42)'); hg.addColorStop(1,'rgba(255,120,30,0)');
     ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(hx,hy,40,0,Math.PI*2); ctx.fill();
-    const heroFont = '38px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif';
-    if(canvasCanRenderGlyph('🧙\uFE0F', heroFont)){
-      fillEmojiCentered('🧙\uFE0F', hx, hy, heroFont);
-    } else {
-      drawHeroFallback(hx, hy, 38);
-    }
+    drawHeroFallback(hx, hy, 38);
   }
 
   // 粒子
