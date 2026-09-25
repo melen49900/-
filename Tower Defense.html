@@ -1487,6 +1487,7 @@ function spawnEnemy(){
     spd: (isBoss ? 11 : 17 * base.spd) * waveSpeedMulFor(w) * hScale,
     r: isBoss ? 34 : base.r,
     emoji: isBoss ? BOSSES[Math.floor(Math.random()*BOSSES.length)] : base.emoji,
+    img: isBoss ? pickRandomImg(bossImgs) : pickRandomImg(monsterImgs),
     gold: base.gold * (isBoss ? 22 : 1) * (1 + w*0.35),
     boss: isBoss,
     dps,
@@ -2008,9 +2009,53 @@ function canvasCanRenderGlyph(text, font){
   return ok;
 }
 
-// 法師角色圖案：不依賴系統 emoji 字型（不同裝置的彩色 emoji 字型是多圖層疊出來的，
-// 曾發生平板只畫出其中一層、變成裁切過的半透明殘影的狀況），改成完全用 canvas
-// 向量圖形手繪，確保任何裝置、瀏覽器畫出來都是同一個樣子，不會缺圖層或跑位。
+// 法師角色圖片：優先使用自訂圖片（放在指定資料夾內、檔名固定），
+// 圖片還沒上傳或載入失敗時，自動退回手繪版本，畫面不會開天窗。
+const HERO_IMG_FOLDER = 'Tower Defense images'; // 資料夾名稱（含空格也沒關係，下面會自動做 URL 編碼）
+const HERO_IMG_FILE = 'hero.png';                // 圖片檔名固定用這個，之後要換圖只要覆蓋這個檔案
+const heroImg = new Image();
+let heroImgReady = false;
+heroImg.onload  = ()=>{ heroImgReady = true; };
+heroImg.onerror = ()=>{ heroImgReady = false; };
+heroImg.src = encodeURI(`./${HERO_IMG_FOLDER}/${HERO_IMG_FILE}`);
+
+// 怪物／Boss 自訂圖片：monster1.png、monster2.png…、Boss1.png、Boss2.png…
+// GitHub Pages 沒有「列出資料夾內容」的功能，所以用「從 1 開始一張一張試著載入，
+// 有載入成功的都收進陣列」的方式，自動偵測到底有幾張圖，不用手動設定數量。
+// 檔名區分大小寫：怪物請用小寫 monster + 數字，Boss 請用大寫開頭 Boss + 數字。
+const MONSTER_IMG_PREFIX = 'monster';
+const BOSS_IMG_PREFIX = 'Boss';
+const IMG_PROBE_MAX = 30; // 最多嘗試偵測到第幾號，通常夠用；要放更多張圖可以調大
+let monsterImgs = [];
+let bossImgs = [];
+function probeImageSeries(folder, prefix, maxCount){
+  return new Promise(resolve=>{
+    const found = [];
+    let pending = maxCount;
+    const check = ()=>{ if(--pending <= 0){ found.sort((a,b)=>a.n-b.n); resolve(found.map(f=>f.img)); } };
+    for(let n=1; n<=maxCount; n++){
+      const img = new Image();
+      img.onload  = ()=>{ found.push({n, img}); check(); };
+      img.onerror = ()=>{ check(); };
+      img.src = encodeURI(`./${folder}/${prefix}${n}.png`);
+    }
+  });
+}
+function pickRandomImg(arr){
+  return (arr && arr.length) ? arr[Math.floor(Math.random()*arr.length)] : null;
+}
+
+function drawHero(x, y, size){
+  if(heroImgReady){
+    // 自訂圖片：維持正方形比例置中繪製，size 是視覺直徑（跟手繪版一致方便比較）
+    const d = size * 1.35; // 圖片通常比 emoji 留白少，稍微放大一點視覺大小才會接近
+    ctx.drawImage(heroImg, x - d/2, y - d/2, d, d);
+    return;
+  }
+  drawHeroFallback(x, y, size);
+}
+
+// 手繪版法師（自訂圖片載入失敗，或尚未上傳圖片時使用）
 function drawHeroFallback(x, y, size){
   ctx.save();
   ctx.translate(x, y);
@@ -2145,13 +2190,18 @@ function draw(){
     }
     ctx.save();
     if(e.hit > 0){ ctx.globalAlpha = 0.55; }
-    const enemyFont = `${e.r*2}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif`;
-    if(canvasCanRenderGlyph(e.emoji + '\uFE0F', enemyFont)){
-      fillEmojiCentered(e.emoji + '\uFE0F', e.x, e.y, enemyFont);
+    if(e.img){
+      const d = e.r * 2.3; // 自訂圖片視覺直徑，比原本 emoji 略大一點比較有存在感
+      ctx.drawImage(e.img, e.x - d/2, e.y - d/2, d, d);
     } else {
-      // 備援：畫不出這個怪物 emoji 時，至少畫一顆有辨識度的色塊，不要整隻消失
-      ctx.fillStyle = e.boss ? '#ff3b6b' : '#c9663a';
-      ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI*2); ctx.fill();
+      const enemyFont = `${e.r*2}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif`;
+      if(canvasCanRenderGlyph(e.emoji + '\uFE0F', enemyFont)){
+        fillEmojiCentered(e.emoji + '\uFE0F', e.x, e.y, enemyFont);
+      } else {
+        // 備援：畫不出這個怪物 emoji 時，至少畫一顆有辨識度的色塊，不要整隻消失
+        ctx.fillStyle = e.boss ? '#ff3b6b' : '#c9663a';
+        ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI*2); ctx.fill();
+      }
     }
     ctx.restore();
     // 血條
@@ -2260,7 +2310,7 @@ function draw(){
     const hg = ctx.createRadialGradient(hx,hy,2,hx,hy,40);
     hg.addColorStop(0,'rgba(255,170,60,.42)'); hg.addColorStop(1,'rgba(255,120,30,0)');
     ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(hx,hy,40,0,Math.PI*2); ctx.fill();
-    drawHeroFallback(hx, hy, 38);
+    drawHero(hx, hy, 38);
   }
 
   // 粒子
@@ -2842,16 +2892,31 @@ async function boot(){
     }
   }catch(e){ /* 沒有這個檔案就當作沒有圖片題，安靜跳過 */ }
 
+  // 怪物／Boss 自訂圖片：跟上面的題目圖片一樣是「選用」的，沒放圖片完全不影響遊戲，
+  // 怪物只是會退回原本的 emoji 造型而已，不會卡住開場流程。
+  let monsterImgCount = 0, bossImgCount = 0;
+  try{
+    [monsterImgs, bossImgs] = await Promise.all([
+      probeImageSeries(HERO_IMG_FOLDER, MONSTER_IMG_PREFIX, IMG_PROBE_MAX),
+      probeImageSeries(HERO_IMG_FOLDER, BOSS_IMG_PREFIX, IMG_PROBE_MAX),
+    ]);
+    monsterImgCount = monsterImgs.length;
+    bossImgCount = bossImgs.length;
+  }catch(e){ /* 偵測失敗就當作沒有自訂圖，安靜跳過 */ }
+
   clearTimeout(skipTimer);
 
   const missing = ['chinese','english','science','geography'].filter(s=>!subjectReady(s));
+  const imgNote = (monsterImgCount || bossImgCount)
+    ? `　偵測到自訂圖片：怪物 ${monsterImgCount} 張、Boss ${bossImgCount} 張。`
+    : '';
 
   if(!ok){
-    setBootStatus(`${failReason}\n數學仍可正常出題，但國文／英文／自然／社會目前沒有題目。`, true);
+    setBootStatus(`${failReason}\n數學仍可正常出題，但國文／英文／自然／社會目前沒有題目。${imgNote}`, true);
   } else if(missing.length){
-    setBootStatus(`已載入 ${count} 題（含 ${imageCount} 張圖片），其中 ${missing.map(s=>SUBJ_NAME[s]).join('、')} 目前沒有題目。`, true);
+    setBootStatus(`已載入 ${count} 題（含 ${imageCount} 張圖片），其中 ${missing.map(s=>SUBJ_NAME[s]).join('、')} 目前沒有題目。${imgNote}`, true);
   } else {
-    setBootStatus(`已載入 ${count} 題（含 ${imageCount} 張圖片），題目系統就緒。`);
+    setBootStatus(`已載入 ${count} 題（含 ${imageCount} 張圖片），題目系統就緒。${imgNote}`);
   }
 
   await new Promise(res=>setTimeout(res, 450)); // 讓狀態訊息至少停留一下，不會一閃即過
