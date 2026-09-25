@@ -1835,12 +1835,6 @@ function step(dt){
     // 尋找路徑上（在敵人下方、水平範圍內）的最近土牆，擋住敵人前進；
     // 這裡不篩掉本影格內剛好被打到 hp<=0 的牆，讓「摧毀那一下」也還是能稍微擋住敵人
     // （包含同一影格內還有其他敵人正壓在同一道牆上的情況），下個影格才真正移除、放行。
-    let blockWall = null, blockY = Infinity;
-    for(const w of run.walls){
-      if(w.y <= e.y) continue; // 牆已經在敵人上方（已通過），不再擋
-      if(Math.abs(e.x - w.x) > w.width/2 + e.r) continue;
-      if(w.y < blockY){ blockY = w.y; blockWall = w; }
-    }
 
     // 破牆停頓：牆被打壞的瞬間還不會立刻放行，讓敵人原地停頓一小段時間（可觀察的停頓感）再繼續前進
     if(e.wallStagger > 0){
@@ -1850,10 +1844,22 @@ function step(dt){
       continue;
     }
 
+    const preY = e.y; // 移動前的 y：用來判斷「這道牆本來就已經在敵人後面」，避免已合法通過的牆又把敵人卡住
     e.y += e.spd*dt*slowMul;
     e.x += e.vx*dt*slowMul;
     if(e.x < e.r || e.x > W-e.r) e.vx *= -1;
     if(e.hit > 0) e.hit -= dt;
+
+    // 抓出這一步「跨過」的最近土牆：牆是否還在前方用移動前的 y 判斷，
+    // 但水平範圍要用移動「後」的 x 判斷——如果只看移動前的 x，當怪物左右晃動、
+    // 剛好在同一幀裡水平滑進牆的範圍、同時垂直也壓過牆線，就會判定成「沒對到、不用擋」，
+    // 結果直接穿牆跑到牆後面（尤其開 2x 加速、每幀移動量變大時特別容易發生）。
+    let blockWall = null, blockY = Infinity;
+    for(const w of run.walls){
+      if(w.y <= preY) continue; // 牆已經在敵人上方（已通過），不再擋
+      if(Math.abs(e.x - w.x) > w.width/2 + e.r) continue;
+      if(w.y < blockY){ blockY = w.y; blockWall = w; }
+    }
 
     // 土牆吸引敵人攻擊：壓到土牆 → 停在牆前，持續攻擊土牆直到牆被打壞才會繼續前進，
     // 牆被打壞的那一下額外進入 wallStagger 停頓，停頓結束才真正恢復前進
