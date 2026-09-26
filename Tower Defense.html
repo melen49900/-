@@ -764,10 +764,10 @@ const EQUIP_POOL = [
   { id:'a5', slot:'armor',  name:'聖岩護心',   icon:'⛰️', hp:33, crit:1.5 },
   // 飾品：主要給暴擊與特殊效果
   { id:'c1', slot:'trinket', name:'幸運骨符',  icon:'🍀', crit:6 },
-  { id:'c2', slot:'trinket', name:'魔力指環',  icon:'💍', atk:3, crit:4 },
+  { id:'c2', slot:'trinket', name:'魔力指環',  icon:'💍', atk:3, crit:5 },
   { id:'c3', slot:'trinket', name:'雙生水晶',  icon:'💠', atk:3, hp:10 },
   { id:'c4', slot:'trinket', name:'嗜血項鍊',  icon:'📿', crit:9, hp:-8 },
-  { id:'c5', slot:'trinket', name:'流星碎片',  icon:'☄️', atk:4, crit:4, spd:0.01 },
+  { id:'c5', slot:'trinket', name:'流星碎片',  icon:'☄️', atk:5, crit:4 },
 ];
 const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品' };
 
@@ -782,8 +782,8 @@ const UPGRADES = [
   { key:'hp',   icon:'❤️', name:'生命值',  base:40,  grow:1.12, per:15,   fmt:v=>'+'+v,
     body:lv=>100 + lv*15,                  full:lv=>100 + lv*15 + sumEquip('hp'),
     bodyFmt:v=>String(Math.round(v)) },
-  { key:'spd',  icon:'💨', name:'攻擊速度', base:90,  grow:1.28, per:0.12, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
-    body:lv=>Math.max(0.4, 0.3 + lv*0.12), full:lv=>Math.max(0.4, 0.3 + lv*0.12 + sumEquip('spd')),
+  { key:'spd',  icon:'💨', name:'攻擊速度', base:90,  grow:1.28, per:0.09, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
+    body:lv=>Math.max(0.4, 0.3 + lv*0.09), full:lv=>Math.max(0.4, 0.3 + lv*0.09 + sumEquip('spd')),
     bodyFmt:v=>v.toFixed(2)+' 發/秒' },
   { key:'crit', icon:'✨', name:'暴擊率',  base:100, grow:1.2, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
     // 暴擊率（等級+裝備疊加後）超過 80% 上限的部分，會在 stats() 裡 1:1 轉成額外暴擊傷害疊加。
@@ -828,9 +828,9 @@ function freshState(){
   return {
     gem:0, gold:0, stone:0,
     up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0 },
-    bag:[],                                   // [{uid,id,rarity}]（精煉等級改綁在裝備種類上，見 refineByBase）
+    bag:[],                                   // [{uid,id,rarity}]（精煉等級改綁在裝備「部位」上，見 refineBySlot）
     equipped:{ weapon:null, armor:null, trinket:null },
-    refineByBase:{},                          // { [裝備id]: 精煉等級 }——精煉綁定「裝備種類」而非單一卡片，換同種裝備（不同稀有度／不同件）不會重來
+    refineBySlot:{ weapon:0, armor:0, trinket:0 }, // { [部位]: 精煉等級 }——精煉綁定「武器／防具／飾品」這個部位，不管換上哪一件、哪個稀有度都沿用同一個等級
     skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0}, whirlwind:{draws:0}, earthwall:{draws:0} }, // 技能召喚抽到的次數（旋風術另外會在 unlockedLevel > 20、土牆術在 unlockedLevel > 40 時自動補發 1 等）
     quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
     qs:{ correct:0, wrong:0, streak:0, best:0, shield:3, shieldProgress:0 },
@@ -869,9 +869,9 @@ function sanitizeState(){
   UPGRADES.forEach(u=>{ state.up[u.key] = Math.max(0, Math.round(fin(state.up[u.key], 0))); });
   state.best.wave  = Math.max(0, fin(state.best.wave, 0));
   state.best.kills = Math.max(0, fin(state.best.kills, 0));
-  (state.bag||[]).forEach(c=>{ delete c.refine; }); // 精煉等級已改綁在裝備種類上，卡片本身不再存這欄
-  Object.keys(state.refineByBase||{}).forEach(id=>{
-    state.refineByBase[id] = Math.max(0, Math.round(fin(state.refineByBase[id], 0)));
+  (state.bag||[]).forEach(c=>{ delete c.refine; }); // 精煉等級已改綁在裝備部位上，卡片本身不再存這欄
+  ['weapon','armor','trinket'].forEach(s=>{
+    state.refineBySlot[s] = Math.max(0, Math.round(fin(state.refineBySlot[s], 0)));
   });
 }
 function save(){
@@ -886,7 +886,7 @@ function load(){
     state = Object.assign(f, d);
     state.up       = Object.assign(f.up, d.up||{});
     state.equipped = Object.assign(f.equipped, d.equipped||{});
-    state.refineByBase = Object.assign(f.refineByBase, d.refineByBase||{});
+    state.refineBySlot = Object.assign(f.refineBySlot, d.refineBySlot||{});
     state.qs       = Object.assign(f.qs, d.qs||{});
     state.best     = Object.assign(f.best, d.best||{});
     state.skills = {
@@ -902,14 +902,23 @@ function load(){
     checkEarthwallUnlock(); // 舊存檔若過關進度早已超過 40 關，補發土牆術 1 等
     // 進度資料還原：補上舊存檔可能缺少的欄位，避免引擎讀到 undefined
     state.quiz     = Object.assign(QuizEngine.createProgress(), d.quiz||{});
-    // 舊存檔搬家：精煉等級原本存在「單一卡片」上（card.refine），現在改成綁在「裝備種類」(base id) 上，
-    // 同一種裝備不管換哪件、哪個稀有度都共用同一個精煉等級。這裡把舊資料裡每張卡片曾經存過的
-    // refine 值搬進 state.refineByBase，同一 id 有多筆就取最高的一筆，避免玩家的精煉進度被吃掉。
+    // 舊存檔搬家 1：最早的版本把精煉等級存在「單一卡片」上（card.refine），
+    // 換裝就會歸零重來。這裡把每張卡片曾經存過的 refine 值，依它所屬的部位（武器／防具／飾品）
+    // 搬進 state.refineBySlot，同一部位有多筆就取最高的一筆，避免玩家的精煉進度被吃掉。
     [...(d.bag||[]), ...Object.values(d.equipped||{})].forEach(c=>{
       if(c && c.id && Number.isFinite(c.refine)){
-        state.refineByBase[c.id] = Math.max(fin(state.refineByBase[c.id], 0), c.refine);
+        const base = EQUIP_POOL.find(e=>e.id===c.id);
+        if(base) state.refineBySlot[base.slot] = Math.max(fin(state.refineBySlot[base.slot], 0), c.refine);
       }
     });
+    // 舊存檔搬家 2：上一版把精煉等級改綁在「裝備種類」(base id) 上（state.refineByBase），
+    // 這裡再依每個 id 對應的部位，搬進現在的 state.refineBySlot，一樣取最高的一筆。
+    if(d.refineByBase){
+      Object.entries(d.refineByBase).forEach(([id, lv])=>{
+        const base = EQUIP_POOL.find(e=>e.id===id);
+        if(base && Number.isFinite(lv)) state.refineBySlot[base.slot] = Math.max(fin(state.refineBySlot[base.slot], 0), lv);
+      });
+    }
     // 修復「裝備跑掉」的 bug：JSON 存檔/讀檔會讓 state.equipped[slot] 和
     // state.bag 裡對應的物品變成兩個不同的物件（就算 uid 相同）。
     // 這裡強制讓 equipped 指回背包裡「同一個」物件，兩邊資料重新同步成一份。
@@ -979,8 +988,7 @@ const speechCfg = {
   voiceURI: localStorage.getItem('tts_voice_uri') || null, // 使用者指定的語音，存起來下次自動套用
 };
 
-// Web Speech API 唸中文時實際用的「聲音」由裝置/瀏覽器提供，
-// 所以額外讓使用者從裝置已有的語音清單中手動指定要用哪一個。
+// Web Speech API 唸中文時實際用的「聲音」由裝置/瀏覽器提供，讓使用者可從已有的語音清單中指定。
 function getSelectedVoice(){
   if(!window.speechSynthesis) return null;
   const voices = window.speechSynthesis.getVoices();
@@ -1173,11 +1181,9 @@ function answer(choice, btn){
     state.qs.correct++;
     state.qs.streak++;
     state.qs.best = Math.max(state.qs.best, state.qs.streak);
-
-    // 鑽石獎勵：底 15，連勝每 1 次 +1（上限 +100），第一次就答對再 +10
-    // 鍛造台「鑽石強化」：解鎖後每級再固定 +1 顆鑽石
-    const bonus = Math.min(100, state.qs.streak * 1);
-    const gemBoostAdd = fin(state.up.gemboost, 0) * 1;
+    
+    const bonus = Math.min(100, state.qs.streak * 1);// 鑽石獎勵：底 15，連勝每 1 次 +1（上限 +100），第一次就答對再 +10
+    const gemBoostAdd = fin(state.up.gemboost, 0) * 1;// 鍛造台「鑽石強化」：解鎖後每級再固定 +1 顆鑽石
     const gain  = 15 + bonus + (firstTry ? 10 : 0) + gemBoostAdd;
     state.gem += gain;
 
@@ -1253,16 +1259,16 @@ function syncQuizMeta(){
 /* ══════════════════════════════════════════
    角色能力
    ══════════════════════════════════════════ */
-// 精煉等級綁定在「裝備種類」(base id) 上，不是綁在單一那件卡片／稀有度上，
-// 所以熔爐抽到同種裝備的不同稀有度、或背包裡換一件同種裝備來穿，精煉進度都會沿用、不用重來。
-function getRefine(baseId){ return Math.max(0, Math.round(fin(state.refineByBase[baseId], 0))); }
-function addRefine(baseId, amt){ state.refineByBase[baseId] = getRefine(baseId) + amt; }
+// 精煉等級綁定在「裝備部位」(武器／防具／飾品) 上，不是綁在單一那件卡片、也不是綁在某個裝備種類上，
+// 所以不管換上同部位的哪一件裝備、哪個稀有度，精煉進度都會沿用、不用重來。
+function getRefine(slot){ return Math.max(0, Math.round(fin(state.refineBySlot[slot], 0))); }
+function addRefine(slot, amt){ state.refineBySlot[slot] = getRefine(slot) + amt; }
 function equipStat(card, key){
   if(!card) return 0;
   const base = EQUIP_POOL.find(e=>e.id===card.id);
   if(!base || !base[key]) return 0;
   const rar = RARITY[card.rarity].mult;
-  const ref = 1 + getRefine(card.id) * 0.1;//強化石1
+  const ref = 1 + getRefine(base.slot) * 0.1;//強化石1
   const raw = base[key] * rar * ref;
   // 彈道是整數，不隨稀有度放大到奇怪的小數
   if(key === 'multi') return Math.floor(base[key] * (card.rarity==='SSR'?2:1));
@@ -1751,8 +1757,7 @@ function step(dt){
   // 主角移動（平滑跟隨）
   run.heroX += (run.targetX - run.heroX) * Math.min(1, dt*13);
 
-  // 開火：三個技能各自獨立計時，頻率＝角色攻速 × SKILL_SPD_MULT（見該常數定義處的說明），
-  // 不再綁在同一顆計時器上一起觸發。
+  // 開火：三個技能各自獨立計時，頻率＝角色攻速 × SKILL_SPD_MULT。
   const s = stats();
   run.fireTimer -= dt;
   if(run.fireTimer <= 0){ fire(); run.fireTimer = 1 / (s.spd * SKILL_SPD_MULT.fireball); }
@@ -1765,16 +1770,13 @@ function step(dt){
   run.earthwallTimer -= dt;
   if(run.earthwallTimer <= 0){ castEarthwall(); run.earthwallTimer = 1 / (s.spd * SKILL_SPD_MULT.earthwall); }
 
-  // 冰椎術佇列：各自倒數，時間到才真正生成（見 queueIceSpikes 的說明）
+  // 冰椎術佇列：各自倒數，時間到才真正生成
   for(let i=run.iceQueue.length-1;i>=0;i--){
     run.iceQueue[i] -= dt;
     if(run.iceQueue[i] <= 0){ spawnIceSpike(); run.iceQueue.splice(i,1); }
   }
 
-  // 子彈：扇形散開的彈道會朝各自鎖定的目標自動修正角度，
-  // 避免「多彈道數不是奇數」時，因為初始夾角讓每一發都偏在目標兩側、永遠沒有一發是對準的。
-  // 先直飛一小段時間再開始修正，讓扇形散開的視覺效果保留久一點，不會一有目標就整把瞬間黏成一條線。
-  const SHOT_HOMING_DELAY = 0.15; // 秒：出膛後多久才開始自動修正
+  const SHOT_HOMING_DELAY = 0.15; // 單位秒：子彈出膛後多久才開始自動修正朝鎖定的目標
   const SHOT_TURN_RATE = 5;       // 每秒最多修正的弧度
   for(let i=run.shots.length-1;i>=0;i--){
     const b = run.shots[i];
@@ -1822,7 +1824,6 @@ function step(dt){
   }
 
   // 旋風術：龍捲風持續朝最近的敵人移動，並持續對範圍內敵人造成一次傷害
-  // （放在「怪物」迴圈之前，讓被龍捲風打死的敵人能在同一幀就被下面的迴圈清掉）
   for(let i=run.tornadoes.length-1;i>=0;i--){
     const t = run.tornadoes[i];
     t.age += dt;
@@ -1888,11 +1889,7 @@ function step(dt){
       continue;
     }
 
-    // 尋找路徑上（在敵人下方、水平範圍內）的最近土牆，擋住敵人前進；
-    // 這裡不篩掉本影格內剛好被打到 hp<=0 的牆，讓「摧毀那一下」也還是能稍微擋住敵人
-    // （包含同一影格內還有其他敵人正壓在同一道牆上的情況），下個影格才真正移除、放行。
-
-    // 破牆停頓：牆被打壞的瞬間還不會立刻放行，讓敵人原地停頓一小段時間（可觀察的停頓感）再繼續前進
+    // 敵人路徑上的最近土牆擋住其前進，摧毀那一下也還是能稍微擋住敵人，下個影格才真正移除、放行。
     if(e.wallStagger > 0){
       e.wallStagger -= dt;
       e.touching = true;
@@ -1900,33 +1897,22 @@ function step(dt){
       continue;
     }
 
-    const preY = e.y; // 移動前的 y：用來判斷「這道牆本來就已經在敵人後面」，避免已合法通過的牆又把敵人卡住
+    const preY = e.y; // 移動前的 y：用來判斷「這道牆本來就已經在敵人後面」，避免已通過的牆又把敵人卡住
     e.y += e.spd*dt*slowMul;
     e.x += e.vx*dt*slowMul;
     if(e.x < e.r || e.x > W-e.r) e.vx *= -1;
     if(e.hit > 0) e.hit -= dt;
 
-    // 抓出這一步「跨過」的最近土牆：牆是否還在前方用移動前的 y 判斷，
-    // 但水平範圍要用移動「後」的 x 判斷——如果只看移動前的 x，當怪物左右晃動、
-    // 剛好在同一幀裡水平滑進牆的範圍、同時垂直也壓過牆線，就會判定成「沒對到、不用擋」，
-    // 結果直接穿牆跑到牆後面（尤其開 2x 加速、每幀移動量變大時特別容易發生）。
     let blockWall = null, blockY = Infinity;
     for(const w of run.walls){
-      // 用「小於」而不是「小於等於」：怪物被夾到剛好貼在牆上時 w.y 會跟 preY 完全相等，
-      // 這種情況這道牆仍然在擋（還沒被打壞），不能當成「已經通過」而放行，
-      // 不然牆疊很多層時，怪物會在貼牆的下一幀突然被判定成「沒有牆擋了」，
-      // 直接一口氣衝去攻擊疊在後面的下一道牆（跳過原本還活著的這一道）。
       if(w.y < preY) continue; // 牆已經在敵人上方（已通過），不再擋
       if(Math.abs(e.x - w.x) > w.width/2 + e.r) continue;
       if(w.y < blockY){ blockY = w.y; blockWall = w; }
     }
-
-    // 土牆吸引敵人攻擊：壓到土牆 → 停在牆前，持續攻擊土牆直到牆被打壞才會繼續前進，
-    // 牆被打壞的那一下額外進入 wallStagger 停頓，停頓結束才真正恢復前進
     if(blockWall && e.y >= blockWall.y){
       e.y = blockWall.y;
       e.touching = true;
-      // 鍛造台「防禦強化」：土牆受到的傷害每級固定 -2（最低扣到 0，不會變成回血）
+      // 鍛造台「防禦強化」：土牆受到的傷害減少，最低扣到 0
       blockWall.hp -= Math.max(0, e.dps - defenseReduction) * dt;
       blockWall.hit = 0.12;
       if(blockWall.hp <= 0) e.wallStagger = EARTHWALL_BREAK_STAGGER;
@@ -1941,7 +1927,7 @@ function step(dt){
     if(e.y >= heroLine){
       e.y = heroLine; // 卡在防線上，不再往下擠
       e.touching = true;
-      // 鍛造台「防禦強化」：角色受到的傷害每級固定 -2（最低扣到 0，不會變成回血）
+      // 鍛造台「防禦強化」：角色受到的傷害減少，最低扣到 0
       run.hp -= Math.max(0, e.dps - defenseReduction) * dt;
       e.hitTimer = (e.hitTimer||0) + dt;
       if(e.hitTimer >= 0.4){ // 每 0.4 秒一次視覺回饋，避免每幀爆量特效
@@ -2016,12 +2002,6 @@ function syncBattleHud(){
 }
 
 /* 繪製 */
-// emoji 用 textAlign='center' 置中時，是用「前進寬度」平分，
-// 但彩色 emoji 字型（尤其平板上的 Apple/Noto Color Emoji）實際圖形常常沒有
-// 對稱畫在前進寬度正中間，導致視覺位置跟真實座標（e.x, e.y）有落差，
-// 在某些裝置上看起來像是整體偏右。改用 measureText 的
-// actualBoundingBoxLeft/Right（真實視覺邊界）算出偏移量來手動置中，
-// 才能讓圖示真正對齊邏輯座標。用 Map 快取避免每幀重算。
 const emojiOffsetCache = new Map();
 function getEmojiCenterOffset(text, font){
   const key = font + '::' + text;
@@ -2048,12 +2028,7 @@ function fillEmojiCentered(text, x, y, font){
   ctx.font = prevFont; ctx.textAlign = prevAlign;
 }
 
-// ── emoji 渲染防呆 ──────────────────────────
-// 有些裝置（尤其部分平板／舊版 WebKit）系統字型裡缺某個 emoji 的彩色字圖，
-// measureText 量得到寬度、但 fillText 實際畫出來是完全透明的一片空白，
-// 導致「角色消失但座標邏輯正常」。這裡用一塊 1x1 的離線 canvas 實際畫一次，
-// 檢查像素是否真的有內容，藉此判斷這個 emoji 在這台裝置上「畫不畫得出來」。
-// 一旦偵測到畫不出來，就改用手繪圖形當備援，確保任何裝置都看得到主角。
+// ── emoji 渲染防呆 ──────────────
 const glyphSupportCache = new Map();
 function canvasCanRenderGlyph(text, font){
   const key = font + '::' + text;
@@ -2077,34 +2052,57 @@ function canvasCanRenderGlyph(text, font){
   return ok;
 }
 
-// 法師角色圖片：優先使用自訂圖片（放在指定資料夾內、檔名固定），
-// 圖片還沒上傳或載入失敗時，自動退回手繪版本，畫面不會開天窗。
-const HERO_IMG_FOLDER = 'Tower Defense images'; // 資料夾名稱（含空格也沒關係，下面會自動做 URL 編碼）
-const HERO_IMG_FILE = 'hero.png';                // 圖片檔名固定用這個，之後要換圖只要覆蓋這個檔案
+// 法師角色圖片：優先使用自訂圖片，圖片沒上傳或載入失敗時，退回手繪版本。
+const HERO_IMG_FOLDER = 'Tower Defense images'; // 指定資料夾
+const HERO_IMG_FILE = 'hero.png';               // 指定圖片檔名
 const heroImg = new Image();
 let heroImgReady = false;
 heroImg.onload  = ()=>{ heroImgReady = true; };
 heroImg.onerror = ()=>{ heroImgReady = false; };
 heroImg.src = encodeURI(`./${HERO_IMG_FOLDER}/${HERO_IMG_FILE}`);
 
-// 怪物／Boss 自訂圖片：monster1.png、monster2.png…、Boss1.png、Boss2.png…
-// GitHub Pages 沒有「列出資料夾內容」的功能，所以用「從 1 開始一張一張試著載入，
-// 有載入成功的都收進陣列」的方式，自動偵測到底有幾張圖，不用手動設定數量。
-// 檔名區分大小寫：怪物請用小寫 monster + 數字，Boss 請用大寫開頭 Boss + 數字。
-const MONSTER_IMG_PREFIX = 'monster';
-const BOSS_IMG_PREFIX = 'Boss';
-const IMG_PROBE_MAX = 30; // 最多嘗試偵測到第幾號，通常夠用；要放更多張圖可以調大
+// 怪物／Boss 自訂圖片
+const MONSTER_IMG_PREFIX = 'monster';// 指定小怪名稱
+const BOSS_IMG_PREFIX = 'Boss';// 指定王名稱
+
+// 目前實際圖片總數：以後新增／刪除圖片，只要改下面兩個數字就好，兩邊互不影響
+const MONSTER_IMG_MAX = 22; // monster1.png ~ monster22.png
+const BOSS_IMG_MAX = 7;     // Boss1.png ~ Boss7.png
+
+// 「先求有、再求全」：只要讀到這個張數就先讓玩家進遊戲，其餘圖片繼續在背景補齊，
+// 補好之後會自動加入怪物池，不需要玩家等全部載完
+const MONSTER_IMG_MIN_TO_ENTER = 5;
+const BOSS_IMG_MIN_TO_ENTER = 4;
+
 let monsterImgs = [];
 let bossImgs = [];
-function probeImageSeries(folder, prefix, maxCount){
-  return new Promise(resolve=>{
+
+// 依序嘗試 folder/prefix1.png ~ prefixMaxCount.png。
+// 一旦「已經有回應（不論成功或404）」的張數達到 minToEnter，就呼叫 onUpdate 並讓外層 Promise resolve，
+// 但不會中斷還沒回應的請求：之後每多一張讀取成功，都會再呼叫一次 onUpdate 把最新結果補進去。
+function probeImageSeries(folder, prefix, maxCount, minToEnter, onUpdate){
+  return new Promise(resolveReady=>{
+    if(maxCount <= 0){ onUpdate([]); resolveReady(); return; }
     const found = [];
-    let pending = maxCount;
-    const check = ()=>{ if(--pending <= 0){ found.sort((a,b)=>a.n-b.n); resolve(found.map(f=>f.img)); } };
+    let settled = 0;
+    let readyFired = false;
+    const publish = ()=>{
+      onUpdate(found.slice().sort((a,b)=>a.n-b.n).map(f=>f.img));
+    };
+    const onSettle = ()=>{
+      settled++;
+      if(!readyFired && settled >= Math.min(minToEnter, maxCount)){
+        readyFired = true;
+        publish();
+        resolveReady();
+      } else if(readyFired){
+        publish(); // 門檻達成、玩家已可進場後，之後每補到一張就即時更新怪物池
+      }
+    };
     for(let n=1; n<=maxCount; n++){
       const img = new Image();
-      img.onload  = ()=>{ found.push({n, img}); check(); };
-      img.onerror = ()=>{ check(); };
+      img.onload  = ()=>{ found.push({n, img}); onSettle(); };
+      img.onerror = ()=>{ onSettle(); };
       img.src = encodeURI(`./${folder}/${prefix}${n}.png`);
     }
   });
@@ -2322,8 +2320,7 @@ function draw(){
   });
   ctx.globalAlpha = 1;
 
-  // 旋風術：不用 emoji，改用多層橢圓堆疊出漏斗狀龍捲風本體，
-  // 每層各自轉動速度不同、加上底部塵土光暈與環繞塵屑小點，營造持續扭轉的動態感
+  // 旋風術：多層橢圓堆疊出漏斗狀龍捲風本體，每層轉動速度不同、加上底部塵土光暈與環繞塵屑小點，營造持續扭轉的動態感
   run.tornadoes.forEach(t=>{
     ctx.save();
     ctx.globalAlpha = 0.16;
@@ -2460,7 +2457,7 @@ function doPull(n){
         <div class="rar r-skill">技能</div>
       </div>`;
     }
-    const st = statLine(o.base, o.rarity, getRefine(o.base.id));
+    const st = statLine(o.base, o.rarity, getRefine(o.base.slot));
     return `<div class="drop${o.dup?'':' new'}">
       <div class="ico">${o.base.icon}</div>
       <div style="flex:1;min-width:0">
@@ -2514,9 +2511,7 @@ function renderUpgrades(){
     const lv = state.up[u.key];
     const maxed = u.max != null && lv >= u.max;
     const cost = upCost(u);
-    // 暴擊傷害這一項要額外加上「暴擊率溢出轉換」的量，
-    // 否則面板顯示的數字會跟 stats() 實際算給戰鬥用的暴擊傷害對不起來
-    // （溢出量只跟目前暴擊率等級+裝備有關，跟暴擊傷害自己升幾級無關，所以目前級/下一級都加同一份）
+    // 暴擊傷害額外加上暴擊率溢出轉換的量
     const overflow  = u.key === 'critdmg' ? critOverflowAmount() : 0;
     const curBody  = u.bodyFmt(u.full(lv) + overflow);
     const nextBody = u.bodyFmt(u.full(lv+1) + overflow);
@@ -2549,7 +2544,7 @@ function renderUpgrades(){
   });
 }
 
-function refineCost(baseId){ return 4 + getRefine(baseId)*1; }//強化石費用
+function refineCost(slot){ return 4 + getRefine(slot)*1; }//強化石費用
 
 // 一鍵強化：反覆找目前已裝備、且精煉費用最低的一件裝備升級，重複到強化石不夠支付為止。
 function refineAllCheapest(){
@@ -2557,15 +2552,14 @@ function refineAllCheapest(){
   while(true){
     const slots = ['weapon','armor','trinket'].filter(s=>state.equipped[s]);
     if(!slots.length) break;
-    let bestSlot = null, bestCard = null, bestCost = Infinity;
+    let bestSlot = null, bestCost = Infinity;
     slots.forEach(s=>{
-      const c = state.equipped[s];
-      const cost = refineCost(c.id);
-      if(cost < bestCost){ bestCost = cost; bestSlot = s; bestCard = c; }
+      const cost = refineCost(s);
+      if(cost < bestCost){ bestCost = cost; bestSlot = s; }
     });
-    if(bestCard == null || !(state.stone >= bestCost)) break; // 用 >= 反向判斷，NaN 一律擋下
+    if(bestSlot == null || !(state.stone >= bestCost)) break; // 用 >= 反向判斷，NaN 一律擋下
     state.stone -= bestCost;
-    addRefine(bestCard.id, 1);
+    addRefine(bestSlot, 1);
     count++;
   }
   if(count > 0){
@@ -2616,7 +2610,7 @@ function renderRefine(){
     if(allBtn){ allBtn.disabled = true; allBtn.onclick = null; }
     return;
   }
-  const cheapestCost = Math.min(...slots.map(s=>refineCost(state.equipped[s].id)));
+  const cheapestCost = Math.min(...slots.map(s=>refineCost(s)));
   if(allBtn){
     allBtn.disabled = !(state.stone >= cheapestCost);
     allBtn.onclick = refineAllCheapest;
@@ -2624,8 +2618,8 @@ function renderRefine(){
   box.innerHTML = slots.map(s=>{
     const c = state.equipped[s];
     const base = EQUIP_POOL.find(e=>e.id===c.id);
-    const cost = refineCost(c.id);
-    const rlv = getRefine(c.id);
+    const cost = refineCost(s);
+    const rlv = getRefine(s);
     return `<div class="up">
       <div class="ico">${base.icon}</div>
       <div class="info">
@@ -2637,13 +2631,13 @@ function renderRefine(){
   }).join('');
   box.querySelectorAll('[data-ref]').forEach(b=>{
     b.onclick = ()=>{
-      const c = state.equipped[b.dataset.ref];
-      const cost = refineCost(c.id);
+      const s = b.dataset.ref;
+      const cost = refineCost(s);
       if(state.stone < cost) return;
       state.stone -= cost;
-      addRefine(c.id, 1);
+      addRefine(s, 1);
       save(); syncUI(); renderRefine(); renderEquip(); renderUpgrades();
-      toast(`精煉成功 +${getRefine(c.id)}`);
+      toast(`精煉成功 +${getRefine(s)}`);
     };
   });
 }
@@ -2658,7 +2652,7 @@ function renderEquip(){
     if(!c) return `<div class="slot"><div class="ico">➕</div>
       <div class="info"><div class="empty">${SLOT_LABEL[s]}　尚未裝備</div></div></div>`;
     const base = EQUIP_POOL.find(e=>e.id===c.id);
-    const rlv = getRefine(c.id);
+    const rlv = getRefine(s);
     return `<div class="slot filled">
       <div class="ico">${base.icon}</div>
       <div class="info">
@@ -2682,7 +2676,7 @@ function renderEquip(){
   bBox.innerHTML = sorted.map(c=>{
     const base = EQUIP_POOL.find(e=>e.id===c.id);
     const on = state.equipped[base.slot] && state.equipped[base.slot].uid === c.uid;
-    const rlv = getRefine(c.id);
+    const rlv = getRefine(base.slot);
     return `<div class="bagItem${on?' on':''}" data-uid="${c.uid}">
       <div class="ico">${base.icon}</div>
       <div class="info">
@@ -2965,8 +2959,7 @@ syncUI();
 renderEquip();
 renderSkills();
 
-// 遊戲一律等 questions.json 讀取完成（成功或失敗都算完成）才會產生第一題、
-// 才讓玩家進入遊戲。內建題庫已清空，四科（國/英/自/社）完全依賴這個檔案；
+// 遊戲一律等 questions.json 讀取完成（成功或失敗都算完成）才會產生第一題並讓玩家進入遊戲。四科（國/英/自/社）完全依賴這個檔案；
 // 數學不受影響，永遠可以出題。
 function setBootStatus(text, warn){
   const el = document.getElementById('bootStatus');
@@ -2984,56 +2977,69 @@ async function boot(){
   const skipTimer = setTimeout(()=>{ skipBtn.style.display = 'block'; }, 4000);
   skipBtn.onclick = () => { clearTimeout(skipTimer); finishOnce(); };
 
-  let ok = false, count = 0, failReason = '';
-  try{
-    const r = await fetch('./questions.json');
-    if(r.ok){
-      const d = await r.json();
-      importedQuestions = Array.isArray(d) ? d : (d.questions || []);
-      count = importedQuestions.length;
-      ok = true;
-    } else {
-      failReason = `找不到 questions.json（HTTP ${r.status}）`;
+  // 下面四項讀取彼此獨立，改成同時發出去（Promise.all），而不是一個等一個，
+  // 整體等待時間會取決於「最慢的那一項」，而不是四項時間相加。
+
+  const questionsTask = (async()=>{
+    let ok = false, count = 0, failReason = '';
+    try{
+      const r = await fetch('./questions.json');
+      if(r.ok){
+        const d = await r.json();
+        importedQuestions = Array.isArray(d) ? d : (d.questions || []);
+        count = importedQuestions.length;
+        ok = true;
+      } else {
+        failReason = `找不到 questions.json（HTTP ${r.status}）`;
+      }
+    }catch(e){
+      failReason = '讀取題庫時發生錯誤：' + e.message;
     }
-  }catch(e){
-    failReason = '讀取題庫時發生錯誤：' + e.message;
-  }
+    return {ok, count, failReason};
+  })();
 
   // images.json 是選用的圖片對照表（檔名 → 圖片資料），沒有也不影響文字題正常運作
-  let imageCount = 0;
-  try{
-    const ri = await fetch('./images.json');
-    if(ri.ok){
-      imageMap = await ri.json();
-      imageCount = Object.keys(imageMap).length;
-    }
-  }catch(e){ /* 沒有這個檔案就當作沒有圖片題，安靜跳過 */ }
+  const imagesTask = (async()=>{
+    let imageCount = 0;
+    try{
+      const ri = await fetch('./images.json');
+      if(ri.ok){
+        imageMap = await ri.json();
+        imageCount = Object.keys(imageMap).length;
+      }
+    }catch(e){ /* 沒有這個檔案就當作沒有圖片題，安靜跳過 */ }
+    return {imageCount};
+  })();
 
-  // 怪物／Boss 自訂圖片：跟上面的題目圖片一樣是「選用」的，沒放圖片完全不影響遊戲，
-  // 怪物只是會退回原本的 emoji 造型而已，不會卡住開場流程。
-  let monsterImgCount = 0, bossImgCount = 0;
-  try{
-    [monsterImgs, bossImgs] = await Promise.all([
-      probeImageSeries(HERO_IMG_FOLDER, MONSTER_IMG_PREFIX, IMG_PROBE_MAX),
-      probeImageSeries(HERO_IMG_FOLDER, BOSS_IMG_PREFIX, IMG_PROBE_MAX),
-    ]);
-    monsterImgCount = monsterImgs.length;
-    bossImgCount = bossImgs.length;
-  }catch(e){ /* 偵測失敗就當作沒有自訂圖，安靜跳過 */ }
+  // 怪物／Boss 自訂圖片：只要各自讀到「可進場」門檻張數就算完成，
+  // 剩下的圖片會在背景繼續補齊，讀到會自動加入怪物池，不會擋住玩家進場。
+  const monsterReadyTask = probeImageSeries(
+    HERO_IMG_FOLDER, MONSTER_IMG_PREFIX, MONSTER_IMG_MAX, MONSTER_IMG_MIN_TO_ENTER,
+    arr => { monsterImgs = arr; }
+  );
+  const bossReadyTask = probeImageSeries(
+    HERO_IMG_FOLDER, BOSS_IMG_PREFIX, BOSS_IMG_MAX, BOSS_IMG_MIN_TO_ENTER,
+    arr => { bossImgs = arr; }
+  );
+
+  const [qResult, iResult] = await Promise.all([questionsTask, imagesTask, monsterReadyTask, bossReadyTask]);
 
   clearTimeout(skipTimer);
 
   const missing = ['chinese','english','science','geography'].filter(s=>!subjectReady(s));
-  const imgNote = (monsterImgCount || bossImgCount)
-    ? `　偵測到自訂圖片：怪物 ${monsterImgCount} 張、Boss ${bossImgCount} 張。`
+  const monsterNote = monsterImgs.length ? `怪物 ${monsterImgs.length}${monsterImgs.length < MONSTER_IMG_MAX ? '+' : ''} 張` : '';
+  const bossNote = bossImgs.length ? `Boss ${bossImgs.length}${bossImgs.length < BOSS_IMG_MAX ? '+' : ''} 張` : '';
+  const imgPieces = [monsterNote, bossNote].filter(Boolean).join('、');
+  const imgNote = imgPieces
+    ? `　偵測到自訂圖片：${imgPieces}${(monsterImgs.length < MONSTER_IMG_MAX || bossImgs.length < BOSS_IMG_MAX) ? '（其餘背景載入中）' : ''}。`
     : '';
 
-  if(!ok){
-    setBootStatus(`${failReason}\n數學仍可正常出題，但國文／英文／自然／社會目前沒有題目。${imgNote}`, true);
+  if(!qResult.ok){
+    setBootStatus(`${qResult.failReason}\n數學仍可正常出題，但國文／英文／自然／社會目前沒有題目。${imgNote}`, true);
   } else if(missing.length){
-    setBootStatus(`已載入 ${count} 題（含 ${imageCount} 張圖片），其中 ${missing.map(s=>SUBJ_NAME[s]).join('、')} 目前沒有題目。${imgNote}`, true);
+    setBootStatus(`已載入 ${qResult.count} 題（含 ${iResult.imageCount} 張圖片），其中 ${missing.map(s=>SUBJ_NAME[s]).join('、')} 目前沒有題目。${imgNote}`, true);
   } else {
-    setBootStatus(`已載入 ${count} 題（含 ${imageCount} 張圖片），題目系統就緒。${imgNote}`);
+    setBootStatus(`已載入 ${qResult.count} 題（含 ${iResult.imageCount} 張圖片），題目系統就緒。${imgNote}`);
   }
 
   await new Promise(res=>setTimeout(res, 450)); // 讓狀態訊息至少停留一下，不會一閃即過
