@@ -598,6 +598,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 </div>
 
 <script src="./quiz-engine.js"></script>
+<script src="./indigenous-quiz-engine.js"></script>
 <script>
 'use strict';
 
@@ -833,6 +834,7 @@ function freshState(){
     refineBySlot:{ weapon:0, armor:0, trinket:0 }, // { [部位]: 精煉等級 }——精煉綁定「武器／防具／飾品」這個部位，不管換上哪一件、哪個稀有度都沿用同一個等級
     skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0}, whirlwind:{draws:0}, earthwall:{draws:0} }, // 技能召喚抽到的次數（旋風術另外會在 unlockedLevel > 20、土牆術在 unlockedLevel > 40 時自動補發 1 等）
     quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
+    indigTier:IndigenousQuiz.createTierState(), // ← 族語階層解鎖進度，整包存檔
     qs:{ correct:0, wrong:0, streak:0, best:0, shield:3, shieldProgress:0 },
     best:{ wave:0, kills:0 },
     unlockedLevel:1,                          // 目前解鎖到第幾關
@@ -902,6 +904,7 @@ function load(){
     checkEarthwallUnlock(); // 舊存檔若過關進度早已超過 40 關，補發土牆術 1 等
     // 進度資料還原：補上舊存檔可能缺少的欄位，避免引擎讀到 undefined
     state.quiz     = Object.assign(QuizEngine.createProgress(), d.quiz||{});
+    state.indigTier = Object.assign(IndigenousQuiz.createTierState(), d.indigTier||{});
     // 舊存檔搬家 1：最早的版本把精煉等級存在「單一卡片」上（card.refine），
     // 換裝就會歸零重來。這裡把每張卡片曾經存過的 refine 值，依它所屬的部位（武器／防具／飾品）
     // 搬進 state.refineBySlot，同一部位有多筆就取最高的一筆，避免玩家的精煉進度被吃掉。
@@ -953,7 +956,38 @@ function resolveImageSrc(ref){
   if(/^(data:|https?:\/\/|\.\/|\/)/.test(ref)) return ref; // 已經是完整路徑，直接用
   return imageMap[ref] || null; // 否則當檔名查 images.json
 }
-const SUBJ_NAME = { math:'數學', chinese:'國文', english:'英文', science:'自然', geography:'社會' };
+const SUBJ_NAME = { math:'數學', chinese:'國文', english:'英文', science:'自然', geography:'社會', indigenous:'族語' };
+
+/* ══════════════════════════════════════════
+   族語答題系統 — 完全獨立於 QuizEngine 的五科系統之外，
+   只在後台開啟、且單字庫資料足夠時，才會混進出題輪替。
+   ══════════════════════════════════════════ */
+let indigenousWords = [];     // 族語單字庫，從 indigenous-words.json 讀取：{id,meaning,spelling,audio,category}[]
+let indigenousAudioMap = {};  // 音檔對照表（indigenous-audio.json）：檔名 → data URI，比照 imageMap
+
+// 音檔欄位可能是完整路徑/data URI，也可能只是檔名（要去 indigenousAudioMap 查）
+function resolveAudioSrc(ref){
+  if(!ref) return null;
+  if(/^(data:|https?:\/\/|\.\/|\/)/.test(ref)) return ref;
+  return indigenousAudioMap[ref] || null;
+}
+
+const INDIGENOUS_ENABLED_KEY = 'td_indigenous_enabled';
+function indigenousEnabled(){ return localStorage.getItem(INDIGENOUS_ENABLED_KEY) === '1'; }
+function setIndigenousEnabled(on){ localStorage.setItem(INDIGENOUS_ENABLED_KEY, on ? '1' : '0'); }
+
+// 至少要有 4 筆資料完整的詞，才湊得出「1 正解 + 3 干擾選項」，跟 IndigenousQuiz.generateQuestion 的門檻一致
+function indigenousReady(){
+  return indigenousWords.filter(w => w && w.meaning && w.spelling && w.id != null).length >= 4;
+}
+
+// 播放族語錄音（不是 TTS）。找不到音檔就安靜跳過，不報錯、不擋流程；
+// 行動瀏覽器若判定沒有使用者互動而擋播放，也是安靜失敗即可。
+function playIndigenousAudio(filename){
+  const src = resolveAudioSrc(filename);
+  if(!src) return;
+  try{ new Audio(src).play().catch(()=>{}); }catch(e){}
+}
 
 // 交給 QuizEngine 的題庫物件
 function bank(){
@@ -973,6 +1007,11 @@ function subjectReady(subject){
 }
 
 function pickSubject(){
+  // 後台開啟且單字庫夠用時，約每 6 題出現 1 題族語題（機率法達到 5:1 的長期比例，
+  // 不是固定「第 6 題一定是」，題與題之間仍是隨機的）
+  if(indigenousEnabled() && indigenousReady() && Math.random() < 1/6){
+    return 'indigenous';
+  }
   const pool = ['math'];
   ['chinese','english','science','geography'].forEach(s=>{
     if(subjectReady(s)) pool.push(s);
@@ -1039,7 +1078,12 @@ function _doSpeak(text, lang){
 
 // 朗讀目前題目：依科目把符號轉成國字，數學把「？」唸成「多少」、運算符號唸成加減乘除
 function speakQuestion(){
-  if(!speechCfg.enabled || !window.speechSynthesis || !curQ) return;
+  if(!curQ) return;
+  if(curSubj === 'indigenous'){
+    if(curQ.promptAudio) playIndigenousAudio(curQ.promptAudio);
+    return; // 族語題一律播錄音，不走下面的瀏覽器 TTS
+  }
+  if(!speechCfg.enabled || !window.speechSynthesis) return;
   let text = curQ.q || '';
   if(curSubj === 'math'){
     text = text
@@ -1114,15 +1158,22 @@ let curQ = null, curSubj = 'math', answered = false, firstTry = true;
 
 function newQuestion(){
   curSubj = pickSubject();
-  curQ = QuizEngine.pickQuestion(state.quiz, curSubj, bank(), {
-    historicalMathCorrect: state.qs.correct,
-    historicalSubjectCorrect: state.qs.correct,
-  });
+  if(curSubj === 'indigenous'){
+    curQ = IndigenousQuiz.pickTieredQuestion(state.indigTier, indigenousWords);
+    if(!curQ){ curSubj = 'math'; } // 保底：萬一單字庫臨時湊不出題，退回數學不讓遊戲卡住
+  }
+  if(curSubj !== 'indigenous'){
+    curQ = QuizEngine.pickQuestion(state.quiz, curSubj, bank(), {
+      historicalMathCorrect: state.qs.correct,
+      historicalSubjectCorrect: state.qs.correct,
+    });
+  }
   answered = false; firstTry = true;
   renderQuestion();
 }
 
 function renderQuestion(){
+  if(curSubj === 'indigenous'){ renderIndigenousQuestion(); return; }
   document.getElementById('qSubject').textContent = SUBJ_NAME[curSubj] || curSubj;
   document.getElementById('qText').textContent = curQ.q;
   const img = document.getElementById('qImg');
@@ -1153,6 +1204,115 @@ function renderQuestion(){
   document.getElementById('qNext').style.display = 'none';
   syncQuizMeta();
   speakQuestion(); // 進入新題目時自動朗讀一次題目
+}
+
+// 族語題的畫面：選項是 {id,label,audio} 物件（不是純文字），
+// 所以跟其他五科的 renderQuestion() 分開處理，不共用同一段渲染邏輯。
+function renderIndigenousQuestion(){
+  document.getElementById('qSubject').textContent = '族語';
+  document.getElementById('qText').textContent = curQ.promptText;
+  document.getElementById('qImg').style.display = 'none';
+
+  const box = document.getElementById('qOpts');
+  box.innerHTML = '';
+  curQ.options.forEach(o=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'ans-wrap';
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.textContent = o.label;
+    b.onclick = ()=>answerIndigenous(o, b);
+    wrap.appendChild(b);
+    if(o.audio){ // 有音檔才顯示喇叭；沒有的話（例如意思選項）就不擺按鈕，不會出現按了沒反應的空按鈕
+      const spk = document.createElement('button');
+      spk.type = 'button';
+      spk.className = 'opt-speak-btn';
+      spk.textContent = '🔊';
+      spk.title = '播放語音';
+      spk.onclick = (e)=>{ e.stopPropagation(); playIndigenousAudio(o.audio); };
+      wrap.appendChild(spk);
+    }
+    box.appendChild(wrap);
+  });
+  document.getElementById('qFeed').textContent = '';
+  document.getElementById('qFeed').className = '';
+  document.getElementById('qNext').style.display = 'none';
+  syncQuizMeta();
+  if(curQ.promptAudio) playIndigenousAudio(curQ.promptAudio); // 進題自動播放一次題目語音
+}
+
+// 族語題的作答：跟 answer() 給一樣的鑽石／連勝／綠燈獎勵，但正確判斷是比對 id（不是文字），
+// 而且刻意不呼叫 QuizEngine.recordAnswer —— 族語不屬於五科的關卡解鎖／數學階層系統，跟那套機制無關。
+function answerIndigenous(choice, btn){
+  if(answered) return;
+  const right = choice.id === curQ.correctId;
+  const feed = document.getElementById('qFeed');
+
+  if(right){
+    answered = true;
+    btn.classList.add('right');
+    document.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+
+    IndigenousQuiz.recordTieredAnswer(state.indigTier, indigenousWords, curQ.correctId,
+      { correct:true, isFirstAttempt:firstTry, isFinal:true });
+
+    if(firstTry){
+      state.qs.shieldProgress = (state.qs.shieldProgress||0) + 1;
+      if(state.qs.shieldProgress >= 2){
+        state.qs.shield = Math.min(3, (state.qs.shield ?? 3) + 1);
+        state.qs.shieldProgress = 0;
+      }
+    }
+    state.qs.correct++;
+    state.qs.streak++;
+    state.qs.best = Math.max(state.qs.best, state.qs.streak);
+
+    const bonus = Math.min(100, state.qs.streak * 1);
+    const gemBoostAdd = fin(state.up.gemboost, 0) * 1;
+    const gain = 15 + bonus + (firstTry ? 10 : 0) + gemBoostAdd;
+    state.gem += gain;
+
+    feed.className = 'ok';
+    feed.textContent = `答對　+${gain} 💎　連續 ${state.qs.streak}`;
+    document.getElementById('qNext').style.display = 'block';
+    save(); syncUI(); syncQuizMeta();
+  } else {
+    btn.classList.add('wrong');
+    btn.disabled = true;
+
+    if(firstTry){
+      if((state.qs.shield ?? 0) > 0){
+        IndigenousQuiz.recordTieredAnswer(state.indigTier, indigenousWords, curQ.correctId,
+          { correct:false, isFirstAttempt:true, isFinal:false });
+        state.qs.shield--;
+        firstTry = false;
+        feed.className = 'no';
+        feed.textContent = `⚠️ 答錯了！還有 ${state.qs.shield} 顆綠燈保護，再試一次！`;
+        save(); syncQuizMeta();
+        return;
+      }
+      IndigenousQuiz.recordTieredAnswer(state.indigTier, indigenousWords, curQ.correctId,
+        { correct:false, isFirstAttempt:true, isFinal:true });
+      answered = true;
+      state.qs.wrong++;
+      state.qs.streak = 0;
+    } else {
+      IndigenousQuiz.recordTieredAnswer(state.indigTier, indigenousWords, curQ.correctId,
+        { correct:false, isFirstAttempt:false, isFinal:true });
+      answered = true;
+      state.qs.wrong++;
+      state.qs.streak = 0;
+    }
+    const correctOpt = curQ.options.find(o=>o.id===curQ.correctId);
+    document.querySelectorAll('.opt').forEach(b=>{
+      b.disabled = true;
+      if(correctOpt && b.textContent === correctOpt.label) b.classList.add('right');
+    });
+    feed.className = 'no';
+    feed.textContent = correctOpt ? `正確答案是「${correctOpt.label}」，連勝中斷！` : '答錯了，連勝中斷！';
+    document.getElementById('qNext').style.display = 'block';
+    save(); syncQuizMeta();
+  }
 }
 
 function answer(choice, btn){
@@ -2064,13 +2224,10 @@ heroImg.src = encodeURI(`./${HERO_IMG_FOLDER}/${HERO_IMG_FILE}`);
 // 怪物／Boss 自訂圖片
 const MONSTER_IMG_PREFIX = 'monster';// 指定小怪名稱
 const BOSS_IMG_PREFIX = 'Boss';// 指定王名稱
-
-// 目前實際圖片總數：以後新增／刪除圖片，只要改下面兩個數字就好，兩邊互不影響
-const MONSTER_IMG_MAX = 22; // monster1.png ~ monster22.png
-const BOSS_IMG_MAX = 7;     // Boss1.png ~ Boss7.png
-
-// 「先求有、再求全」：只要讀到這個張數就先讓玩家進遊戲，其餘圖片繼續在背景補齊，
-// 補好之後會自動加入怪物池，不需要玩家等全部載完
+// 實際圖片總數：新增／刪除圖片只要改下面兩個數字
+const MONSTER_IMG_MAX = 22;
+const BOSS_IMG_MAX = 7;
+//讀到這個張數就先讓玩家進遊戲，其餘在背景補齊，補好會加入怪物池
 const MONSTER_IMG_MIN_TO_ENTER = 5;
 const BOSS_IMG_MIN_TO_ENTER = 4;
 
@@ -2835,6 +2992,47 @@ function admInitTier(subject){
   admRender();
 }
 
+// ── 族語模式開關與階層範圍 ──
+function admToggleIndigenous(){
+  const on = indigenousEnabled();
+  if(!on && !indigenousReady()){
+    toast('單字庫不足 4 筆完整資料，無法開啟');
+    return;
+  }
+  setIndigenousEnabled(!on);
+  admRender();
+  toast(indigenousEnabled() ? '族語模式已開啟' : '族語模式已關閉');
+}
+function admIndigTierMax(){
+  const pool = indigenousWords.filter(w=>w && w.meaning && w.spelling && w.id!=null);
+  return pool.length ? Math.max(...pool.map(w=>w.id)) : 0;
+}
+function admEnsureIndigTier(){
+  IndigenousQuiz.ensureTierState(state.indigTier, indigenousWords, state.qs.correct);
+  save();
+}
+function admSetIndigTierRange(newMax){
+  admEnsureIndigTier();
+  const maxId = admIndigTierMax();
+  if(maxId === 0){ toast('族語單字庫目前是空的，無法調整範圍'); return; }
+  newMax = Math.max(1, Math.min(maxId, Math.round(Number(newMax)||1)));
+  const t = state.indigTier;
+  t.unlockedMax = newMax;
+  const lower = Math.max(1, newMax - 4);
+  const pool = indigenousWords.filter(w=>w && w.meaning && w.spelling && w.id!=null);
+  t.pendingIds = pool.filter(w=>w.id>=lower && w.id<=newMax).map(w=>w.id);
+  save(); admRender();
+  toast(`族語範圍已設定為 第 1～${newMax} 個詞`);
+}
+function admStepIndigTierRange(delta){
+  admEnsureIndigTier();
+  admSetIndigTierRange(state.indigTier.unlockedMax + delta);
+}
+function admInitIndigTier(){
+  admEnsureIndigTier();
+  admRender();
+}
+
 // ── 修改後台密碼 ──
 function admChangePw(){
   const cur = document.getElementById('admPwCur').value;
@@ -2903,6 +3101,45 @@ function admRender(){
       <button class="btn ghost sm" onclick="admSetMathStage(document.getElementById('admMathStageInput').value)">套用輸入的數字</button>
     </div>
   </div>`;
+
+  {
+    const readyCount = indigenousWords.filter(w => w && w.meaning && w.spelling && w.id != null).length;
+    const on = indigenousEnabled();
+    const maxId = admIndigTierMax();
+    const t = state.indigTier;
+    html += `<div class="adm-sec">
+      <h4>🗣️ 族語・答題模式</h4>
+      <div class="adm-stat">
+        單字庫共 <b>${indigenousWords.length}</b> 筆（資料完整可用 <b>${readyCount}</b> 筆，至少需要 4 筆才能開啟）<br>
+        目前狀態：<b>${on ? '已開啟（約每 6 題出現 1 題族語題）' : '已關閉'}</b>
+        ${!indigenousReady() ? '<br><span style="color:var(--blood)">單字庫不足，暫時無法開啟。</span>' : ''}
+      </div>
+      <div class="adm-actionrow">
+        <button class="btn ${on ? 'ghost' : 'mana'} sm" onclick="admToggleIndigenous()">${on ? '關閉族語模式' : '開啟族語模式'}</button>
+      </div>`;
+    if(maxId === 0){
+      html += `<div class="adm-stat" style="margin-top:8px">目前沒有單字（indigenous-words.json 尚未提供），無法調整範圍。</div>`;
+    } else if(t.unlockedMax == null){
+      html += `<div class="adm-stat" style="margin-top:8px">尚未初始化（這台裝置還沒答過族語題）。單字庫共 <b>${maxId}</b> 個詞。</div>
+      <div class="adm-actionrow"><button class="btn ghost sm" onclick="admInitIndigTier()">立即初始化</button></div>`;
+    } else {
+      html += `<div class="adm-stat" style="margin-top:8px">
+        已開放範圍　第 1～<b>${t.unlockedMax}</b> 個詞（單字庫共 <b>${maxId}</b> 個詞）<br>
+        本批待過關 <b>${(t.pendingIds||[]).length}</b> 個　排隊重考 <b>${(t.retryQueue||[]).length}</b> 個
+      </div>
+      <div class="adm-row" style="margin-top:8px">
+        <button class="adm-stepbtn" onclick="admStepIndigTierRange(-20)">-20</button>
+        <button class="adm-stepbtn" onclick="admStepIndigTierRange(-5)">-5</button>
+        <input type="number" id="admIndigTierInput" value="${t.unlockedMax}" style="text-align:center">
+        <button class="adm-stepbtn" onclick="admStepIndigTierRange(5)">+5</button>
+        <button class="adm-stepbtn" onclick="admStepIndigTierRange(20)">+20</button>
+      </div>
+      <div class="adm-actionrow">
+        <button class="btn ghost sm" onclick="admSetIndigTierRange(document.getElementById('admIndigTierInput').value)">套用輸入的數字</button>
+      </div>`;
+    }
+    html += `</div>`;
+  }
 
   ['chinese','english','science','geography'].forEach(subj=>{
     const maxId = admTierPoolMax(subj);
@@ -3011,6 +3248,19 @@ async function boot(){
     return {imageCount};
   })();
 
+  // 族語單字庫／音檔對照表：跟 images.json 一樣是選用檔案，沒有的話族語模式就是「單字庫不足，維持關閉」，
+  // 不影響其他五科正常運作。
+  const indigenousTask = (async()=>{
+    try{
+      const rw = await fetch('./indigenous-words.json');
+      if(rw.ok) indigenousWords = await rw.json();
+    }catch(e){ /* 沒有這個檔案就當作族語模式暫時沒有單字庫，安靜跳過 */ }
+    try{
+      const ra = await fetch('./indigenous-audio.json');
+      if(ra.ok) indigenousAudioMap = await ra.json();
+    }catch(e){ /* 沒有這個檔案不影響文字，只是喇叭按了沒聲音 */ }
+  })();
+
   // 怪物／Boss 自訂圖片：只要各自讀到「可進場」門檻張數就算完成，
   // 剩下的圖片會在背景繼續補齊，讀到會自動加入怪物池，不會擋住玩家進場。
   const monsterReadyTask = probeImageSeries(
@@ -3022,7 +3272,7 @@ async function boot(){
     arr => { bossImgs = arr; }
   );
 
-  const [qResult, iResult] = await Promise.all([questionsTask, imagesTask, monsterReadyTask, bossReadyTask]);
+  const [qResult, iResult] = await Promise.all([questionsTask, imagesTask, monsterReadyTask, bossReadyTask, indigenousTask]);
 
   clearTimeout(skipTimer);
 
