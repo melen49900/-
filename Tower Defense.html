@@ -2271,24 +2271,23 @@ heroImg.onload  = ()=>{ heroImgReady = true; };
 heroImg.onerror = ()=>{ heroImgReady = false; };
 heroImg.src = encodeURI(`./${HERO_IMG_FOLDER}/${HERO_IMG_FILE}`);
 
-// 造型獎勵：通關第 25 關解鎖 hero2.png、第 50 關解鎖 hero3.png，玩家可在「裝備」頁上方切換。
-// 新增造型只要：1) 把圖片放進同一個資料夾 2) 在 HERO_SKINS 多加一筆設定，其餘（載入／解鎖判斷／畫面）都會自動處理。
+// 造型獎勵：「裝備」頁切換
 const hero2Img = new Image();
 let hero2ImgReady = false;
 hero2Img.onload  = ()=>{ hero2ImgReady = true; };
 hero2Img.onerror = ()=>{ hero2ImgReady = false; };
-hero2Img.src = encodeURI(`./${HERO_IMG_FOLDER}/hero2.png`);
+hero2Img.src = encodeURI(`./${HERO_IMG_FOLDER}/hero2.png`);//指定名稱
 
 const hero3Img = new Image();
 let hero3ImgReady = false;
 hero3Img.onload  = ()=>{ hero3ImgReady = true; };
 hero3Img.onerror = ()=>{ hero3ImgReady = false; };
-hero3Img.src = encodeURI(`./${HERO_IMG_FOLDER}/hero3.png`);
+hero3Img.src = encodeURI(`./${HERO_IMG_FOLDER}/hero3.png`);//指定名稱
 
 const HERO_SKINS = [
-  { id:1, name:'烈焰法師（初始）', icon:'🧙', unlockLevel:0,  img:()=>heroImg,  ready:()=>heroImgReady  },
-  { id:2, name:'造型 2',           icon:'🧊', unlockLevel:25, img:()=>hero2Img, ready:()=>hero2ImgReady },
-  { id:3, name:'造型 3',           icon:'⚡', unlockLevel:50, img:()=>hero3Img, ready:()=>hero3ImgReady },
+  { id:1, name:'造型 1', icon:'🧙', unlockLevel:0,  img:()=>heroImg,  ready:()=>heroImgReady  },
+  { id:2, name:'造型 2', icon:'🧊', unlockLevel:25, img:()=>hero2Img, ready:()=>hero2ImgReady },//第 25 關解鎖 hero2.png
+  { id:3, name:'造型 3', icon:'⚡', unlockLevel:50, img:()=>hero3Img, ready:()=>hero3ImgReady },//第 50 關解鎖 hero3.png
 ];
 function currentHeroSkin(){
   return HERO_SKINS.find(h=>h.id===(state.selectedHero||1)) || HERO_SKINS[0];
@@ -2346,8 +2345,6 @@ let monsterImgs = [];
 let bossImgs = [];
 
 // 依序嘗試 folder/prefix1.png ~ prefixMaxCount.png。
-// 一旦「已經有回應（不論成功或404）」的張數達到 minToEnter，就呼叫 onUpdate 並讓外層 Promise resolve，
-// 但不會中斷還沒回應的請求：之後每多一張讀取成功，都會再呼叫一次 onUpdate 把最新結果補進去。
 function probeImageSeries(folder, prefix, maxCount, minToEnter, onUpdate){
   return new Promise(resolveReady=>{
     if(maxCount <= 0){ onUpdate([]); resolveReady(); return; }
@@ -3025,8 +3022,6 @@ document.querySelectorAll('.tab').forEach(t=>{
 
 /* ══════════════════════════════════════════
    管理後台
-   ── 這是單機／單一裝置用的簡易管理面板，密碼只存在這台裝置的
-      localStorage，目的是防止小朋友自己亂改，不是真正的帳號系統。
    ══════════════════════════════════════════ */
 const ADM_PW_KEY = 'td_admin_pw_v1';
 function admGetPw(){ return localStorage.getItem(ADM_PW_KEY) || '1234'; }
