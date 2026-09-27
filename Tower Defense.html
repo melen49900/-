@@ -188,6 +188,26 @@ body{
 .lvCard.locked .lvNum{filter:grayscale(1)}
 .lvCard.current{border-color:var(--ember);box-shadow:0 0 0 1px var(--ember),0 0 14px rgba(255,106,31,.35)}
 
+/* ── 角色造型（裝備頁上方） ─────────────────── */
+#heroSkinGrid{display:flex;gap:9px;margin-top:6px}
+.heroCard{
+  flex:1;position:relative;border-radius:13px;border:1px solid var(--stoneline);
+  background:rgba(0,0,0,.3);display:flex;flex-direction:column;align-items:center;
+  gap:5px;padding:10px 4px;cursor:pointer;font-family:inherit;color:var(--bone);
+}
+.heroCard:active{transform:translateY(2px)}
+.heroCard .heroThumb{
+  width:52px;height:52px;border-radius:99px;overflow:hidden;font-size:20px;
+  background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--stoneline);
+}
+.heroCard .heroThumb img{width:100%;height:100%;object-fit:cover}
+.heroCard .heroName{font-size:11px;font-weight:800;text-align:center;line-height:1.3}
+.heroCard .heroTag{font-size:9px;font-weight:800;color:#86efac}
+.heroCard .heroTag.lockTag{color:var(--bone-dim);font-weight:700}
+.heroCard.locked{opacity:.45;cursor:not-allowed}
+.heroCard.on{border-color:var(--ember);box-shadow:0 0 0 1px var(--ember),0 0 14px rgba(255,106,31,.35)}
+
 #hud{
   position:absolute;top:0;left:0;right:0;padding:9px 11px;
   display:flex;align-items:center;gap:9px;
@@ -543,7 +563,11 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
     <!-- 裝備 -->
     <section class="screen" id="screen-equip">
       <div class="pad">
-        <h2 class="sec">裝備</h2>
+        <h2 class="sec">角色造型</h2>
+        <p class="sub">通關第 25 關、第 50 關會解鎖新造型，點頭像即可切換。</p>
+        <div id="heroSkinGrid"></div>
+
+        <h2 class="sec" style="margin-top:18px">裝備</h2>
         <p class="sub">點下方背包中的裝備即可穿戴，同部位會自動替換。</p>
         <div id="slots"></div>
         <h2 class="sec" style="margin-top:18px">背包</h2>
@@ -840,6 +864,8 @@ function freshState(){
     unlockedLevel:1,                          // 目前解鎖到第幾關
     levelRecords:{},                          // { [level]: {cleared, bestWave, bestKills} }
     seenIntro:false,
+    selectedHero:1,                           // 目前使用的角色造型 id（對應 HERO_SKINS）
+    heroUnlockedSeen:[1],                     // 已經提示過解鎖的造型 id（避免重複跳提示）
   };
 }
 
@@ -875,6 +901,13 @@ function sanitizeState(){
   ['weapon','armor','trinket'].forEach(s=>{
     state.refineBySlot[s] = Math.max(0, Math.round(fin(state.refineBySlot[s], 0)));
   });
+  // 角色造型：已提示清單一定要包含預設造型1；選用中的造型若不存在（或還沒解鎖，例如手動改過存檔），一律退回造型1
+  if(!Array.isArray(state.heroUnlockedSeen)) state.heroUnlockedSeen = [];
+  if(!state.heroUnlockedSeen.includes(1)) state.heroUnlockedSeen.push(1);
+  const validHero = HERO_SKINS.find(h=>h.id===state.selectedHero);
+  if(!validHero || (validHero.unlockLevel>0 && !(state.unlockedLevel > validHero.unlockLevel))){
+    state.selectedHero = 1;
+  }
 }
 function save(){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
@@ -2221,6 +2254,67 @@ heroImg.onload  = ()=>{ heroImgReady = true; };
 heroImg.onerror = ()=>{ heroImgReady = false; };
 heroImg.src = encodeURI(`./${HERO_IMG_FOLDER}/${HERO_IMG_FILE}`);
 
+// 造型獎勵：通關第 25 關解鎖 hero2.png、第 50 關解鎖 hero3.png，玩家可在「裝備」頁上方切換。
+// 新增造型只要：1) 把圖片放進同一個資料夾 2) 在 HERO_SKINS 多加一筆設定，其餘（載入／解鎖判斷／畫面）都會自動處理。
+const hero2Img = new Image();
+let hero2ImgReady = false;
+hero2Img.onload  = ()=>{ hero2ImgReady = true; };
+hero2Img.onerror = ()=>{ hero2ImgReady = false; };
+hero2Img.src = encodeURI(`./${HERO_IMG_FOLDER}/hero2.png`);
+
+const hero3Img = new Image();
+let hero3ImgReady = false;
+hero3Img.onload  = ()=>{ hero3ImgReady = true; };
+hero3Img.onerror = ()=>{ hero3ImgReady = false; };
+hero3Img.src = encodeURI(`./${HERO_IMG_FOLDER}/hero3.png`);
+
+const HERO_SKINS = [
+  { id:1, name:'烈焰法師（初始）', icon:'🧙', unlockLevel:0,  img:()=>heroImg,  ready:()=>heroImgReady  },
+  { id:2, name:'造型 2',           icon:'🧊', unlockLevel:25, img:()=>hero2Img, ready:()=>hero2ImgReady },
+  { id:3, name:'造型 3',           icon:'⚡', unlockLevel:50, img:()=>hero3Img, ready:()=>hero3ImgReady },
+];
+function currentHeroSkin(){
+  return HERO_SKINS.find(h=>h.id===(state.selectedHero||1)) || HERO_SKINS[0];
+}
+// 過關進度一旦超過門檻，就自動解鎖對應造型，並提示一次（不會重複跳）
+function checkHeroUnlock(){
+  HERO_SKINS.forEach(h=>{
+    if(h.unlockLevel<=0) return;
+    if(state.unlockedLevel > h.unlockLevel && !state.heroUnlockedSeen.includes(h.id)){
+      state.heroUnlockedSeen.push(h.id);
+      save();
+      toast(`🎭 解鎖新造型：${h.name}！到「裝備」頁面更換`);
+    }
+  });
+}
+function renderHeroSkins(){
+  const box = document.getElementById('heroSkinGrid');
+  if(!box) return;
+  box.innerHTML = HERO_SKINS.map(h=>{
+    const unlocked = h.unlockLevel<=0 || state.unlockedLevel > h.unlockLevel;
+    const on = unlocked && (state.selectedHero||1)===h.id;
+    const thumb = (unlocked && h.ready()) ? `<img src="${h.img().src}" alt="">` : (unlocked ? h.icon : '🔒');
+    const tag = unlocked
+      ? (on ? '<div class="heroTag">使用中</div>' : '')
+      : `<div class="heroTag lockTag">通關第 ${h.unlockLevel} 關解鎖</div>`;
+    return `<button class="heroCard${unlocked?'':' locked'}${on?' on':''}" data-id="${h.id}" ${unlocked?'':'disabled'}>
+      <div class="heroThumb">${thumb}</div>
+      <div class="heroName">${unlocked?h.name:'？？？'}</div>
+      ${tag}
+    </button>`;
+  }).join('');
+  box.querySelectorAll('.heroCard').forEach(el=>{
+    if(el.disabled) return;
+    el.onclick = ()=>{
+      const id = Number(el.dataset.id);
+      if(state.selectedHero === id) return;
+      state.selectedHero = id;
+      save(); renderHeroSkins();
+      toast('已更換造型');
+    };
+  });
+}
+
 // 怪物／Boss 自訂圖片
 const MONSTER_IMG_PREFIX = 'monster';// 指定小怪名稱
 const BOSS_IMG_PREFIX = 'Boss';// 指定王名稱
@@ -2269,10 +2363,11 @@ function pickRandomImg(arr){
 }
 
 function drawHero(x, y, size){
-  if(heroImgReady){
+  const skin = currentHeroSkin();
+  if(skin.ready()){
     // 自訂圖片：維持正方形比例置中繪製，size 是視覺直徑（跟手繪版一致方便比較）
     const d = size * 1.35; // 圖片通常比 emoji 留白少，稍微放大一點視覺大小才會接近
-    ctx.drawImage(heroImg, x - d/2, y - d/2, d, d);
+    ctx.drawImage(skin.img(), x - d/2, y - d/2, d, d);
     return;
   }
   drawHeroFallback(x, y, size);
@@ -2803,6 +2898,7 @@ function renderRefine(){
    裝備
    ══════════════════════════════════════════ */
 function renderEquip(){
+  renderHeroSkins();
   const sBox = document.getElementById('slots');
   sBox.innerHTML = ['weapon','armor','trinket'].map(s=>{
     const c = state.equipped[s];
@@ -2861,6 +2957,7 @@ function renderEquip(){
 function syncUI(){
   checkWhirlwindUnlock(); // 過關進度一旦超過門檻就自動補發旋風術 1 等
   checkEarthwallUnlock(); // 過關進度一旦超過門檻就自動補發土牆術 1 等
+  checkHeroUnlock();      // 過關進度一旦超過門檻就自動解鎖對應造型並提示一次
   document.getElementById('uiGem').textContent   = state.gem;
   document.getElementById('uiGold').textContent  = fmtNum(state.gold);
   document.getElementById('uiStone').textContent = fmtNum(state.stone);
