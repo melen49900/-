@@ -747,6 +747,7 @@ function checkWhirlwindUnlock(){
   if(state.unlockedLevel > WHIRLWIND_UNLOCK_LEVEL && state.skills.whirlwind.draws < 1){
     state.skills.whirlwind.draws = 1;
     save();
+    toast('🌪️ 解鎖新技能：旋風術！攻速觸發，之後也能從「召喚」抽到並疊加');
   }
 }
 // 土牆術：過關進度（unlockedLevel）超過第 40 關時自動習得 1 等
@@ -758,6 +759,7 @@ function checkEarthwallUnlock(){
   if(state.unlockedLevel > EARTHWALL_UNLOCK_LEVEL && state.skills.earthwall.draws < 1){
     state.skills.earthwall.draws = 1;
     save();
+    toast('🧱 解鎖新技能：土牆術！攻速觸發，之後也能從「召喚」抽到並疊加');
   }
 }
 
@@ -846,6 +848,19 @@ const UPGRADES = [
 const GOLDBOOST_UNLOCK_LEVEL = 30; // 金幣強化解鎖門檻：過關進度（unlockedLevel）超過第 30 關時解鎖
 function goldboostUnlocked(){ return state.unlockedLevel > GOLDBOOST_UNLOCK_LEVEL; }
 
+// 鍛造台裡「requiresLevel 才解鎖」的項目（金幣強化／鑽石強化／防禦強化／分解強化）：
+// 過關進度一旦超過門檻，提示一次即可，不用額外設定──新增鍛造項目只要照樣填 requiresLevel 就會自動被這裡吃到。
+function checkUpgradeUnlocks(){
+  UPGRADES.forEach(u=>{
+    if(u.requiresLevel == null) return;
+    if(state.unlockedLevel > u.requiresLevel && !state.upgradeUnlockedSeen.includes(u.key)){
+      state.upgradeUnlockedSeen.push(u.key);
+      save();
+      toast(`${u.icon} 解鎖鍛造項目：${u.name}！到「鍛造」頁面查看`);
+    }
+  });
+}
+
 /* ── 存檔狀態 ─────────────────────────────── */
 let state = freshState();
 
@@ -866,6 +881,7 @@ function freshState(){
     seenIntro:false,
     selectedHero:1,                           // 目前使用的角色造型 id（對應 HERO_SKINS）
     heroUnlockedSeen:[1],                     // 已經提示過解鎖的造型 id（避免重複跳提示）
+    upgradeUnlockedSeen:[],                   // 已經提示過解鎖的鍛造項目 key（避免重複跳提示）
   };
 }
 
@@ -908,6 +924,7 @@ function sanitizeState(){
   if(!validHero || (validHero.unlockLevel>0 && !(state.unlockedLevel > validHero.unlockLevel))){
     state.selectedHero = 1;
   }
+  if(!Array.isArray(state.upgradeUnlockedSeen)) state.upgradeUnlockedSeen = [];
 }
 function save(){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
@@ -2958,6 +2975,7 @@ function syncUI(){
   checkWhirlwindUnlock(); // 過關進度一旦超過門檻就自動補發旋風術 1 等
   checkEarthwallUnlock(); // 過關進度一旦超過門檻就自動補發土牆術 1 等
   checkHeroUnlock();      // 過關進度一旦超過門檻就自動解鎖對應造型並提示一次
+  checkUpgradeUnlocks();  // 過關進度一旦超過門檻就提示新解鎖的鍛造項目（金幣/鑽石/防禦/分解強化）
   document.getElementById('uiGem').textContent   = state.gem;
   document.getElementById('uiGold').textContent  = fmtNum(state.gold);
   document.getElementById('uiStone').textContent = fmtNum(state.stone);
@@ -2975,12 +2993,21 @@ function syncUI(){
 }
 
 let toastTimer = null;
+let toastQueue = [];
 function toast(msg){
+  toastQueue.push(msg);
+  if(!toastTimer) processToastQueue(); // 沒有東西正在顯示才立刻播放，否則排隊等前一則播完
+}
+function processToastQueue(){
+  const msg = toastQueue.shift();
+  if(msg === undefined){ toastTimer = null; return; }
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('on');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>el.classList.remove('on'), 1700);
+  toastTimer = setTimeout(()=>{
+    el.classList.remove('on');
+    setTimeout(processToastQueue, 220); // 短暫間隔再顯示下一則，避免像瞬間跳字看不清楚
+  }, 1700);
 }
 
 function show(name){
