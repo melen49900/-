@@ -581,6 +581,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
       <div class="pad">
         <h2 class="sec">鍛造台</h2>
         <p class="sub">用金幣增強角色能力。每級費用會隨等級提高。</p>
+        <button class="btn ghost sm" id="upAllBtn" style="margin-bottom:11px">💰 一鍵強化（自動選最便宜的項目）</button>
         <div class="card" id="upList"></div>
         <h2 class="sec" style="margin-top:18px">裝備精煉</h2>
         <p class="sub">用強化石精煉已裝備的物品，每次精煉提升該裝備 10% 全能力。</p>
@@ -681,8 +682,8 @@ const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 155;        // 所有怪物出完的時間點（2:35），清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
 const LEVEL_COUNT = 90;           // 共 90 關
-const LEVEL_HP_GROWTH = 1.287;                                  // 血量成長係數
-const LEVEL_ATK_GROWTH = 1.19;                                  // 攻擊成長係數
+const LEVEL_HP_GROWTH = 1.286;                                  // 血量成長係數
+const LEVEL_ATK_GROWTH = 1.21;                                  // 攻擊成長係數
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內 20 波，血量差 3 倍
 const WAVE_SPD_GROWTH = 0.1;                                    // 關內 20 波，移速大約多 10%（≈1.1倍）
 
@@ -862,21 +863,22 @@ const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品' };
 const ATK_PCT_PER_LV = 0.005; // 攻擊力鍛造：每級額外 +0.5% 全攻擊（含裝備）
 const HP_PCT_PER_LV  = 0.005; // 生命值鍛造：每級額外 +0.5% 全生命（含裝備）——與攻擊分開設定，可各自調整
 const REFINE_COST_REDUCE_PER_LV = 1; // 精煉成本：每級減少每次精煉消耗的強化石（最低為 1）
+const MONSTER_WEAKEN_MULT_PER_LV = 0.99; // 怪物弱化：每級怪物生命 ×0.99（累乘），例如 Lv.10 ＝ ×0.904
 const DEFENSE_MULT_PER_LV = 0.99; // 減傷：每級受到的傷害 ×0.99（累乘），例如 Lv.10 ＝ ×0.904
 const UPGRADES = [
-  { key:'atk',  icon:'🗡️', name:'攻擊力',  base:40,  grow:1.12, per:3,    fmt:v=>'+'+v,
+  { key:'atk',  icon:'🗡️', name:'攻擊力',  base:40,  grow:1.11, per:3,    fmt:v=>'+'+v,
     // 每級：固定 +3，另外「全攻擊（本體＋鍛造＋裝備）」再 +0.5%（各級線性相加，例如 Lv.20 ＝ ×1.10）
     body:lv=>(25 + lv*3) * (1 + lv*ATK_PCT_PER_LV),
     full:lv=>(25 + lv*3 + sumEquip('atk')) * (1 + lv*ATK_PCT_PER_LV),
     perFmt:lv=>'+'+(lv*3)+' 且 +'+(lv*ATK_PCT_PER_LV*100).toFixed(1)+'%',
     bodyFmt:v=>String(Math.round(v)) },
-  { key:'hp',   icon:'❤️', name:'生命值',  base:40,  grow:1.12, per:15,   fmt:v=>'+'+v,
+  { key:'hp',   icon:'❤️', name:'生命值',  base:40,  grow:1.11, per:15,   fmt:v=>'+'+v,
     // 每級：固定 +15，另外「全生命（本體＋鍛造＋裝備）」再 +HP_PCT_PER_LV（預設 0.5%，線性相加）
     body:lv=>(100 + lv*15) * (1 + lv*HP_PCT_PER_LV),
     full:lv=>(100 + lv*15 + sumEquip('hp')) * (1 + lv*HP_PCT_PER_LV),
     perFmt:lv=>'+'+(lv*15)+' 且 +'+(lv*HP_PCT_PER_LV*100).toFixed(1)+'%',
     bodyFmt:v=>String(Math.round(v)) },
-  { key:'spd',  icon:'💨', name:'攻擊速度', base:90,  grow:1.28, per:0.09, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
+  { key:'spd',  icon:'💨', name:'攻擊速度', base:90,  grow:1.31, per:0.09, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
     body:lv=>Math.max(0.4, 0.3 + lv*0.09), full:lv=>Math.max(0.4, 0.3 + lv*0.09 + sumEquip('spd')),
     bodyFmt:v=>v.toFixed(2)+' 發/秒' },
   { key:'crit', icon:'✨', name:'暴擊率',  base:100, grow:1.2, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
@@ -894,14 +896,13 @@ const UPGRADES = [
     body:lv=>lv*5,                           full:lv=>lv*5,
     bodyFmt:v=>v.toFixed(0)+'%' },
   // 鑽石強化：第 35 關才會解鎖，解鎖前在金幣強化下方以「？」顯示，解鎖後過關或答題獲得的鑽石每級 +1（固定值）。
-  { key:'gemboost', icon:'💎', name:'鑽石強化', base:2000, grow:1.5, per:1, fmt:v=>'+'+v.toFixed(0),
+  { key:'gemboost', icon:'💎', name:'鑽石強化', base:1800, grow:1.45, per:1, fmt:v=>'+'+v.toFixed(0),
     requiresLevel:35,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 35 關時解鎖。`,
     body:lv=>lv*1,                           full:lv=>lv*1,
     bodyFmt:v=>v.toFixed(0) },
   // 減傷：第 45 關才會解鎖，解鎖前在鑽石強化下方以「？」顯示。解鎖後角色跟土牆受到的傷害每級 ×DEFENSE_MULT_PER_LV（預設 0.99，累乘）。
-  // key 維持 'defense'，沿用舊存檔的等級欄位。成本係數 1.15 → 1.20。
-  { key:'defense', icon:'🛡️', name:'減傷', base:100, grow:1.20, per:1, fmt:v=>'-'+v.toFixed(1)+'%',
+  { key:'defense', icon:'🛡️', name:'減傷', base:100, grow:1.19, per:1, fmt:v=>'-'+v.toFixed(1)+'%',
     requiresLevel:45,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 45 關時解鎖。`,
     body:lv=>(1 - Math.pow(DEFENSE_MULT_PER_LV, lv)) * 100,
@@ -909,17 +910,24 @@ const UPGRADES = [
     perFmt:lv=>'受傷 ×'+Math.pow(DEFENSE_MULT_PER_LV, lv).toFixed(3),
     bodyFmt:v=>'-'+v.toFixed(1)+'%' },
   // 精煉成本：第 50 關才會解鎖，解鎖前在減傷下方以「？」顯示。解鎖後每級讓「每次精煉消耗的強化石」-REFINE_COST_REDUCE_PER_LV（最低為 1）。
-  // key 維持 'breakboost'，沿用舊存檔的等級欄位。成本係數 1.10 → 1.11。
   { key:'breakboost', icon:'♻️', name:'精煉成本', base:40, grow:1.11, per:1, fmt:v=>'-'+v.toFixed(0),
     requiresLevel:50,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 50 關時解鎖。`,
     body:lv=>lv*REFINE_COST_REDUCE_PER_LV,   full:lv=>lv*REFINE_COST_REDUCE_PER_LV,
     bodyFmt:v=>'-'+v.toFixed(0)+' 🔮/次' },
+  // 怪物弱化：第 55 關才會解鎖，解鎖前在精煉成本下方以「？」顯示。解鎖後每級怪物生命 ×MONSTER_WEAKEN_MULT_PER_LV（預設 0.99，累乘）。
+  { key:'monweaken', icon:'☠️', name:'怪物弱化', base:95, grow:1.16, per:1, fmt:v=>'-'+v.toFixed(1)+'%',
+    requiresLevel:55,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
+    lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 55 關時解鎖。`,
+    body:lv=>(1 - Math.pow(MONSTER_WEAKEN_MULT_PER_LV, lv)) * 100,
+    full:lv=>(1 - Math.pow(MONSTER_WEAKEN_MULT_PER_LV, lv)) * 100,
+    perFmt:lv=>'怪物生命 ×'+Math.pow(MONSTER_WEAKEN_MULT_PER_LV, lv).toFixed(3),
+    bodyFmt:v=>'-'+v.toFixed(1)+'%' },
 ];
 const GOLDBOOST_UNLOCK_LEVEL = 30; // 金幣強化解鎖門檻：過關進度（unlockedLevel）超過第 30 關時解鎖
 function goldboostUnlocked(){ return state.unlockedLevel > GOLDBOOST_UNLOCK_LEVEL; }
 
-// 鍛造台裡「requiresLevel 才解鎖」的項目（金幣強化／鑽石強化／減傷／精煉成本）：
+// 鍛造台裡「requiresLevel 才解鎖」的項目（金幣強化／鑽石強化／減傷／精煉成本／怪物弱化）：
 // 過關進度一旦超過門檻，提示一次即可，不用額外設定──新增鍛造項目只要照樣填 requiresLevel 就會自動被這裡吃到。
 function checkUpgradeUnlocks(){
   UPGRADES.forEach(u=>{
@@ -955,7 +963,7 @@ function freshState(){
   const kit = makeStarterKit();
   return {
     gem:0, gold:0, stone:0,
-    up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0 },
+    up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0 },
     bag:kit.bag,                              // [{uid,id,rarity}]（新存檔內建新手三件裝備）（精煉等級改綁在裝備「部位」上，見 refineBySlot）
     equipped:kit.equipped,
     starterGiven:true,                        // 已發放新手裝備
@@ -982,7 +990,7 @@ function fmtNum(n){
   n = fin(n, 0);
   const sign = n < 0 ? '-' : '';
   n = Math.abs(n);
-  const units = [ {v:1e9, s:'B'}, {v:1e6, s:'M'}, {v:1e3, s:'K'} ];
+  const units = [ {v:1e12, s:'T'}, {v:1e9, s:'B'}, {v:1e6, s:'M'}, {v:1e3, s:'K'} ];
   for(const u of units){
     if(n >= u.v){
       let val = Math.round(n / u.v * 10) / 10;
@@ -995,6 +1003,11 @@ function fmtNum(n){
     }
   }
   return sign + Math.round(n).toString();
+}
+// 倍率顯示：小於 1000 保留一位小數（例如 2.5），達 1000 以上改用 K／M／B／T
+function fmtMul(n){
+  n = fin(n, 0);
+  return n < 1000 ? n.toFixed(1) : fmtNum(n);
 }
 function sanitizeState(){
   state.gem   = Math.max(0, fin(state.gem, 0));
@@ -1050,9 +1063,7 @@ function load(){
     // 進度資料還原：補上舊存檔可能缺少的欄位，避免引擎讀到 undefined
     state.quiz     = Object.assign(QuizEngine.createProgress(), d.quiz||{});
     state.indigTier = Object.assign(IndigenousQuiz.createTierState(), d.indigTier||{});
-    // 舊存檔搬家 1：最早的版本把精煉等級存在「單一卡片」上（card.refine），
-    // 換裝就會歸零重來。這裡把每張卡片曾經存過的 refine 值，依它所屬的部位（武器／防具／飾品）
-    // 搬進 state.refineBySlot，同一部位有多筆就取最高的一筆，避免玩家的精煉進度被吃掉。
+    // 舊存檔搬家 1：精煉等級從單一卡片改依所屬部位
     [...(d.bag||[]), ...Object.values(d.equipped||{})].forEach(c=>{
       if(c && c.id && Number.isFinite(c.refine)){
         const base = EQUIP_POOL.find(e=>e.id===c.id);
@@ -1067,9 +1078,7 @@ function load(){
         if(base && Number.isFinite(lv)) state.refineBySlot[base.slot] = Math.max(fin(state.refineBySlot[base.slot], 0), lv);
       });
     }
-    // 修復「裝備跑掉」的 bug：JSON 存檔/讀檔會讓 state.equipped[slot] 和
-    // state.bag 裡對應的物品變成兩個不同的物件（就算 uid 相同）。
-    // 這裡強制讓 equipped 指回背包裡「同一個」物件，兩邊資料重新同步成一份。
+    // 修復「裝備跑掉」的 bug：JSON 存檔/讀檔會讓對應的物品變成兩個不同的物件，兩邊資料重新同步成一份。
     ['weapon','armor','trinket'].forEach(s=>{
       const eq = state.equipped[s];
       if(eq && eq.uid){
@@ -1092,8 +1101,7 @@ function load(){
       state.starterGiven = true;
     }
   }catch(e){}
-  // 修復壞掉的存檔：把任何已經變成 NaN／undefined 的數值拉回正常值，
-  // 這樣舊的壞存檔載入後就會自動恢復，不會一直卡在 NaN。
+  // 修復壞存檔：把變成 NaN／undefined 的數值拉回正常值
   sanitizeState();
   save();
 }
@@ -1734,7 +1742,7 @@ function openLevelConfirm(level){
   const hpMul = Math.pow(LEVEL_HP_GROWTH, level-1);
   document.getElementById('ovTitle').textContent = `第 ${level} 關`;
   document.getElementById('ovSub').innerHTML =
-    `本關共 ${WAVES_PER_LEVEL} 波，怪物基礎血量約為第 1 關的 ${hpMul.toFixed(1)} 倍。<br>拖曳畫面移動法師，攻擊會自動施放。`;
+    `本關共 ${WAVES_PER_LEVEL} 波，怪物基礎血量約為第 1 關的 ${fmtMul(hpMul)} 倍。<br>拖曳畫面移動法師，攻擊會自動施放。`;
   const loot = document.getElementById('ovLoot');
   loot.className = ''; loot.innerHTML = '';
 
@@ -1873,7 +1881,9 @@ function spawnEnemy(){
   const w = run.wave;
   const isBoss = (w % 5 === 0) && run.spawned === run.waveQuota-1;
   const base = MONSTERS[Math.floor(Math.random()*MONSTERS.length)];
-  const hp = enemyHpFor(run.level, w) * base.hp * (isBoss ? 14 : 1);
+  // 鍛造台「怪物弱化」：怪物生命每級 ×MONSTER_WEAKEN_MULT_PER_LV（累乘）
+  const weakenMul = Math.pow(MONSTER_WEAKEN_MULT_PER_LV, fin(state.up.monweaken, 0));
+  const hp = enemyHpFor(run.level, w) * base.hp * (isBoss ? 14 : 1) * weakenMul;
   const dps = (isBoss ? 13 : 4) * Math.pow(LEVEL_ATK_GROWTH, run.level-1);
   run.enemies.push({
     x: 32 + Math.random()*(W-64),
@@ -2903,7 +2913,7 @@ function doPull(n, free){
 
 // 數值有可能是負的（例如巨錘犧牲攻速、項鍊犧牲生命），正負號要正確顯示
 function signed(v, digits){
-  const n = digits ? v.toFixed(digits) : String(Math.round(v));
+  const n = digits ? v.toFixed(digits) : fmtNum(Math.round(v)); // 整數部分（攻擊／生命）用 K／M／B／T 縮寫
   return (v >= 0 ? '+' : '') + n;
 }
 function statLine(base, rarity, refine){
@@ -2925,8 +2935,49 @@ function upCost(u){
   return Math.round(u.base * Math.pow(u.grow, lv));
 }
 
+// 這個鍛造項目現在能不能買（已解鎖、沒滿級）
+function upgradeAvailable(u){
+  if(u.requiresLevel != null && state.unlockedLevel <= u.requiresLevel) return false;
+  if(u.max != null && state.up[u.key] >= u.max) return false;
+  return true;
+}
+// 一鍵強化：反覆找目前「已解鎖、沒滿級、費用最低」的鍛造項目升一級，直到金幣不夠為止。
+// （規則跟下方「裝備精煉」的一鍵強化一致，優先補便宜的項目，整體會比較平均。）
+function upgradeAllCheapest(){
+  const bought = {};
+  let count = 0;
+  for(let guard=0; guard<20000; guard++){
+    let best = null, bestCost = Infinity;
+    UPGRADES.forEach(u=>{
+      if(!upgradeAvailable(u)) return;
+      const c = upCost(u);
+      if(Number.isFinite(c) && c < bestCost){ bestCost = c; best = u; }
+    });
+    if(!best || !(state.gold >= bestCost)) break; // 用 >= 反向判斷，NaN 一律擋下
+    state.gold -= bestCost;
+    state.up[best.key]++;
+    bought[best.key] = (bought[best.key] || 0) + 1;
+    count++;
+  }
+  if(count > 0){
+    save(); syncUI(); renderUpgrades(); renderRefine();
+    const detail = UPGRADES.filter(u=>bought[u.key]).map(u=>`${u.name}+${bought[u.key]}`).join('、');
+    toast(`一鍵強化完成，共 ${count} 次（${detail}）`);
+  } else {
+    toast('金幣不足，無法強化');
+  }
+}
+
 function renderUpgrades(){
   const box = document.getElementById('upList');
+  // 一鍵強化按鈕：連最便宜的項目都買不起時停用
+  const allBtn = document.getElementById('upAllBtn');
+  if(allBtn){
+    let cheapest = Infinity;
+    UPGRADES.forEach(u=>{ if(upgradeAvailable(u)){ const c = upCost(u); if(Number.isFinite(c) && c < cheapest) cheapest = c; } });
+    allBtn.disabled = !(state.gold >= cheapest);
+    allBtn.onclick = upgradeAllCheapest;
+  }
   box.innerHTML = UPGRADES.map(u=>{
     // requiresLevel：過關進度（unlockedLevel）未超過門檻前，整項用「？」顯示，且不能購買。
     const locked = u.requiresLevel != null && state.unlockedLevel <= u.requiresLevel;
