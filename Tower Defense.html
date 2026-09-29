@@ -426,6 +426,30 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
   display:none;box-shadow:0 0 7px var(--blood);
 }
 .tab .dot.on{display:block}
+#tabGacha.pulse i{animation:tabBounce 1s ease-in-out infinite}
+@keyframes tabBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.free-card{
+  border-color:var(--ember-hot);text-align:center;
+  background:linear-gradient(180deg,rgba(255,208,70,.14),rgba(255,106,31,.08));
+  animation:freeGlow 1.6s ease-in-out infinite;
+}
+@keyframes freeGlow{0%,100%{box-shadow:0 0 0 rgba(255,208,70,0)}50%{box-shadow:0 0 16px rgba(255,208,70,.45)}}
+.free-title{font-size:16px;font-weight:900;color:var(--ember-hot);margin-bottom:6px}
+.free-desc{font-size:12px;color:var(--bone-dim);line-height:1.7;margin-bottom:11px}
+#guideOv{
+  position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  padding:26px;background:rgba(8,4,10,.88);backdrop-filter:blur(3px);z-index:20;
+}
+#guideOv.on{display:flex}
+#guideCard{width:100%;max-width:330px;text-align:center}
+#guideCard h3{margin:0 0 8px;font-size:22px;font-weight:900;color:var(--ember-hot)}
+#guideCard p{margin:0 0 16px;font-size:13px;line-height:1.8;color:var(--bone)}
+#guideCard .gear{
+  display:flex;flex-direction:column;gap:5px;margin:0 0 16px;padding:11px;
+  background:rgba(0,0,0,.4);border:1px solid var(--stoneline);border-radius:12px;
+  font-size:13px;font-weight:700;text-align:left;
+}
+#guideCard .btn + .btn{margin-top:9px}
 
 /* ── 提示 ──────────────────────────────────── */
 #toast{
@@ -534,13 +558,18 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
       <div class="pad">
         <h2 class="sec">熔爐召喚</h2>
         <p class="sub">投入鑽石，從熔爐中拉出裝備或技能。重複的裝備會自動熔成強化石。</p>
+        <div id="freePullCard" class="card free-card" style="display:none">
+          <div class="free-title">🎁 新手禮包・免費十連抽</div>
+          <div class="free-desc">送你一次免費的 10 連抽！可能抽到裝備或技能（火球術彈道、冰椎、閃電…），抽完記得到「裝備」頁挑更強的穿上。</div>
+          <button class="btn" id="pullFree">🎁 免費召喚 10 次</button>
+        </div>
         <div id="pullResult"></div>
         <button class="btn mana" id="pull1" style="margin-bottom:9px">召喚 1 次 · 100 💎</button>
         <button class="btn mana" id="pull10">召喚 10 次 · 900 💎</button>
         <div class="card" style="margin-top:14px">
           <div style="font-size:12px;color:var(--bone-dim);line-height:1.9">
             <div id="skillOddsInfo">技能機率　合計 30%</div>
-            <div>裝備機率　合計 70%　普通 35%　精良 21%　稀有 10.5%　傳說 3.5%</div>
+            <div id="equipOddsInfo">裝備機率　合計 70%　普通 35%　精良 21%　稀有 10.5%　傳說 3.5%</div>
             <div style="margin-top:6px">重複裝備熔解：普通 +1　精良 +3　稀有 +8　傳說 +20 🔮</div>
           </div>
         </div>
@@ -590,13 +619,29 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
   <nav id="tabs">
     <button class="tab on" data-s="battle"><i>⚔️</i>試煉</button>
     <button class="tab" data-s="quiz"><i>💎</i>答題<span class="dot" id="dotQuiz"></span></button>
-    <button class="tab" data-s="gacha"><i>🔥</i>召喚</button>
+    <button class="tab" data-s="gacha" id="tabGacha"><i>🔥</i>召喚<span class="dot" id="dotGacha"></span></button>
     <button class="tab" data-s="upgrade"><i>🔨</i>鍛造</button>
     <button class="tab" data-s="equip"><i>🎒</i>裝備</button>
     <button class="tab" data-s="skills"><i>🎇</i>技能</button>
   </nav>
 
   <div id="toast"></div>
+
+  <!-- 新手導引：提醒領取免費十連抽 -->
+  <div id="guideOv">
+    <div id="guideCard">
+      <h3>🎁 歡迎，勇者！</h3>
+      <p>我們替你準備了新手禮包：</p>
+      <div class="gear">
+        <div>🔨 熔心巨錘　攻擊 +11　暴擊 +2%</div>
+        <div>🐉 龍鱗胸甲　生命 +40</div>
+        <div>☄️ 流星碎片　攻擊 +5　暴擊 +4%</div>
+      </div>
+      <p>三件裝備<b>已經幫你穿好</b>，另外還有一次<b>免費十連抽</b>，先去召喚，再出發挑戰吧！</p>
+      <button class="btn" id="guideGo">🎁 前往領取免費十連抽</button>
+      <button class="btn ghost" id="guideLater">稍後再說</button>
+    </div>
+  </div>
 
   <!-- 管理後台：密碼驗證 -->
   <div id="admGate">
@@ -635,7 +680,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 155;        // 所有怪物出完的時間點（2:35），清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 80;           // 共 80 關
+const LEVEL_COUNT = 90;           // 共 90 關
 const LEVEL_HP_GROWTH = 1.287;                                  // 血量成長係數
 const LEVEL_ATK_GROWTH = 1.19;                                  // 攻擊成長係數
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內 20 波，血量差 3 倍
@@ -802,12 +847,22 @@ const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品' };
 // body(lv)：該項目在鍛造等級 lv 時，角色「本體」的實際數值（不含裝備），對應 stats() 裡的公式
 // full(lv)：本體 + 目前已裝備裝備的加成（含裝備），套用跟 stats() 相同的封頂/下限
 // bodyFmt：數值的顯示格式（不加正負號，純數值）
+const ATK_PCT_PER_LV = 0.005; // 攻擊力鍛造：每級額外 +0.5% 全攻擊（含裝備）
+const HP_PCT_PER_LV  = 0.005; // 生命值鍛造：每級額外 +0.5% 全生命（含裝備）——與攻擊分開設定，可各自調整
+const REFINE_COST_REDUCE_PER_LV = 1; // 精煉成本：每級減少每次精煉消耗的強化石（最低為 1）
+const DEFENSE_MULT_PER_LV = 0.99; // 減傷：每級受到的傷害 ×0.99（累乘），例如 Lv.10 ＝ ×0.904
 const UPGRADES = [
   { key:'atk',  icon:'🗡️', name:'攻擊力',  base:40,  grow:1.12, per:3,    fmt:v=>'+'+v,
-    body:lv=>14 + lv*3,                    full:lv=>14 + lv*3 + sumEquip('atk'),
+    // 每級：固定 +3，另外「全攻擊（本體＋鍛造＋裝備）」再 +0.5%（各級線性相加，例如 Lv.20 ＝ ×1.10）
+    body:lv=>(25 + lv*3) * (1 + lv*ATK_PCT_PER_LV),
+    full:lv=>(25 + lv*3 + sumEquip('atk')) * (1 + lv*ATK_PCT_PER_LV),
+    perFmt:lv=>'+'+(lv*3)+' 且 +'+(lv*ATK_PCT_PER_LV*100).toFixed(1)+'%',
     bodyFmt:v=>String(Math.round(v)) },
   { key:'hp',   icon:'❤️', name:'生命值',  base:40,  grow:1.12, per:15,   fmt:v=>'+'+v,
-    body:lv=>100 + lv*15,                  full:lv=>100 + lv*15 + sumEquip('hp'),
+    // 每級：固定 +15，另外「全生命（本體＋鍛造＋裝備）」再 +HP_PCT_PER_LV（預設 0.5%，線性相加）
+    body:lv=>(100 + lv*15) * (1 + lv*HP_PCT_PER_LV),
+    full:lv=>(100 + lv*15 + sumEquip('hp')) * (1 + lv*HP_PCT_PER_LV),
+    perFmt:lv=>'+'+(lv*15)+' 且 +'+(lv*HP_PCT_PER_LV*100).toFixed(1)+'%',
     bodyFmt:v=>String(Math.round(v)) },
   { key:'spd',  icon:'💨', name:'攻擊速度', base:90,  grow:1.28, per:0.09, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
     body:lv=>Math.max(0.4, 0.3 + lv*0.09), full:lv=>Math.max(0.4, 0.3 + lv*0.09 + sumEquip('spd')),
@@ -832,23 +887,27 @@ const UPGRADES = [
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 35 關時解鎖。`,
     body:lv=>lv*1,                           full:lv=>lv*1,
     bodyFmt:v=>v.toFixed(0) },
-  // 防禦強化：第 45 關才會解鎖，解鎖前在鑽石強化下方以「？」顯示，解鎖後角色跟土牆受到的傷害每級 -2（固定值，最低扣到 0）。
-  { key:'defense', icon:'🛡️', name:'防禦強化', base:100, grow:1.15, per:2, fmt:v=>'-'+v.toFixed(0),
+  // 減傷：第 45 關才會解鎖，解鎖前在鑽石強化下方以「？」顯示。解鎖後角色跟土牆受到的傷害每級 ×DEFENSE_MULT_PER_LV（預設 0.99，累乘）。
+  // key 維持 'defense'，沿用舊存檔的等級欄位。成本係數 1.15 → 1.20。
+  { key:'defense', icon:'🛡️', name:'減傷', base:100, grow:1.20, per:1, fmt:v=>'-'+v.toFixed(1)+'%',
     requiresLevel:45,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 45 關時解鎖。`,
-    body:lv=>lv*2,                           full:lv=>lv*2,
-    bodyFmt:v=>'-'+v.toFixed(0) },
-  // 分解強化：第 50 關才會解鎖，解鎖前在防禦強化下方以「？」顯示，解鎖後熔解重複裝備獲得的強化石每級 +1（固定值）。
-  { key:'breakboost', icon:'♻️', name:'分解強化', base:40, grow:1.1, per:1, fmt:v=>'+'+v.toFixed(0),
+    body:lv=>(1 - Math.pow(DEFENSE_MULT_PER_LV, lv)) * 100,
+    full:lv=>(1 - Math.pow(DEFENSE_MULT_PER_LV, lv)) * 100,
+    perFmt:lv=>'受傷 ×'+Math.pow(DEFENSE_MULT_PER_LV, lv).toFixed(3),
+    bodyFmt:v=>'-'+v.toFixed(1)+'%' },
+  // 精煉成本：第 50 關才會解鎖，解鎖前在減傷下方以「？」顯示。解鎖後每級讓「每次精煉消耗的強化石」-REFINE_COST_REDUCE_PER_LV（最低為 1）。
+  // key 維持 'breakboost'，沿用舊存檔的等級欄位。成本係數 1.10 → 1.11。
+  { key:'breakboost', icon:'♻️', name:'精煉成本', base:40, grow:1.11, per:1, fmt:v=>'-'+v.toFixed(0),
     requiresLevel:50,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 50 關時解鎖。`,
-    body:lv=>lv*1,                           full:lv=>lv*1,
-    bodyFmt:v=>v.toFixed(0) },
+    body:lv=>lv*REFINE_COST_REDUCE_PER_LV,   full:lv=>lv*REFINE_COST_REDUCE_PER_LV,
+    bodyFmt:v=>'-'+v.toFixed(0)+' 🔮/次' },
 ];
 const GOLDBOOST_UNLOCK_LEVEL = 30; // 金幣強化解鎖門檻：過關進度（unlockedLevel）超過第 30 關時解鎖
 function goldboostUnlocked(){ return state.unlockedLevel > GOLDBOOST_UNLOCK_LEVEL; }
 
-// 鍛造台裡「requiresLevel 才解鎖」的項目（金幣強化／鑽石強化／防禦強化／分解強化）：
+// 鍛造台裡「requiresLevel 才解鎖」的項目（金幣強化／鑽石強化／減傷／精煉成本）：
 // 過關進度一旦超過門檻，提示一次即可，不用額外設定──新增鍛造項目只要照樣填 requiresLevel 就會自動被這裡吃到。
 function checkUpgradeUnlocks(){
   UPGRADES.forEach(u=>{
@@ -862,14 +921,33 @@ function checkUpgradeUnlocks(){
 }
 
 /* ── 存檔狀態 ─────────────────────────────── */
+// 新手固定裝備：熔心巨錘／龍鱗胸甲／流星碎片（皆為普通品質），新存檔自動放進背包並裝備
+const STARTER_GEAR = [
+  { uid:'starter_weapon',  id:'w5', rarity:'N' },
+  { uid:'starter_armor',   id:'a3', rarity:'N' },
+  { uid:'starter_trinket', id:'c5', rarity:'N' },
+];
+function makeStarterKit(){
+  const bag = STARTER_GEAR.map(g=>({ ...g }));
+  const equipped = { weapon:null, armor:null, trinket:null };
+  bag.forEach(c=>{
+    const base = EQUIP_POOL.find(e=>e.id===c.id);
+    if(base) equipped[base.slot] = c; // 指向背包裡「同一個」物件
+  });
+  return { bag, equipped };
+}
+
 let state = freshState();
 
 function freshState(){
+  const kit = makeStarterKit();
   return {
     gem:0, gold:0, stone:0,
     up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0 },
-    bag:[],                                   // [{uid,id,rarity}]（精煉等級改綁在裝備「部位」上，見 refineBySlot）
-    equipped:{ weapon:null, armor:null, trinket:null },
+    bag:kit.bag,                              // [{uid,id,rarity}]（新存檔內建新手三件裝備）（精煉等級改綁在裝備「部位」上，見 refineBySlot）
+    equipped:kit.equipped,
+    starterGiven:true,                        // 已發放新手裝備
+    freePullUsed:false,                       // 新手免費十連抽是否已使用
     refineBySlot:{ weapon:0, armor:0, trinket:0 }, // { [部位]: 精煉等級 }——精煉綁定「武器／防具／飾品」這個部位，不管換上哪一件、哪個稀有度都沿用同一個等級
     skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0}, whirlwind:{draws:0}, earthwall:{draws:0} }, // 技能召喚抽到的次數（旋風術另外會在 unlockedLevel > 20、土牆術在 unlockedLevel > 40 時自動補發 1 等）
     quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
@@ -950,6 +1028,11 @@ function load(){
     };
     state.levelRecords = Object.assign({}, d.levelRecords||{});
     state.unlockedLevel = Math.max(1, Math.min(LEVEL_COUNT, d.unlockedLevel || 1));
+    // 關卡數擴充後的搬家：舊存檔若已通關當時的最後一關（進度卡在最後一關且已過關），自動開放下一關
+    {
+      const lastRec = state.levelRecords[state.unlockedLevel];
+      if(lastRec && lastRec.cleared && state.unlockedLevel < LEVEL_COUNT) state.unlockedLevel++;
+    }
     checkWhirlwindUnlock(); // 舊存檔若過關進度早已超過 20 關，補發旋風術 1 等
     checkEarthwallUnlock(); // 舊存檔若過關進度早已超過 40 關，補發土牆術 1 等
     // 進度資料還原：補上舊存檔可能缺少的欄位，避免引擎讀到 undefined
@@ -982,6 +1065,20 @@ function load(){
         if(inBag) state.equipped[s] = inBag;
       }
     });
+    // 新手禮包搬家：舊存檔沒有 starterGiven 欄位。
+    // 背包與裝備欄都是空的（還沒玩出進度）→ 補發新手裝備＋免費十連抽；已經有裝備的老玩家 → 視為已領取，不追加。
+    if(d.starterGiven === undefined){
+      const noGear = (!d.bag || d.bag.length===0) && !Object.values(d.equipped||{}).some(Boolean);
+      if(noGear){
+        const kit = makeStarterKit();
+        state.bag = kit.bag;
+        state.equipped = kit.equipped;
+        state.freePullUsed = false;
+      } else {
+        state.freePullUsed = true;
+      }
+      state.starterGiven = true;
+    }
   }catch(e){}
   // 修復壞掉的存檔：把任何已經變成 NaN／undefined 的數值拉回正常值，
   // 這樣舊的壞存檔載入後就會自動恢復，不會一直卡在 NaN。
@@ -1138,7 +1235,7 @@ function speakQuestion(){
   if(curSubj === 'math'){
     text = text
       .replace(/[?？]\s*$/, '多少').replace(/[?？]/g, '多少')
-      .replace(/\+/g,'加').replace(/－/g,'減').replace(/×/g,'乘以').replace(/÷/g,'除以')
+      .replace(/\+/g,'加').replace(/－/g,'減').replace(/×/g,'成以').replace(/÷/g,'除以')
       .replace(/＋/g,'加').replace(/＝/g,'等於').replace(/=/g,'等於');
     text = text.replace(/_+/g, '空格');
     _doSpeak(text, speechCfg.lang);
@@ -1503,7 +1600,7 @@ function stats(){
   const rawCrit = get('crit');
   const critOverflow = critOverflowAmount();
   return {
-    atk:     Math.round(fin(get('atk'), 14)),
+    atk:     Math.round(fin(get('atk'), 25)),
     maxHp:   Math.round(fin(get('hp'), 100)),
     spd:     fin(get('spd'), 0.4),
     crit:    fin(Math.min(CRIT_CAP, rawCrit), 5),
@@ -1634,7 +1731,16 @@ function openLevelConfirm(level){
   const ovBtn3 = document.getElementById('ovBtn3');
   ovBtn.textContent = '開始挑戰';
   ovBtn.onclick = ()=>{ state.seenIntro = true; save(); startRun(level); };
-  ovBtn3.style.display = 'none'; // 出戰前的確認畫面不需要「再打一次」
+  if(!state.freePullUsed){
+    // 還沒領免費十連抽：在出戰前再提醒一次，並提供直達按鈕
+    document.getElementById('ovSub').innerHTML +=
+      `<br><b style="color:var(--ember-hot)">🎁 你還有一次免費十連抽沒領，先去召喚會更輕鬆！</b>`;
+    ovBtn3.style.display = 'block';
+    ovBtn3.textContent = '🎁 先去領免費十連抽';
+    ovBtn3.onclick = ()=>{ openLevelSelect(); show('gacha'); };
+  } else {
+    ovBtn3.style.display = 'none'; // 出戰前的確認畫面不需要「再打一次」
+  }
   ovBtn2.style.display = 'block';
   ovBtn2.textContent = '取消';
   ovBtn2.onclick = ()=>{ openLevelSelect(); };
@@ -1690,7 +1796,7 @@ function endRun(win){
   const ovBtn3  = document.getElementById('ovBtn3');
 
   if(win && isLast){
-    ovTitle.textContent = '全 20 關　通關！';
+    ovTitle.textContent = `全 ${LEVEL_COUNT} 關　通關！`;
     ovSub.innerHTML = `你已經撐過全部 ${LEVEL_COUNT} 關，擊倒 ${run.kills} 隻。`;
   } else if(win){
     ovTitle.textContent = `第 ${run.level} 關　過關`;
@@ -2077,8 +2183,8 @@ function step(dt){
 
   // 怪物
   const heroLine = H - 74;
-  // 鍛造台「防禦強化」：角色跟土牆受到的傷害固定減免，每級 -2
-  const defenseReduction = fin(state.up.defense, 0) * 2;
+  // 鍛造台「減傷」：角色跟土牆受到的傷害每級 ×DEFENSE_MULT_PER_LV（累乘）
+  const dmgTakenMul = Math.pow(DEFENSE_MULT_PER_LV, fin(state.up.defense, 0));
   for(let i=run.enemies.length-1;i>=0;i--){
     const e = run.enemies[i];
     // 冰凍減速：每層各自倒數，到期就移除
@@ -2122,8 +2228,8 @@ function step(dt){
     if(blockWall && e.y >= blockWall.y){
       e.y = blockWall.y;
       e.touching = true;
-      // 鍛造台「防禦強化」：土牆受到的傷害減少，最低扣到 0
-      blockWall.hp -= Math.max(0, e.dps - defenseReduction) * dt;
+      // 鍛造台「減傷」：土牆受到的傷害乘以減傷係數
+      blockWall.hp -= e.dps * dmgTakenMul * dt;
       blockWall.hit = 0.12;
       if(blockWall.hp <= 0) e.wallStagger = EARTHWALL_BREAK_STAGGER;
       e.hitTimer = (e.hitTimer||0) + dt;
@@ -2137,8 +2243,8 @@ function step(dt){
     if(e.y >= heroLine){
       e.y = heroLine; // 卡在防線上，不再往下擠
       e.touching = true;
-      // 鍛造台「防禦強化」：角色受到的傷害減少，最低扣到 0
-      run.hp -= Math.max(0, e.dps - defenseReduction) * dt;
+      // 鍛造台「減傷」：角色受到的傷害乘以減傷係數
+      run.hp -= e.dps * dmgTakenMul * dt;
       e.hitTimer = (e.hitTimer||0) + dt;
       if(e.hitTimer >= 0.4){ // 每 0.4 秒一次視覺回饋，避免每幀爆量特效
         e.hitTimer = 0;
@@ -2678,17 +2784,24 @@ function skillPullOnce(){
   const draws = state.skills[key].draws;
   return { kind:'skill', key, def: SKILL_DEFS[key], draws, gotPct: draws > SKILL_STACK_CAP };
 }
+// 「裝備齊全」的定義：裝備池裡每一種裝備，都已收集到 GEAR_COMPLETE_RARITIES 指定的每個稀有度。
+// 預設要求全部 4 種稀有度（16 種 × 4 ＝ 64 件）。想放寬可改成例如 ['SSR']（每種裝備只要有傳說品質就算齊全）。
+const GEAR_COMPLETE_RARITIES = ['N','R','SR','SSR'];
+function gearCollectionComplete(){
+  return EQUIP_POOL.every(base =>
+    GEAR_COMPLETE_RARITIES.every(r => state.bag.some(c => c.id===base.id && c.rarity===r))
+  );
+}
 function pullOnce(){
-  // 30% 機率抽到技能（平均分攤給所有技能），其餘 70% 抽裝備
-  if(Math.random() < SKILL_PULL_CHANCE) return skillPullOnce();
+  // 裝備已收集齊全 → 只抽技能；否則 30% 機率抽到技能（平均分攤給所有技能），其餘 70% 抽裝備
+  if(gearCollectionComplete() || Math.random() < SKILL_PULL_CHANCE) return skillPullOnce();
 
   const base = EQUIP_POOL[Math.floor(Math.random()*EQUIP_POOL.length)];
   const rarity = rollRarity();
   // 背包已有「同裝備同稀有度」→ 熔成強化石
   const dup = state.bag.find(c=>c.id===base.id && c.rarity===rarity);
   if(dup){
-    // 鍛造台「分解強化」：熔成的強化石每級固定 +1
-    const dust = RARITY[rarity].dust + fin(state.up.breakboost, 0) * 1;
+    const dust = RARITY[rarity].dust; // 重複裝備熔成的強化石（依稀有度固定）
     state.stone += dust;
     return { kind:'equip', base, rarity, dup:true, dust };
   }
@@ -2698,17 +2811,29 @@ function pullOnce(){
   if(!state.equipped[base.slot]) state.equipped[base.slot] = card;
   return { kind:'equip', base, rarity, dup:false, card };
 }
-function doPull(n){
-  const cost = n===10 ? 900 : 100;
-  if(state.gem < cost){ toast('鑽石不足，去答題凝聚更多'); return; }
-  state.gem -= cost;
+function doPull(n, free){
+  if(free){
+    if(state.freePullUsed) return;
+    state.freePullUsed = true; // 先標記，避免連點重複領取
+  } else {
+    const cost = n===10 ? 900 : 100;
+    if(state.gem < cost){ toast('鑽石不足，去答題凝聚更多'); return; }
+    state.gem -= cost;
+  }
+  const wasComplete = gearCollectionComplete();
   const out = [];
   for(let i=0;i<n;i++) out.push(pullOnce());
   save(); syncUI(); renderEquip(); renderSkills();
+  if(!wasComplete && gearCollectionComplete()) toast('🎉 裝備收集齊全！之後召喚只會抽到技能');
 
   const box = document.getElementById('pullResult');
   box.className = 'on';
-  box.innerHTML = out.map(o=>{
+  const freeHint = free
+    ? `<div class="card" style="text-align:center;border-color:var(--ember-hot);font-size:13px;line-height:1.8">
+         🎉 免費十連抽完成！<br>到「<b>裝備</b>」頁看看有沒有比新手裝備更強的可以換，<br>準備好就回「<b>試煉</b>」出戰，打不過就先賺金幣去「<b>鍛造</b>」變強。
+       </div>`
+    : '';
+  box.innerHTML = freeHint + out.map(o=>{
     if(o.kind === 'skill'){
       const stackLabel = o.def.stackLabel;
       const line = o.gotPct
@@ -2781,8 +2906,8 @@ function renderUpgrades(){
     const overflow  = u.key === 'critdmg' ? critOverflowAmount() : 0;
     const curBody  = u.bodyFmt(u.full(lv) + overflow);
     const nextBody = u.bodyFmt(u.full(lv+1) + overflow);
-    const curPer   = u.fmt(u.per * lv);
-    const nextPer  = u.fmt(u.per * (lv+1));
+    const curPer   = u.perFmt ? u.perFmt(lv)   : u.fmt(u.per * lv);
+    const nextPer  = u.perFmt ? u.perFmt(lv+1) : u.fmt(u.per * (lv+1));
     return `<div class="up">
       <div class="ico">${u.icon}</div>
       <div class="info">
@@ -2804,13 +2929,16 @@ function renderUpgrades(){
       if(u.max != null && state.up[u.key] >= u.max) return;
       state.gold -= cost;
       state.up[u.key]++;
-      save(); syncUI(); renderUpgrades();
+      save(); syncUI(); renderUpgrades(); renderRefine();
       toast(`${u.name} 提升到 Lv.${state.up[u.key]}`);
     };
   });
 }
 
-function refineCost(slot){ return 4 + getRefine(slot)*1; }//強化石費用
+// 精煉費用：4 + 目前精煉等級，再扣掉鍛造台「精煉成本」的減免，最低為 1
+function refineCost(slot){
+  return Math.max(1, 4 + getRefine(slot)*1 - fin(state.up.breakboost, 0) * REFINE_COST_REDUCE_PER_LV);
+}//強化石費用
 
 // 一鍵強化：反覆找目前已裝備、且精煉費用最低的一件裝備升級，重複到強化石不夠支付為止。
 function refineAllCheapest(){
@@ -2972,19 +3100,31 @@ function syncUI(){
   checkWhirlwindUnlock(); // 過關進度一旦超過門檻就自動補發旋風術 1 等
   checkEarthwallUnlock(); // 過關進度一旦超過門檻就自動補發土牆術 1 等
   checkHeroUnlock();      // 過關進度一旦超過門檻就自動解鎖對應造型並提示一次
-  checkUpgradeUnlocks();  // 過關進度一旦超過門檻就提示新解鎖的鍛造項目（金幣/鑽石/防禦/分解強化）
+  checkUpgradeUnlocks();  // 過關進度一旦超過門檻就提示新解鎖的鍛造項目（金幣/鑽石/減傷/精煉成本）
   document.getElementById('uiGem').textContent   = state.gem;
   document.getElementById('uiGold').textContent  = fmtNum(state.gold);
   document.getElementById('uiStone').textContent = fmtNum(state.stone);
   document.getElementById('pull1').disabled  = state.gem < 100;
   document.getElementById('pull10').disabled = state.gem < 900;
+  // 新手免費十連抽：沒用過就顯示禮包卡片，並讓「召喚」分頁跳動＋紅點提醒
+  const freeAvail = !state.freePullUsed;
+  document.getElementById('freePullCard').style.display = freeAvail ? 'block' : 'none';
+  document.getElementById('dotGacha').classList.toggle('on', freeAvail);
+  document.getElementById('tabGacha').classList.toggle('pulse', freeAvail);
   // 鑽石不夠抽時，提醒去答題
   document.getElementById('dotQuiz').classList.toggle('on', state.gem < 100);
   const skillCount = Object.keys(SKILL_DEFS).filter(skillAvailableForPull).length;
   const skillOddsEl = document.getElementById('skillOddsInfo');
+  const gearDone = gearCollectionComplete();
+  const equipOddsEl = document.getElementById('equipOddsInfo');
+  if(equipOddsEl) equipOddsEl.style.display = gearDone ? 'none' : '';
   if(skillOddsEl){
-    const each = (SKILL_PULL_CHANCE*100/skillCount);
-    skillOddsEl.textContent = `技能機率　合計 ${Math.round(SKILL_PULL_CHANCE*100)}%（目前 ${skillCount} 種技能，每種各 ${each.toFixed(1)}%）`;
+    if(gearDone){
+      skillOddsEl.textContent = `裝備已收集齊全，召喚只會抽到技能（目前 ${skillCount} 種技能，每種各 ${(100/skillCount).toFixed(1)}%）`;
+    } else {
+      const each = (SKILL_PULL_CHANCE*100/skillCount);
+      skillOddsEl.textContent = `技能機率　合計 ${Math.round(SKILL_PULL_CHANCE*100)}%（目前 ${skillCount} 種技能，每種各 ${each.toFixed(1)}%）`;
+    }
   }
   syncQuizMeta();
 }
@@ -3309,6 +3449,14 @@ function admRender(){
 document.getElementById('qNext').onclick = newQuestion;
 document.getElementById('pull1').onclick  = ()=>doPull(1);
 document.getElementById('pull10').onclick = ()=>doPull(10);
+document.getElementById('pullFree').onclick = ()=>doPull(10, true);
+document.getElementById('guideGo').onclick = ()=>{
+  document.getElementById('guideOv').classList.remove('on');
+  show('gacha');
+};
+document.getElementById('guideLater').onclick = ()=>{
+  document.getElementById('guideOv').classList.remove('on');
+};
 
 load();
 syncUI();
@@ -3420,6 +3568,8 @@ function finishBoot(){
   openLevelSelect();
   resizeCanvas();
   document.getElementById('bootOverlay').classList.add('hidden');
+  // 新手導引：還沒領免費十連抽就跳出提示（沒領之前，每次進遊戲都會提醒一次）
+  if(!state.freePullUsed) document.getElementById('guideOv').classList.add('on');
 }
 
 requestAnimationFrame(loop);
