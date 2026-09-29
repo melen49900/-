@@ -783,7 +783,11 @@ function icespikeAtk(s){ return s.atk * icespikePct() / 100; }
 function lightningAtk(s){ return s.atk * lightningPct() / 100; }
 function whirlwindAtk(s){ return s.atk * whirlwindPct() / 100; }
 const WHIRLWIND_UNLOCK_LEVEL = 20;// 旋風術解鎖條件：過關進度（unlockedLevel）超過第 20 關時自動習得 1 等
-const WHIRLWIND_RADIUS = 45;//旋風術半徑
+const WHIRLWIND_RADIUS = 45;//旋風術半徑（實際傷害範圍，只有這個圓）
+const WHIRLWIND_VISUAL_HEIGHT = 150;     // 純視覺：龍捲風從圓心向上延伸的高度
+const WHIRLWIND_VISUAL_TOP_RADIUS = 70;  // 純視覺：龍捲風頂端的旋轉半徑（比傷害圈大，但不造成傷害）
+const WHIRLWIND_DUST_COUNT = 90;         // 純視覺：沙塵粒子數量
+function twRnd(i){ const x = Math.sin(i*127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
 const WHIRLWIND_TICK = 0.5;//旋風術傷害CD
 const WHIRLWIND_LIFE = 3.5;//旋風術持續時間
 const WHIRLWIND_SPEED_MULT = 0.2;//旋風術移動速度
@@ -2738,50 +2742,41 @@ function draw(){
   });
   ctx.globalAlpha = 1;
 
-  // 旋風術：多層橢圓堆疊出漏斗狀龍捲風本體，每層轉動速度不同、加上底部塵土光暈與環繞塵屑小點，營造持續扭轉的動態感
+  // 旋風術：沙塵龍捲。底部固定在傷害圈（半徑 WHIRLWIND_RADIUS）的圓心，沙塵向上旋轉、越高越寬（純視覺）；
+  // 實際傷害只有腳下那個圓，圓外的沙塵不會傷到敵人。
   run.tornadoes.forEach(t=>{
-    ctx.save();
-    ctx.globalAlpha = 0.16;
-    ctx.strokeStyle = '#8affb0';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(t.x, t.y, WHIRLWIND_RADIUS, 0, Math.PI*2); ctx.stroke();
-    ctx.restore();
-
+    const fade = Math.max(0, Math.min(1, t.age/0.3, (WHIRLWIND_LIFE - t.age)/0.4));
     ctx.save();
     ctx.translate(t.x, t.y);
+    ctx.globalAlpha = fade;
 
-    // 底部塵土光暈
-    const dust = ctx.createRadialGradient(0,10,2,0,10,26);
-    dust.addColorStop(0,'rgba(170,230,190,.35)');
-    dust.addColorStop(1,'rgba(170,230,190,0)');
-    ctx.fillStyle = dust;
-    ctx.beginPath(); ctx.ellipse(0,10,26,10,0,0,Math.PI*2); ctx.fill();
+    // 傷害圈：淡沙色地面 ＋ 虛線邊，讓玩家看得出實際判定範圍
+    ctx.fillStyle = 'rgba(200,170,110,.14)';
+    ctx.beginPath(); ctx.arc(0, 0, WHIRLWIND_RADIUS, 0, Math.PI*2); ctx.fill();
+    ctx.setLineDash([6,5]);
+    ctx.strokeStyle = 'rgba(216,196,154,.45)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(0, 0, WHIRLWIND_RADIUS, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
 
-    // 漏斗本體：由下而上堆疊多層橢圓環，底部寬、頂部窄，各層轉速不同，看起來像持續扭轉
-    const TORNADO_LAYERS = 8;
-    for(let i=0;i<TORNADO_LAYERS;i++){
-      const f = i/(TORNADO_LAYERS-1);        // 0=底 1=頂
-      const y = 14 - f*46;                   // 由下往上
-      const rx = 4 + (1-f)*16;               // 底部寬、頂部窄
-      const ry = rx*0.42;
-      const spin = t.rot*(1.6+f*1.2) + i*0.9;
-      const wob = Math.sin(t.rot*2.4+i)*2*(1-f*0.5);
-      ctx.save();
-      ctx.translate(wob, y);
-      ctx.rotate(spin);
-      ctx.strokeStyle = `rgba(200,255,214,${0.55-f*0.25})`;
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2); ctx.stroke();
-      ctx.restore();
+    // 漏斗輪廓：幾圈很淡的橢圓，讓沙塵有依附的形狀
+    const funnelR = h => 6 + Math.pow(h, 1.2) * WHIRLWIND_VISUAL_TOP_RADIUS;
+    ctx.strokeStyle = 'rgba(216,196,154,.14)'; ctx.lineWidth = 1.5;
+    for(let k=1;k<=5;k++){
+      const h = k/5, rx = funnelR(h);
+      ctx.beginPath(); ctx.ellipse(0, -h*WHIRLWIND_VISUAL_HEIGHT, rx, rx*.3, 0, 0, Math.PI*2); ctx.stroke();
     }
 
-    // 環繞漏斗旋轉的塵屑小點
-    for(let i=0;i<5;i++){
-      const a = t.rot*3 + i*(Math.PI*2/5);
-      const rr = 14 + (i%3)*5;
-      const px = Math.cos(a)*rr, py = -6 + Math.sin(a)*rr*0.4;
-      ctx.fillStyle = 'rgba(210,255,224,.8)';
-      ctx.beginPath(); ctx.arc(px,py,1.6,0,Math.PI*2); ctx.fill();
+    // 沙塵粒子：由下往上飄升，越靠近底部轉得越快、越靠近頂端範圍越大
+    for(let i=0;i<WHIRLWIND_DUST_COUNT;i++){
+      const s1 = twRnd(i), s2 = twRnd(i+40);
+      const h = (s1 + t.rot*0.04*(1+s2)) % 1;                  // 0=底 1=頂
+      const rad = funnelR(h) * (.6 + s2*.5);
+      const ang = t.rot*(1.2 + (1-h)*1.8) + s2*6.283;
+      const x = Math.cos(ang) * rad;
+      const y = -h*WHIRLWIND_VISUAL_HEIGHT + Math.sin(ang) * rad * .3;
+      const sz = (1.3 + s2*2.2) * (.8 + h*.6);
+      ctx.fillStyle = `rgba(${(214+s2*24)|0},${(184+s2*24)|0},${(128+s2*20)|0},${(.9 - h*.45).toFixed(2)})`;
+      ctx.beginPath(); ctx.arc(x, y, sz, 0, Math.PI*2); ctx.fill();
     }
 
     ctx.restore();
