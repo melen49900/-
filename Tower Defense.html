@@ -732,11 +732,11 @@ const SKILL_DEFS = {
   earthwall: {
     name:'土牆術', icon:'🧱', innate:false,
     requiresLevel:40,   // 過關進度（unlockedLevel）需超過此關卡數才會自動解鎖
-    stackLabel:'城牆寬度',
+    stackLabel:'牆體血量倍率',
     stacksFn: ()=>skillStacks('earthwall'),
     pctFn: ()=>earthwallPct(),
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 40 關時會自動習得 1 等，之後也能從「召喚」抽到並疊加。`,
-    desc:'召喚一道土牆，吸引敵人攻擊。',
+    desc:'開場在固定位置生成一道橫貫全場的碎石牆，擋住所有敵人；前 6 等每等提高生成血量，會定時回復，被擊破後經過冷卻重生一道新牆。',
   },
 };
 // 各技能施放頻率＝角色攻速 × 對應倍率（各自獨立計時，不是三個技能綁在同一顆計時器上）：
@@ -797,8 +797,10 @@ function checkWhirlwindUnlock(){
 }
 // 土牆術：過關進度（unlockedLevel）超過第 40 關時自動習得 1 等
 const EARTHWALL_UNLOCK_LEVEL = 40;
-const EARTHWALL_MIN_OFFSET = 200; // 土牆生成位置距底部Min
-const EARTHWALL_MAX_OFFSET = 600; // 土牆生成位置距底部Max
+const EARTHWALL_Y_FROM_BOTTOM = 350;  // 土牆固定位置：距離畫面底部往上 350
+const EARTHWALL_HP_MULT_BASE = 50;   // 1 等：生成血量 ＝ 原始血量 × 50
+const EARTHWALL_HP_MULT_STEP = 10;   // 每多 1 等 +10 倍（2 等 60 倍 … 6 等 100 倍；第 6 等之後不再增加倍率）
+const EARTHWALL_ROCK_COUNT = 14;     // 碎石堆的岩塊數量（橫貫全場）
 const EARTHWALL_BREAK_STAGGER = 0.2; // 牆被打壞後，敵人還會停頓幾秒才繼續前進（可自行調整 0.1～0.2 之間的數值）
 function checkEarthwallUnlock(){
   if(state.unlockedLevel > EARTHWALL_UNLOCK_LEVEL && state.skills.earthwall.draws < 1){
@@ -808,12 +810,18 @@ function checkEarthwallUnlock(){
   }
 }
 
-function earthwallWidth(){ return 100 + 20 * skillStacks('earthwall'); }// 土牆寬度
+function earthwallY(){ return Math.max(50, H - EARTHWALL_Y_FROM_BOTTOM); }
+// 生成血量倍率：1 等 50 倍、2 等 60 倍 … 6 等 100 倍
+function earthwallMaxHpMult(){ return EARTHWALL_HP_MULT_BASE + (Math.max(1, skillStacks('earthwall')) - 1) * EARTHWALL_HP_MULT_STEP; }
 function earthwallPct(){ return 50 + skillOverCap('earthwall') * 2; }// 土牆係數
-// 血量＝基礎攻擊 ×（1+暴擊率）× 暴擊傷害 × 土牆係數
+// 原始血量＝基礎攻擊 ×（1+暴擊率）× 暴擊傷害 × 土牆係數。
+// 現在它是土牆的「每次回復量」，同時也是被擊破後重生的新牆的起始血量（1 倍）；
+// 土牆的血量上限（開場生成血量）＝ 原始血量 × earthwallMaxHpMult()。
 function earthwallHp(s){
   return s.atk * (1 + s.crit/100) * (s.critDmg/100) * (earthwallPct()/100);
 }
+function earthwallMaxHp(s){ return earthwallHp(s) * earthwallMaxHpMult(); }
+function earthwallInterval(s){ return 1 / (s.spd * SKILL_SPD_MULT.earthwall); } // 回復間隔＝重生冷卻＝攻速 0.1 倍
 // 冰椎減速：每次命中疊加一層，每層獨立倒數，最多 3 層
 const ICESPIKE_SLOW_PCT = 0.20;
 const ICESPIKE_SLOW_MAX_STACKS = 3;
@@ -1658,7 +1666,7 @@ const run = {
   t:0, wave:1, spawned:0, waveQuota:0, spawnTimer:0,
   hp:100, maxHp:100,
   heroX:W/2, targetX:W/2,
-  fireTimer:0, iceTimer:0, lightningTimer:0, whirlwindTimer:0, earthwallTimer:0,
+  fireTimer:0, iceTimer:0, lightningTimer:0, whirlwindTimer:0, earthwallTimer:0, earthwallCd:0,
   kills:0, gold:0,
   enemies:[], shots:[], bits:[], pops:[], bolts:[], tornadoes:[], walls:[],
   iceQueue:[],   // 冰椎術待發射佇列（每個元素是還剩多少秒才發射）
@@ -1748,19 +1756,27 @@ function openLevelConfirm(level){
   document.getElementById('overlay').classList.add('on');
 }
 
+function mixHex(hex, k){ // 把顏色往白色混 k（0～1），用來做受擊泛白
+  if(!k) return hex;
+  const n = parseInt(hex.slice(1), 16);
+  let r = n>>16, g = n>>8&255, b = n&255;
+  r += (255-r)*k; g += (255-g)*k; b += (255-b)*k;
+  return `rgb(${r|0},${g|0},${b|0})`;
+}
 function startRun(level){
   const s = stats();
   run.active=true; run.over=false;
   run.level = level || run.level || 1;
   run.t=0; run.wave=1; run.spawned=0; run.waveQuota=waveQuotaFor(1); run.spawnTimer=0;
   run.maxHp=s.maxHp; run.hp=s.maxHp;
-  run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0; run.whirlwindTimer=0; run.earthwallTimer=0;
+  run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0; run.whirlwindTimer=0; run.earthwallTimer=0; run.earthwallCd=0;
   run.kills=0; run.gold=0;
   run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.tornadoes=[]; run.walls=[]; run.shake=0;
   applyLevelTheme(run.level);
   document.getElementById('overlay').classList.remove('on');
   openStage();
   resizeCanvas();
+  spawnEarthwall(s, true); // 土牆術：開場就生成（要等 resizeCanvas 算出場地高度之後）
   syncBattleHud();
 }
 
@@ -1981,25 +1997,42 @@ function castWhirlwind(){
   });
 }
 
-// 土牆術：生成一道橫向的土牆，高度隨機，寬度依疊加等級決定，
-// 水平位置隨機偏左或偏右（不再固定在正中間），並確保整道牆仍在畫面範圍內；
-// 沒有存在時間限制，直到血量歸零才會消失，敵人壓到會停下來持續攻擊土牆。
-function castEarthwall(){
+// 土牆術：固定在距離底部 EARTHWALL_Y_FROM_BOTTOM 的位置，左右整個場地都擋住。
+// full=true（開場）：血量＝上限（原始血量 × 倍率）；full=false（被擊破後重生）：血量＝原始血量 × 1，之後靠定時回復慢慢補滿。
+function spawnEarthwall(s, full){
   if(state.skills.earthwall.draws < 1) return; // 尚未解鎖
-  const s = stats();
-  const hp = earthwallHp(s);
-  const offset = EARTHWALL_MIN_OFFSET + Math.random()*(EARTHWALL_MAX_OFFSET-EARTHWALL_MIN_OFFSET);
-  const width = earthwallWidth();
-  const maxShift = Math.max(0, (W - width) / 2); // 牆中心最多能偏離正中間多少，才不會超出畫面
-  const side = Math.random() < 0.5 ? -1 : 1;      // 隨機偏左或偏右
-  const x = W/2 + side * Math.random() * maxShift;
+  const regen = earthwallHp(s);
+  const maxHp = regen * earthwallMaxHpMult();
+  const n = EARTHWALL_ROCK_COUNT, sw = (W + 20) / n;
+  const rocks = [];
+  for(let i=0;i<n;i++){
+    // 每顆岩塊的形狀在生成時固定下來，畫的時候不會每格重新亂數
+    rocks.push({ cx:-10 + (i+.5)*sw, w:sw*1.9, bh:24 + Math.random()*20, r:Math.random(), o:(i%2)*3 });
+  }
   run.walls.push({
-    x,
-    y: Math.max(50, H - offset),
-    width,
-    hp, maxHp: hp,
-    hit: 0,
+    x: W/2, y: earthwallY(),
+    width: W + 100,          // 比場地還寬，整條路線都擋住
+    hp: full ? maxHp : regen, maxHp,
+    hit: 0, rise: 0, rocks,
   });
+  run.earthwallTimer = earthwallInterval(s);
+  run.earthwallCd = 0;
+}
+// 每格更新：牆存在 → 定時回復；牆不在 → 倒數重生冷卻
+function updateEarthwall(dt, s){
+  if(state.skills.earthwall.draws < 1) return;
+  const wall = run.walls[0];
+  if(wall){
+    wall.y = earthwallY(); // 視窗大小改變時跟著調整
+    run.earthwallTimer -= dt;
+    if(run.earthwallTimer <= 0){
+      wall.hp = Math.min(wall.maxHp, wall.hp + earthwallHp(s));
+      run.earthwallTimer = earthwallInterval(s);
+    }
+  } else if(run.earthwallCd > 0){
+    run.earthwallCd -= dt;
+    if(run.earthwallCd <= 0) spawnEarthwall(s, false);
+  }
 }
 
 
@@ -2083,8 +2116,7 @@ function step(dt){
   if(run.lightningTimer <= 0){ castLightning(); run.lightningTimer = 1 / (s.spd * SKILL_SPD_MULT.lightning); }
   run.whirlwindTimer -= dt;
   if(run.whirlwindTimer <= 0){ castWhirlwind(); run.whirlwindTimer = 1 / (s.spd * SKILL_SPD_MULT.whirlwind); }
-  run.earthwallTimer -= dt;
-  if(run.earthwallTimer <= 0){ castEarthwall(); run.earthwallTimer = 1 / (s.spd * SKILL_SPD_MULT.earthwall); }
+  updateEarthwall(dt, s);
 
   // 冰椎術佇列：各自倒數，時間到才真正生成
   for(let i=run.iceQueue.length-1;i>=0;i--){
@@ -2179,7 +2211,7 @@ function step(dt){
   }
 
   // 土牆術：牆本身不會消失，只有被打壞（hp<=0）才移除；受擊的紅光回饋計時器倒數
-  for(const w of run.walls){ if(w.hit > 0) w.hit -= dt; }
+  for(const w of run.walls){ if(w.hit > 0) w.hit -= dt; if(w.rise < 1) w.rise = Math.min(1, w.rise + dt/0.5); }
 
   // 怪物
   const heroLine = H - 74;
@@ -2259,8 +2291,9 @@ function step(dt){
   for(let i=run.walls.length-1;i>=0;i--){
     if(run.walls[i].hp <= 0){
       const w = run.walls[i];
-      burst(w.x, w.y, '#c99a5b', 16);
+      for(let k=0;k<6;k++) burst(W*(k+.5)/6, w.y, '#c99a5b', 8); // 整條牆崩塌的碎屑
       run.walls.splice(i,1);
+      run.earthwallCd = earthwallInterval(s); // 冷卻結束才會重生新牆
     }
   }
 
@@ -2586,34 +2619,47 @@ function draw(){
 
   ctx.textAlign='center'; ctx.textBaseline='middle';
 
-  // 土牆術：磚牆造型的橫向柵欄，受擊時短暫泛紅
+  // 土牆術：橫貫全場的碎石堆。血量越低岩塊越矮（崩塌），受擊時短暫泛白，剛生成時從地面升起
   run.walls.forEach(w=>{
-    const bw = w.width, bh = 22, bx = w.x - bw/2, by = w.y - bh/2;
+    const f = Math.max(0, w.hp / w.maxHp);
+    const base = w.y + 12;                                   // 岩塊底部；敵人停在 w.y，剛好踩在石堆上
+    const rise = 1 - Math.pow(1 - (w.rise == null ? 1 : w.rise), 3);
+    const k = w.hit > 0 ? 0.4 : 0;
     ctx.save();
-    ctx.fillStyle = w.hit > 0 ? '#e0a374' : '#a9764a';
-    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1;
-    ctx.beginPath();
-    if(ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 4); else ctx.rect(bx, by, bw, bh);
-    ctx.fill(); ctx.stroke();
-    // 磚紋
-    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1;
-    const rows = 2, brickW = 26;
-    for(let r=0;r<rows;r++){
-      const ry = by + (bh/rows)*r;
-      ctx.beginPath(); ctx.moveTo(bx, ry); ctx.lineTo(bx+bw, ry); ctx.stroke();
-      const offset = (r%2===0) ? 0 : brickW/2;
-      for(let bx2 = bx+offset; bx2 < bx+bw; bx2 += brickW){
-        ctx.beginPath(); ctx.moveTo(bx2, ry); ctx.lineTo(bx2, ry+bh/rows); ctx.stroke();
-      }
-    }
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(0, base - 2, W, 5);
+    w.rocks.forEach((r,i)=>{
+      const hg = r.bh * Math.max(.25, Math.min(1, f*1.2 + (r.r-.5)*.3)) * rise;
+      const cx = r.cx, rw = r.w, o = r.o;
+      const pts = [[cx-rw/2, base-o],[cx-rw*.45, base-hg*.6-o],[cx-rw*.2, base-hg-o],[cx+rw*.25, base-hg*.9-o],[cx+rw*.5, base-hg*.5-o],[cx+rw/2, base-o]];
+      ctx.fillStyle = mixHex(i%2 ? '#7d5e42' : '#8d6a4a', k);
+      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+      for(let j=1;j<pts.length;j++) ctx.lineTo(pts[j][0], pts[j][1]);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = mixHex('#b08a63', k);
+      ctx.beginPath(); ctx.moveTo(pts[1][0], pts[1][1]); ctx.lineTo(pts[2][0], pts[2][1]); ctx.lineTo(pts[3][0], pts[3][1]); ctx.lineTo(cx, base-hg*.55-o);
+      ctx.closePath(); ctx.fill();
+    });
     ctx.restore();
-    // 血條
+    // 血條與數值
     if(w.hp < w.maxHp){
-      ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(bx, by-7, bw, 3.5);
+      const by = w.y - 42;
+      ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(10, by, W-20, 4);
       ctx.fillStyle = '#c99a5b';
-      ctx.fillRect(bx, by-7, bw*Math.max(0,w.hp/w.maxHp), 3.5);
+      ctx.fillRect(10, by, (W-20)*f, 4);
+      ctx.font = '11px sans-serif'; ctx.fillStyle = '#e8d5b8'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(`${fmtNum(Math.max(0, Math.round(w.hp)))} / ${fmtNum(Math.round(w.maxHp))}`, W/2, by - 8);
     }
   });
+  // 牆被擊破後的重生倒數
+  if(!run.walls.length && run.earthwallCd > 0){
+    ctx.save();
+    ctx.font = '12px sans-serif'; ctx.fillStyle = 'rgba(232,213,184,.65)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.setLineDash([6,5]); ctx.strokeStyle = 'rgba(232,213,184,.3)'; ctx.lineWidth = 1;
+    const y = earthwallY() + 12;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    ctx.fillText(`土牆重生中 ${run.earthwallCd.toFixed(1)}s`, W/2, y - 10);
+    ctx.restore();
+  }
 
   // 怪物
   run.enemies.forEach(e=>{
@@ -2979,7 +3025,8 @@ function renderSkills(){
     if(!owned){
       statusText = def.lockHintFn ? def.lockHintFn() : '尚未習得，去「召喚」試試手氣';
     } else if(key === 'earthwall'){
-      statusText = `寬度 ${earthwallWidth()}　土牆係數 ${pct.toFixed(1)}%　血量約 ${Math.round(earthwallHp(stats()))}`;
+      const st = stats();
+      statusText = `生成血量 ×${earthwallMaxHpMult()}（${fmtNum(Math.round(earthwallMaxHp(st)))}）　每 ${earthwallInterval(st).toFixed(1)} 秒回復 ${fmtNum(Math.round(earthwallHp(st)))}　擊破後 ${earthwallInterval(st).toFixed(1)} 秒重生`;
     } else {
       statusText = `${def.stackLabel} ${stacks}　傷害 ${pct.toFixed(1)}% 攻擊`;
     }
