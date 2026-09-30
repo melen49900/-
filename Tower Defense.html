@@ -462,6 +462,13 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* 鍛造台能力值：兩排（目前／下一級），欄位對齊 */
+.upstat{ display:grid; grid-template-columns:auto auto auto 1fr; column-gap:8px; row-gap:2px; align-items:baseline; font-variant-numeric:tabular-nums; }
+.upstat .lb{ white-space:nowrap; }
+.upstat .bd{ text-align:right; white-space:nowrap; }
+.upstat .pr{ text-align:left; }
+.upstat .ar{ text-align:left; }
 </style>
 </head>
 <body>
@@ -3004,7 +3011,10 @@ function renderUpgrades(){
       <div class="ico">${u.icon}</div>
       <div class="info">
         <div class="nm">${u.name}　<span style="color:var(--bone-dim);font-size:12px">Lv.${lv}${maxed?' 已滿':''}</span></div>
-        <div class="val">目前 ${curBody}(${curPer})　→　下一級 ${nextBody}(${nextPer})</div>
+        <div class="val upstat">
+          <span class="lb">目前</span><span class="bd">${curBody}</span><span class="pr">(${curPer})</span><span class="ar">→</span>
+          <span class="lb">下一級</span><span class="bd">${nextBody}</span><span class="pr">(${nextPer})</span><span class="ar"></span>
+        </div>
       </div>
       <button data-up="${u.key}" ${maxed||state.gold<cost?'disabled':''}>
         ${maxed ? '已滿級' : '💰 '+fmtNum(cost)}
