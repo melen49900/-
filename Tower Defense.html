@@ -507,7 +507,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 
       <div id="levelSelectPanel" class="pad">
         <h2 class="sec">烈焰試煉場</h2>
-        <p class="sub">共 20 關，每關 20 波。關內怪物只會小幅變強，換關卡才是難度大跳升的地方。</p>
+        <p class="sub">每關 20 波，關內怪物只會小幅變強，換關卡才會難度跳升。</p>
         <div id="levelGrid"></div>
       </div>
 
@@ -681,8 +681,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 
 /* ══════════════════════════════════════════════════════════
    烈焰試煉場
-   答題邏輯全部委託給 quiz-engine.js（QuizEngine），
-   這個檔案只負責：戰鬥、經濟、裝備、存檔。
+   答題委託給 quiz-engine.js（QuizEngine），此檔負責：戰鬥、經濟、裝備、存檔。
    ══════════════════════════════════════════════════════════ */
 
 const SAVE_KEY = 'emberTrial_v1';
@@ -691,8 +690,8 @@ const WAVES_PER_LEVEL = 20;       // 每關 20 波
 const LEVEL_COUNT = 90;           // 共 90 關
 const LEVEL_HP_GROWTH = 1.286;                                  // 血量成長係數
 const LEVEL_ATK_GROWTH = 1.21;                                  // 攻擊成長係數
-const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內 20 波，血量差 3 倍
-const WAVE_SPD_GROWTH = 0.1;                                    // 關內 20 波，移速大約多 10%（≈1.1倍）
+const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內血量差距3倍
+const WAVE_SPD_GROWTH = 0.1;                                    // 關內移速差距10%
 
 /* ── 裝備資料 ─────────────────────────────── */
 const RARITY = {
@@ -744,18 +743,27 @@ const SKILL_DEFS = {
     stacksFn: ()=>skillStacks('earthwall'),
     pctFn: ()=>earthwallPct(),
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 40 關時會自動習得 1 等，之後也能從「召喚」抽到並疊加。`,
-    desc:'開場在固定位置生成一道橫貫全場的碎石牆，擋住所有敵人；前 6 等每等提高生成血量，會定時回復，被擊破後經過冷卻重生一道新牆。',
+    desc:'開場在固定位置生成碎石牆，擋住所有敵人；前 6 等每等提高生成血量，會定時回復，被擊破後經過冷卻重生一道新牆。',
+  },
+  beam: {
+    name:'光束砲', icon:'🔆', innate:false,
+    requiresLevel:60,   // 過關進度（unlockedLevel）需超過此關卡數才會自動解鎖
+    stackLabel:'光束寬度',
+    stacksFn: ()=>skillStacks('beam'),
+    pctFn: ()=>beamPct(),
+    lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 60 關時會自動習得 1 等，之後也能從「召喚」抽到並疊加。`,
+    desc:'隨機鎖定一名敵人，從主角朝該敵人射出一道貫穿到畫面盡頭的光束，路徑上所有敵人都會受傷；目標死亡後自動換下一名。前 6 等每等加寬光束，之後每等增加傷害。',
   },
 };
 // 各技能施放頻率＝角色攻速 × 對應倍率（各自獨立計時，不是三個技能綁在同一顆計時器上）：
 // 火球術 x1（跟角色攻速一致）、冰椎術 x0.5（角色攻速的一半）、閃電術 x0.9。
-const SKILL_SPD_MULT = { fireball:1, icespike:0.5, lightning:0.9, whirlwind:0.1, earthwall:0.1 };
-// 抽到技能的總機率固定 30%，平均分攤給「目前已可抽到」的技能種類
-// （旋風術在 unlockedLevel 超過 20 之前、土牆術在 unlockedLevel 超過 40 之前不會出現在召喚池，解鎖後才加入均分）
+const SKILL_SPD_MULT = { fireball:1, icespike:0.5, lightning:0.9, whirlwind:0.1, earthwall:0.1, beam:1.1 };
+// 抽到技能的總機率固定 30%，平均分攤給「目前已可抽到」的技能種類）
 const SKILL_PULL_CHANCE = 0.30;
 function skillAvailableForPull(key){
   if(key === 'whirlwind') return state.unlockedLevel > WHIRLWIND_UNLOCK_LEVEL;
   if(key === 'earthwall') return state.unlockedLevel > EARTHWALL_UNLOCK_LEVEL;
+  if(key === 'beam') return state.unlockedLevel > BEAM_UNLOCK_LEVEL;
   return true;
 }
 function rollSkill(){
@@ -819,6 +827,22 @@ function checkEarthwallUnlock(){
     state.skills.earthwall.draws = 1;
     save();
     toast('🧱 解鎖新技能：土牆術！攻速觸發，之後也能從「召喚」抽到並疊加');
+  }
+}
+
+// 光束砲：過關進度超過第 60 關時自動習得 1 等。
+// 寬度＝5 + 等級×5（前 6 等，最寬 35）；傷害＝攻擊力 × 50%，第 7 等起每等 +5%。
+// 發動頻率＝角色攻速 × SKILL_SPD_MULT.beam（各自獨立計時）：光束持續存在並追著目標，每次計時到就結算一次傷害。
+const BEAM_UNLOCK_LEVEL = 60;
+const BEAM_PULSE_VISUAL = 0.16; // 純視覺：每次結算傷害時光束閃亮加粗的時間
+function beamWidth(){ return 5 + skillStacks('beam') * 5; }
+function beamPct(){ return 50 + skillOverCap('beam') * 5; }
+function beamAtk(s){ return s.atk * beamPct() / 100; }
+function checkBeamUnlock(){
+  if(state.unlockedLevel > BEAM_UNLOCK_LEVEL && state.skills.beam.draws < 1){
+    state.skills.beam.draws = 1;
+    save();
+    toast('🔆 解鎖新技能：光束砲！攻速觸發，之後也能從「召喚」抽到並疊加');
   }
 }
 
@@ -976,7 +1000,7 @@ function freshState(){
     starterGiven:true,                        // 已發放新手裝備
     freePullUsed:false,                       // 新手免費十連抽是否已使用
     refineBySlot:{ weapon:0, armor:0, trinket:0 }, // { [部位]: 精煉等級 }——精煉綁定「武器／防具／飾品」這個部位，不管換上哪一件、哪個稀有度都沿用同一個等級
-    skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0}, whirlwind:{draws:0}, earthwall:{draws:0} }, // 技能召喚抽到的次數（旋風術另外會在 unlockedLevel > 20、土牆術在 unlockedLevel > 40 時自動補發 1 等）
+    skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0}, whirlwind:{draws:0}, earthwall:{draws:0}, beam:{draws:0} }, // 技能召喚抽到的次數（旋風術另外會在 unlockedLevel > 20、土牆術在 unlockedLevel > 40 時自動補發 1 等）
     quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
     indigTier:IndigenousQuiz.createTierState(), // ← 族語階層解鎖進度，整包存檔
     qs:{ correct:0, wrong:0, streak:0, best:0, shield:3, shieldProgress:0 },
@@ -1057,6 +1081,7 @@ function load(){
       lightning: Object.assign({draws:0}, (d.skills&&d.skills.lightning)||{}),
       whirlwind: Object.assign({draws:0}, (d.skills&&d.skills.whirlwind)||{}),
       earthwall: Object.assign({draws:0}, (d.skills&&d.skills.earthwall)||{}),
+      beam: Object.assign({draws:0}, (d.skills&&d.skills.beam)||{}),
     };
     state.levelRecords = Object.assign({}, d.levelRecords||{});
     state.unlockedLevel = Math.max(1, Math.min(LEVEL_COUNT, d.unlockedLevel || 1));
@@ -1067,6 +1092,7 @@ function load(){
     }
     checkWhirlwindUnlock(); // 舊存檔若過關進度早已超過 20 關，補發旋風術 1 等
     checkEarthwallUnlock(); // 舊存檔若過關進度早已超過 40 關，補發土牆術 1 等
+    checkBeamUnlock();      // 舊存檔若過關進度早已超過 60 關，補發光束砲 1 等
     // 進度資料還原：補上舊存檔可能缺少的欄位，避免引擎讀到 undefined
     state.quiz     = Object.assign(QuizEngine.createProgress(), d.quiz||{});
     state.indigTier = Object.assign(IndigenousQuiz.createTierState(), d.indigTier||{});
@@ -1133,8 +1159,7 @@ function resolveImageSrc(ref){
 const SUBJ_NAME = { math:'數學', chinese:'國文', english:'英文', science:'自然', geography:'社會', indigenous:'族語' };
 
 /* ══════════════════════════════════════════
-   族語答題系統 — 完全獨立於 QuizEngine 的五科系統之外，
-   只在後台開啟、且單字庫資料足夠時，才會混進出題輪替。
+   族語答題系統 — 獨立五科系統之外，後台開啟且單字足夠時才會出題輪替。
    ══════════════════════════════════════════ */
 let indigenousWords = [];     // 族語單字庫，從 indigenous-words.json 讀取：{id,meaning,spelling,audio,category}[]
 let indigenousAudioMap = {};  // 音檔對照表（indigenous-audio.json）：檔名 → data URI，比照 imageMap
@@ -1160,6 +1185,7 @@ function indigenousReady(){
 function playIndigenousAudio(filename){
   const src = resolveAudioSrc(filename);
   if(!src) return;
+  if(window.speechSynthesis) window.speechSynthesis.cancel(); // 避免 TTS 與錄音疊在一起
   try{ new Audio(src).play().catch(()=>{}); }catch(e){}
 }
 
@@ -1180,17 +1206,26 @@ function subjectReady(subject){
     Array.isArray(q.options) && q.options.length >= 2);
 }
 
+// 固定出題順序：國文 → 英文 → 數學 → 社會 → 自然 →（族語，僅在後台開啟且單字足夠時）→ 回到國文
+// 族語關閉時，序列自動跳過族語，就是 5 科循環；沒有題目的科目也會被跳過。
+const SUBJECT_ORDER = ['chinese','english','math','geography','science','indigenous'];
+const SUBJ_CURSOR_KEY = 'td_subject_cursor';
+function subjectEligible(s){
+  if(s === 'indigenous') return indigenousEnabled() && indigenousReady();
+  return subjectReady(s);
+}
 function pickSubject(){
-  // 後台開啟且單字庫夠用時，約每 6 題出現 1 題族語題（機率法達到 5:1 的長期比例，
-  // 不是固定「第 6 題一定是」，題與題之間仍是隨機的）
-  if(indigenousEnabled() && indigenousReady() && Math.random() < 1/6){
-    return 'indigenous';
+  let cur = parseInt(localStorage.getItem(SUBJ_CURSOR_KEY), 10);
+  if(!(cur >= 0 && cur < SUBJECT_ORDER.length)) cur = 0;
+  for(let i=0; i<SUBJECT_ORDER.length; i++){
+    const idx = (cur + i) % SUBJECT_ORDER.length;
+    const s = SUBJECT_ORDER[idx];
+    if(subjectEligible(s)){
+      localStorage.setItem(SUBJ_CURSOR_KEY, String((idx + 1) % SUBJECT_ORDER.length));
+      return s;
+    }
   }
-  const pool = ['math'];
-  ['chinese','english','science','geography'].forEach(s=>{
-    if(subjectReady(s)) pool.push(s);
-  });
-  return pool[Math.floor(Math.random()*pool.length)];
+  return 'math';
 }
 
 /* ══════════════════════════════════════════
@@ -1219,6 +1254,7 @@ function getSelectedVoice(){
 // 台灣／中國破音字唸法修正：只影響朗讀用的文字，不影響畫面上顯示的文字
 const TW_PRONOUNCE_FIX = [
   [/划/g, '滑'],      // 划船 應唸 huá；預設語音容易唸成 huà
+  [/岔/g, '插'],
 ];
 function applyPronounceFix(text){
   let r = text;
@@ -1254,8 +1290,10 @@ function _doSpeak(text, lang){
 function speakQuestion(){
   if(!curQ) return;
   if(curSubj === 'indigenous'){
+    // 族語發音一律播錄音；題目若沒有錄音（表示題目是中文），才用 TTS 唸中文
     if(curQ.promptAudio) playIndigenousAudio(curQ.promptAudio);
-    return; // 族語題一律播錄音，不走下面的瀏覽器 TTS
+    else speakIndigenousChinese(curQ.promptText);
+    return;
   }
   if(!speechCfg.enabled || !window.speechSynthesis) return;
   let text = curQ.q || '';
@@ -1278,6 +1316,13 @@ function speakQuestion(){
     text = text.replace(/_+/g, '空格');
     _doSpeak(text, speechCfg.lang);
   }
+}
+
+// 族語題裡的中文（題目或選項的「意思」）用瀏覽器 TTS 唸；族語拼音本身不唸，只播錄音
+const CJK_RE = /[\u3400-\u9fff]/;
+function speakIndigenousChinese(text){
+  if(!text || !CJK_RE.test(text)) return;
+  _doSpeak(String(text), speechCfg.lang);
 }
 
 // 朗讀單一選項：英文科目且看起來是英文的選項用英文語音唸，其他一律用中文語音
@@ -1397,13 +1442,21 @@ function renderIndigenousQuestion(){
     b.textContent = o.label;
     b.onclick = ()=>answerIndigenous(o, b);
     wrap.appendChild(b);
-    if(o.audio){ // 有音檔才顯示喇叭；沒有的話（例如意思選項）就不擺按鈕，不會出現按了沒反應的空按鈕
+    if(o.audio){ // 有錄音：播放族語錄音
       const spk = document.createElement('button');
       spk.type = 'button';
       spk.className = 'opt-speak-btn';
       spk.textContent = '🔊';
       spk.title = '播放語音';
       spk.onclick = (e)=>{ e.stopPropagation(); playIndigenousAudio(o.audio); };
+      wrap.appendChild(spk);
+    } else if(CJK_RE.test(String(o.label||''))){ // 沒錄音但是中文（例如意思選項）：用 TTS 唸
+      const spk = document.createElement('button');
+      spk.type = 'button';
+      spk.className = 'opt-speak-btn';
+      spk.textContent = '🔊';
+      spk.title = '朗讀這個選項';
+      spk.onclick = (e)=>{ e.stopPropagation(); speakIndigenousChinese(o.label); };
       wrap.appendChild(spk);
     }
     box.appendChild(wrap);
@@ -1412,7 +1465,7 @@ function renderIndigenousQuestion(){
   document.getElementById('qFeed').className = '';
   document.getElementById('qNext').style.display = 'none';
   syncQuizMeta();
-  if(curQ.promptAudio) playIndigenousAudio(curQ.promptAudio); // 進題自動播放一次題目語音
+  speakQuestion(); // 進題自動朗讀一次：有錄音播錄音，題目是中文就用 TTS
 }
 
 // 族語題的作答：跟 answer() 給一樣的鑽石／連勝／綠燈獎勵，但正確判斷是比對 id（不是文字），
@@ -1685,7 +1738,8 @@ const run = {
   t:0, wave:1, spawned:0, waveQuota:0, spawnTimer:0,
   hp:100, maxHp:100,
   heroX:W/2, targetX:W/2,
-  fireTimer:0, iceTimer:0, lightningTimer:0, whirlwindTimer:0, earthwallTimer:0, earthwallCd:0,
+  fireTimer:0, iceTimer:0, lightningTimer:0, whirlwindTimer:0, earthwallTimer:0, earthwallCd:0, beamTimer:0,
+  beam:{ target:null, ang:-Math.PI/2, pulse:0, active:false },
   kills:0, gold:0,
   enemies:[], shots:[], bits:[], pops:[], bolts:[], tornadoes:[], walls:[],
   iceQueue:[],   // 冰椎術待發射佇列（每個元素是還剩多少秒才發射）
@@ -1788,7 +1842,8 @@ function startRun(level){
   run.level = level || run.level || 1;
   run.t=0; run.wave=1; run.spawned=0; run.waveQuota=waveQuotaFor(1); run.spawnTimer=0;
   run.maxHp=s.maxHp; run.hp=s.maxHp;
-  run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0; run.whirlwindTimer=0; run.earthwallTimer=0; run.earthwallCd=0;
+  run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0; run.whirlwindTimer=0; run.earthwallTimer=0; run.earthwallCd=0; run.beamTimer=0;
+  run.beam={ target:null, ang:-Math.PI/2, pulse:0, active:false };
   run.kills=0; run.gold=0;
   run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.tornadoes=[]; run.walls=[]; run.shake=0;
   applyLevelTheme(run.level);
@@ -2000,6 +2055,50 @@ function castLightning(){
   run.bolts.push({ points, age:0, life:0.22, crit });
 }
 
+// 光束砲：光束持續存在，鎖定一名隨機敵人並跟著他轉；目標死亡（或離場）就立刻換下一名。
+// 光束從主角出發、沿著「主角→目標」的方向一路貫穿到畫面盡頭，傷害在 pulseBeam()（依攻速計時）結算。
+function beamOrigin(){ return { x: run.heroX, y: H - 96 }; }
+function beamVisible(e){ return e.hp > 0 && e.y + e.r > 0; }
+function updateBeam(dt){
+  const b = run.beam;
+  if(state.skills.beam.draws < 1){ b.active = false; return; }
+  if(b.pulse > 0) b.pulse = Math.max(0, b.pulse - dt);
+  if(!b.target || !run.enemies.includes(b.target) || !beamVisible(b.target)){
+    const pool = run.enemies.filter(beamVisible);
+    b.target = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+  }
+  if(!b.target){ b.active = false; return; }
+  b.active = true;
+  const o = beamOrigin();
+  const want = Math.atan2(b.target.y - o.y, b.target.x - o.x);
+  let d = want - b.ang;
+  while(d > Math.PI) d -= Math.PI*2;
+  while(d < -Math.PI) d += Math.PI*2;
+  b.ang += d * Math.min(1, dt*14); // 快速轉向新目標
+}
+function beamHits(){
+  const b = run.beam, o = beamOrigin();
+  const dx = Math.cos(b.ang), dy = Math.sin(b.ang), half = beamWidth()/2;
+  return run.enemies.filter(e=>{
+    if(!beamVisible(e)) return false;
+    const px = e.x - o.x, py = e.y - o.y;
+    if(px*dx + py*dy < 0) return false;            // 在主角背後不算
+    return Math.abs(px*dy - py*dx) <= half + e.r;  // 到光束中線的垂直距離
+  });
+}
+function pulseBeam(s){
+  if(state.skills.beam.draws < 1 || !run.beam.active) return;
+  const base = beamAtk(s);
+  beamHits().forEach(e=>{
+    const crit = Math.random()*100 < s.crit;
+    const dmg = crit ? base * (s.critDmg/100) : base;
+    e.hp -= dmg; e.hit = 0.12;
+    popText(e.x, e.y-e.r-4, fmtNum(dmg), crit);
+    burst(e.x, e.y, '#b5d4f4', 4);
+  });
+  run.beam.pulse = BEAM_PULSE_VISUAL;
+}
+
 // 旋風術：尚未習得，或場上沒有敵人時不生成。
 // 生成位置＝場上隨機一位敵人的所在位置，之後每一幀都會朝「當下最近的敵人」移動；
 // tickTimer 從 0 開始，代表出生當下立刻造成第一次範圍傷害，之後每 WHIRLWIND_TICK 秒再一次，
@@ -2137,6 +2236,9 @@ function step(dt){
   if(run.lightningTimer <= 0){ castLightning(); run.lightningTimer = 1 / (s.spd * SKILL_SPD_MULT.lightning); }
   run.whirlwindTimer -= dt;
   if(run.whirlwindTimer <= 0){ castWhirlwind(); run.whirlwindTimer = 1 / (s.spd * SKILL_SPD_MULT.whirlwind); }
+  updateBeam(dt);
+  run.beamTimer -= dt;
+  if(run.beamTimer <= 0){ pulseBeam(s); run.beamTimer = 1 / (s.spd * SKILL_SPD_MULT.beam); }
   updateEarthwall(dt, s);
 
   // 冰椎術佇列：各自倒數，時間到才真正生成
@@ -2759,6 +2861,25 @@ function draw(){
   });
   ctx.globalAlpha = 1;
 
+  // 光束砲：持續存在的貫穿光束，每次結算傷害時會閃亮加粗一下
+  if(run.beam.active){
+    const b = run.beam, o = beamOrigin();
+    const boost = b.pulse > 0 ? 1 + b.pulse/BEAM_PULSE_VISUAL*0.35 : 1;
+    const w = beamWidth() * boost, len = (W + H) * 1.5;
+    ctx.save();
+    ctx.translate(o.x, o.y); ctx.rotate(b.ang);
+    ctx.globalAlpha = .28; ctx.fillStyle = '#85b7eb'; ctx.fillRect(0, -w*.9, len, w*1.8);
+    ctx.globalAlpha = .75; ctx.fillStyle = '#378add'; ctx.fillRect(0, -w/2, len, w);
+    ctx.globalAlpha = 1;   ctx.fillStyle = '#e6f1fb'; ctx.fillRect(0, -Math.max(2, w*.3), len, Math.max(4, w*.6));
+    ctx.restore();
+    if(b.target){
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(b.target.x, b.target.y, b.target.r + 5, 0, Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
   // 旋風術：沙塵龍捲。底部固定在傷害圈（半徑 WHIRLWIND_RADIUS）的圓心，沙塵向上旋轉、越高越寬（純視覺）；
   // 實際傷害只有腳下那個圓，圓外的沙塵不會傷到敵人。
   run.tornadoes.forEach(t=>{
@@ -3083,6 +3204,8 @@ function renderSkills(){
     } else if(key === 'earthwall'){
       const st = stats();
       statusText = `生成血量 ×${earthwallMaxHpMult()}（${fmtNum(Math.round(earthwallMaxHp(st)))}）　每 ${earthwallInterval(st).toFixed(1)} 秒回復 ${fmtNum(Math.round(earthwallHp(st)))}　擊破後 ${earthwallInterval(st).toFixed(1)} 秒重生`;
+    } else if(key === 'beam'){
+      statusText = `光束寬度 ${beamWidth()}px　傷害 ${pct.toFixed(0)}% 攻擊`;
     } else {
       statusText = `${def.stackLabel} ${stacks}　傷害 ${pct.toFixed(1)}% 攻擊`;
     }
@@ -3202,6 +3325,7 @@ function renderEquip(){
 function syncUI(){
   checkWhirlwindUnlock(); // 過關進度一旦超過門檻就自動補發旋風術 1 等
   checkEarthwallUnlock(); // 過關進度一旦超過門檻就自動補發土牆術 1 等
+  checkBeamUnlock();      // 過關進度一旦超過門檻就自動補發光束砲 1 等
   checkHeroUnlock();      // 過關進度一旦超過門檻就自動解鎖對應造型並提示一次
   checkUpgradeUnlocks();  // 過關進度一旦超過門檻就提示新解鎖的鍛造項目（金幣/鑽石/減傷/精煉成本）
   document.getElementById('uiGem').textContent   = state.gem;
@@ -3473,7 +3597,7 @@ function admRender(){
       <h4>🗣️ 族語・答題模式</h4>
       <div class="adm-stat">
         單字庫共 <b>${indigenousWords.length}</b> 筆（資料完整可用 <b>${readyCount}</b> 筆，至少需要 4 筆才能開啟）<br>
-        目前狀態：<b>${on ? '已開啟（約每 6 題出現 1 題族語題）' : '已關閉'}</b>
+        目前狀態：<b>${on ? '已開啟（依序：國文→英文→數學→社會→自然→族語，循環出題）' : '已關閉'}</b>
         ${!indigenousReady() ? '<br><span style="color:var(--blood)">單字庫不足，暫時無法開啟。</span>' : ''}
       </div>
       <div class="adm-actionrow">
