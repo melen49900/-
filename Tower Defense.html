@@ -968,15 +968,15 @@ const UPGRADES = [
     bodyFmt:v=>'-'+v.toFixed(1)+'%' },
   // 守護半徑減少：第 60 關後解鎖。每級守護者的守護圈半徑 -1。
   // 上限：守護圈半徑（250+關卡數）最多減到只剩 100，所以上限 ＝ 150 + 過關進度（每通過一個新關卡上限 +1）。
-  { key:'guardradius', icon:'📏', name:'守護半徑減少', base:1000, grow:1.4, per:1, fmt:v=>'-'+v.toFixed(0),
+  { key:'guardradius', icon:'📏', name:'守護半徑減少', base:1000, grow:1.25, per:1, fmt:v=>'-'+v.toFixed(0),
     requiresLevel:60,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 60 關時解鎖。`,
     maxFn: ()=> Math.max(0, GUARDIAN_RADIUS_BASE + state.unlockedLevel - GUARDIAN_RADIUS_MIN),
     body:lv=>lv, full:lv=>lv,
-    perFmt:lv=>'目前進度守護半徑 '+Math.max(GUARDIAN_RADIUS_MIN, GUARDIAN_RADIUS_BASE + state.unlockedLevel - lv),
+    perFmt:lv=>'守護半徑 '+Math.max(GUARDIAN_RADIUS_MIN, GUARDIAN_RADIUS_BASE + state.unlockedLevel - lv),
     bodyFmt:v=>'半徑 -'+v.toFixed(0) },
   // 守護能力減少：第 60 關後解鎖。每級守護者的減傷 -1%（基礎 80%），上限 50 級（剩 30%）。
-  { key:'guardpower', icon:'🗿', name:'守護能力減少', base:2000, grow:1.8, per:1, fmt:v=>'-'+v.toFixed(0)+'%',
+  { key:'guardpower', icon:'🗿', name:'守護能力減少', base:2000, grow:1.66, per:1, fmt:v=>'-'+v.toFixed(0)+'%',
     max:50,
     requiresLevel:60,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 60 關時解鎖。`,
