@@ -577,7 +577,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
           <div style="font-size:12px;color:var(--bone-dim);line-height:1.9">
             <div id="skillOddsInfo">技能機率　合計 30%</div>
             <div id="equipOddsInfo">裝備機率　合計 70%　普通 35%　精良 21%　稀有 10.5%　傳說 3.5%</div>
-            <div style="margin-top:6px">重複裝備熔解：普通 +1　精良 +3　稀有 +8　傳說 +20 🔮</div>
+            <div style="margin-top:6px">副武器（魔法書／盾牌／水晶）通關第 65 關後解鎖<br>重複裝備熔解：普通 +1　精良 +3　稀有 +8　傳說 +20 🔮</div>
           </div>
         </div>
       </div>
@@ -801,7 +801,7 @@ function whirlwindAtk(s){ return s.atk * whirlwindPct() / 100; }
 const WHIRLWIND_UNLOCK_LEVEL = 20;// 旋風術解鎖條件：過關進度（unlockedLevel）超過第 20 關時自動習得 1 等
 const WHIRLWIND_RADIUS = 45;//旋風術半徑（實際傷害範圍，只有這個圓）
 const WHIRLWIND_VISUAL_HEIGHT = 150;     // 純視覺：龍捲風從圓心向上延伸的高度
-const WHIRLWIND_VISUAL_TOP_RADIUS = 70;  // 純視覺：龍捲風頂端的旋轉半徑（比傷害圈大，但不造成傷害）
+const WHIRLWIND_VISUAL_TOP_RADIUS = 70;  // 純視覺：龍捲風頂端的旋轉半徑
 const WHIRLWIND_DUST_COUNT = 90;         // 純視覺：沙塵粒子數量
 function twRnd(i){ const x = Math.sin(i*127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
 const WHIRLWIND_TICK = 0.5;//旋風術傷害CD
@@ -815,13 +815,13 @@ function checkWhirlwindUnlock(){
     toast('🌪️ 解鎖新技能：旋風術！攻速觸發，之後也能從「召喚」抽到並疊加');
   }
 }
-// 土牆術：過關進度（unlockedLevel）超過第 40 關時自動習得 1 等
-const EARTHWALL_UNLOCK_LEVEL = 40;
-const EARTHWALL_Y_FROM_BOTTOM = 350;  // 土牆固定位置：距離畫面底部往上 350
+// 土牆術
+const EARTHWALL_UNLOCK_LEVEL = 40;//過關進度超過第 40 關時自動習得 1 等
+const EARTHWALL_Y_FROM_BOTTOM = 350;  // 位置固定距離畫面底部往上 350
 const EARTHWALL_HP_MULT_BASE = 50;   // 1 等：生成血量 ＝ 原始血量 × 50
-const EARTHWALL_HP_MULT_STEP = 10;   // 每多 1 等 +10 倍（2 等 60 倍 … 6 等 100 倍；第 6 等之後不再增加倍率）
-const EARTHWALL_ROCK_COUNT = 14;     // 碎石堆的岩塊數量（橫貫全場）
-const EARTHWALL_BREAK_STAGGER = 0.2; // 牆被打壞後，敵人還會停頓幾秒才繼續前進（可自行調整 0.1～0.2 之間的數值）
+const EARTHWALL_HP_MULT_STEP = 10;   // 每多 1 等 +10 倍，6 等 100 倍
+const EARTHWALL_ROCK_COUNT = 20;     // 碎石堆的岩塊數量(橫貫全場)
+const EARTHWALL_BREAK_STAGGER = 0.2; // 牆被打壞後，敵人還會停頓幾秒才繼續前進(0.1～0.2)
 function checkEarthwallUnlock(){
   if(state.unlockedLevel > EARTHWALL_UNLOCK_LEVEL && state.skills.earthwall.draws < 1){
     state.skills.earthwall.draws = 1;
@@ -830,14 +830,20 @@ function checkEarthwallUnlock(){
   }
 }
 
-// 光束砲：過關進度超過第 60 關時自動習得 1 等。
-// 寬度＝5 + 等級×5（前 6 等，最寬 35）；傷害＝攻擊力 × 50%，第 7 等起每等 +5%。
-// 發動頻率＝角色攻速 × SKILL_SPD_MULT.beam（各自獨立計時）：光束持續存在並追著目標，每次計時到就結算一次傷害。
-const BEAM_UNLOCK_LEVEL = 60;
-const BEAM_PULSE_VISUAL = 0.16; // 純視覺：每次結算傷害時光束閃亮加粗的時間
-function beamWidth(){ return 5 + skillStacks('beam') * 5; }
-function beamPct(){ return 50 + skillOverCap('beam') * 5; }
+// 光束砲
+const BEAM_UNLOCK_LEVEL = 60;//過關進度超過第 60 關時自動習得 1 等。
+const BEAM_PULSE_VISUAL = 0.03; // 純視覺：每次結算傷害時光束閃亮加粗的時間
+function beamWidth(){ return 7 + skillStacks('beam') * 3; }// 寬度＝7+等級×3
+function beamPct(){ return 50 + skillOverCap('beam') * 5; }// 傷害＝攻擊力 ×(50%+額外等級×5%)
 function beamAtk(s){ return s.atk * beamPct() / 100; }
+function checkOffhandUnlock(){
+  if(offhandUnlocked() && !state.offhandSeen){
+    state.offhandSeen = true;
+    save();
+    toast('🛡️ 解鎖副武器欄位！可從「召喚」抽到魔法書、盾牌、水晶');
+    renderEquip(); renderRefine();
+  }
+}
 function checkBeamUnlock(){
   if(state.unlockedLevel > BEAM_UNLOCK_LEVEL && state.skills.beam.draws < 1){
     state.skills.beam.draws = 1;
@@ -846,22 +852,17 @@ function checkBeamUnlock(){
   }
 }
 
-function earthwallY(){ return Math.max(50, H - EARTHWALL_Y_FROM_BOTTOM); }
-// 生成血量倍率：1 等 50 倍、2 等 60 倍 … 6 等 100 倍
+function earthwallY(){ return Math.max(50, H - EARTHWALL_Y_FROM_BOTTOM); }// 土牆血量上限：回復量×{50+(等級-1)×10)
 function earthwallMaxHpMult(){ return EARTHWALL_HP_MULT_BASE + (Math.max(1, skillStacks('earthwall')) - 1) * EARTHWALL_HP_MULT_STEP; }
 function earthwallPct(){ return 50 + skillOverCap('earthwall') * 2; }// 土牆係數
-// 原始血量＝基礎攻擊 ×（1+暴擊率）× 暴擊傷害 × 土牆係數。
-// 現在它是土牆的「每次回復量」，同時也是被擊破後重生的新牆的起始血量（1 倍）；
-// 土牆的血量上限（開場生成血量）＝ 原始血量 × earthwallMaxHpMult()。
 function earthwallHp(s){
-  return s.atk * (1 + s.crit/100) * (s.critDmg/100) * (earthwallPct()/100);
+  return s.atk * (1 + s.crit/100) * (s.critDmg/100) * (earthwallPct()/100);// 回復量＝攻擊×(1+暴擊率)×暴擊傷害×土牆係數。
 }
 function earthwallMaxHp(s){ return earthwallHp(s) * earthwallMaxHpMult(); }
 function earthwallInterval(s){ return 1 / (s.spd * SKILL_SPD_MULT.earthwall); } // 回復間隔＝重生冷卻＝攻速 0.1 倍
-// 冰椎減速：每次命中疊加一層，每層獨立倒數，最多 3 層
-const ICESPIKE_SLOW_PCT = 0.20;
-const ICESPIKE_SLOW_MAX_STACKS = 3;
-const ICESPIKE_SLOW_DURATION = 1; // 秒
+const ICESPIKE_SLOW_PCT = 0.20;// 冰椎減速比例
+const ICESPIKE_SLOW_MAX_STACKS = 3;//最多 3 層
+const ICESPIKE_SLOW_DURATION = 1; // 緩速時間(秒)
 
 // base 為「普通」品質的數值，實際數值 = base × 稀有度倍率
 const EQUIP_POOL = [
@@ -884,15 +885,26 @@ const EQUIP_POOL = [
   { id:'c3', slot:'trinket', name:'雙生水晶',  icon:'💠', atk:3, hp:10 },
   { id:'c4', slot:'trinket', name:'嗜血項鍊',  icon:'📿', crit:9, hp:-8 },
   { id:'c5', slot:'trinket', name:'流星碎片',  icon:'☄️', atk:5, crit:4 },
+  // 副武器：通關第 65 關後解鎖（解鎖前不會被抽到、欄位隱藏）
+  { id:'o1', slot:'offhand', name:'魔法書',    icon:'📘', atk:1 },
+  { id:'o2', slot:'offhand', name:'盾牌',      icon:'🛡️', hp:1 },
+  { id:'o3', slot:'offhand', name:'水晶',      icon:'🔮', atk:0.5, hp:0.5 },
 ];
-const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品' };
+const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品', offhand:'副武器' };
+const OFFHAND_UNLOCK_LEVEL = 65;   // 通關第 65 關（進度超過 65）後解鎖副武器
+const ALL_SLOTS = ['weapon','armor','trinket','offhand'];
+function offhandUnlocked(){ return state.unlockedLevel > OFFHAND_UNLOCK_LEVEL; }
+function slotAvailable(s){ return s !== 'offhand' || offhandUnlocked(); }
+function activeSlots(){ return ALL_SLOTS.filter(slotAvailable); }
+// 目前可被抽到的裝備池（副武器解鎖前排除）
+function availablePool(){ return EQUIP_POOL.filter(b=>slotAvailable(b.slot)); }
 
 /* ── 本體強化 ─────────────────────────────── */
 // body(lv)：該項目在鍛造等級 lv 時，角色「本體」的實際數值（不含裝備），對應 stats() 裡的公式
 // full(lv)：本體 + 目前已裝備裝備的加成（含裝備），套用跟 stats() 相同的封頂/下限
 // bodyFmt：數值的顯示格式（不加正負號，純數值）
 const ATK_PCT_PER_LV = 0.005; // 攻擊力鍛造：每級額外 +0.5% 全攻擊（含裝備）
-const HP_PCT_PER_LV  = 0.005; // 生命值鍛造：每級額外 +0.5% 全生命（含裝備）——與攻擊分開設定，可各自調整
+const HP_PCT_PER_LV  = 0.005; // 生命值鍛造：每級額外 +0.5% 全生命（含裝備）
 const REFINE_COST_REDUCE_PER_LV = 1; // 精煉成本：每級減少每次精煉消耗的強化石（最低為 1）
 const MONSTER_WEAKEN_MULT_PER_LV = 0.99; // 怪物弱化：每級怪物生命 ×0.99（累乘），例如 Lv.10 ＝ ×0.904
 const DEFENSE_MULT_PER_LV = 0.99; // 減傷：每級受到的傷害 ×0.99（累乘），例如 Lv.10 ＝ ×0.904
@@ -954,19 +966,36 @@ const UPGRADES = [
     full:lv=>(1 - Math.pow(MONSTER_WEAKEN_MULT_PER_LV, lv)) * 100,
     perFmt:lv=>'怪物生命 ×'+Math.pow(MONSTER_WEAKEN_MULT_PER_LV, lv).toFixed(3),
     bodyFmt:v=>'-'+v.toFixed(1)+'%' },
+  // 守護半徑減少：第 60 關後解鎖。每級守護者的守護圈半徑 -1。
+  // 上限：守護圈半徑（250+關卡數）最多減到只剩 100，所以上限 ＝ 150 + 過關進度（每通過一個新關卡上限 +1）。
+  { key:'guardradius', icon:'📏', name:'守護半徑減少', base:1000, grow:1.4, per:1, fmt:v=>'-'+v.toFixed(0),
+    requiresLevel:60,
+    lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 60 關時解鎖。`,
+    maxFn: ()=> Math.max(0, GUARDIAN_RADIUS_BASE + state.unlockedLevel - GUARDIAN_RADIUS_MIN),
+    body:lv=>lv, full:lv=>lv,
+    perFmt:lv=>'目前進度守護半徑 '+Math.max(GUARDIAN_RADIUS_MIN, GUARDIAN_RADIUS_BASE + state.unlockedLevel - lv),
+    bodyFmt:v=>'半徑 -'+v.toFixed(0) },
+  // 守護能力減少：第 60 關後解鎖。每級守護者的減傷 -1%（基礎 80%），上限 50 級（剩 30%）。
+  { key:'guardpower', icon:'🗿', name:'守護能力減少', base:2000, grow:1.8, per:1, fmt:v=>'-'+v.toFixed(0)+'%',
+    max:50,
+    requiresLevel:60,
+    lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 60 關時解鎖。`,
+    body:lv=>lv, full:lv=>lv,
+    perFmt:lv=>'守護減傷 '+(GUARDIAN_REDUCE_BASE - lv)+'%',
+    bodyFmt:v=>'減傷 -'+v.toFixed(0)+'%' },
 ];
+// 鍛造項目的等級上限：固定值 max，或依過關進度動態計算的 maxFn
+function upMax(u){ return u.maxFn ? u.maxFn() : (u.max != null ? u.max : null); }
 const GOLDBOOST_UNLOCK_LEVEL = 30; // 金幣強化解鎖門檻：過關進度（unlockedLevel）超過第 30 關時解鎖
 function goldboostUnlocked(){ return state.unlockedLevel > GOLDBOOST_UNLOCK_LEVEL; }
 
-// 鍛造台裡「requiresLevel 才解鎖」的項目（金幣強化／鑽石強化／減傷／精煉成本／怪物弱化）：
-// 過關進度一旦超過門檻，提示一次即可，不用額外設定──新增鍛造項目只要照樣填 requiresLevel 就會自動被這裡吃到。
-function checkUpgradeUnlocks(){
+function checkUpgradeUnlocks(){// 過關進度一旦超過門檻發送的提示
   UPGRADES.forEach(u=>{
     if(u.requiresLevel == null) return;
     if(state.unlockedLevel > u.requiresLevel && !state.upgradeUnlockedSeen.includes(u.key)){
       state.upgradeUnlockedSeen.push(u.key);
       save();
-      toast(`${u.icon} 解鎖鍛造項目：${u.name}！到「鍛造」頁面查看`);
+      toast(`${u.icon} 解鎖鍛造項目：${u.name}！可到「鍛造」頁面查看`);
     }
   });
 }
@@ -980,7 +1009,7 @@ const STARTER_GEAR = [
 ];
 function makeStarterKit(){
   const bag = STARTER_GEAR.map(g=>({ ...g }));
-  const equipped = { weapon:null, armor:null, trinket:null };
+  const equipped = { weapon:null, armor:null, trinket:null, offhand:null };
   bag.forEach(c=>{
     const base = EQUIP_POOL.find(e=>e.id===c.id);
     if(base) equipped[base.slot] = c; // 指向背包裡「同一個」物件
@@ -994,12 +1023,12 @@ function freshState(){
   const kit = makeStarterKit();
   return {
     gem:0, gold:0, stone:0,
-    up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0 },
+    up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0, guardradius:0, guardpower:0 },
     bag:kit.bag,                              // [{uid,id,rarity}]（新存檔內建新手三件裝備）（精煉等級改綁在裝備「部位」上，見 refineBySlot）
     equipped:kit.equipped,
     starterGiven:true,                        // 已發放新手裝備
     freePullUsed:false,                       // 新手免費十連抽是否已使用
-    refineBySlot:{ weapon:0, armor:0, trinket:0 }, // { [部位]: 精煉等級 }——精煉綁定「武器／防具／飾品」這個部位，不管換上哪一件、哪個稀有度都沿用同一個等級
+    refineBySlot:{ weapon:0, armor:0, trinket:0, offhand:0 }, // { [部位]: 精煉等級 }——精煉綁定「武器／防具／飾品」這個部位，不管換上哪一件、哪個稀有度都沿用同一個等級
     skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0}, whirlwind:{draws:0}, earthwall:{draws:0}, beam:{draws:0} }, // 技能召喚抽到的次數（旋風術另外會在 unlockedLevel > 20、土牆術在 unlockedLevel > 40 時自動補發 1 等）
     quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
     indigTier:IndigenousQuiz.createTierState(), // ← 族語階層解鎖進度，整包存檔
@@ -1008,6 +1037,7 @@ function freshState(){
     unlockedLevel:1,                          // 目前解鎖到第幾關
     levelRecords:{},                          // { [level]: {cleared, bestWave, bestKills} }
     seenIntro:false,
+    offhandSeen:false,                        // 副武器解鎖提示是否已顯示過
     selectedHero:1,                           // 目前使用的角色造型 id（對應 HERO_SKINS）
     heroUnlockedSeen:[1],                     // 已經提示過解鎖的造型 id（避免重複跳提示）
     upgradeUnlockedSeen:[],                   // 已經提示過解鎖的鍛造項目 key（避免重複跳提示）
@@ -1048,7 +1078,7 @@ function sanitizeState(){
   state.best.wave  = Math.max(0, fin(state.best.wave, 0));
   state.best.kills = Math.max(0, fin(state.best.kills, 0));
   (state.bag||[]).forEach(c=>{ delete c.refine; }); // 精煉等級已改綁在裝備部位上，卡片本身不再存這欄
-  ['weapon','armor','trinket'].forEach(s=>{
+  ALL_SLOTS.forEach(s=>{
     state.refineBySlot[s] = Math.max(0, Math.round(fin(state.refineBySlot[s], 0)));
   });
   // 角色造型：已提示清單一定要包含預設造型1；選用中的造型若不存在（或還沒解鎖，例如手動改過存檔），一律退回造型1
@@ -1103,8 +1133,7 @@ function load(){
         if(base) state.refineBySlot[base.slot] = Math.max(fin(state.refineBySlot[base.slot], 0), c.refine);
       }
     });
-    // 舊存檔搬家 2：上一版把精煉等級改綁在「裝備種類」(base id) 上（state.refineByBase），
-    // 這裡再依每個 id 對應的部位，搬進現在的 state.refineBySlot，一樣取最高的一筆。
+    // 舊存檔搬家 2
     if(d.refineByBase){
       Object.entries(d.refineByBase).forEach(([id, lv])=>{
         const base = EQUIP_POOL.find(e=>e.id===id);
@@ -1112,15 +1141,14 @@ function load(){
       });
     }
     // 修復「裝備跑掉」的 bug：JSON 存檔/讀檔會讓對應的物品變成兩個不同的物件，兩邊資料重新同步成一份。
-    ['weapon','armor','trinket'].forEach(s=>{
+    ALL_SLOTS.forEach(s=>{
       const eq = state.equipped[s];
       if(eq && eq.uid){
         const inBag = state.bag.find(b=>b.uid===eq.uid);
         if(inBag) state.equipped[s] = inBag;
       }
     });
-    // 新手禮包搬家：舊存檔沒有 starterGiven 欄位。
-    // 背包與裝備欄都是空的（還沒玩出進度）→ 補發新手裝備＋免費十連抽；已經有裝備的老玩家 → 視為已領取，不追加。
+    // 新手禮包：新手裝備＋免費十連抽；已經有裝備的老玩家 → 視為已領取，不追加。
     if(d.starterGiven === undefined){
       const noGear = (!d.bag || d.bag.length===0) && !Object.values(d.equipped||{}).some(Boolean);
       if(noGear){
@@ -1140,16 +1168,10 @@ function load(){
 }
 
 /* ── 題庫 ─────────────────────────────────── */
-// 數學由引擎自動生成、不需要題庫。其他四科完全依賴 questions.json，
-// 有 id 的題目會自動進入引擎的「關卡分批解鎖」機制。
-const BUILTIN = {
-  // 內建題庫刻意留空：所有題目一律從同目錄的 questions.json 讀取，
-  // 遊戲開場會先等這個檔案載入完成，題目系統準備好才能進入試煉。
-  math:[], chinese:[], english:[], science:[], geography:[],
-};
+// 內建題庫刻意留空，題目從questions.json出，遊戲開場會先等這個檔案載入完成
+const BUILTIN = {math:[], chinese:[], english:[], science:[], geography:[],};
 let importedQuestions = [];   // 可放 questions.json 匯入的題目
 let imageMap = {};            // 圖片對照表（images.json）：檔名 → base64 data URI
-
 // 題目的 image 欄位可能是完整網址/data URI，也可能只是檔名（要去 imageMap 查）
 function resolveImageSrc(ref){
   if(!ref) return null;
@@ -1425,8 +1447,7 @@ function renderQuestion(){
   speakQuestion(); // 進入新題目時自動朗讀一次題目
 }
 
-// 族語題的畫面：選項是 {id,label,audio} 物件（不是純文字），
-// 所以跟其他五科的 renderQuestion() 分開處理，不共用同一段渲染邏輯。
+// 族語題的畫面：選項是 {id,label,audio} 物件(不是純文字)，跟其他五科分開處理。
 function renderIndigenousQuestion(){
   document.getElementById('qSubject').textContent = '族語';
   document.getElementById('qText').textContent = curQ.promptText;
@@ -1663,7 +1684,7 @@ function equipStat(card, key){
 }
 function sumEquip(key){
   let t = 0;
-  ['weapon','armor','trinket'].forEach(s=>{ t += equipStat(state.equipped[s], key); });
+  activeSlots().forEach(s=>{ t += equipStat(state.equipped[s], key); });
   return t;
 }
 // 暴擊率上限，stats() 跟鍛造台面板顯示都要用同一個值，避免兩邊算出不同結果
@@ -1730,6 +1751,30 @@ const MONSTERS = [
   { emoji:'👹', hp:1.45, spd:1.10, r:17, gold:1.4 },
   { emoji:'🕷️', hp:0.8,  spd:1.45, r:14, gold:1.0 },
 ];
+// 守護者：通關第 50 關後（第 51 關起）才會出現，只有普通怪（不會是 Boss）。
+// 場上每隻守護者會產生一道守護圈，圈內「其他」敵人（含 Boss）受到的傷害大幅減少（守護者自己不受影響）。
+const GUARDIAN_UNLOCK_LEVEL = 50;
+const GUARDIAN_DEF = { emoji:'🗿', hp:0.8, spd:0.5, r:15, gold:1.1, guardian:true };
+const GUARDIAN_RADIUS_BASE = 250;       // 守護圈半徑 ＝ 250 + 關卡數
+const GUARDIAN_RADIUS_MIN  = 100;       // 半徑最低剩 100
+const GUARDIAN_REDUCE_BASE = 80;        // 基礎減傷 80%
+function guardianRadiusFor(level){
+  return Math.max(GUARDIAN_RADIUS_MIN, GUARDIAN_RADIUS_BASE + level - fin(state.up.guardradius, 0));
+}
+function guardianReducePct(){
+  return Math.max(0, GUARDIAN_REDUCE_BASE - fin(state.up.guardpower, 0));
+}
+// 傷害倍率：目標若不是守護者、且位在任何一隻存活守護者的守護圈內，受到的傷害 ×(1-減傷)
+function guardMul(e){
+  if(e.guardian) return 1;
+  const R = guardianRadiusFor(run.level);
+  for(const g of run.enemies){
+    if(!g.guardian || g.hp <= 0) continue;
+    const dx = e.x-g.x, dy = e.y-g.y;
+    if(dx*dx+dy*dy <= R*R) return 1 - guardianReducePct()/100;
+  }
+  return 1;
+}
 const BOSSES = ['👺','🐲','💀','👿'];
 
 const run = {
@@ -1942,7 +1987,9 @@ cv.addEventListener('pointercancel',()=>{ dragging=false; });
 function spawnEnemy(){
   const w = run.wave;
   const isBoss = (w % 5 === 0) && run.spawned === run.waveQuota-1;
-  const base = MONSTERS[Math.floor(Math.random()*MONSTERS.length)];
+  // 守護者：第 51 關起加入怪物池（Boss 不會是守護者）
+  const monsterPool = (!isBoss && run.level > GUARDIAN_UNLOCK_LEVEL) ? MONSTERS.concat([GUARDIAN_DEF]) : MONSTERS;
+  const base = monsterPool[Math.floor(Math.random()*monsterPool.length)];
   // 鍛造台「怪物弱化」：怪物生命每級 ×MONSTER_WEAKEN_MULT_PER_LV（累乘）
   const weakenMul = Math.pow(MONSTER_WEAKEN_MULT_PER_LV, fin(state.up.monweaken, 0));
   const hp = enemyHpFor(run.level, w) * base.hp * (isBoss ? 14 : 1) * weakenMul;
@@ -1955,7 +2002,8 @@ function spawnEnemy(){
     spd: (isBoss ? 11 : 17 * base.spd) * waveSpeedMulFor(w) * hScale,
     r: isBoss ? 34 : base.r,
     emoji: isBoss ? BOSSES[Math.floor(Math.random()*BOSSES.length)] : base.emoji,
-    img: isBoss ? pickRandomImg(bossImgs) : pickRandomImg(monsterImgs),
+    img: isBoss ? pickRandomImg(bossImgs) : (base.guardian ? null : pickRandomImg(monsterImgs)),
+    guardian: !!base.guardian,
     gold: base.gold * (isBoss ? 22 : 1) * (1 + w*0.35),
     boss: isBoss,
     dps,
@@ -1997,24 +2045,16 @@ function fire(){
   }
 }
 
-// 冰椎術：不追蹤、不鎖定目標，單純從角色「當下」位置往正上方發射。
-// 一次觸發會排出 n 枚的佇列，每枚間隔 0.05 秒才真正生成，
-// 這樣每一枚冰椎的出發點都是它實際發射那一刻的角色位置，而不是排隊當下的位置。
+// 冰椎術：從角色當下位置往正上方發射。
 function queueIceSpikes(){
   const n = icespikeBullets();
-  for(let i=0;i<n;i++) run.iceQueue.push(i * 0.05);
+  for(let i=0;i<n;i++) run.iceQueue.push(i * 0.05);// 一次觸發會排出 n 枚的佇列，每枚間隔 0.05 秒才真正生成
 }
 function spawnIceSpike(){
   const s = stats();
   run.shots.push({
     kind:'ice',
-    // 發射點改成跟主角實際站位同高（H-74，即 heroLine），
-    // 而不是原本更靠上方的 H-96：
-    // 原本冰椎從 H-96 往正上方（y 遞減）飛，若敵人已壓到主角、卡在 heroLine(H-74)，
-    // 敵人的 y 反而比發射點還大（在發射點下方），冰椎往上飛永遠不會經過那個位置，
-    // 導致敵人貼臉之後冰椎完全打不到。改成從 heroLine 發射，往上飛的路徑就會經過
-    // 貼臉敵人所在的位置，同時仍然能命中上方靠近中的敵人。
-    x: run.heroX, y: H - 74,
+    x: run.heroX, y: H - 74,// 發射點改成跟主角實際站位同高，確保打到貼臉敵人
     vx: 0, vy: -SHOT_SPEED_BASE * hScale,
     dmg: icespikeAtk(s),
     crit: Math.random()*100 < s.crit,
@@ -2024,15 +2064,13 @@ function spawnIceSpike(){
   });
 }
 
-// 閃電術：隨機選一位場上敵人當起點，再隨機多連鎖 (n-1) 位不重複的敵人。
-// 不是彈道，是瞬間命中：直接扣血 + 記錄一條「角色→敵人→敵人→…」的閃電連線給 draw() 畫。
+// 閃電術：瞬間命中一位場上隨機敵人，再隨機連鎖 (n-1) 位不重複的敵人。
 function castLightning(){
   const n = lightningChain();
   if(n <= 0 || run.enemies.length === 0) return;
   const s = stats();
   const baseDmg = lightningAtk(s);
   const crit = Math.random()*100 < s.crit;
-  // 修正：原本 crit 只影響顯示顏色跟字級，沒有真的加傷害，這裡補上暴擊傷害倍率
   const dmg = crit ? baseDmg * (s.critDmg/100) : baseDmg;
 
   // 從場上敵人隨機抽出最多 n 位、不重複
@@ -2045,8 +2083,9 @@ function castLightning(){
   if(!targets.length) return;
 
   targets.forEach(e=>{
-    e.hp -= dmg; e.hit = 0.12;
-    popText(e.x, e.y-e.r-4, fmtNum(dmg), crit);
+    const d = dmg * guardMul(e);
+    e.hp -= d; e.hit = 0.12;
+    popText(e.x, e.y-e.r-4, fmtNum(d), crit);
   });
   burst(targets[0].x, targets[0].y, crit ? '#fff9c4' : '#ffe066', crit?9:5);
 
@@ -2091,7 +2130,7 @@ function pulseBeam(s){
   const base = beamAtk(s);
   beamHits().forEach(e=>{
     const crit = Math.random()*100 < s.crit;
-    const dmg = crit ? base * (s.critDmg/100) : base;
+    const dmg = (crit ? base * (s.critDmg/100) : base) * guardMul(e);
     e.hp -= dmg; e.hit = 0.12;
     popText(e.x, e.y-e.r-4, fmtNum(dmg), crit);
     burst(e.x, e.y, '#b5d4f4', 4);
@@ -2100,9 +2139,6 @@ function pulseBeam(s){
 }
 
 // 旋風術：尚未習得，或場上沒有敵人時不生成。
-// 生成位置＝場上隨機一位敵人的所在位置，之後每一幀都會朝「當下最近的敵人」移動；
-// tickTimer 從 0 開始，代表出生當下立刻造成第一次範圍傷害，之後每 WHIRLWIND_TICK 秒再一次，
-// 直到 age 達到 WHIRLWIND_LIFE（2.8 秒＝共 7 次）才消失。
 function castWhirlwind(){
   if(state.skills.whirlwind.draws < 1) return; // 尚未解鎖
   if(run.enemies.length === 0) return;
@@ -2276,7 +2312,7 @@ function step(dt){
       const dx=b.x-e.x, dy=b.y-e.y;
       if(dx*dx+dy*dy < (e.r+b.r)*(e.r+b.r)){
         // 暴擊傷害改用鍛造台的「暴擊傷害」數值（含暴擊率溢出轉換），不再寫死 x2
-        const dmg = b.crit ? b.dmg * (s.critDmg/100) : b.dmg;
+        const dmg = (b.crit ? b.dmg * (s.critDmg/100) : b.dmg) * guardMul(e);
         e.hp -= dmg; e.hit = 0.12;
         popText(e.x, e.y-e.r-4, fmtNum(dmg), b.crit);
         if(b.kind === 'ice'){
@@ -2323,7 +2359,7 @@ function step(dt){
         const dx = e.x-t.x, dy = e.y-t.y;
         if(dx*dx+dy*dy <= WHIRLWIND_RADIUS*WHIRLWIND_RADIUS){
           const crit = Math.random()*100 < s.crit;
-          const dmg = crit ? t.dmg * (s.critDmg/100) : t.dmg;
+          const dmg = (crit ? t.dmg * (s.critDmg/100) : t.dmg) * guardMul(e);
           e.hp -= dmg; e.hit = 0.12;
           popText(e.x, e.y-e.r-4, fmtNum(dmg), crit);
           hitAny = true;
@@ -2784,6 +2820,23 @@ function draw(){
     ctx.restore();
   }
 
+  // 守護者的守護圈（畫在怪物底下）
+  {
+    const gR = guardianRadiusFor(run.level);
+    run.enemies.forEach(g=>{
+      if(!g.guardian || g.hp <= 0) return;
+      ctx.save();
+      const grad = ctx.createRadialGradient(g.x,g.y,gR*0.2,g.x,g.y,gR);
+      grad.addColorStop(0,'rgba(120,200,255,.03)');
+      grad.addColorStop(1,'rgba(120,200,255,.16)');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(g.x, g.y, gR, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = 'rgba(150,220,255,.6)'; ctx.lineWidth = 2;
+      ctx.setLineDash([8,6]);
+      ctx.beginPath(); ctx.arc(g.x, g.y, gR, 0, Math.PI*2); ctx.stroke();
+      ctx.restore();
+    });
+  }
   // 怪物
   run.enemies.forEach(e=>{
     const slowed = e.slowStacks && e.slowStacks.length;
@@ -2967,7 +3020,7 @@ function skillPullOnce(){
 // 預設要求全部 4 種稀有度（16 種 × 4 ＝ 64 件）。想放寬可改成例如 ['SSR']（每種裝備只要有傳說品質就算齊全）。
 const GEAR_COMPLETE_RARITIES = ['N','R','SR','SSR'];
 function gearCollectionComplete(){
-  return EQUIP_POOL.every(base =>
+  return availablePool().every(base =>
     GEAR_COMPLETE_RARITIES.every(r => state.bag.some(c => c.id===base.id && c.rarity===r))
   );
 }
@@ -2975,7 +3028,8 @@ function pullOnce(){
   // 裝備已收集齊全 → 只抽技能；否則 30% 機率抽到技能（平均分攤給所有技能），其餘 70% 抽裝備
   if(gearCollectionComplete() || Math.random() < SKILL_PULL_CHANCE) return skillPullOnce();
 
-  const base = EQUIP_POOL[Math.floor(Math.random()*EQUIP_POOL.length)];
+  const pool = availablePool();
+  const base = pool[Math.floor(Math.random()*pool.length)];
   const rarity = rollRarity();
   // 背包已有「同裝備同稀有度」→ 熔成強化石
   const dup = state.bag.find(c=>c.id===base.id && c.rarity===rarity);
@@ -3047,8 +3101,10 @@ function signed(v, digits){
 function statLine(base, rarity, refine){
   const m = RARITY[rarity].mult * (1 + (refine||0)*0.1);//強化石2
   const parts = [];
-  if(base.atk)  parts.push('攻擊 ' + signed(base.atk*m));
-  if(base.hp)   parts.push('生命 ' + signed(base.hp*m));
+  // 副武器數值很小（例如 +0.5），需顯示到小數點後一位
+  const sv = v => base.slot==='offhand' ? ((v>=0?'+':'') + parseFloat(v.toFixed(1))) : signed(v);
+  if(base.atk)  parts.push('攻擊 ' + sv(base.atk*m));
+  if(base.hp)   parts.push('生命 ' + sv(base.hp*m));
   if(base.spd)  parts.push('攻速 ' + signed(base.spd*m, 2));
   if(base.crit) parts.push('暴擊 ' + signed(base.crit*m, 1) + '%');
   if(base.multi)parts.push('彈道 +' + Math.floor(base.multi*(rarity==='SSR'?2:1)));
@@ -3066,7 +3122,7 @@ function upCost(u){
 // 這個鍛造項目現在能不能買（已解鎖、沒滿級）
 function upgradeAvailable(u){
   if(u.requiresLevel != null && state.unlockedLevel <= u.requiresLevel) return false;
-  if(u.max != null && state.up[u.key] >= u.max) return false;
+  { const m = upMax(u); if(m != null && state.up[u.key] >= m) return false; }
   return true;
 }
 // 一鍵強化：反覆找目前「已解鎖、沒滿級、費用最低」的鍛造項目升一級，直到金幣不夠為止。
@@ -3120,7 +3176,8 @@ function renderUpgrades(){
       </div>`;
     }
     const lv = state.up[u.key];
-    const maxed = u.max != null && lv >= u.max;
+    const umax = upMax(u);
+    const maxed = umax != null && lv >= umax;
     const cost = upCost(u);
     // 暴擊傷害額外加上暴擊率溢出轉換的量
     const overflow  = u.key === 'critdmg' ? critOverflowAmount() : 0;
@@ -3149,7 +3206,7 @@ function renderUpgrades(){
       const cost = upCost(u);
       if(!Number.isFinite(cost)) return; // 費用算不出來就不放行，避免把金幣扣成 NaN
       if(!(state.gold >= cost)) return;  // 用 >= 反向判斷，NaN 一律擋下（NaN 比較永遠是 false）
-      if(u.max != null && state.up[u.key] >= u.max) return;
+      { const m = upMax(u); if(m != null && state.up[u.key] >= m) return; }
       state.gold -= cost;
       state.up[u.key]++;
       save(); syncUI(); renderUpgrades(); renderRefine();
@@ -3167,7 +3224,7 @@ function refineCost(slot){
 function refineAllCheapest(){
   let count = 0;
   while(true){
-    const slots = ['weapon','armor','trinket'].filter(s=>state.equipped[s]);
+    const slots = activeSlots().filter(s=>state.equipped[s]);
     if(!slots.length) break;
     let bestSlot = null, bestCost = Infinity;
     slots.forEach(s=>{
@@ -3224,7 +3281,7 @@ function renderSkills(){
 function renderRefine(){
   const box = document.getElementById('refineList');
   const allBtn = document.getElementById('refineAllBtn');
-  const slots = ['weapon','armor','trinket'].filter(s=>state.equipped[s]);
+  const slots = activeSlots().filter(s=>state.equipped[s]);
   if(!slots.length){
     box.innerHTML = '<div class="empty-note">先到召喚取得裝備，裝備後才能精煉。</div>';
     if(allBtn){ allBtn.disabled = true; allBtn.onclick = null; }
@@ -3268,7 +3325,7 @@ function renderRefine(){
 function renderEquip(){
   renderHeroSkins();
   const sBox = document.getElementById('slots');
-  sBox.innerHTML = ['weapon','armor','trinket'].map(s=>{
+  sBox.innerHTML = activeSlots().map(s=>{
     const c = state.equipped[s];
     if(!c) return `<div class="slot"><div class="ico">➕</div>
       <div class="info"><div class="empty">${SLOT_LABEL[s]}　尚未裝備</div></div></div>`;
@@ -3292,7 +3349,7 @@ function renderEquip(){
     return;
   }
   const order = { SSR:0, SR:1, R:2, N:3 };
-  const sorted = state.bag.slice().sort((a,b)=>
+  const sorted = state.bag.filter(c=>{ const b=EQUIP_POOL.find(e=>e.id===c.id); return b && slotAvailable(b.slot); }).slice().sort((a,b)=>
     (order[a.rarity]-order[b.rarity]) || a.id.localeCompare(b.id));
   bBox.innerHTML = sorted.map(c=>{
     const base = EQUIP_POOL.find(e=>e.id===c.id);
@@ -3326,6 +3383,7 @@ function syncUI(){
   checkWhirlwindUnlock(); // 過關進度一旦超過門檻就自動補發旋風術 1 等
   checkEarthwallUnlock(); // 過關進度一旦超過門檻就自動補發土牆術 1 等
   checkBeamUnlock();      // 過關進度一旦超過門檻就自動補發光束砲 1 等
+  checkOffhandUnlock();   // 過關進度超過 65 關時解鎖副武器並提示一次
   checkHeroUnlock();      // 過關進度一旦超過門檻就自動解鎖對應造型並提示一次
   checkUpgradeUnlocks();  // 過關進度一旦超過門檻就提示新解鎖的鍛造項目（金幣/鑽石/減傷/精煉成本）
   document.getElementById('uiGem').textContent   = state.gem;
