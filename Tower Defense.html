@@ -379,6 +379,13 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 }
 .up button:active{transform:translateY(2px);box-shadow:0 1px 0 #a37400}
 .up button:disabled{background:#3a2a38;color:#7b6a78;box-shadow:0 3px 0 #241a24;transform:none}
+.up .upbtns{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.up .upbtns button{min-width:92px}
+.up .upbtns .exbtn{padding:6px 8px;color:#fff;background:linear-gradient(180deg,#b58cff,#7a4dd8);box-shadow:0 3px 0 #4a2b8f;line-height:1.25}
+.up .upbtns .exbtn small{display:block;font-size:10px;font-weight:700;opacity:.9}
+.up .upbtns .exbtn:active{box-shadow:0 1px 0 #4a2b8f}
+.up .upbtns .exbtn:disabled{background:#3a2a38;color:#7b6a78;box-shadow:0 3px 0 #241a24}
+.exbadge{display:inline-block;margin-left:4px;padding:0 6px;border-radius:6px;font-size:10px;font-weight:900;color:#fff;background:linear-gradient(180deg,#b58cff,#7a4dd8);vertical-align:1px}
 
 /* ── 裝備 ──────────────────────────────────── */
 .slot{
@@ -587,12 +594,9 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
     <section class="screen" id="screen-upgrade">
       <div class="pad">
         <h2 class="sec">鍛造台</h2>
-        <p class="sub">用金幣增強角色能力。每級費用會隨等級提高。</p>
+        <p class="sub">用金幣增強角色能力。每級費用會隨等級提高。通關第 70 關後，每項能力旁可花 2000 💎 解鎖 EX 強化版（永久，之後該能力改用 EX 數值與成長）。</p>
         <button class="btn ghost sm" id="upAllBtn" style="margin-bottom:11px">💰 一鍵強化（自動選最便宜的項目）</button>
         <div class="card" id="upList"></div>
-        <h2 class="sec" style="margin-top:18px">鍛造台 EX</h2>
-        <p class="sub">通關第 70 關後解鎖。用鑽石強化，每項能力都有 EX 版本，效果與上方鍛造疊加。</p>
-        <div class="card" id="upExList"></div>
         <h2 class="sec" style="margin-top:18px">裝備精煉</h2>
         <p class="sub">用強化石精煉已裝備的物品，每次精煉提升該裝備 10% 全能力。</p>
         <button class="btn ghost sm" id="refineAllBtn" style="margin-bottom:11px">🔮 一鍵強化（自動選最便宜的裝備）</button>
@@ -911,109 +915,116 @@ const HP_PCT_PER_LV  = 0.005; // 生命值鍛造：每級額外 +0.5% 全生命�
 const REFINE_COST_REDUCE_PER_LV = 1; // 精煉成本：每級減少每次精煉消耗的強化石（最低為 1）
 const MONSTER_WEAKEN_MULT_PER_LV = 0.99; // 怪物弱化：每級怪物生命 ×0.99（累乘），例如 Lv.10 ＝ ×0.904
 const DEFENSE_MULT_PER_LV = 0.99; // 減傷：每級受到的傷害 ×0.99（累乘），例如 Lv.10 ＝ ×0.904
-/* ── 鍛造台 EX：通關第 70 關後解鎖，用鑽石強化，效果與原本鍛造疊加 ── */
-const EX_UNLOCK_LEVEL = 70;                 // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
-const EX_GEM_BASE = 2000;                   // 每項 EX 能力 Lv.0→1 的鑽石費用；之後每級 ×該項目的 grow
-const EX_ATK_PCT_PER_LV = 0.0055;           // 攻擊力 EX：每級 +0.55% 全攻擊（原版 0.5%）
+/* ── 鍛造台 EX：通關第 70 關後，每項能力可花 2000 鑽石「解鎖」EX 強化版（一次性）。
+      解鎖後該能力的每級效果與費用成長改成下面的 EX 版本，原本已投入的等級照舊沿用。── */
+const EX_UNLOCK_LEVEL = 70;                 // 過關進度（unlockedLevel）需超過此關卡數才能解鎖 EX
+const EX_UNLOCK_GEM = 2000;                 // 每項能力解鎖 EX 的鑽石費用
+const EX_ATK_PCT_PER_LV = 0.0055;           // 攻擊力 EX：每級 +0.55% 全攻擊（原版 0.5%）；固定值改為第 N 級 +N（累計 N(N+1)/2，原版每級 +3）
 const EX_HP_PCT_PER_LV  = 0.0055;           // 生命值 EX：每級 +0.55% 全生命（原版 0.5%）
-const EX_HP_FLAT_MULT   = 5;                // 生命值 EX：第 N 級固定 +5×N（累計 5×N(N+1)/2）；攻擊力 EX 第 N 級固定 +N
+const EX_HP_FLAT_MULT   = 5;                // 生命值 EX：固定值改為第 N 級 +5×N（原版每級 +15）
 const EX_SPD_PER_LV = 0.08;                 // 攻擊速度 EX：每級 +0.08 發/秒（原版 0.09）
 const EX_OUTPUT_PCT_PER_LV = 0.003;         // 攻擊速度 EX：每級另外 +0.3% 總輸出（攻擊力乘算）
 const EX_CRIT_PER_LV = 1.3;                 // 暴擊率 EX：每級 +1.3%（原版 1.2%）
 const EX_CRITDMG_PER_LV = 1.3;              // 暴擊傷害 EX：每級 +1.3%（原版 1.2%）
 const EX_GOLD_PCT_PER_LV = 6;               // 金幣強化 EX：每級 +6%（原版 5%）
 const EX_GEM_PER_LV = 1.2;                  // 鑽石強化 EX：每級 +1.2 顆，總量無條件捨去（原版 1）
-const EX_DEFENSE_MULT_PER_LV = 0.99;        // 減傷 EX：每級受傷 ×0.99（累乘，與原版相同）
 const EX_REFINE_REDUCE_PER_LV = 2.7;        // 精煉成本 EX：每級 -2.7 強化石，總量無條件捨去（原版 1）
 const EX_MONSTER_WEAKEN_MULT_PER_LV = 0.987;// 怪物弱化 EX：每級怪物生命 ×0.987（原版 0.99）
 const GUARDIAN_RADIUS_MIN_EX = 40;          // 守護半徑 EX：半徑下限由 80 降到 40
 const GUARDIAN_REDUCE_MIN_EX = 15;          // 守護能力 EX：守護減傷下限由 30% 降到 15%
-const EX_MAX = { guardradius:40, guardpower:15 }; // 有上限的 EX 項目（＝ 80→40、30%→15% 的差距）
 function exUnlocked(){ return state.unlockedLevel > EX_UNLOCK_LEVEL; }
-function exLv(key){ return state.upEx ? Math.max(0, fin(state.upEx[key], 0)) : 0; }
+function exOn(key){ return !!(state.exOn && state.exOn[key]); }   // 這項能力是否已解鎖 EX
 function exTri(n){ return n*(n+1)/2; }      // 第 N 級增量為 N 時的累計值：1+2+…+N
 function exFloor(x){ return Math.floor(x + 1e-9); } // 無條件捨去（加極小值避免浮點誤差，例如 35×1.2 算成 41.999…）
-// 套用 EX 之後的實際效果（原版鍛造 + EX 疊加）
-function goldBoostPct(){ return fin(state.up.goldboost, 0)*5 + exLv('goldboost')*EX_GOLD_PCT_PER_LV; }
-function gemBoostAmount(){ return fin(state.up.gemboost, 0)*1 + exFloor(exLv('gemboost')*EX_GEM_PER_LV); }
-function refineReduceTotal(){ return fin(state.up.breakboost, 0)*REFINE_COST_REDUCE_PER_LV + exFloor(exLv('breakboost')*EX_REFINE_REDUCE_PER_LV); }
-function defenseTakenMul(){ return Math.pow(DEFENSE_MULT_PER_LV, fin(state.up.defense, 0)) * Math.pow(EX_DEFENSE_MULT_PER_LV, exLv('defense')); }
-function monsterWeakenMul(){ return Math.pow(MONSTER_WEAKEN_MULT_PER_LV, fin(state.up.monweaken, 0)) * Math.pow(EX_MONSTER_WEAKEN_MULT_PER_LV, exLv('monweaken')); }
-function exOutputMul(){ return 1 + exLv('spd')*EX_OUTPUT_PCT_PER_LV; }
+function guardRadiusMin(){ return exOn('guardradius') ? GUARDIAN_RADIUS_MIN_EX : GUARDIAN_RADIUS_MIN; }
+// 套用 EX 之後的實際效果
+function goldBoostPct(){ return fin(state.up.goldboost, 0) * (exOn('goldboost') ? EX_GOLD_PCT_PER_LV : 5); }
+function gemBoostAmount(){ const lv = fin(state.up.gemboost, 0); return exOn('gemboost') ? exFloor(lv*EX_GEM_PER_LV) : lv; }
+function refineReduceTotal(){ const lv = fin(state.up.breakboost, 0); return exOn('breakboost') ? exFloor(lv*EX_REFINE_REDUCE_PER_LV) : lv*REFINE_COST_REDUCE_PER_LV; }
+function monsterWeakenMul(){ return Math.pow(exOn('monweaken') ? EX_MONSTER_WEAKEN_MULT_PER_LV : MONSTER_WEAKEN_MULT_PER_LV, fin(state.up.monweaken, 0)); }
+function exOutputMul(){ return exOn('spd') ? 1 + fin(state.up.spd, 0)*EX_OUTPUT_PCT_PER_LV : 1; }
 const UPGRADES = [
   { key:'atk',  icon:'🗡️', name:'攻擊力',  base:40,  grow:1.11, per:3,    fmt:v=>'+'+fmtNum(v),
     // 每級：固定 +3，另外「全攻擊（本體＋鍛造＋裝備）」再 +0.5%（各級線性相加，例如 Lv.20 ＝ ×1.10）
     body:lv=>(25 + lv*3) * (1 + lv*ATK_PCT_PER_LV),
-    full:(lv,ex=exLv('atk'))=>(25 + lv*3 + exTri(ex) + sumEquip('atk')) * (1 + lv*ATK_PCT_PER_LV + ex*EX_ATK_PCT_PER_LV),
-    perFmt:lv=>'+'+fmtNum(lv*3)+' 且 +'+fmtPct(lv*ATK_PCT_PER_LV*100,1)+'%',
+    full:lv=>(25 + (exOn('atk') ? exTri(lv) : lv*3) + sumEquip('atk')) * (1 + lv*(exOn('atk') ? EX_ATK_PCT_PER_LV : ATK_PCT_PER_LV)),
+    perFmt:lv=>'+'+fmtNum(exOn('atk') ? exTri(lv) : lv*3)+' 且 +'+(exOn('atk') ? fmtPct(lv*EX_ATK_PCT_PER_LV*100,2) : fmtPct(lv*ATK_PCT_PER_LV*100,1))+'%',
     bodyFmt:v=>fmtNum(Math.round(v)) },
   { key:'hp',   icon:'❤️', name:'生命值',  base:40,  grow:1.11, per:15,   fmt:v=>'+'+fmtNum(v),
     // 每級：固定 +15，另外「全生命（本體＋鍛造＋裝備）」再 +HP_PCT_PER_LV（預設 0.5%，線性相加）
     body:lv=>(100 + lv*15) * (1 + lv*HP_PCT_PER_LV),
-    full:(lv,ex=exLv('hp'))=>(100 + lv*15 + EX_HP_FLAT_MULT*exTri(ex) + sumEquip('hp')) * (1 + lv*HP_PCT_PER_LV + ex*EX_HP_PCT_PER_LV),
-    perFmt:lv=>'+'+fmtNum(lv*15)+' 且 +'+fmtPct(lv*HP_PCT_PER_LV*100,1)+'%',
+    full:lv=>(100 + (exOn('hp') ? EX_HP_FLAT_MULT*exTri(lv) : lv*15) + sumEquip('hp')) * (1 + lv*(exOn('hp') ? EX_HP_PCT_PER_LV : HP_PCT_PER_LV)),
+    perFmt:lv=>'+'+fmtNum(exOn('hp') ? EX_HP_FLAT_MULT*exTri(lv) : lv*15)+' 且 +'+(exOn('hp') ? fmtPct(lv*EX_HP_PCT_PER_LV*100,2) : fmtPct(lv*HP_PCT_PER_LV*100,1))+'%',
     bodyFmt:v=>fmtNum(Math.round(v)) },
   { key:'spd',  icon:'💨', name:'攻擊速度', base:90,  grow:1.31, per:0.09, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
-    body:lv=>Math.max(0.4, 0.3 + lv*0.09), full:(lv,ex=exLv('spd'))=>Math.max(0.4, 0.3 + lv*0.09 + ex*EX_SPD_PER_LV + sumEquip('spd')),
+    body:lv=>Math.max(0.4, 0.3 + lv*0.09), full:lv=>Math.max(0.4, 0.3 + lv*(exOn('spd') ? EX_SPD_PER_LV : 0.09) + sumEquip('spd')),
+    perFmt:lv=>'+'+(lv*(exOn('spd') ? EX_SPD_PER_LV : 0.09)).toFixed(2)+' 發/秒'+(exOn('spd') ? ' 且 總輸出 +'+(lv*EX_OUTPUT_PCT_PER_LV*100).toFixed(1)+'%' : ''),
     bodyFmt:v=>v.toFixed(2)+' 發/秒' },
   { key:'crit', icon:'✨', name:'暴擊率',  base:100, grow:1.2, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
     // 暴擊率（等級+裝備疊加後）超過 80% 上限的部分，會在 stats() 裡 1:1 轉成額外暴擊傷害疊加。
-    body:lv=>Math.min(80, 5 + lv*1.2),     full:(lv,ex=exLv('crit'))=>5 + lv*1.2 + ex*EX_CRIT_PER_LV + sumEquip('crit'),
+    body:lv=>Math.min(80, 5 + lv*1.2),     full:lv=>5 + lv*(exOn('crit') ? EX_CRIT_PER_LV : 1.2) + sumEquip('crit'),
+    perFmt:lv=>'+'+(lv*(exOn('crit') ? EX_CRIT_PER_LV : 1.2)).toFixed(1)+'%',
     bodyFmt:v=>Math.min(80, v).toFixed(1)+'%' },
   // 暴擊傷害：基礎倍率 200%，每級 +1%。
   { key:'critdmg', icon:'💥', name:'暴擊傷害', base:100, grow:1.2, per:1.2, fmt:v=>'+'+fmtPct(v,0)+'%',
-    body:lv=>200 + lv*1.2,                   full:(lv,ex=exLv('critdmg'))=>200 + lv*1.2 + ex*EX_CRITDMG_PER_LV + sumEquip('critdmg'),
+    body:lv=>200 + lv*1.2,                   full:lv=>200 + lv*(exOn('critdmg') ? EX_CRITDMG_PER_LV : 1.2) + sumEquip('critdmg'),
+    perFmt:lv=>'+'+fmtPct(lv*(exOn('critdmg') ? EX_CRITDMG_PER_LV : 1.2), exOn('critdmg') ? 1 : 0)+'%',
     bodyFmt:v=>fmtPct(v,0)+'%' },
   // 金幣強化：第 30 關才會解鎖，解鎖前在暴擊傷害下方以「？」顯示，解鎖後獲得的金幣每級 +5%。
   { key:'goldboost', icon:'💰', name:'金幣強化', base:1000, grow:1.25, per:5, fmt:v=>'+'+v.toFixed(0)+'%',
     requiresLevel:30,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 30 關時解鎖。`,
-    body:lv=>lv*5,                           full:(lv,ex=exLv('goldboost'))=>lv*5 + ex*EX_GOLD_PCT_PER_LV,
+    body:lv=>lv*5,                           full:lv=>lv*(exOn('goldboost') ? EX_GOLD_PCT_PER_LV : 5),
+    perFmt:lv=>'+'+fmtPct(lv*(exOn('goldboost') ? EX_GOLD_PCT_PER_LV : 5),0)+'%',
     bodyFmt:v=>v.toFixed(0)+'%' },
   // 鑽石強化：第 35 關才會解鎖，解鎖前在金幣強化下方以「？」顯示，解鎖後過關或答題獲得的鑽石每級 +1（固定值）。
   { key:'gemboost', icon:'💎', name:'鑽石強化', base:1800, grow:1.45, per:1, fmt:v=>'+'+v.toFixed(0),
     requiresLevel:35,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 35 關時解鎖。`,
-    body:lv=>lv*1,                           full:(lv,ex=exLv('gemboost'))=>lv*1 + exFloor(ex*EX_GEM_PER_LV),
+    body:lv=>lv*1,                           full:lv=>exOn('gemboost') ? exFloor(lv*EX_GEM_PER_LV) : lv*1,
+    exGrow:1.44,   // EX 解鎖後費用成長（原版 1.45）
+    perFmt:lv=>'+'+(exOn('gemboost') ? exFloor(lv*EX_GEM_PER_LV) : lv),
     bodyFmt:v=>v.toFixed(0) },
   // 減傷：第 45 關才會解鎖，解鎖前在鑽石強化下方以「？」顯示。解鎖後角色跟土牆受到的傷害每級 ×DEFENSE_MULT_PER_LV（預設 0.99，累乘）。
-  { key:'defense', icon:'🛡️', name:'減傷', base:100, grow:1.19, per:1, fmt:v=>'-'+v.toFixed(1)+'%',
+  { key:'defense', icon:'🛡️', name:'減傷', base:100, grow:1.19, exGrow:1.17, per:1, fmt:v=>'-'+v.toFixed(1)+'%',   // EX 解鎖後費用成長 1.17（原版 1.19）
     requiresLevel:45,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 45 關時解鎖。`,
     body:lv=>(1 - Math.pow(DEFENSE_MULT_PER_LV, lv)) * 100,
-    full:(lv,ex=exLv('defense'))=>(1 - Math.pow(DEFENSE_MULT_PER_LV, lv) * Math.pow(EX_DEFENSE_MULT_PER_LV, ex)) * 100,
+    full:lv=>(1 - Math.pow(DEFENSE_MULT_PER_LV, lv)) * 100,
     perFmt:lv=>'受傷 ×'+Math.pow(DEFENSE_MULT_PER_LV, lv).toFixed(3),
     bodyFmt:v=>'-'+v.toFixed(1)+'%' },
   // 精煉成本：第 50 關才會解鎖，解鎖前在減傷下方以「？」顯示。解鎖後每級讓「每次精煉消耗的強化石」-REFINE_COST_REDUCE_PER_LV（最低為 1）。
   { key:'breakboost', icon:'♻️', name:'精煉成本', base:40, grow:1.11, per:1, fmt:v=>'-'+v.toFixed(0),
     requiresLevel:50,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 50 關時解鎖。`,
-    body:lv=>lv*REFINE_COST_REDUCE_PER_LV,   full:(lv,ex=exLv('breakboost'))=>lv*REFINE_COST_REDUCE_PER_LV + exFloor(ex*EX_REFINE_REDUCE_PER_LV),
+    body:lv=>lv*REFINE_COST_REDUCE_PER_LV,   full:lv=>exOn('breakboost') ? exFloor(lv*EX_REFINE_REDUCE_PER_LV) : lv*REFINE_COST_REDUCE_PER_LV,
+    exGrow:1.12,   // EX 解鎖後費用成長 1.12（原版 1.11，反而變高）
+    perFmt:lv=>'-'+(exOn('breakboost') ? exFloor(lv*EX_REFINE_REDUCE_PER_LV) : lv*REFINE_COST_REDUCE_PER_LV),
     bodyFmt:v=>'-'+v.toFixed(0)+' 🔮/次' },
   // 怪物弱化：第 55 關才會解鎖，解鎖前在精煉成本下方以「？」顯示。解鎖後每級怪物生命 ×MONSTER_WEAKEN_MULT_PER_LV（預設 0.99，累乘）。
   { key:'monweaken', icon:'☠️', name:'怪物弱化', base:95, grow:1.16, per:1, fmt:v=>'-'+v.toFixed(1)+'%',
     requiresLevel:55,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 55 關時解鎖。`,
     body:lv=>(1 - Math.pow(MONSTER_WEAKEN_MULT_PER_LV, lv)) * 100,
-    full:(lv,ex=exLv('monweaken'))=>(1 - Math.pow(MONSTER_WEAKEN_MULT_PER_LV, lv) * Math.pow(EX_MONSTER_WEAKEN_MULT_PER_LV, ex)) * 100,
-    perFmt:lv=>'怪物生命 ×'+Math.pow(MONSTER_WEAKEN_MULT_PER_LV, lv).toFixed(3),
+    full:lv=>(1 - Math.pow(exOn('monweaken') ? EX_MONSTER_WEAKEN_MULT_PER_LV : MONSTER_WEAKEN_MULT_PER_LV, lv)) * 100,
+    perFmt:lv=>'怪物生命 ×'+Math.pow(exOn('monweaken') ? EX_MONSTER_WEAKEN_MULT_PER_LV : MONSTER_WEAKEN_MULT_PER_LV, lv).toFixed(3),
     bodyFmt:v=>'-'+v.toFixed(1)+'%' },
   // 守護半徑減少：第 60 關後解鎖。每級守護者的守護圈半徑 -1。
   // 上限：守護圈半徑（250+關卡數）最多減到只剩 80，所以上限 ＝ 170 + 過關進度。
-  { key:'guardradius', icon:'📏', name:'守護半徑減少', base:800, grow:1.19, per:1, fmt:v=>'-'+v.toFixed(0),
+  { key:'guardradius', icon:'📏', name:'守護半徑減少', base:800, grow:1.19, exGrow:1.14, per:1, fmt:v=>'-'+v.toFixed(0),
     requiresLevel:60,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 60 關時解鎖。`,
-    maxFn: ()=> Math.max(0, GUARDIAN_RADIUS_BASE + state.unlockedLevel - GUARDIAN_RADIUS_MIN),
-    body:lv=>lv, full:(lv,ex=exLv('guardradius'))=>lv + ex,
-    perFmt:lv=>'守護半徑 '+Math.max(GUARDIAN_RADIUS_MIN_EX, Math.max(GUARDIAN_RADIUS_MIN, GUARDIAN_RADIUS_BASE + state.unlockedLevel - lv) - exLv('guardradius')),
+    maxFn: ()=> Math.max(0, GUARDIAN_RADIUS_BASE + state.unlockedLevel - guardRadiusMin()),  // EX 解鎖後半徑下限 40，可再多減
+    body:lv=>lv, full:lv=>lv,
+    perFmt:lv=>'守護半徑 '+Math.max(guardRadiusMin(), GUARDIAN_RADIUS_BASE + state.unlockedLevel - lv),
     bodyFmt:v=>'半徑 -'+v.toFixed(0) },
   // 守護能力減少：第 60 關後解鎖。每級守護者的減傷 -1%（基礎 80%），上限 50 級（剩 30%）。
-  { key:'guardpower', icon:'🗿', name:'守護能力減少', base:1600, grow:1.6, per:1, fmt:v=>'-'+v.toFixed(0)+'%',
-    max:50,
+  { key:'guardpower', icon:'🗿', name:'守護能力減少', base:1600, grow:1.6, exGrow:1.57, per:1, fmt:v=>'-'+v.toFixed(0)+'%',
+    maxFn: ()=> exOn('guardpower') ? GUARDIAN_REDUCE_BASE - GUARDIAN_REDUCE_MIN_EX : 50,  // 原版上限 50 級（剩 30%）；EX 解鎖後 65 級（剩 15%）
     requiresLevel:60,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 60 關時解鎖。`,
-    body:lv=>lv, full:(lv,ex=exLv('guardpower'))=>lv + ex,
-    perFmt:lv=>'守護減傷 '+Math.max(0, GUARDIAN_REDUCE_BASE - lv - exLv('guardpower'))+'%',
+    body:lv=>lv, full:lv=>lv,
+    perFmt:lv=>'守護減傷 '+(GUARDIAN_REDUCE_BASE - lv)+'%',
     bodyFmt:v=>'減傷 -'+v.toFixed(0)+'%' },
 ];
 // 鍛造項目的等級上限：固定值 max，或依過關進度動態計算的 maxFn
@@ -1025,7 +1036,7 @@ function checkExUnlock(){
   if(exUnlocked() && !state.exSeen){
     state.exSeen = true;
     save();
-    setTimeout(()=>toast('💠 解鎖鍛造台 EX！可用鑽石強化各項能力'), 2600); // 避開同時解鎖副武器的提示
+    setTimeout(()=>toast('💠 鍛造台 EX 開放！每項能力旁可花 2000 💎 解鎖強化版'), 2600);
     renderUpgrades();
   }
 }
@@ -1064,7 +1075,7 @@ function freshState(){
   return {
     gem:0, gold:0, stone:0,
     up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0, guardradius:0, guardpower:0 },
-    upEx:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0, guardradius:0, guardpower:0 }, // 鍛造台 EX 等級（用鑽石強化）
+    exOn:{ atk:false, hp:false, spd:false, crit:false, critdmg:false, goldboost:false, gemboost:false, defense:false, breakboost:false, monweaken:false, guardradius:false, guardpower:false }, // 鍛造台 EX 是否已解鎖（每項 2000 💎）
     exSeen:false,                             // 鍛造台 EX 解鎖提示是否已顯示過
     bag:kit.bag,                              // [{uid,id,rarity}]（新存檔內建新手三件裝備）（精煉等級改綁在裝備「部位」上，見 refineBySlot）
     equipped:kit.equipped,
@@ -1122,12 +1133,8 @@ function sanitizeState(){
   state.gold  = Math.max(0, fin(state.gold, 0));
   state.stone = Math.max(0, fin(state.stone, 0));
   UPGRADES.forEach(u=>{ state.up[u.key] = Math.max(0, Math.round(fin(state.up[u.key], 0))); });
-  if(!state.upEx) state.upEx = {};
-  UPGRADES.forEach(u=>{
-    let v = Math.max(0, Math.round(fin(state.upEx[u.key], 0)));
-    if(EX_MAX[u.key] != null) v = Math.min(v, EX_MAX[u.key]);
-    state.upEx[u.key] = v;
-  });
+  if(!state.exOn) state.exOn = {};
+  UPGRADES.forEach(u=>{ state.exOn[u.key] = !!state.exOn[u.key]; });
   state.best.wave  = Math.max(0, fin(state.best.wave, 0));
   state.best.kills = Math.max(0, fin(state.best.kills, 0));
   (state.bag||[]).forEach(c=>{ delete c.refine; }); // 精煉等級已改綁在裝備部位上，卡片本身不再存這欄
@@ -1154,7 +1161,11 @@ function load(){
     const f = freshState();
     state = Object.assign(f, d);
     state.up       = Object.assign(f.up, d.up||{});
-    state.upEx     = Object.assign(f.upEx, d.upEx||{});
+    state.exOn     = Object.assign(f.exOn, d.exOn||{});
+    if(d.upEx){ // 舊版 EX（可重複升級）搬家：花過鑽石的項目直接視為已解鎖
+      Object.keys(d.upEx).forEach(k=>{ if(fin(d.upEx[k], 0) > 0) state.exOn[k] = true; });
+      delete state.upEx;
+    }
     state.equipped = Object.assign(f.equipped, d.equipped||{});
     state.refineBySlot = Object.assign(f.refineBySlot, d.refineBySlot||{});
     state.qs       = Object.assign(f.qs, d.qs||{});
@@ -1813,10 +1824,10 @@ const GUARDIAN_RADIUS_BASE = 250;       // 守護圈半徑 ＝ 250 + 關卡數
 const GUARDIAN_RADIUS_MIN  = 80;        // 半徑最低剩 80
 const GUARDIAN_REDUCE_BASE = 80;        // 基礎減傷 80%
 function guardianRadiusFor(level){
-  return Math.max(GUARDIAN_RADIUS_MIN_EX, Math.max(GUARDIAN_RADIUS_MIN, GUARDIAN_RADIUS_BASE + level - fin(state.up.guardradius, 0)) - exLv('guardradius'));
+  return Math.max(guardRadiusMin(), GUARDIAN_RADIUS_BASE + level - fin(state.up.guardradius, 0));
 }
 function guardianReducePct(){
-  return Math.max(GUARDIAN_REDUCE_MIN_EX, Math.max(0, GUARDIAN_REDUCE_BASE - fin(state.up.guardpower, 0) - exLv('guardpower')));
+  return Math.max(0, GUARDIAN_REDUCE_BASE - fin(state.up.guardpower, 0));
 }
 // 傷害倍率：目標若不是守護者、且位在任何一隻存活守護者的守護圈內，受到的傷害 ×(1-減傷)
 function guardMul(e){
@@ -1957,7 +1968,7 @@ function endRun(win){
   run.active=false; run.over=true;
 
   const levelMul  = fin(Math.pow(1.21, run.level-1), 1);   // 金幣／強化石增加係數
-  const goldBoostMul = 1 + goldBoostPct() / 100; // 鍛造台「金幣強化」（含 EX）：每級 +5%（EX +6%）金幣
+  const goldBoostMul = 1 + goldBoostPct() / 100; // 鍛造台「金幣強化」：每級 +5%（EX 解鎖後 +6%）金幣
   const goldGain  = Math.round(fin(run.gold, 0) * levelMul * goldBoostMul);
   const stoneGain = Math.round((Math.floor(run.wave/3) + (win?3:0)) * levelMul);
   const gemBoostAdd = gemBoostAmount();                        // 鍛造台「鑽石強化」（含 EX）：每級固定加鑽石
@@ -2429,7 +2440,7 @@ function step(dt){
   // 怪物
   const heroLine = H - 74;
   // 鍛造台「減傷」：角色跟土牆受到的傷害每級 ×DEFENSE_MULT_PER_LV（累乘）
-  const dmgTakenMul = defenseTakenMul();
+  const dmgTakenMul = Math.pow(DEFENSE_MULT_PER_LV, fin(state.up.defense, 0));
   for(let i=run.enemies.length-1;i>=0;i--){
     const e = run.enemies[i];
     // 冰凍減速：每層各自倒數，到期就移除
@@ -3180,7 +3191,8 @@ function statLine(base, rarity, refine){
    ══════════════════════════════════════════ */
 function upCost(u){
   const lv = fin(state.up[u.key], 0);
-  return Math.round(u.base * Math.pow(u.grow, lv));
+  const g = (exOn(u.key) && u.exGrow != null) ? u.exGrow : u.grow; // 解鎖 EX 後改用 EX 的費用成長
+  return Math.round(u.base * Math.pow(g, lv));
 }
 
 // 這個鍛造項目現在能不能買（已解鎖、沒滿級）
@@ -3214,76 +3226,6 @@ function upgradeAllCheapest(){
   } else {
     toast('金幣不足，無法強化');
   }
-}
-
-/* ── 鍛造台 EX ── */
-const EX_UPGRADES = [
-  { key:'atk',  grow:1.11, per:ex=>`+${fmtNum(exTri(ex))} 且 +${fmtPct(ex*EX_ATK_PCT_PER_LV*100,2)}%` },
-  { key:'hp',   grow:1.11, per:ex=>`+${fmtNum(EX_HP_FLAT_MULT*exTri(ex))} 且 +${fmtPct(ex*EX_HP_PCT_PER_LV*100,2)}%` },
-  { key:'spd',  grow:1.31, per:ex=>`+${(ex*EX_SPD_PER_LV).toFixed(2)} 且 總輸出 +${(ex*EX_OUTPUT_PCT_PER_LV*100).toFixed(1)}%` },
-  { key:'crit', grow:1.2,  per:ex=>`+${(ex*EX_CRIT_PER_LV).toFixed(1)}%` },
-  { key:'critdmg', grow:1.2, per:ex=>`+${fmtPct(ex*EX_CRITDMG_PER_LV,1)}%` },
-  { key:'goldboost', grow:1.25, per:ex=>`+${fmtPct(ex*EX_GOLD_PCT_PER_LV,0)}%` },
-  { key:'gemboost',  grow:1.44, per:ex=>`+${fmtNum(exFloor(ex*EX_GEM_PER_LV))}` },
-  { key:'defense',   grow:1.17, per:ex=>`受傷 ×${Math.pow(EX_DEFENSE_MULT_PER_LV, ex).toFixed(3)}` },
-  { key:'breakboost',grow:1.12, per:ex=>`-${fmtNum(exFloor(ex*EX_REFINE_REDUCE_PER_LV))}` },
-  { key:'monweaken', grow:1.16, per:ex=>`怪物生命 ×${Math.pow(EX_MONSTER_WEAKEN_MULT_PER_LV, ex).toFixed(3)}` },
-  { key:'guardradius', grow:1.14, max:EX_MAX.guardradius, per:ex=>`半徑再 -${ex}` },
-  { key:'guardpower',  grow:1.57, max:EX_MAX.guardpower,  per:ex=>`減傷再 -${ex}%` },
-];
-function exCost(x){ return Math.round(EX_GEM_BASE * Math.pow(x.grow, exLv(x.key))); }
-function renderUpgradesEx(){
-  const box = document.getElementById('upExList');
-  if(!box) return;
-  if(!exUnlocked()){
-    box.innerHTML = `<div class="up">
-      <div class="ico">？</div>
-      <div class="info">
-        <div class="nm">？？？　<span style="color:var(--bone-dim);font-size:12px">？</span></div>
-        <div class="val">過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 ${EX_UNLOCK_LEVEL} 關時解鎖。</div>
-      </div>
-      <button disabled>🔒 ？</button>
-    </div>`;
-    return;
-  }
-  box.innerHTML = EX_UPGRADES.map(x=>{
-    const u = UPGRADES.find(b=>b.key===x.key);
-    const lv = fin(state.up[x.key], 0);
-    const ex = exLv(x.key);
-    const maxed = x.max != null && ex >= x.max;
-    const cost = exCost(x);
-    const overflow = x.key === 'critdmg' ? critOverflowAmount() : 0;
-    const curBody  = u.bodyFmt(u.full(lv, ex) + overflow);
-    const nextBody = u.bodyFmt(u.full(lv, ex+1) + overflow);
-    return `<div class="up">
-      <div class="ico">${u.icon}</div>
-      <div class="info">
-        <div class="nm">${u.name} EX　<span style="color:var(--bone-dim);font-size:12px">Lv.${ex}${maxed?' 已滿':''}</span></div>
-        <div class="val upstat">
-          <span class="lb">目前</span><span class="bd">${curBody}</span><span class="pr">(${x.per(ex)})</span><span class="ar">→</span>
-          <span class="lb">下一級</span><span class="bd">${maxed ? '—' : nextBody}</span><span class="pr">${maxed ? '' : '('+x.per(ex+1)+')'}</span><span class="ar"></span>
-        </div>
-      </div>
-      <button data-upex="${x.key}" ${maxed||state.gem<cost?'disabled':''}>
-        ${maxed ? '已滿級' : '💎 '+fmtNum(cost)}
-      </button>
-    </div>`;
-  }).join('');
-  box.querySelectorAll('[data-upex]').forEach(b=>{
-    b.onclick = ()=>{
-      if(!exUnlocked()) return;
-      const x = EX_UPGRADES.find(e=>e.key===b.dataset.upex);
-      const u = UPGRADES.find(e=>e.key===x.key);
-      const cost = exCost(x);
-      if(!Number.isFinite(cost)) return;
-      if(!(state.gem >= cost)) return;
-      if(x.max != null && exLv(x.key) >= x.max) return;
-      state.gem -= cost;
-      state.upEx[x.key] = exLv(x.key) + 1;
-      save(); syncUI(); renderUpgrades(); renderRefine();
-      toast(`${u.name} EX 提升到 Lv.${state.upEx[x.key]}`);
-    };
-  });
 }
 
 function renderUpgrades(){
@@ -3322,15 +3264,18 @@ function renderUpgrades(){
     return `<div class="up">
       <div class="ico">${u.icon}</div>
       <div class="info">
-        <div class="nm">${u.name}　<span style="color:var(--bone-dim);font-size:12px">Lv.${lv}${maxed?' 已滿':''}</span></div>
+        <div class="nm">${u.name}${exOn(u.key)?'<span class="exbadge">EX</span>':''}　<span style="color:var(--bone-dim);font-size:12px">Lv.${lv}${maxed?' 已滿':''}</span></div>
         <div class="val upstat">
           <span class="lb">目前</span><span class="bd">${curBody}</span><span class="pr">(${curPer})</span><span class="ar">→</span>
           <span class="lb">下一級</span><span class="bd">${nextBody}</span><span class="pr">(${nextPer})</span><span class="ar"></span>
         </div>
       </div>
-      <button data-up="${u.key}" ${maxed||state.gold<cost?'disabled':''}>
-        ${maxed ? '已滿級' : '💰 '+fmtNum(cost)}
-      </button>
+      <div class="upbtns">
+        <button data-up="${u.key}" ${maxed||state.gold<cost?'disabled':''}>
+          ${maxed ? '已滿級' : '💰 '+fmtNum(cost)}
+        </button>
+        ${(exUnlocked() && !exOn(u.key)) ? `<button class="exbtn" data-exunlock="${u.key}" ${state.gem<EX_UNLOCK_GEM?'disabled':''}>💎 ${fmtNum(EX_UNLOCK_GEM)}<small>解鎖 EX</small></button>` : ''}
+      </div>
     </div>`;
   }).join('');
   box.querySelectorAll('[data-up]').forEach(b=>{
@@ -3347,7 +3292,18 @@ function renderUpgrades(){
       toast(`${u.name} 提升到 Lv.${state.up[u.key]}`);
     };
   });
-  renderUpgradesEx();
+  // 解鎖 EX：一次性花 2000 鑽石，之後該能力改用 EX 數值與費用成長
+  box.querySelectorAll('[data-exunlock]').forEach(b=>{
+    b.onclick = ()=>{
+      const u = UPGRADES.find(x=>x.key===b.dataset.exunlock);
+      if(!u || !exUnlocked() || exOn(u.key)) return;
+      if(!(state.gem >= EX_UNLOCK_GEM)) return;
+      state.gem -= EX_UNLOCK_GEM;
+      state.exOn[u.key] = true;
+      save(); syncUI(); renderUpgrades(); renderRefine();
+      toast(`${u.icon} ${u.name} 已解鎖 EX！`);
+    };
+  });
 }
 
 // 精煉費用：4 + 目前精煉等級，再扣掉鍛造台「精煉成本」的減免，最低為 1
@@ -3519,7 +3475,7 @@ function syncUI(){
   checkEarthwallUnlock(); // 過關進度一旦超過門檻就自動補發土牆術 1 等
   checkBeamUnlock();      // 過關進度一旦超過門檻就自動補發光束砲 1 等
   checkOffhandUnlock();   // 過關進度超過 65 關時解鎖副武器並提示一次
-  checkExUnlock();        // 過關進度超過 70 關時解鎖鍛造台 EX 並提示一次
+  checkExUnlock();        // 過關進度超過 70 關時開放鍛造台 EX 並提示一次
   checkHeroUnlock();      // 過關進度一旦超過門檻就自動解鎖對應造型並提示一次
   checkUpgradeUnlocks();  // 過關進度一旦超過門檻就提示新解鎖的鍛造項目（金幣/鑽石/減傷/精煉成本）
   document.getElementById('uiGem').textContent   = state.gem;
