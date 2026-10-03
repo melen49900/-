@@ -719,6 +719,36 @@ const RARITY = {
 };
 const RARITY_ODDS = [['N',.50],['R',.30],['SR',.15],['SSR',.05]];
 
+/* ── 召喚強化：通關第 85 關後開放，花鑽石升級，逐級把低稀有度的機率移給高稀有度 ──
+   機率單位：「占全部召喚的 0.01%」，用整數運算避免浮點誤差（裝備合計 7000 ＝ 70%）。
+   基礎：普通 3500／精良 2100／稀有 1050／傳說 350
+   階段1（1~125 級）　每級 普通 -28，精良 +16、稀有 +8、傳說 +4　→ 125 級普通剛好歸零（精良 4100）
+   階段2（126~330 級）每級 精良 -20，稀有 +12、傳說 +8　　　　　→ 330 級精良歸零
+   階段3（331~781 級）每級 稀有 -10，全部給傳說　　　　　　　　 → 781 級全傳說 */
+const SUMMON_BASE_COST = 500;
+const SUMMON_COST_GROW = 1.05;
+const SUMMON_UNLOCK_LEVEL = 85;
+const SUMMON_STAGE1_END = 125, SUMMON_STAGE2_END = 330, SUMMON_MAX_LV = 781;
+const EQUIP_ODDS_TOTAL = 7000;
+function summonOddsUnits(lv){
+  lv = Math.max(0, Math.min(SUMMON_MAX_LV, lv|0));
+  let N=3500, R=2100, SR=1050, SSR=350;
+  const a = Math.min(lv, SUMMON_STAGE1_END);
+  N -= 28*a; R += 16*a; SR += 8*a; SSR += 4*a;
+  const b = Math.min(Math.max(lv - SUMMON_STAGE1_END, 0), SUMMON_STAGE2_END - SUMMON_STAGE1_END);
+  R -= 20*b; SR += 12*b; SSR += 8*b;
+  const c = Math.min(Math.max(lv - SUMMON_STAGE2_END, 0), SUMMON_MAX_LV - SUMMON_STAGE2_END);
+  SR -= 10*c; SSR += 10*c;
+  return { N, R, SR, SSR };
+}
+// 第 n 級（升到這一級）減少哪個稀有度、減少多少（單位同上，用於鍛造台顯示）
+function summonStepInfo(n){
+  if(n <= SUMMON_STAGE1_END) return { label:'普通', pct:0.28 };
+  if(n <= SUMMON_STAGE2_END) return { label:'精良', pct:0.20 };
+  return { label:'稀有', pct:0.10 };
+}
+function summonPctText(units){ return String(+(units/100).toFixed(2)); }
+
 /* ── 技能 ─────────────────────────────────── */
 // 彈道/發射數/連鎖數每抽疊加 1，抽到第 6 次之後改成疊加「基礎傷害的百分比」
 const SKILL_STACK_CAP = 6;
@@ -1084,9 +1114,9 @@ const UPGRADES = [
     body:lv=>lv, full:lv=>lv,
     perFmt:lv=>'守護減傷 '+(GUARDIAN_REDUCE_BASE - lv)+'%',
     bodyFmt:v=>'減傷 -'+v.toFixed(0)+'%' },
-  // 鋼鐵殺手：第 75 關後解鎖，用「鑽石」購買（初始 120，每級 ×1.01）。每級讓鋼鐵敵人最大生命 -1，最低為 1。
+  // 鋼鐵殺手：第 75 關後解鎖，用「鑽石」購買（每級固定 250，不成長）。每級讓鋼鐵敵人最大生命 -1，最低為 1。
   // 上限 ＝ 最高關卡的鋼鐵生命 - 1（2×過關進度 - 1）。不適用 EX。
-  { key:'steelkiller', icon:'🔩', name:'鋼鐵殺手', base:120, grow:1.01, per:1, fmt:v=>'-'+v.toFixed(0),
+  { key:'steelkiller', icon:'🔩', name:'鋼鐵殺手', base:250, grow:1, per:1, fmt:v=>'-'+v.toFixed(0),
     currency:'gem', noEx:true,
     requiresLevel:75,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 75 關時解鎖。`,
@@ -1094,6 +1124,16 @@ const UPGRADES = [
     body:lv=>lv, full:lv=>lv,
     perFmt:lv=>'生命 -'+fmtNum(lv),
     bodyFmt:v=>'鋼鐵生命 '+fmtNum(Math.max(1, 2*state.unlockedLevel - v)) },
+  // 召喚強化：第 85 關後解鎖，用「金幣」購買（初始 500，每級 ×1.05）。每級降低低稀有度裝備的機率（詳見 summonOddsUnits）。上限 781 級。不適用 EX。
+  // nextOnly：鍛造台只顯示「下一級減少哪種機率」，不顯示目前。
+  { key:'summon', icon:'🔥', name:'召喚強化', base:SUMMON_BASE_COST, grow:SUMMON_COST_GROW, per:1, fmt:v=>String(v),
+    noEx:true, nextOnly:true,
+    requiresLevel:SUMMON_UNLOCK_LEVEL,
+    lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 ${SUMMON_UNLOCK_LEVEL} 關時解鎖。`,
+    max:SUMMON_MAX_LV,
+    body:lv=>lv, full:lv=>lv,
+    nextFmt:lv=>{ const t = summonStepInfo(lv+1); return t.label+'裝備機率 -'+t.pct+'%'; },
+    bodyFmt:v=>String(v) },
 ];
 // 鍛造項目的等級上限：固定值 max，或依過關進度動態計算的 maxFn
 function upMax(u){ return u.maxFn ? u.maxFn() : (u.max != null ? u.max : null); }
@@ -1142,7 +1182,7 @@ function freshState(){
   const kit = makeStarterKit();
   return {
     gem:0, gold:0, stone:0,
-    up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0, guardradius:0, guardpower:0, steelkiller:0 },
+    up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0, guardradius:0, guardpower:0, steelkiller:0, summon:0 },
     exOn:{ atk:false, hp:false, spd:false, crit:false, critdmg:false, goldboost:false, gemboost:false, defense:false, breakboost:false, monweaken:false, guardradius:false, guardpower:false }, // 鍛造台 EX 是否已解鎖（每項 2000 💎）
     exSeen:false,                             // 鍛造台 EX 解鎖提示是否已顯示過
     bag:kit.bag,                              // [{uid,id,rarity}]（新存檔內建新手三件裝備）（精煉等級改綁在裝備「部位」上，見 refineBySlot）
@@ -3437,9 +3477,10 @@ function draw(){
    召喚（抽裝備）
    ══════════════════════════════════════════ */
 function rollRarity(){
-  let r = Math.random();
-  for(const [key,p] of RARITY_ODDS){ if((r -= p) < 0) return key; }
-  return 'N';
+  const o = summonOddsUnits(state.up.summon || 0);
+  let r = Math.random() * EQUIP_ODDS_TOTAL;
+  for(const key of ['N','R','SR','SSR']){ if((r -= o[key]) < 0) return key; }
+  return 'SSR'; // 浮點邊界保底：只可能落在最高稀有度
 }
 function skillPullOnce(){
   const key = rollSkill();
@@ -3447,9 +3488,8 @@ function skillPullOnce(){
   const draws = state.skills[key].draws;
   return { kind:'skill', key, def: SKILL_DEFS[key], draws, gotPct: draws > SKILL_STACK_CAP };
 }
-// 「裝備齊全」的定義：裝備池裡每一種裝備，都已收集到 GEAR_COMPLETE_RARITIES 指定的每個稀有度。
-// 預設要求全部 4 種稀有度（16 種 × 4 ＝ 64 件）。想放寬可改成例如 ['SSR']（每種裝備只要有傳說品質就算齊全）。
-const GEAR_COMPLETE_RARITIES = ['N','R','SR','SSR'];
+// 「裝備齊全」的定義：每種裝備只要有傳說品質就算齊全。
+const GEAR_COMPLETE_RARITIES = ['SSR'];
 function gearCollectionComplete(){
   return availablePool().every(base =>
     GEAR_COMPLETE_RARITIES.every(r => state.bag.some(c => c.id===base.id && c.rarity===r))
@@ -3618,6 +3658,20 @@ function renderUpgrades(){
     const overflow  = u.key === 'critdmg' ? critOverflowAmount() : 0;
     const curBody  = u.bodyFmt(u.full(lv) + overflow);
     const nextBody = u.bodyFmt(u.full(lv+1) + overflow);
+    if(u.nextOnly){
+      return `<div class="up">
+      <div class="ico">${u.icon}</div>
+      <div class="info">
+        <div class="nm">${u.name}　<span style="color:var(--bone-dim);font-size:12px">Lv.${lv}${maxed?' 已滿':''}</span></div>
+        <div class="val">${maxed ? '機率已全數轉為傳說' : '下一級　'+u.nextFmt(lv)}</div>
+      </div>
+      <div class="upbtns">
+        <button data-up="${u.key}" ${maxed||(u.currency==='gem'?state.gem:state.gold)<cost?'disabled':''}>
+          ${maxed ? '已滿級' : (u.currency==='gem'?'💎 ':'💰 ')+fmtNum(cost)}
+        </button>
+      </div>
+    </div>`;
+    }
     const curPer   = u.perFmt ? u.perFmt(lv)   : u.fmt(u.per * lv);
     const nextPer  = u.perFmt ? u.perFmt(lv+1) : u.fmt(u.per * (lv+1));
     return `<div class="up">
@@ -3893,7 +3947,14 @@ function syncUI(){
   const skillOddsEl = document.getElementById('skillOddsInfo');
   const gearDone = gearCollectionComplete();
   const equipOddsEl = document.getElementById('equipOddsInfo');
-  if(equipOddsEl) equipOddsEl.style.display = gearDone ? 'none' : '';
+  if(equipOddsEl){
+    equipOddsEl.style.display = gearDone ? 'none' : '';
+    const o = summonOddsUnits(state.up.summon || 0);
+    const eqTotal = Math.round((1 - SKILL_PULL_CHANCE) * 100);
+    // 裝備各品質占「全部召喚」的機率（先扣掉技能的 30%）
+    const share = k => summonPctText(o[k] * (eqTotal*100) / EQUIP_ODDS_TOTAL);
+    equipOddsEl.textContent = `裝備機率　合計 ${eqTotal}%　普通 ${share('N')}%　精良 ${share('R')}%　稀有 ${share('SR')}%　傳說 ${share('SSR')}%`;
+  }
   if(skillOddsEl){
     if(gearDone){
       skillOddsEl.textContent = `裝備已收集齊全，召喚只會抽到技能（目前 ${skillCount} 種技能，每種各 ${(100/skillCount).toFixed(1)}%）`;
