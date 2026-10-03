@@ -704,7 +704,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 155;        // 所有怪物出完的時間點（2:35），清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 90;           // 共 90 關
+const LEVEL_COUNT = 110;           // 共 110 關
 const LEVEL_HP_GROWTH = 1.286;                                  // 血量成長係數
 const LEVEL_ATK_GROWTH = 1.21;                                  // 攻擊成長係數
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內血量差距3倍
@@ -722,7 +722,7 @@ const RARITY_ODDS = [['N',.50],['R',.30],['SR',.15],['SSR',.05]];
 /* ── 技能 ─────────────────────────────────── */
 // 彈道/發射數/連鎖數每抽疊加 1，抽到第 6 次之後改成疊加「基礎傷害的百分比」
 const SKILL_STACK_CAP = 6;
-/* ── 技能 EX：通關第 80 關後開放，每個技能可花 2000 鑽石「解鎖」EX 版本（一次性）。目前只有火球術有 EX。── */
+/* ── 技能 EX：通關第 80 關後開放，每個技能可花 2000 鑽石「解鎖」EX 版本（一次性）。── */
 const SKILL_EX_UNLOCK_LEVEL = 80;           // 過關進度（unlockedLevel）需超過此關卡數才開放
 const SKILL_EX_GEM = 2000;                  // 每個技能解鎖 EX 的鑽石費用
 const FIREBALL_EX_DMG_MULT = 15;            // 火球術 EX：大火球傷害 ＝ 原本單顆火球 × 15
@@ -732,8 +732,16 @@ const FIREBALL_EX_SPLASH_PCT = 0.5;         // 擴散傷害固定為大火球的
 const FIREBALL_EX_SPLASH_TIME = 0.3;        // 爆風從中心擴散到最大範圍的時間（秒）
 const FIREBALL_EX_R = 16;                   // 大火球本體半徑（原本單顆是 6）
 const FIREBALL_EX_GROUND_SPEED = 460;       // 大火球水平飛行速度（決定飛行時間）
+const ICE_EX_DMG_MULT = 15;      // 冰椎術 EX：冰刃傷害 ＝ 原本單顆冰椎 × 15
+const ICE_EX_SPD_MULT = 0.2;     // 冰椎術 EX：發射頻率 ＝ 角色攻速 × 0.2（原本 ×0.5）
+const ICE_EX_WIDTH = 100;        // 冰刃／冰痕寬度
+const ICE_EX_SLOW_PCT = 0.75;    // 冰刃命中緩速比例
+const ICE_EX_SLOW_TIME = 1.5;    // 冰刃命中緩速時間（秒）
+const ICE_EX_TRAIL_LIFE = 1;     // 冰痕存在時間（秒）
+const ICE_EX_TICK = 0.25;        // 冰痕傷害間隔（秒），1 秒共 4 下
 function skillExOn(key){ return !!(state.skillEx && state.skillEx[key]); }
 function skillExAvailable(key){ return !!SKILL_DEFS[key].ex && state.unlockedLevel > SKILL_EX_UNLOCK_LEVEL; }
+function iceSpdMult(){ return skillExOn('icespike') ? ICE_EX_SPD_MULT : SKILL_SPD_MULT.icespike; }
 function fireballSpdMult(){ return skillExOn('fireball') ? FIREBALL_EX_SPD_MULT : SKILL_SPD_MULT.fireball; }
 const SKILL_DEFS = {
   fireball: {
@@ -743,7 +751,7 @@ const SKILL_DEFS = {
     pctFn: ()=>fireballPct(),
     desc:'自動鎖定場上最接近的敵人並追蹤，每抽 1 次多 1 彈道，上限 7 道。',
     ex:true,
-    exDesc:'EX：所有彈道合併為 1 顆大火球，以拋物線拋向目標，落地時爆炸並向外擴散（直徑 100），範圍內敵人受到大火球 50% 的擴散傷害。攻速減半，傷害為原本單顆的 15 倍。',
+    exDesc:'EX：所有彈道合併為 1 顆大火球，以拋物線拋向目標，落地時爆炸並擴散。',
   },
   icespike: {
     name:'冰椎術', icon:'🔷', innate:false,
@@ -751,6 +759,8 @@ const SKILL_DEFS = {
     stacksFn: ()=>icespikeBullets(),
     pctFn: ()=>icespikePct(),
     desc:'正上方直線發射；每抽 1 次多發射 1 枚，最多 6 枚，每枚間隔 0.05 秒，命中會使目標緩速。',
+    ex:true,
+    exDesc:'EX：所有彈道合併為 1 道冰刃，擊中敵人造成傷害並緩速，經過之處會留下冰痕並造成持續傷害。沒有目標時不發射。',
   },
   lightning: {
     name:'閃電術', icon:'⚡', innate:false,
@@ -775,7 +785,7 @@ const SKILL_DEFS = {
     stacksFn: ()=>skillStacks('earthwall'),
     pctFn: ()=>earthwallPct(),
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 40 關時會自動習得 1 等，之後也能從「召喚」抽到並疊加。`,
-    desc:'開場在固定位置生成碎石牆，擋住所有敵人；前 6 等每等提高生成血量，會定時回復，被擊破後經過冷卻重生一道新牆。',
+    desc:'開場在固定位置生成碎石牆，擋住所有敵人，會定時回復，被擊破後經過冷卻重生一道新牆。',
   },
   beam: {
     name:'光束砲', icon:'🔆', innate:false,
@@ -784,7 +794,7 @@ const SKILL_DEFS = {
     stacksFn: ()=>skillStacks('beam'),
     pctFn: ()=>beamPct(),
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 60 關時會自動習得 1 等，之後也能從「召喚」抽到並疊加。`,
-    desc:'隨機鎖定一名敵人，從主角朝該敵人射出一道貫穿到畫面盡頭的光束，路徑上所有敵人都會受傷；目標死亡後自動換下一名。前 6 等每等加寬光束，之後每等增加傷害。',
+    desc:'該隨機一名敵人射出一道貫穿的光束，路徑上所有敵人都會受傷。',
   },
 };
 // 各技能施放頻率＝角色攻速 × 對應倍率（各自獨立計時，不是三個技能綁在同一顆計時器上）：
@@ -823,14 +833,13 @@ function lightningChain(){
 function fireballPct(){ return 80 + skillOverCap('fireball') * 0.8; }
 function icespikePct(){ return 110 + skillOverCap('icespike') * 1.2; }
 function lightningPct(){ return 90 + skillOverCap('lightning') * 1.5; }
-// 旋風術：基礎傷害 50%，+1~+6 等會直接把傷害乘上 2~7 倍（stacks=1→x2 … stacks=6→x7），
-// 滿 +6 之後每抽改為線性疊加傷害 +3%（不再繼續乘倍率）。
+// 旋風術：基礎傷害 50%，前六等傷害乘上 2~7 倍，7等之後每等疊加傷害3%。
 function whirlwindPct(){ return 50 * (1 + skillStacks('whirlwind')) + skillOverCap('whirlwind') * 3; }
 function fireballAtk(s){ return s.atk * fireballPct() / 100; }
 function icespikeAtk(s){ return s.atk * icespikePct() / 100; }
 function lightningAtk(s){ return s.atk * lightningPct() / 100; }
 function whirlwindAtk(s){ return s.atk * whirlwindPct() / 100; }
-const WHIRLWIND_UNLOCK_LEVEL = 20;// 旋風術解鎖條件：過關進度（unlockedLevel）超過第 20 關時自動習得 1 等
+const WHIRLWIND_UNLOCK_LEVEL = 20;// 旋風術解鎖條件：過關進度超過第 20 關時自動習得 1 等
 const WHIRLWIND_RADIUS = 45;//旋風術半徑（實際傷害範圍，只有這個圓）
 const WHIRLWIND_VISUAL_HEIGHT = 150;     // 純視覺：龍捲風從圓心向上延伸的高度
 const WHIRLWIND_VISUAL_TOP_RADIUS = 70;  // 純視覺：龍捲風頂端的旋轉半徑
@@ -848,12 +857,12 @@ function checkWhirlwindUnlock(){
   }
 }
 // 土牆術
-const EARTHWALL_UNLOCK_LEVEL = 40;//過關進度超過第 40 關時自動習得 1 等
+const EARTHWALL_UNLOCK_LEVEL = 40;    //過關進度超過第 40 關時自動習得 1 等
 const EARTHWALL_Y_FROM_BOTTOM = 350;  // 位置固定距離畫面底部往上 350
-const EARTHWALL_HP_MULT_BASE = 50;   // 1 等：生成血量 ＝ 原始血量 × 50
-const EARTHWALL_HP_MULT_STEP = 10;   // 每多 1 等 +10 倍，6 等 100 倍
-const EARTHWALL_ROCK_COUNT = 20;     // 碎石堆的岩塊數量(橫貫全場)
-const EARTHWALL_BREAK_STAGGER = 0.2; // 牆被打壞後，敵人還會停頓幾秒才繼續前進(0.1～0.2)
+const EARTHWALL_HP_MULT_BASE = 50;    // 1 等：生成血量 ＝ 原始血量 × 50
+const EARTHWALL_HP_MULT_STEP = 10;    // 每多 1 等 +10 倍，6 等 100 倍
+const EARTHWALL_ROCK_COUNT = 20;      // 碎石堆的岩塊數量(橫貫全場)
+const EARTHWALL_BREAK_STAGGER = 0.2;  // 牆被打壞後，敵人還會停頓幾秒才繼續前進(0.1～0.2)
 function checkEarthwallUnlock(){
   if(state.unlockedLevel > EARTHWALL_UNLOCK_LEVEL && state.skills.earthwall.draws < 1){
     state.skills.earthwall.draws = 1;
@@ -888,7 +897,7 @@ function checkSkillExUnlock(){
   if(state.unlockedLevel > SKILL_EX_UNLOCK_LEVEL && !state.skillExSeen){
     state.skillExSeen = true;
     save();
-    toast('🔥 技能 EX 開放！到「技能」頁面可花 2000 💎 解鎖火球術 EX');
+    toast('🔥 技能 EX 開放！到「技能」頁面可花 2000 💎 解鎖火球術／冰椎術 EX');
   }
 }
 function checkBeamUnlock(){
@@ -1332,7 +1341,7 @@ function indigenousReady(){
   return indigenousWords.filter(w => w && w.meaning && w.spelling && w.id != null).length >= 4;
 }
 
-// 播放族語錄音（不是 TTS）。找不到音檔就安靜跳過，不報錯、不擋流程；
+// 播放族語錄音（不是 TTS）。找不到音檔就跳過；
 // 行動瀏覽器若判定沒有使用者互動而擋播放，也是安靜失敗即可。
 function playIndigenousAudio(filename){
   const src = resolveAudioSrc(filename);
@@ -1358,8 +1367,7 @@ function subjectReady(subject){
     Array.isArray(q.options) && q.options.length >= 2);
 }
 
-// 固定出題順序：國文 → 英文 → 數學 → 社會 → 自然 →（族語，僅在後台開啟且單字足夠時）→ 回到國文
-// 族語關閉時，序列自動跳過族語，就是 5 科循環；沒有題目的科目也會被跳過。
+// 固定出題順序：國 → 英 → 數 → 社 → 自 →（族語，僅在後台開啟且足夠時）；沒有題目的科目也會被跳過。
 const SUBJECT_ORDER = ['chinese','english','math','geography','science','indigenous'];
 const SUBJ_CURSOR_KEY = 'td_subject_cursor';
 function subjectEligible(s){
@@ -1619,8 +1627,7 @@ function renderIndigenousQuestion(){
   speakQuestion(); // 進題自動朗讀一次：有錄音播錄音，題目是中文就用 TTS
 }
 
-// 族語題的作答：跟 answer() 給一樣的鑽石／連勝／綠燈獎勵，但正確判斷是比對 id（不是文字），
-// 而且刻意不呼叫 QuizEngine.recordAnswer —— 族語不屬於五科的關卡解鎖／數學階層系統，跟那套機制無關。
+// 族語題的獎勵同其他題目。
 function answerIndigenous(choice, btn){
   if(answered) return;
   const right = choice.id === curQ.correctId;
@@ -1937,6 +1944,7 @@ const run = {
   beam:{ target:null, ang:-Math.PI/2, pulse:0, active:false },
   kills:0, gold:0,
   enemies:[], shots:[], bits:[], pops:[], bolts:[], tornadoes:[], walls:[],
+  iceBlades:[], // 冰椎術 EX：冰刃（含冰痕）
   lobs:[], blasts:[], // 火球術 EX：飛行中的大火球／落地後的爆風
   iceQueue:[],   // 冰椎術待發射佇列（每個元素是還剩多少秒才發射）
   shake:0,
@@ -2041,7 +2049,7 @@ function startRun(level){
   run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0; run.whirlwindTimer=0; run.earthwallTimer=0; run.earthwallCd=0; run.beamTimer=0;
   run.beam={ target:null, ang:-Math.PI/2, pulse:0, active:false };
   run.kills=0; run.gold=0;
-  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.tornadoes=[]; run.walls=[]; run.lobs=[]; run.blasts=[]; run.shake=0;
+  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.tornadoes=[]; run.walls=[]; run.lobs=[]; run.blasts=[]; run.iceBlades=[]; run.shake=0;
   applyLevelTheme(run.level);
   document.getElementById('overlay').classList.remove('on');
   openStage();
@@ -2191,6 +2199,111 @@ function lobPos(l){
   const z = 4 * l.h * u * (1-u);
   return { u, gx, gy, z, x:gx, y:gy - z };
 }
+
+/* ══════════════════════════════════════════
+   冰椎術 EX：冰刃 ＋ 冰痕
+   ══════════════════════════════════════════ */
+function spawnIceBlade(){
+  const s = stats();
+  const y0 = H - 74;
+  const shards = [];
+  for(let i=0;i<46;i++) shards.push({ x:(Math.random()-.5)*(ICE_EX_WIDTH-12), y:y0 - Math.random()*(y0+40), h:20+Math.random()*30, w:6+Math.random()*7, tilt:(Math.random()-.5)*.6, p:Math.random() });
+  run.iceBlades.push({
+    x: run.heroX, y0, y: y0, t: 0, spd: SHOT_SPEED_BASE * hScale,
+    dmg: icespikeAtk(s) * ICE_EX_DMG_MULT,
+    crit: Math.random()*100 < s.crit,
+    hit: new Set(),     // 已被冰刃本體命中的敵人
+    ticks: new Map(),   // 冰痕：敵人 → { n:已跳次數, acc:累計時間 }
+    shards,
+  });
+}
+function updateIceEx(dt, s){
+  for(let i=run.iceBlades.length-1;i>=0;i--){
+    const b = run.iceBlades[i];
+    b.t += dt; b.y = b.y0 - b.spd * b.t;
+    const half = ICE_EX_WIDTH/2;
+    for(const e of run.enemies){
+      if(e.hp <= 0) continue;
+      const inX = Math.abs(e.x - b.x) <= half + e.r*0.5;
+      if(!inX) continue;
+      // 冰刃本體：刃尖到達敵人位置時命中一次（不消失）
+      if(!b.hit.has(e) && b.y <= e.y + e.r*0.5){
+        b.hit.add(e);
+        const d = enemyDmg(e, b.crit ? b.dmg * (s.critDmg/100) : b.dmg);
+        e.hp -= d; e.hit = 0.12;
+        popText(e.x, e.y-e.r-4, fmtNum(d), b.crit);
+        e.exSlow = ICE_EX_SLOW_TIME;
+        burst(e.x, e.y, b.crit ? '#d6faff' : '#7fe3ff', b.crit?9:5);
+      }
+      // 冰痕：敵人所在位置的冰痕還在（存在 1 秒）時，每 0.25 秒跳一下，最多 4 下，不更新緩速
+      const age = b.t - (b.y0 - e.y)/b.spd;
+      if(age >= 0 && age <= ICE_EX_TRAIL_LIFE){
+        let k = b.ticks.get(e); if(!k){ k = { n:0, acc:0 }; b.ticks.set(e,k); }
+        k.acc += dt;
+        if(k.acc >= ICE_EX_TICK && k.n < 4){
+          k.acc -= ICE_EX_TICK; k.n++;
+          const crit = Math.random()*100 < s.crit;
+          const d = enemyDmg(e, crit ? icespikeAtk(s) * (s.critDmg/100) : icespikeAtk(s));
+          e.hp -= d; e.hit = 0.12;
+          popText(e.x, e.y-e.r-4, fmtNum(d), crit);
+        }
+      }
+    }
+    if(b.t > (b.y0 + 40)/b.spd + ICE_EX_TRAIL_LIFE) run.iceBlades.splice(i,1);
+  }
+}
+function iceRow(b, y){ // 位置 y 的冰痕狀態；冰刃還沒經過或已消失則回傳 null
+  const age = b.t - (b.y0 - y)/b.spd;
+  if(age < 0 || age > ICE_EX_TRAIL_LIFE) return null;
+  const fade = age > ICE_EX_TRAIL_LIFE-.25 ? (ICE_EX_TRAIL_LIFE-age)/.25 : 1;
+  return { age, fade, pop:Math.min(1, age/.12), tk:((age%ICE_EX_TICK) < .07 && age > .02) ? 1 : 0 };
+}
+function drawIceTrailEx(){
+  const hw = ICE_EX_WIDTH/2;
+  run.iceBlades.forEach(b=>{
+    ctx.save();
+    for(let y=b.y0; y>-46; y-=6){
+      const r = iceRow(b, y); if(!r) continue;
+      ctx.fillStyle = `rgba(150,215,255,${(.16+.14*r.tk)*r.fade})`;
+      ctx.fillRect(b.x-hw, y-6, ICE_EX_WIDTH, 6);
+    }
+    // 兩側霜線
+    for(let y=b.y0; y>-46; y-=14){
+      const r = iceRow(b, y); if(!r) continue;
+      ctx.globalAlpha = .5*r.fade; ctx.fillStyle = '#d8f3ff';
+      ctx.fillRect(b.x-hw, y, 2, 8); ctx.fillRect(b.x+hw-2, y, 2, 8);
+    }
+    // 霜晶碎片
+    b.shards.forEach(k=>{
+      const r = iceRow(b, k.y); if(!r) return;
+      const h = k.h * r.pop;
+      ctx.save(); ctx.translate(b.x + k.x, k.y); ctx.rotate(k.tilt);
+      ctx.globalAlpha = (.5+.3*r.tk)*r.fade;
+      const g = ctx.createLinearGradient(0,-h,0,0); g.addColorStop(0,'#ecfbff'); g.addColorStop(1,'#7cc8f5');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(0,-h); ctx.lineTo(-k.w/2,0); ctx.lineTo(k.w/2,0); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha *= .6; ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.moveTo(0,-h); ctx.lineTo(0,0); ctx.lineTo(k.w/2,0); ctx.fill();
+      if(r.age < .6 && k.p > .5){ ctx.globalAlpha = (1-r.age/.6)*.9; ctx.fillRect(k.w*1.2, -h*.6 - r.age*20, 2, 2); }
+      ctx.restore();
+    });
+    ctx.restore();
+  });
+}
+function drawIceBladeEx(){
+  const hw = ICE_EX_WIDTH/2;
+  run.iceBlades.forEach(b=>{
+    if(b.y < -50) return;
+    const y = b.y, x = b.x;
+    ctx.save(); ctx.shadowBlur = 18; ctx.shadowColor = b.crit ? '#ffffff' : '#bfeaff';
+    const g = ctx.createLinearGradient(0,y-30,0,y+8); g.addColorStop(0, b.crit ? '#ffffff' : '#f2fcff'); g.addColorStop(1,'#8fd6ff');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(x-hw,y+8); ctx.quadraticCurveTo(x,y-46,x+hw,y+8); ctx.quadraticCurveTo(x,y-14,x-hw,y+8); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = .4; ctx.lineWidth = 2; ctx.strokeStyle = '#fff';
+    ctx.beginPath(); ctx.moveTo(x-40,y+3); ctx.quadraticCurveTo(x,y-34,x+40,y+3); ctx.stroke();
+    ctx.restore();
+  });
+}
 function updateFireballEx(dt, s){
   for(let i=run.lobs.length-1;i>=0;i--){
     const l = run.lobs[i];
@@ -2330,6 +2443,10 @@ function fire(){
 // 冰椎術：從角色當下位置往正上方發射。
 function queueIceSpikes(){
   const n = icespikeBullets();
+  if(skillExOn('icespike')){ // EX：有目標才發射 1 道冰刃，彈道數加成無效
+    if(n > 0 && run.enemies.some(e=>e.y > -10)) spawnIceBlade();
+    return;
+  }
   for(let i=0;i<n;i++) run.iceQueue.push(i * 0.05);// 一次觸發會排出 n 枚的佇列，每枚間隔 0.05 秒才真正生成
 }
 function spawnIceSpike(){
@@ -2549,7 +2666,7 @@ function step(dt){
   run.fireTimer -= dt;
   if(run.fireTimer <= 0){ fire(); run.fireTimer = 1 / (s.spd * fireballSpdMult()); }
   run.iceTimer -= dt;
-  if(run.iceTimer <= 0){ queueIceSpikes(); run.iceTimer = 1 / (s.spd * SKILL_SPD_MULT.icespike); }
+  if(run.iceTimer <= 0){ queueIceSpikes(); run.iceTimer = 1 / (s.spd * iceSpdMult()); }
   run.lightningTimer -= dt;
   if(run.lightningTimer <= 0){ castLightning(); run.lightningTimer = 1 / (s.spd * SKILL_SPD_MULT.lightning); }
   run.whirlwindTimer -= dt;
@@ -2565,6 +2682,7 @@ function step(dt){
     if(run.iceQueue[i] <= 0){ spawnIceSpike(); run.iceQueue.splice(i,1); }
   }
 
+  updateIceEx(dt, s);      // 冰椎術 EX：冰刃飛行、命中、冰痕傷害
   updateFireballEx(dt, s); // 火球術 EX：大火球飛行、落地、爆風擴散
 
   const SHOT_HOMING_DELAY = 0.15; // 單位秒：子彈出膛後多久才開始自動修正朝鎖定的目標
@@ -2662,6 +2780,7 @@ function step(dt){
   const dmgTakenMul = Math.pow(DEFENSE_MULT_PER_LV, fin(state.up.defense, 0));
   for(let i=run.enemies.length-1;i>=0;i--){
     const e = run.enemies[i];
+    if(e.exSlow > 0) e.exSlow -= dt; // 冰椎術 EX 緩速倒數
     // 冰凍減速：每層各自倒數，到期就移除
     if(e.slowStacks && e.slowStacks.length){
       for(let k=e.slowStacks.length-1;k>=0;k--){
@@ -2669,7 +2788,7 @@ function step(dt){
         if(e.slowStacks[k] <= 0) e.slowStacks.splice(k,1);
       }
     }
-    const slowMul = 1 - Math.min(ICESPIKE_SLOW_MAX_STACKS, e.slowStacks ? e.slowStacks.length : 0) * ICESPIKE_SLOW_PCT;
+    const slowMul = Math.min(1 - Math.min(ICESPIKE_SLOW_MAX_STACKS, e.slowStacks ? e.slowStacks.length : 0) * ICESPIKE_SLOW_PCT, e.exSlow > 0 ? 1 - ICE_EX_SLOW_PCT : 1);
 
     if(e.hp <= 0){
       run.kills++;
@@ -3119,6 +3238,7 @@ function draw(){
     ctx.restore();
   }
 
+  drawIceTrailEx(); // 冰椎術 EX：冰痕（畫在怪物底下）
   // 守護者的守護圈（畫在怪物底下）
   {
     const gR = guardianRadiusFor(run.level);
@@ -3203,6 +3323,7 @@ function draw(){
     ctx.restore();
   });
 
+  drawIceBladeEx(); // 冰椎術 EX：冰刃本體
   drawFireballEx(); // 火球術 EX：拋物線大火球與爆風
 
   // 閃電連線：角色 → 敵人 → 敵人 → …，鋸齒狀連線，命中瞬間亮起、快速淡出
@@ -3591,6 +3712,8 @@ function renderSkills(){
       statusText = `生成血量 ×${earthwallMaxHpMult()}（${fmtNum(Math.round(earthwallMaxHp(st)))}）　每 ${earthwallInterval(st).toFixed(1)} 秒回復 ${fmtNum(Math.round(earthwallHp(st)))}　擊破後 ${earthwallInterval(st).toFixed(1)} 秒重生`;
     } else if(key === 'beam'){
       statusText = `光束寬度 ${beamWidth()}px　傷害 ${pct.toFixed(0)}% 攻擊`;
+    } else if(key === 'icespike' && skillExOn('icespike')){
+      statusText = `冰刃傷害 ${fmtNum(Math.round(pct*ICE_EX_DMG_MULT))}% 攻擊　冰痕每下 ${pct.toFixed(1)}%×4　寬度 ${ICE_EX_WIDTH}　攻速 ×${ICE_EX_SPD_MULT}`;
     } else if(key === 'fireball' && skillExOn('fireball')){
       statusText = `大火球傷害 ${fmtNum(Math.round(pct*FIREBALL_EX_DMG_MULT))}% 攻擊　擴散 ${FIREBALL_EX_SPLASH_PCT*100}%（直徑 ${FIREBALL_EX_SPLASH_DIAMETER}）　攻速 ×${FIREBALL_EX_SPD_MULT}`;
     } else {
