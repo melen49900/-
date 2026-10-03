@@ -1015,8 +1015,8 @@ const UPGRADES = [
     perFmt:lv=>'+'+fmtNum(exOn('hp') ? EX_HP_FLAT_MULT*exTri(lv) : lv*15)+' 且 +'+(exOn('hp') ? fmtPct(lv*EX_HP_PCT_PER_LV*100,2) : fmtPct(lv*HP_PCT_PER_LV*100,1))+'%',
     bodyFmt:v=>fmtNum(Math.round(v)) },
   { key:'spd',  icon:'💨', name:'攻擊速度', base:90,  grow:1.31, per:0.09, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
-    body:lv=>Math.max(0.4, 0.3 + lv*0.09), full:lv=>Math.max(0.4, 0.3 + lv*(exOn('spd') ? EX_SPD_PER_LV : 0.09) + sumEquip('spd')),
-    perFmt:lv=>'+'+(lv*(exOn('spd') ? EX_SPD_PER_LV : 0.09)).toFixed(2)+' 發/秒'+(exOn('spd') ? ' 且 總輸出 +'+(lv*EX_OUTPUT_PCT_PER_LV*100).toFixed(1)+'%' : ''),
+    body:lv=>Math.max(0.4, 0.3 + lv*0.09), full:lv=>Math.max(0.4, 0.3 + lv*(exOn('spd') ? EX_SPD_PER_LV : 0.09)),
+    perFmt:lv=>(exOn('spd') ? '且輸出+'+(lv*EX_OUTPUT_PCT_PER_LV*100).toFixed(1)+'%' : ''),
     bodyFmt:v=>v.toFixed(2)+' 發/秒' },
   { key:'crit', icon:'✨', name:'暴擊率',  base:100, grow:1.2, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
     // 暴擊率（等級+裝備疊加後）超過 80% 上限的部分，會在 stats() 裡 1:1 轉成額外暴擊傷害疊加。
@@ -1084,15 +1084,15 @@ const UPGRADES = [
     body:lv=>lv, full:lv=>lv,
     perFmt:lv=>'守護減傷 '+(GUARDIAN_REDUCE_BASE - lv)+'%',
     bodyFmt:v=>'減傷 -'+v.toFixed(0)+'%' },
-  // 鋼鐵殺手：第 75 關後解鎖，用「鑽石」購買（初始 200，每級 ×1.01）。每級讓鋼鐵敵人最大生命 -1，最低為 1。
+  // 鋼鐵殺手：第 75 關後解鎖，用「鑽石」購買（初始 120，每級 ×1.01）。每級讓鋼鐵敵人最大生命 -1，最低為 1。
   // 上限 ＝ 最高關卡的鋼鐵生命 - 1（2×過關進度 - 1）。不適用 EX。
-  { key:'steelkiller', icon:'🔩', name:'鋼鐵殺手', base:200, grow:1.01, per:1, fmt:v=>'-'+v.toFixed(0),
+  { key:'steelkiller', icon:'🔩', name:'鋼鐵殺手', base:120, grow:1.01, per:1, fmt:v=>'-'+v.toFixed(0),
     currency:'gem', noEx:true,
     requiresLevel:75,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 75 關時解鎖。`,
     maxFn: ()=> Math.max(0, 2*state.unlockedLevel - 1),
     body:lv=>lv, full:lv=>lv,
-    perFmt:lv=>'鋼鐵敵人生命 -'+fmtNum(lv),
+    perFmt:lv=>'生命 -'+fmtNum(lv),
     bodyFmt:v=>'鋼鐵生命 '+fmtNum(Math.max(1, 2*state.unlockedLevel - v)) },
 ];
 // 鍛造項目的等級上限：固定值 max，或依過關進度動態計算的 maxFn
@@ -2906,10 +2906,12 @@ function syncBattleHud(){
   }
 
   document.getElementById('runKill').textContent = `☠ ${run.kills}`;
-  document.getElementById('runGold').textContent = `💰 ${fmtNum(run.gold)}`;
+  // 右上角金幣：套用與結算（endRun）相同的關卡係數與金幣強化，顯示的就是實際會拿到的金幣
+  const gMul = fin(Math.pow(1.21, run.level-1), 1) * (1 + goldBoostPct() / 100);
+  document.getElementById('runGold').textContent = `💰 ${fmtNum(Math.round(fin(run.gold, 0) * gMul))}`;
   const pct = run.maxHp ? Math.max(0, run.hp/run.maxHp*100) : 0;
   document.getElementById('hpFill').style.width = pct + '%';
-  document.getElementById('hpText').textContent = `${Math.max(0,Math.ceil(run.hp))} / ${run.maxHp}`;
+  document.getElementById('hpText').textContent = `${fmtNum(Math.max(0,Math.ceil(run.hp)))} / ${fmtNum(Math.round(run.maxHp))}`;
 }
 
 /* 繪製 */
@@ -3623,8 +3625,8 @@ function renderUpgrades(){
       <div class="info">
         <div class="nm">${u.name}${exOn(u.key)?'<span class="exbadge">EX</span>':''}　<span style="color:var(--bone-dim);font-size:12px">Lv.${lv}${maxed?' 已滿':''}</span></div>
         <div class="val upstat">
-          <span class="lb">目前</span><span class="bd">${curBody}</span><span class="pr">(${curPer})</span><span class="ar">→</span>
-          <span class="lb">下一級</span><span class="bd">${nextBody}</span><span class="pr">(${nextPer})</span><span class="ar"></span>
+          <span class="lb">目前</span><span class="bd">${curBody}</span><span class="pr">${curPer ? '('+curPer+')' : ''}</span><span class="ar">→</span>
+          <span class="lb">下一級</span><span class="bd">${nextBody}</span><span class="pr">${nextPer ? '('+nextPer+')' : ''}</span><span class="ar"></span>
         </div>
       </div>
       <div class="upbtns">
