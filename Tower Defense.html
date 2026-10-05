@@ -1124,18 +1124,17 @@ const UPGRADES = [
     body:lv=>lv, full:lv=>lv,
     perFmt:lv=>'生命 -'+fmtNum(lv),
     bodyFmt:v=>'鋼鐵生命 '+fmtNum(Math.max(1, 2*state.unlockedLevel - v)) },
-  // 召喚強化：第 85 關後解鎖，用「金幣」購買（初始 500，每級 ×1.05）。每級降低低稀有度裝備的機率（詳見 summonOddsUnits）。上限 781 級。不適用 EX。
-  // nextOnly：鍛造台只顯示「下一級減少哪種機率」，不顯示目前。
+  // 召喚強化：第 85 關後解鎖。每級降低低稀有度裝備的機率（詳見 summonOddsUnits）。上限 781 級。不適用 EX。
   { key:'summon', icon:'🔥', name:'召喚強化', base:SUMMON_BASE_COST, grow:SUMMON_COST_GROW, per:1, fmt:v=>String(v),
     noEx:true, nextOnly:true,
     requiresLevel:SUMMON_UNLOCK_LEVEL,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 85 關時解鎖。`,
     max:SUMMON_MAX_LV,
     body:lv=>lv, full:lv=>lv,
-    nextFmt:lv=>{ const t = summonStepInfo(lv+1); return t.label+'裝備機率 -'+t.pct+'%'; },
+    nextFmt:lv=>{ const t = summonStepInfo(lv+1); return t.label+'裝備機率 -'+t.pct+'%'; },// 只顯示「下一級減少哪種機率」，不顯示目前。
     bodyFmt:v=>String(v) },
-  // 遠距範圍減少：第 90 關解鎖，用「金幣」購買（初始 500，每級 ×1.17）。每級讓遠距敵人的攻擊距離 -1，下限 300。不適用 EX。
-  { key:'rangedreduce', icon:'🏹', name:'遠距範圍減少', base:500, grow:1.17, per:1, fmt:v=>'-'+v.toFixed(0),
+  // 遠距範圍減少：第 90 關解鎖。每級讓遠距敵人的攻擊距離 -1，下限 300。不適用 EX。
+  { key:'rangedreduce', icon:'🏹', name:'遠距範圍減少', base:600, grow:1.2, per:1, fmt:v=>'-'+v.toFixed(0),
     noEx:true,
     requiresLevel:90,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）達到第 90 關時解鎖。`,
