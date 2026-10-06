@@ -728,6 +728,8 @@ const RARITY_ODDS = [['N',.50],['R',.30],['SR',.15],['SSR',.05]];
 const SUMMON_BASE_COST = 500;
 const SUMMON_COST_GROW = 1.05;
 const SUMMON_UNLOCK_LEVEL = 85;  //通關第 85 關後開放
+const SUMMON_EX_MAX_LV = 1000;     // 召喚強化 EX：等級上限提升為 1000
+const SUMMON_EX_GEM_PER_10LV = 1;  // 召喚強化 EX：每 10 級，召喚 10 次所需鑽石 -1
 const SUMMON_STAGE1_END = 125, SUMMON_STAGE2_END = 330, SUMMON_MAX_LV = 781;
 const EQUIP_ODDS_TOTAL = 7000;
 function summonOddsUnits(lv){
@@ -747,6 +749,8 @@ function summonStepInfo(n){
   if(n <= SUMMON_STAGE2_END) return { label:'精良', pct:0.20 };
   return { label:'稀有', pct:0.10 };
 }
+function pull10Reduce(){ return exOn('summon') ? Math.floor(fin(state.up.summon,0)/10) * SUMMON_EX_GEM_PER_10LV : 0; }
+function pull10Cost(){ return Math.max(1, 900 - pull10Reduce()); }
 function summonPctText(units){ return String(+(units/100).toFixed(2)); }
 
 /* ── 技能 ─────────────────────────────────── */
@@ -1115,27 +1119,30 @@ const UPGRADES = [
     perFmt:lv=>'守護減傷 '+(GUARDIAN_REDUCE_BASE - lv)+'%',
     bodyFmt:v=>'減傷 -'+v.toFixed(0)+'%' },
   // 鋼鐵殺手：第 75 關後解鎖，用「鑽石」購買（每級固定 250，不成長）。每級讓鋼鐵敵人最大生命 -1，最低為 1。
-  // 上限 ＝ 最高關卡的鋼鐵生命 - 1（2×過關進度 - 1）。不適用 EX。
+  // 上限 ＝ 最高關卡的鋼鐵生命 - 1（3×過關進度 - 1）。EX：每級 -1.5（四捨五入）。
   { key:'steelkiller', icon:'🔩', name:'鋼鐵殺手', base:250, grow:1, per:1, fmt:v=>'-'+v.toFixed(0),
-    currency:'gem', noEx:true,
+    currency:'gem',
     requiresLevel:75,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 75 關時解鎖。`,
-    maxFn: ()=> Math.max(0, 2*state.unlockedLevel - 1),
-    body:lv=>lv, full:lv=>lv,
-    perFmt:lv=>'生命 -'+fmtNum(lv),
-    bodyFmt:v=>'鋼鐵生命 '+fmtNum(Math.max(1, 2*state.unlockedLevel - v)) },
-  // 召喚強化：第 85 關後解鎖。每級降低低稀有度裝備的機率（詳見 summonOddsUnits）。上限 781 級。不適用 EX。
+    maxFn: ()=>{ const cap = Math.max(0, 3*state.unlockedLevel - 1); return exOn('steelkiller') ? (cap<=0 ? 0 : Math.ceil((cap-0.5)/EX_STEEL_PER_LV)) : cap; },
+    body:lv=>lv, full:lv=>exOn('steelkiller') ? Math.round(lv*EX_STEEL_PER_LV) : lv,
+    perFmt:lv=>'生命 -'+fmtNum(exOn('steelkiller') ? Math.round(lv*EX_STEEL_PER_LV) : lv),
+    bodyFmt:v=>'鋼鐵生命 '+fmtNum(Math.max(1, 3*state.unlockedLevel - v)) },
+  // 召喚強化：第 85 關後解鎖。每級降低低稀有度裝備的機率（詳見 summonOddsUnits）。上限 781 級（EX：1000 級，並每 10 級讓十召喚 -1 鑽石）。
   { key:'summon', icon:'🔥', name:'召喚強化', base:SUMMON_BASE_COST, grow:SUMMON_COST_GROW, per:1, fmt:v=>String(v),
-    noEx:true, nextOnly:true,
+    nextOnly:true,
     requiresLevel:SUMMON_UNLOCK_LEVEL,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 85 關時解鎖。`,
-    max:SUMMON_MAX_LV,
+    maxFn: ()=> exOn('summon') ? SUMMON_EX_MAX_LV : SUMMON_MAX_LV,
     body:lv=>lv, full:lv=>lv,
-    nextFmt:lv=>{ const t = summonStepInfo(lv+1); return t.label+'裝備機率 -'+t.pct+'%'; },// 只顯示「下一級減少哪種機率」，不顯示目前。
+    nextFmt:lv=>{
+      const n = lv+1;
+      const odds = n > SUMMON_MAX_LV ? '裝備機率已全數轉為傳說' : (()=>{ const t = summonStepInfo(n); return t.label+'裝備機率 -'+t.pct+'%'; })();
+      return exOn('summon') ? odds+'且十召喚鑽石 -'+(Math.floor(n/10)*SUMMON_EX_GEM_PER_10LV) : odds;
+    },// 只顯示「下一級減少哪種機率」，不顯示目前。
     bodyFmt:v=>String(v) },
-  // 遠距範圍減少：第 90 關解鎖。每級讓遠距敵人的攻擊距離 -1，下限 300。不適用 EX。
-  { key:'rangedreduce', icon:'🏹', name:'遠距範圍減少', base:600, grow:1.2, per:1, fmt:v=>'-'+v.toFixed(0),
-    noEx:true,
+  // 遠距範圍減少：第 90 關解鎖。每級讓遠距敵人的攻擊距離 -1，下限 300。費用成長 1.22；EX 解鎖後成長降為 1.2。
+  { key:'rangedreduce', icon:'🏹', name:'遠距範圍減少', base:600, grow:1.22, exGrow:1.2, per:1, fmt:v=>'-'+v.toFixed(0),
     requiresLevel:90,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）達到第 90 關時解鎖。`,
     maxFn: ()=> Math.max(0, RANGED_BASE_RANGE + state.unlockedLevel - RANGED_MIN_RANGE),
@@ -1191,7 +1198,7 @@ function freshState(){
   return {
     gem:0, gold:0, stone:0,
     up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0, guardradius:0, guardpower:0, steelkiller:0, summon:0, rangedreduce:0 },
-    exOn:{ atk:false, hp:false, spd:false, crit:false, critdmg:false, goldboost:false, gemboost:false, defense:false, breakboost:false, monweaken:false, guardradius:false, guardpower:false }, // 鍛造台 EX 是否已解鎖（每項 2000 💎）
+    exOn:{ atk:false, hp:false, spd:false, crit:false, critdmg:false, goldboost:false, gemboost:false, defense:false, breakboost:false, monweaken:false, guardradius:false, guardpower:false, steelkiller:false, summon:false, rangedreduce:false }, // 鍛造台 EX 是否已解鎖（每項 2000 💎）
     exSeen:false,                             // 鍛造台 EX 解鎖提示是否已顯示過
     bag:kit.bag,                              // [{uid,id,rarity}]（新存檔內建新手三件裝備）（精煉等級改綁在裝備「部位」上，見 refineBySlot）
     equipped:kit.equipped,
@@ -1223,6 +1230,12 @@ function fmtNum(n){
   n = fin(n, 0);
   const sign = n < 0 ? '-' : '';
   n = Math.abs(n);
+  // 超過 T（約 999.95T）改用 10 的次方表示，例如 7.6×10²³
+  if(n >= 999.95e12){
+    const [m, ex] = n.toExponential(1).split('e');
+    const sup = String(parseInt(ex,10)).split('').map(ch=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[+ch]).join('');
+    return sign + m + '×10' + sup;
+  }
   const units = [ {v:1e12, s:'T'}, {v:1e9, s:'B'}, {v:1e6, s:'M'}, {v:1e3, s:'K'} ];
   for(const u of units){
     if(n >= u.v){
@@ -1242,7 +1255,7 @@ function fmtMul(n){
   n = fin(n, 0);
   return n < 1000 ? n.toFixed(1) : fmtNum(n);
 }
-// 百分比／小數數值顯示：小於 1000 依指定小數位顯示，達 1000 以上改用 K／M／B／T 縮寫
+// 百分比／小數數值顯示：小於 1000 依指定小數位顯示，達 1000 以上改用 K／M／B／T（超過 T 改 10 的次方）縮寫
 function fmtPct(n, digits){
   n = fin(n, 0);
   return Math.abs(n) < 1000 ? n.toFixed(digits||0) : fmtNum(n);
@@ -1943,6 +1956,8 @@ const GUARDIAN_UNLOCK_LEVEL = 50;
 const GUARDIAN_DEF = { emoji:'🗿', hp:0.8, spd:0.5, r:15, gold:1.1, guardian:true, rate:5 }; // 守護者出場率 5%
 // 鋼鐵敵人：速度一般、體積稍大。鍛造台「鋼鐵殺手」每級讓它的最大生命 -1（最低為 1）。
 const STEEL_UNLOCK_LEVEL = 75;//通關第 75 關後才會出現
+const EX_STEEL_PER_LV = 1.5;   // 鋼鐵殺手 EX：每級 -1.5 生命，總量四捨五入（原版 1）
+function steelReduceTotal(){ const lv = fin(state.up.steelkiller, 0); return exOn('steelkiller') ? Math.round(lv*EX_STEEL_PER_LV) : lv; }
 const STEEL_DEF = { emoji:'🤖', hp:0, spd:1.0, r:21, gold:1.8, steel:true, rate:3 };      // 鋼鐵敵人出場率 3%
 // ── 第 81 關起：敵人基礎移動速度強化（每關比上一關 +1）──
 const SPEED_BOOST_AFTER_LEVEL = 80;
@@ -1956,7 +1971,7 @@ const RANGED_BASE_RANGE = 320, RANGED_MIN_RANGE = 300;
 const RANGED_SHOOT_INTERVAL = 1.6;      // 每 1.6 秒拋一顆火球（每顆傷害 ＝ 敵人 dps × 間隔，總 DPS 與近戰相同）
 const RANGED_DEF = { emoji:'🧙', hp:0.8, spd:0.8, r:15, gold:1.5, ranged:true, rate:6 }; // 移速稍慢、出場率 6%
 function rangedRangeFor(level){ return Math.max(RANGED_MIN_RANGE, RANGED_BASE_RANGE + level - fin(state.up.rangedreduce, 0)); }
-function steelHpFor(level){ return Math.max(1, level*2 - fin(state.up.steelkiller, 0)); } // 生命固定為關卡數 × 2
+function steelHpFor(level){ return Math.max(1, level*3 - steelReduceTotal()); } // 生命固定為關卡數 × 3
 // 鋼鐵敵人每次被打固定只損失 1 點生命；其他敵人照原本規則（守護圈減傷）
 function enemyDmg(e, dmg){ return e.steel ? 1 : dmg * guardMul(e); }
 function pickMonsterBase(pool){
@@ -3639,7 +3654,7 @@ function doPull(n, free){
     if(state.freePullUsed) return;
     state.freePullUsed = true; // 先標記，避免連點重複領取
   } else {
-    const cost = n===10 ? 900 : 100;
+    const cost = n===10 ? pull10Cost() : 100;
     if(state.gem < cost){ toast('鑽石不足，去答題凝聚更多'); return; }
     state.gem -= cost;
   }
@@ -3685,7 +3700,7 @@ function doPull(n, free){
 
 // 數值有可能是負的（例如巨錘犧牲攻速、項鍊犧牲生命），正負號要正確顯示
 function signed(v, digits){
-  const n = digits ? v.toFixed(digits) : fmtNum(Math.round(v)); // 整數部分（攻擊／生命）用 K／M／B／T 縮寫
+  const n = digits ? v.toFixed(digits) : fmtNum(Math.round(v)); // 整數部分（攻擊／生命）用 K／M／B／T（超過 T 改 10 的次方）縮寫
   return (v >= 0 ? '+' : '') + n;
 }
 function statLine(base, rarity, refine){
@@ -3693,12 +3708,12 @@ function statLine(base, rarity, refine){
   const parts = [];
   // 副武器數值很小（例如 +0.5），需顯示到小數點後一位
   const sv = v => base.slot==='offhand'
-    ? ((v>=0?'+':'') + (Math.abs(v) >= 1000 ? fmtNum(v) : parseFloat(v.toFixed(1)))) // 小於 1000 保留小數，達 1000 以上用 K／M／B／T 縮寫
+    ? ((v>=0?'+':'') + (Math.abs(v) >= 1000 ? fmtNum(v) : parseFloat(v.toFixed(1)))) // 小於 1000 保留小數，達 1000 以上用 K／M／B／T（超過 T 改 10 的次方）縮寫
     : signed(v);
   if(base.atk)  parts.push('攻擊 ' + sv(base.atk*m));
   if(base.hp)   parts.push('生命 ' + sv(base.hp*m));
   if(base.spd)  parts.push('攻速 ' + signed(base.spd*m, 2));
-  if(base.crit) { const cv = base.crit*m; parts.push('暴擊 ' + (Math.abs(cv) >= 1000 ? (cv>=0?'+':'') + fmtNum(cv) : signed(cv, 1)) + '%'); } // 小於 1000 保留一位小數，達 1000 以上用 K／M／B／T 縮寫
+  if(base.crit) { const cv = base.crit*m; parts.push('暴擊 ' + (Math.abs(cv) >= 1000 ? (cv>=0?'+':'') + fmtNum(cv) : signed(cv, 1)) + '%'); } // 小於 1000 保留一位小數，達 1000 以上用 K／M／B／T（超過 T 改 10 的次方）縮寫
   if(base.multi)parts.push('彈道 +' + Math.floor(base.multi*(rarity==='SSR'?2:1)));
   return SLOT_LABEL[base.slot] + ' · ' + parts.join('　');
 }
@@ -3781,13 +3796,14 @@ function renderUpgrades(){
       return `<div class="up">
       <div class="ico">${u.icon}</div>
       <div class="info">
-        <div class="nm">${u.name}　<span style="color:var(--bone-dim);font-size:12px">Lv.${lv}${maxed?' 已滿':''}</span></div>
-        <div class="val">${maxed ? '機率已全數轉為傳說' : '下一級　'+u.nextFmt(lv)}</div>
+        <div class="nm">${u.name}${exOn(u.key)?'<span class="exbadge">EX</span>':''}　<span style="color:var(--bone-dim);font-size:12px">Lv.${lv}${maxed?' 已滿':''}</span></div>
+        <div class="val">${maxed ? (exOn(u.key) ? '已達 EX 等級上限' : '機率已全數轉為傳說') : '下一級　'+u.nextFmt(lv)}</div>
       </div>
       <div class="upbtns">
         <button data-up="${u.key}" ${maxed||(u.currency==='gem'?state.gem:state.gold)<cost?'disabled':''}>
           ${maxed ? '已滿級' : (u.currency==='gem'?'💎 ':'💰 ')+fmtNum(cost)}
         </button>
+        ${(exUnlocked() && !u.noEx && !exOn(u.key)) ? `<button class="exbtn" data-exunlock="${u.key}" ${state.gem<EX_UNLOCK_GEM?'disabled':''}>💎 ${fmtNum(EX_UNLOCK_GEM)}<small>解鎖 EX</small></button>` : ''}
       </div>
     </div>`;
     }
@@ -3944,7 +3960,7 @@ function renderRefine(){
     return `<div class="up">
       <div class="ico">${base.icon}</div>
       <div class="info">
-        <div class="nm">${base.name}　<span style="color:var(--bone-dim);font-size:12px">精煉 +${rlv}</span></div>
+        <div class="nm">${base.name}　<span style="color:var(--bone-dim);font-size:12px">精煉 +${fmtNum(rlv)}</span></div>
         <div class="val">${statLine(base, c.rarity, rlv)}</div>
       </div>
       <button data-ref="${s}" ${state.stone<cost?'disabled':''}>🔮 ${fmtNum(cost)}</button>
@@ -3958,7 +3974,7 @@ function renderRefine(){
       state.stone -= cost;
       addRefine(s, 1);
       save(); syncUI(); renderRefine(); renderEquip(); renderUpgrades();
-      toast(`精煉成功 +${getRefine(s)}`);
+      toast(`精煉成功 +${fmtNum(getRefine(s))}`);
     };
   });
 }
@@ -3978,7 +3994,7 @@ function renderEquip(){
     return `<div class="slot filled">
       <div class="ico">${base.icon}</div>
       <div class="info">
-        <div class="nm">${base.name}${rlv?` +${rlv}`:''}</div>
+        <div class="nm">${base.name}</div>
         <div class="st">${statLine(base, c.rarity, rlv)}</div>
       </div>
       <div class="rar r-${c.rarity}">${RARITY[c.rarity].label}</div>
@@ -4000,7 +4016,7 @@ function renderEquip(){
     return `<div class="bagItem${on?' on':''}" data-uid="${c.uid}">
       <div class="ico">${base.icon}</div>
       <div class="info">
-        <div class="nm">${base.name}${rlv?` +${rlv}`:''}${on?'　<span style="color:var(--ember-hot);font-size:11px">使用中</span>':''}</div>
+        <div class="nm">${base.name}${on?'　<span style="color:var(--ember-hot);font-size:11px">使用中</span>':''}</div>
         <div class="st">${statLine(base, c.rarity, rlv)}</div>
       </div>
       <div class="rar r-${c.rarity}">${RARITY[c.rarity].label}</div>
@@ -4054,7 +4070,8 @@ function syncUI(){
   document.getElementById('uiGold').textContent  = fmtNum(state.gold);
   document.getElementById('uiStone').textContent = fmtNum(state.stone);
   document.getElementById('pull1').disabled  = state.gem < 100;
-  document.getElementById('pull10').disabled = state.gem < 900;
+  document.getElementById('pull10').disabled = state.gem < pull10Cost();
+  document.getElementById('pull10').textContent = `召喚 10 次 · ${fmtNum(pull10Cost())} 💎`;
   // 新手免費十連抽：沒用過就顯示禮包卡片，並讓「召喚」分頁跳動＋紅點提醒
   const freeAvail = !state.freePullUsed;
   document.getElementById('freePullCard').style.display = freeAvail ? 'block' : 'none';
