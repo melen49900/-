@@ -1439,7 +1439,42 @@ function playIndigenousAudio(filename){
   const src = resolveAudioSrc(filename);
   if(!src) return;
   if(window.speechSynthesis) window.speechSynthesis.cancel(); // 避免 TTS 與錄音疊在一起
-  try{ new Audio(src).play().catch(()=>{}); }catch(e){}
+  // 已經存在裝置裡的音檔直接播（不用網路）；還沒存過的先用網路播，並順便存起來，下次就不用再抓
+  const url = audioBlobUrls.get(src) || src;
+  if(!audioBlobUrls.has(src)) downloadAudio(src);
+  try{ new Audio(url).play().catch(()=>{}); }catch(e){}
+}
+
+/* ── 族語音檔離線快取 ──
+   連線成功後，把所有族語音檔在背景下載並存進瀏覽器的 Cache（存在玩家自己的裝置裡）。
+   之後播放直接讀裝置上的那份，網路慢或暫時離線也能播。
+   播放時只用「已載入記憶體的 blob 網址」，確保手機點喇叭的當下可以立刻出聲。 */
+const AUDIO_CACHE_NAME = 'td-audio-v1';          // 音檔有大改動想強制全部重抓時，把 v1 改成 v2
+const AUDIO_PREFETCH_PARALLEL = 3;               // 背景同時下載幾個，避免壓垮網路
+const audioBlobUrls = new Map();                 // 音檔來源 → 本機 blob 網址
+const audioLoading = new Set();
+async function downloadAudio(src){
+  if(!src || /^data:/.test(src) || audioBlobUrls.has(src) || audioLoading.has(src) || !window.caches) return;
+  audioLoading.add(src);
+  try{
+    const c = await caches.open(AUDIO_CACHE_NAME);
+    let r = await c.match(src);
+    if(!r){
+      const resp = await fetch(src);
+      if(!resp.ok) return;
+      await c.put(src, resp.clone());
+      r = resp;
+    }
+    audioBlobUrls.set(src, URL.createObjectURL(await r.blob()));
+  }catch(e){ /* 離線或下載失敗：安靜略過，播放時會退回直接用網路播 */ }
+  finally{ audioLoading.delete(src); }
+}
+async function prefetchIndigenousAudio(){
+  const set = new Set();
+  indigenousWords.forEach(w=>{ const s = (w && w.audio) ? resolveAudioSrc(w.audio) : null; if(s) set.add(s); });
+  const list = [...set]; let i = 0;
+  const worker = async()=>{ while(i < list.length) await downloadAudio(list[i++]); };
+  await Promise.all(Array.from({length:AUDIO_PREFETCH_PARALLEL}, worker));
 }
 
 // 交給 QuizEngine 的題庫物件
@@ -4751,6 +4786,9 @@ async function boot(){
 }
 
 function finishBoot(){
+  // 離線支援：註冊 sw.js（存網頁／圖片／json），並在背景預先下載所有族語音檔
+  if('serviceWorker' in navigator && /^https?:/.test(location.protocol)) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  setTimeout(()=>{ prefetchIndigenousAudio(); }, 800);
   newQuestion();
   openLevelSelect();
   resizeCanvas();
