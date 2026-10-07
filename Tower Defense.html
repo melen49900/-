@@ -2749,7 +2749,7 @@ function drawLightningEx(){
     [[-.55,.1,.7],[0,-.2,.95],[.55,.1,.7],[-.2,.2,.8],[.25,.22,.75]].forEach(([dx,dy,sc])=>{
       const gx = cx+dx*R0, gy = cy+dy*R0;
       const g = ctx.createRadialGradient(gx,gy,0,gx,gy,R0*sc*.8);
-      g.addColorStop(0,'rgba(60,58,72,.62)'); g.addColorStop(1,'rgba(40,38,50,0)');
+      g.addColorStop(0,'rgba(78,74,96,.9)'); g.addColorStop(0.6,'rgba(58,54,76,.6)'); g.addColorStop(1,'rgba(40,38,56,0)');
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(gx,gy,R0*sc*.8,0,Math.PI*2); ctx.fill();
     });
     ctx.strokeStyle = '#d4b8ff'; ctx.lineWidth = 1.2; ctx.shadowColor = '#b388ff'; ctx.shadowBlur = 6; ctx.lineCap = 'round';
@@ -2767,11 +2767,7 @@ function drawLightningEx(){
       ctx.shadowBlur = 0; ctx.strokeStyle = '#f7f0ff'; ctx.lineWidth = 3.2; lightningExLine(main);
       ctx.restore();
     }
-    // 衝擊閃光與衝擊環
-    if(bt < 0.12){
-      ctx.save(); ctx.globalAlpha = 1 - bt/0.12; ctx.fillStyle = '#f3e8ff';
-      ctx.beginPath(); ctx.arc(b.x,b.y,b.r*2.4,0,Math.PI*2); ctx.fill(); ctx.restore();
-    }
+    // 衝擊環（已移除圓形閃光，避免打王時太刺眼）
     if(bt < 0.35){
       const f = bt/0.35;
       ctx.save(); ctx.globalAlpha = 1 - f; ctx.strokeStyle = '#d4b8ff'; ctx.lineWidth = 3*(1-f)+1;
