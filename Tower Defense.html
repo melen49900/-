@@ -773,8 +773,17 @@ const ICE_EX_SLOW_PCT = 0.75;    // 冰刃命中緩速比例
 const ICE_EX_SLOW_TIME = 1.5;    // 冰刃命中緩速時間（秒）
 const ICE_EX_TRAIL_LIFE = 1;     // 冰痕存在時間（秒）
 const ICE_EX_TICK = 0.25;        // 冰痕傷害間隔（秒），1 秒共 4 下
+const LIGHTNING_EX_UNLOCK_LEVEL = 90;      // 閃電術 EX：過關進度需超過第 90 關才開放（跟冰火的 80 不同）
+const LIGHTNING_EX_SPD_MULT = 0.4;         // 閃電術 EX：施放頻率 ＝ 角色攻速 × 0.4（原本 ×0.9）
+const LIGHTNING_EX_DMG_MULT = 2;           // 閃電術 EX：每一下傷害 ＝ 原本單下 × 2（各自獨立判定暴擊）
+const LIGHTNING_EX_MAX_HITS = 7;           // 閃電術 EX：攻擊次數 ＝ 連鎖敵人數(上限 6) + 1，最多 7 下
+const LIGHTNING_EX_STUN = 0.1;             // 閃電術 EX：鋼鐵敵人被擊中後無法動彈的時間（秒）
+const LIGHTNING_EX_CLOUD_DELAY = 0.2;      // 小烏雲出現後幾秒落雷
+const LIGHTNING_EX_FLASH = 0.35;           // 鋼鐵敵人全身淺紫閃光（純視覺，含淡出）
+const LIGHTNING_EX_CLOUD_FADE = 1.4;       // 擊中後雲緩慢消散所需時間
 function skillExOn(key){ return !!(state.skillEx && state.skillEx[key]); }
-function skillExAvailable(key){ return !!SKILL_DEFS[key].ex && state.unlockedLevel > SKILL_EX_UNLOCK_LEVEL; }
+function skillExAvailable(key){ return !!SKILL_DEFS[key].ex && state.unlockedLevel > (SKILL_DEFS[key].exLevel || SKILL_EX_UNLOCK_LEVEL); }
+function lightningSpdMult(){ return skillExOn('lightning') ? LIGHTNING_EX_SPD_MULT : SKILL_SPD_MULT.lightning; }
 function iceSpdMult(){ return skillExOn('icespike') ? ICE_EX_SPD_MULT : SKILL_SPD_MULT.icespike; }
 function fireballSpdMult(){ return skillExOn('fireball') ? FIREBALL_EX_SPD_MULT : SKILL_SPD_MULT.fireball; }
 const SKILL_DEFS = {
@@ -802,6 +811,9 @@ const SKILL_DEFS = {
     stacksFn: ()=>lightningChain(),
     pctFn: ()=>lightningPct(),
     desc:'隨機選擇場上一位敵人給予電擊；每抽 1 次多連鎖 1 位敵人，最多 6 位。',
+    ex:true,
+    exLevel:90,   // 通關第 90 關後才開放 EX
+    exDesc:'EX：閃電合併成 1 道落雷，一次對敵人造成數次傷害，優先攻擊特殊敵人，並會暫時麻痺鋼鐵敵人。',
   },
   whirlwind: {
     name:'旋風術', icon:'🌪️', innate:false,
@@ -932,6 +944,13 @@ function checkSkillExUnlock(){
     state.skillExSeen = true;
     save();
     toast('🔥 技能 EX 開放！到「技能」頁面可花 2000 💎 解鎖火球術／冰椎術 EX');
+  }
+}
+function checkLightningExUnlock(){
+  if(state.unlockedLevel > LIGHTNING_EX_UNLOCK_LEVEL && !state.lightningExSeen){
+    state.lightningExSeen = true;
+    save();
+    toast('⚡ 閃電術 EX 開放！到「技能」頁面可花 2000 💎 解鎖閃電術 EX');
   }
 }
 function checkBeamUnlock(){
@@ -1149,6 +1168,17 @@ const UPGRADES = [
     body:lv=>lv, full:lv=>lv,
     perFmt:lv=>'遠距攻擊距離 '+Math.max(RANGED_MIN_RANGE, RANGED_BASE_RANGE + state.unlockedLevel - lv),
     bodyFmt:v=>'距離 -'+v.toFixed(0) },
+  // 緩速：通關第 95 關後解鎖（放在「遠距範圍減少」下方，未解鎖以「？」顯示）。
+  // 每級讓「關卡加速加成」-1（第 66 關起每關 +1 的那份），最多扣到加成歸零（見 slowedSpeedBonus）。
+  // 費用成長 1.49；EX 解鎖後成長降為 1.47（比照「遠距範圍減少」，只降低費用成長）。
+  // 等級上限 ＝ 過關進度的加速加成（unlockedLevel - 65），隨過關進度每關多 1。
+  { key:'slow', icon:'🐌', name:'緩速', base:2000, grow:1.49, exGrow:1.47, per:1, fmt:v=>'-'+v.toFixed(0),
+    requiresLevel:95,
+    lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 95 關時解鎖。`,
+    maxFn: ()=> slowMaxLevel(),
+    body:lv=>lv, full:lv=>lv,
+    perFmt:lv=>'關卡加速加成 +'+Math.max(0, levelSpeedBonus(state.unlockedLevel) - lv),
+    bodyFmt:v=>'加速加成 -'+v.toFixed(0) },
 ];
 // 鍛造項目的等級上限：固定值 max，或依過關進度動態計算的 maxFn
 function upMax(u){ return u.maxFn ? u.maxFn() : (u.max != null ? u.max : null); }
@@ -1197,8 +1227,8 @@ function freshState(){
   const kit = makeStarterKit();
   return {
     gem:0, gold:0, stone:0,
-    up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0, guardradius:0, guardpower:0, steelkiller:0, summon:0, rangedreduce:0 },
-    exOn:{ atk:false, hp:false, spd:false, crit:false, critdmg:false, goldboost:false, gemboost:false, defense:false, breakboost:false, monweaken:false, guardradius:false, guardpower:false, steelkiller:false, summon:false, rangedreduce:false }, // 鍛造台 EX 是否已解鎖（每項 2000 💎）
+    up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0, guardradius:0, guardpower:0, steelkiller:0, summon:0, rangedreduce:0, slow:0 },
+    exOn:{ atk:false, hp:false, spd:false, crit:false, critdmg:false, goldboost:false, gemboost:false, defense:false, breakboost:false, monweaken:false, guardradius:false, guardpower:false, steelkiller:false, summon:false, rangedreduce:false, slow:false }, // 鍛造台 EX 是否已解鎖（每項 2000 💎）
     exSeen:false,                             // 鍛造台 EX 解鎖提示是否已顯示過
     bag:kit.bag,                              // [{uid,id,rarity}]（新存檔內建新手三件裝備）（精煉等級改綁在裝備「部位」上，見 refineBySlot）
     equipped:kit.equipped,
@@ -1207,6 +1237,7 @@ function freshState(){
     refineBySlot:{ weapon:0, armor:0, trinket:0, offhand:0, hat:0 }, // { [部位]: 精煉等級 }——精煉綁定「武器／防具／飾品」這個部位，不管換上哪一件、哪個稀有度都沿用同一個等級
     skillEx:{ fireball:false, icespike:false, lightning:false, whirlwind:false, earthwall:false, beam:false }, // 技能 EX 是否已解鎖（每個 2000 💎）
     skillExSeen:false,                        // 技能 EX 開放提示是否已顯示過
+    lightningExSeen:false,                    // 閃電術 EX（第 90 關後）開放提示是否已顯示過
     skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0}, whirlwind:{draws:0}, earthwall:{draws:0}, beam:{draws:0} }, // 技能召喚抽到的次數（旋風術另外會在 unlockedLevel > 20、土牆術在 unlockedLevel > 40 時自動補發 1 等）
     quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
     indigTier:IndigenousQuiz.createTierState(), // ← 族語階層解鎖進度，整包存檔
@@ -1959,17 +1990,39 @@ const STEEL_UNLOCK_LEVEL = 75;//通關第 75 關後才會出現
 const EX_STEEL_PER_LV = 1.5;   // 鋼鐵殺手 EX：每級 -1.5 生命，總量四捨五入（原版 1）
 function steelReduceTotal(){ const lv = fin(state.up.steelkiller, 0); return exOn('steelkiller') ? Math.round(lv*EX_STEEL_PER_LV) : lv; }
 const STEEL_DEF = { emoji:'🤖', hp:0, spd:1.0, r:21, gold:1.8, steel:true, rate:3 };      // 鋼鐵敵人出場率 3%
-// ── 第 81 關起：敵人基礎移動速度強化（每關比上一關 +1）──
-const SPEED_BOOST_AFTER_LEVEL = 80;
+// ── 第 66 關起：敵人基礎移動速度強化（每關比上一關 +1）──
+const SPEED_BOOST_AFTER_LEVEL = 65;
 function levelSpeedBonus(level){ return Math.max(0, level - SPEED_BOOST_AFTER_LEVEL); }
+// ── 鍛造台「緩速」：每級扣 1 點「關卡加速加成」，最多扣到加成歸零（怪物本身的初始移速不變）──
+function slowedSpeedBonus(level){ return Math.max(0, levelSpeedBonus(level) - Math.max(0, fin(state.up.slow, 0))); }
+function slowMaxLevel(){ return levelSpeedBonus(state.unlockedLevel); } // 上限隨過關進度每關 +1
 // ── 第 86 關起：遠距敵人（拋射火球）──
-// 攻擊距離 ＝ 320 + 關卡數（鍛造台「遠距範圍減少」每級 -1，下限 300）。
 // 距離 > 土牆距離（350）：無視土牆，直接朝主角前進、進入射程就停下來拋火球攻擊主角（火球越過土牆）。
 // 距離 ≤ 350：土牆在射程內時停下來攻擊土牆；沒有土牆則照常朝主角前進。
 const RANGED_UNLOCK_LEVEL = 85;
-const RANGED_BASE_RANGE = 320, RANGED_MIN_RANGE = 300;
+const RANGED_BASE_RANGE = 320, RANGED_MIN_RANGE = 250;// 攻擊距離 ＝ 320 + 關卡數（鍛造台「遠距範圍減少」每級 -1，下限 250）。
 const RANGED_SHOOT_INTERVAL = 1.6;      // 每 1.6 秒拋一顆火球（每顆傷害 ＝ 敵人 dps × 間隔，總 DPS 與近戰相同）
 const RANGED_DEF = { emoji:'🧙', hp:0.8, spd:0.8, r:15, gold:1.5, ranged:true, rate:6 }; // 移速稍慢、出場率 6%
+// ── 魔王攻擊疊加（所有關卡、所有階段）──
+// 魔王每打一下（打土牆或打主角、近戰或遠程火球都算），傷害就比上一下多 10%：100%、110%、121%、133%…
+// 近戰魔王改為「每 BOSS_ATTACK_INTERVAL 秒出手一次」（單下傷害 ＝ dps × 間隔，起始總 DPS 與原本相同）。
+const BOSS_ATK_STACK = 1.10;            // 每次攻擊比上一次多 10%
+const BOSS_ATTACK_INTERVAL = 1.0;       // 近戰魔王出手間隔（秒）
+function bossStrikeDmg(e, interval){    // 取出本次攻擊傷害，並讓疊加層數 +1
+  const n = e.atkCount || 0;
+  e.atkCount = n + 1;
+  return e.dps * interval * Math.pow(BOSS_ATK_STACK, n);
+}
+// ── 遠程魔王 ──
+// 魔王有 RANGED_BOSS_CHANCE 的機率是遠程型（停在射程外拋火球），機率 0 = 不出現、1 = 全部都是遠程。
+// 圖片：Tower Defense images/BossRanged1.png ~ BossRanged數量.png；沒放圖片就退回一般魔王圖片／emoji。
+const RANGED_BOSS_CHANCE = 0.35;
+const RANGED_BOSS_UNLOCK_LEVEL = 0;     // 第幾關「之後」才會出現遠程魔王（0 = 第 1 關起）
+const RANGED_BOSS_IMG_PREFIX = 'BossRanged';
+const RANGED_BOSS_IMG_MAX = 2;          // 圖片張數上限
+const RANGED_BOSS_RANGE = 300;          // 遠程魔王固定射程（不受關卡數／鍛造台影響；≤350 所以不會無視土牆，會先打完土牆）
+const RANGED_BOSSES = ['🧛','👹'];       // 沒圖片時的 emoji
+let rangedBossImgs = [];
 function rangedRangeFor(level){ return Math.max(RANGED_MIN_RANGE, RANGED_BASE_RANGE + level - fin(state.up.rangedreduce, 0)); }
 function steelHpFor(level){ return Math.max(1, level*3 - steelReduceTotal()); } // 生命固定為關卡數 × 3
 // 鋼鐵敵人每次被打固定只損失 1 點生命；其他敵人照原本規則（守護圈減傷）
@@ -2016,7 +2069,7 @@ const run = {
   fireTimer:0, iceTimer:0, lightningTimer:0, whirlwindTimer:0, earthwallTimer:0, earthwallCd:0, beamTimer:0,
   beam:{ target:null, ang:-Math.PI/2, pulse:0, active:false },
   kills:0, gold:0,
-  enemies:[], shots:[], bits:[], pops:[], bolts:[], tornadoes:[], walls:[],
+  enemies:[], shots:[], bits:[], pops:[], bolts:[], exBolts:[], tornadoes:[], walls:[],
   iceBlades:[], // 冰椎術 EX：冰刃（含冰痕）
   eshots:[], // 遠距敵人的拋物線火球
   lobs:[], blasts:[], // 火球術 EX：飛行中的大火球／落地後的爆風
@@ -2123,7 +2176,7 @@ function startRun(level){
   run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0; run.whirlwindTimer=0; run.earthwallTimer=0; run.earthwallCd=0; run.beamTimer=0;
   run.beam={ target:null, ang:-Math.PI/2, pulse:0, active:false };
   run.kills=0; run.gold=0;
-  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.tornadoes=[]; run.walls=[]; run.lobs=[]; run.blasts=[]; run.eshots=[]; run.iceBlades=[]; run.shake=0;
+  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.exBolts=[]; run.tornadoes=[]; run.walls=[]; run.lobs=[]; run.blasts=[]; run.eshots=[]; run.iceBlades=[]; run.shake=0;
   applyLevelTheme(run.level);
   document.getElementById('overlay').classList.remove('on');
   openStage();
@@ -2225,7 +2278,8 @@ function fireEnemyLob(e, wall){
     age:0,
     T: Math.max(0.7, Math.min(1.3, dist / (320*hScale))),
     h: Math.max(90, Math.min(210, dist*0.42)),
-    dmg: e.dps * RANGED_SHOOT_INTERVAL,
+    dmg: e.boss ? bossStrikeDmg(e, RANGED_SHOOT_INTERVAL) : e.dps * RANGED_SHOOT_INTERVAL,
+    boss: !!e.boss,
     trail: [],
   });
 }
@@ -2254,8 +2308,8 @@ function drawEnemyLobs(){
     });
     ctx.globalAlpha = 1;
     // 火球本體：越高越大（離鏡頭近）
-    const r = 7 + p.z/b.h*4;
-    ctx.shadowBlur = 16; ctx.shadowColor = '#ff6a1f';
+    const r = (7 + p.z/b.h*4) * (b.boss ? 1.6 : 1);
+    ctx.shadowBlur = 16; ctx.shadowColor = b.boss ? '#ff2a6b' : '#ff6a1f';
     const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r*1.5);
     g.addColorStop(0,'#fff3c4'); g.addColorStop(0.45,'#ff9b3d'); g.addColorStop(1,'rgba(255,90,20,0)');
     ctx.fillStyle = g;
@@ -2276,6 +2330,7 @@ function spawnEnemy(){
     if(run.level > RANGED_UNLOCK_LEVEL)   monsterPool = monsterPool.concat([RANGED_DEF]);
   }
   const base = pickMonsterBase(monsterPool);
+  const bossRanged = isBoss && run.level > RANGED_BOSS_UNLOCK_LEVEL && Math.random() < RANGED_BOSS_CHANCE;
   // 鍛造台「怪物弱化」：怪物生命每級 ×MONSTER_WEAKEN_MULT_PER_LV（累乘）
   const weakenMul = monsterWeakenMul();
   const hp = base.steel ? steelHpFor(run.level) : enemyHpFor(run.level, w) * base.hp * (isBoss ? 14 : 1) * weakenMul;
@@ -2285,13 +2340,15 @@ function spawnEnemy(){
     y: -30,
     vx: (Math.random()-0.5) * 12,
     hp, maxHp:hp,
-    spd: ((isBoss ? 11 : 17 * base.spd) + levelSpeedBonus(run.level)) * waveSpeedMulFor(w) * hScale,
+    spd: ((isBoss ? 11 : 17 * base.spd) + slowedSpeedBonus(run.level)) * waveSpeedMulFor(w) * hScale,
     r: isBoss ? 34 : base.r,
-    emoji: isBoss ? BOSSES[Math.floor(Math.random()*BOSSES.length)] : base.emoji,
-    img: isBoss ? pickRandomImg(bossImgs) : (base.guardian ? (guardianImgReady ? guardianImg : null) : pickRandomImg(monsterImgs)),
+    emoji: isBoss ? (bossRanged ? RANGED_BOSSES : BOSSES)[Math.floor(Math.random()*(bossRanged ? RANGED_BOSSES : BOSSES).length)] : base.emoji,
+    img: isBoss ? pickRandomImg(bossRanged && rangedBossImgs.length ? rangedBossImgs : bossImgs) : (base.guardian ? (guardianImgReady ? guardianImg : null) : pickRandomImg(monsterImgs)),
     guardian: !!base.guardian,
     steel: !!base.steel,
-    ranged: !!base.ranged,
+    ranged: !!base.ranged || bossRanged,
+    atkCount: 0, atkTimer: 0,
+    range: bossRanged ? RANGED_BOSS_RANGE : 0,
     shootTimer: 0.6,
     gold: base.gold * (isBoss ? 22 : 1) * (1 + w*0.35),
     boss: isBoss,
@@ -2589,7 +2646,106 @@ function spawnIceSpike(){
 }
 
 // 閃電術：瞬間命中一位場上隨機敵人，再隨機連鎖 (n-1) 位不重複的敵人。
+/* ── 閃電術 EX：1 道落雷 ──
+   目標優先順序：守護者 › 遠程 › 鋼鐵 › 王 › 一般（同類取最靠近底線者）。
+   小烏雲先出現，約 0.2 秒後落雷直擊目標；攻擊次數 ＝ 連鎖敵人數(上限 6)+1，同時結算、每下各自判定暴擊。
+   鋼鐵敵人每下 1 點傷害，被擊中會暫時無法動彈。沒有目標就不發射。 */
+function lightningExPriority(e){
+  if(e.guardian) return 0;
+  if(e.ranged) return 1;
+  if(e.steel) return 2;
+  if(e.boss) return 3;
+  return 4;
+}
+function castLightningEx(){
+  const n = lightningChain();
+  if(n <= 0) return;
+  let target = null, bp = 99, deepest = -Infinity;
+  for(const e of run.enemies){
+    if(e.hp <= 0 || e.y <= 8) continue;
+    const pr = lightningExPriority(e);
+    if(pr < bp || (pr === bp && e.y > deepest)){ target = e; bp = pr; deepest = e.y; }
+  }
+  if(!target) return;
+  run.exBolts.push({ e:target, x:target.x, y:target.y, r:target.r, hits:Math.min(LIGHTNING_EX_MAX_HITS, n+1), t:0, struck:false, flick:0 });
+}
+function lightningExStrike(b){
+  b.struck = true;
+  const e = b.e, s = stats();
+  const alive = e.hp > 0 && run.enemies.includes(e);
+  if(alive){ b.x = e.x; b.y = e.y; b.r = e.r; }
+  const base = lightningAtk(s) * LIGHTNING_EX_DMG_MULT;
+  let anyCrit = false;
+  for(let i=0;i<b.hits;i++){
+    const crit = Math.random()*100 < s.crit;
+    if(crit) anyCrit = true;
+    const d = alive ? enemyDmg(e, crit ? base*(s.critDmg/100) : base) : 0;
+    if(alive){ e.hp -= d; e.hit = 0.12; }
+    // 傷害數字同時出現，由下至上並排
+    popText(b.x, b.y - b.r - 6 - i*17, fmtNum(alive ? d : 0), crit);
+  }
+  if(alive && e.steel){ e.stun = LIGHTNING_EX_STUN; e.lflash = LIGHTNING_EX_FLASH; }
+  burst(b.x, b.y, anyCrit ? '#fff3ff' : '#e0ccff', anyCrit ? 18 : 12);
+}
+function updateLightningEx(dt){
+  for(let i=run.exBolts.length-1;i>=0;i--){
+    const b = run.exBolts[i];
+    b.t += dt;
+    if(!b.struck){
+      if(b.e.hp > 0 && run.enemies.includes(b.e)){ b.x = b.e.x; b.y = b.e.y; }  // 烏雲跟著目標
+      if(b.t >= LIGHTNING_EX_CLOUD_DELAY) lightningExStrike(b);
+    }
+    if(b.t >= LIGHTNING_EX_CLOUD_DELAY + 0.25 + LIGHTNING_EX_CLOUD_FADE) run.exBolts.splice(i,1);
+  }
+}
+function lightningExZig(x1,y1,x2,y2,j){
+  const pts = [[x1,y1]], n = Math.max(3, Math.round(Math.hypot(x2-x1,y2-y1)/14));
+  for(let i=1;i<n;i++){ const t=i/n; pts.push([x1+(x2-x1)*t+(Math.random()-.5)*j, y1+(y2-y1)*t]); }
+  pts.push([x2,y2]); return pts;
+}
+function lightningExLine(p){ ctx.beginPath(); p.forEach((q,i)=> i ? ctx.lineTo(q[0],q[1]) : ctx.moveTo(q[0],q[1])); ctx.stroke(); }
+function drawLightningEx(){
+  run.exBolts.forEach(b=>{
+    const cx = b.x, cy = Math.min(b.y - 12, Math.max(18, b.y - b.r - 62)), R0 = 44;
+    const bt = b.t - LIGHTNING_EX_CLOUD_DELAY;
+    const a = b.t < LIGHTNING_EX_CLOUD_DELAY ? b.t/LIGHTNING_EX_CLOUD_DELAY : Math.max(0, 1 - (bt-0.25)/LIGHTNING_EX_CLOUD_FADE);
+    // 小烏雲：半透明灰黑，雲內有淺紫電弧
+    ctx.save(); ctx.globalAlpha = a;
+    [[-.55,.1,.7],[0,-.2,.95],[.55,.1,.7],[-.2,.2,.8],[.25,.22,.75]].forEach(([dx,dy,sc])=>{
+      const gx = cx+dx*R0, gy = cy+dy*R0;
+      const g = ctx.createRadialGradient(gx,gy,0,gx,gy,R0*sc*.8);
+      g.addColorStop(0,'rgba(60,58,72,.62)'); g.addColorStop(1,'rgba(40,38,50,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(gx,gy,R0*sc*.8,0,Math.PI*2); ctx.fill();
+    });
+    ctx.strokeStyle = '#d4b8ff'; ctx.lineWidth = 1.2; ctx.shadowColor = '#b388ff'; ctx.shadowBlur = 6; ctx.lineCap = 'round';
+    for(let i=0;i<2;i++) if(Math.random() < .45){
+      const sx = cx+(Math.random()-.5)*R0*1.2, sy = cy+(Math.random()-.5)*R0*.5;
+      lightningExLine(lightningExZig(sx,sy,sx+(Math.random()-.5)*R0*.7,sy+(Math.random()-.3)*R0*.5,9));
+    }
+    ctx.restore();
+    if(!b.struck) return;
+    // 落雷：粗淺紫雷柱＋白色亮芯
+    if(bt < 0.14){
+      const f = 1 - bt/0.14, main = lightningExZig(cx,cy,cx,b.y-2,18);
+      ctx.save(); ctx.globalAlpha = f; ctx.lineJoin = ctx.lineCap = 'round';
+      ctx.shadowColor = '#b388ff'; ctx.shadowBlur = 24; ctx.strokeStyle = '#cdb0ff'; ctx.lineWidth = 9; lightningExLine(main);
+      ctx.shadowBlur = 0; ctx.strokeStyle = '#f7f0ff'; ctx.lineWidth = 3.2; lightningExLine(main);
+      ctx.restore();
+    }
+    // 衝擊閃光與衝擊環
+    if(bt < 0.12){
+      ctx.save(); ctx.globalAlpha = 1 - bt/0.12; ctx.fillStyle = '#f3e8ff';
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.r*2.4,0,Math.PI*2); ctx.fill(); ctx.restore();
+    }
+    if(bt < 0.35){
+      const f = bt/0.35;
+      ctx.save(); ctx.globalAlpha = 1 - f; ctx.strokeStyle = '#d4b8ff'; ctx.lineWidth = 3*(1-f)+1;
+      ctx.beginPath(); ctx.ellipse(b.x,b.y,b.r*3.2*f,b.r*3.2*f*.5,0,0,Math.PI*2); ctx.stroke(); ctx.restore();
+    }
+  });
+}
 function castLightning(){
+  if(skillExOn('lightning')){ castLightningEx(); return; }
   const n = lightningChain();
   if(n <= 0 || run.enemies.length === 0) return;
   const s = stats();
@@ -2793,7 +2949,7 @@ function step(dt){
   run.iceTimer -= dt;
   if(run.iceTimer <= 0){ queueIceSpikes(); run.iceTimer = 1 / (s.spd * iceSpdMult()); }
   run.lightningTimer -= dt;
-  if(run.lightningTimer <= 0){ castLightning(); run.lightningTimer = 1 / (s.spd * SKILL_SPD_MULT.lightning); }
+  if(run.lightningTimer <= 0){ castLightning(); run.lightningTimer = 1 / (s.spd * lightningSpdMult()); }
   run.whirlwindTimer -= dt;
   if(run.whirlwindTimer <= 0){ castWhirlwind(); run.whirlwindTimer = 1 / (s.spd * SKILL_SPD_MULT.whirlwind); }
   updateBeam(dt);
@@ -2924,6 +3080,13 @@ function step(dt){
       continue;
     }
 
+    // 閃電術 EX：鋼鐵敵人被擊中後暫時無法動彈
+    if(e.lflash > 0) e.lflash -= dt;
+    if(e.stun > 0){
+      e.stun -= dt;
+      if(e.hit > 0) e.hit -= dt;
+      continue;
+    }
     // 敵人路徑上的最近土牆擋住其前進，摧毀那一下也還是能稍微擋住敵人，下個影格才真正移除、放行。
     if(e.wallStagger > 0){
       e.wallStagger -= dt;
@@ -2934,7 +3097,7 @@ function step(dt){
 
     // 遠距敵人：進入射程就停下來拋火球
     if(e.ranged){
-      const range = rangedRangeFor(run.level);
+      const range = e.boss ? e.range : rangedRangeFor(run.level);
       let tgtWall = null;
       if(range <= EARTHWALL_Y_FROM_BOTTOM){
         for(const w of run.walls){
@@ -2950,7 +3113,7 @@ function step(dt){
         continue;
       }
     }
-    const ignoreWall = e.ranged && rangedRangeFor(run.level) > EARTHWALL_Y_FROM_BOTTOM; // 射程 > 350：無視土牆
+    const ignoreWall = e.ranged && (e.boss ? e.range : rangedRangeFor(run.level)) > EARTHWALL_Y_FROM_BOTTOM; // 射程 > 350：無視土牆
     const preY = e.y; // 移動前的 y：用來判斷「這道牆本來就已經在敵人後面」，避免已通過的牆又把敵人卡住
     e.y += e.spd*dt*slowMul;
     e.x += e.vx*dt*slowMul;
@@ -2967,8 +3130,19 @@ function step(dt){
       e.y = blockWall.y;
       e.touching = true;
       // 鍛造台「減傷」：土牆受到的傷害乘以減傷係數
-      blockWall.hp -= e.dps * dmgTakenMul * dt;
-      blockWall.hit = 0.12;
+      if(e.boss){
+        // 魔王：每隔 BOSS_ATTACK_INTERVAL 秒出手一次，傷害逐次 +10%
+        e.atkTimer = (e.atkTimer||0) + dt;
+        if(e.atkTimer >= BOSS_ATTACK_INTERVAL){
+          e.atkTimer -= BOSS_ATTACK_INTERVAL;
+          blockWall.hp -= bossStrikeDmg(e, BOSS_ATTACK_INTERVAL) * dmgTakenMul;
+          blockWall.hit = 0.12;
+          burst(e.x, blockWall.y, '#ff3b6b', 10);
+        }
+      } else {
+        blockWall.hp -= e.dps * dmgTakenMul * dt;
+        blockWall.hit = 0.12;
+      }
       if(blockWall.hp <= 0) e.wallStagger = EARTHWALL_BREAK_STAGGER;
       e.hitTimer = (e.hitTimer||0) + dt;
       if(e.hitTimer >= 0.4){
@@ -2982,7 +3156,16 @@ function step(dt){
       e.y = heroLine; // 卡在防線上，不再往下擠
       e.touching = true;
       // 鍛造台「減傷」：角色受到的傷害乘以減傷係數
-      run.hp -= e.dps * dmgTakenMul * dt;
+      if(e.boss){
+        e.atkTimer = (e.atkTimer||0) + dt;
+        if(e.atkTimer >= BOSS_ATTACK_INTERVAL){
+          e.atkTimer -= BOSS_ATTACK_INTERVAL;
+          run.hp -= bossStrikeDmg(e, BOSS_ATTACK_INTERVAL) * dmgTakenMul;
+          run.shake = Math.max(run.shake, 0.3);
+        }
+      } else {
+        run.hp -= e.dps * dmgTakenMul * dt;
+      }
       e.hitTimer = (e.hitTimer||0) + dt;
       if(e.hitTimer >= 0.4){ // 每 0.4 秒一次視覺回饋，避免每幀爆量特效
         e.hitTimer = 0;
@@ -3045,6 +3228,7 @@ function step(dt){
     if(p.age >= p.life){ run.pops.splice(i,1); continue; }
     p.y += p.vy*dt; p.vy *= 0.94;
   }
+  updateLightningEx(dt);
   for(let i=run.bolts.length-1;i>=0;i--){
     const b = run.bolts[i];
     b.age += dt;
@@ -3159,6 +3343,18 @@ hero4Img.onload  = ()=>{ hero4ImgReady = true; };
 hero4Img.onerror = ()=>{ hero4ImgReady = false; };
 hero4Img.src = encodeURI(`./${HERO_IMG_FOLDER}/hero4.png`);//指定名稱
 
+const hero5Img = new Image();
+let hero5ImgReady = false;
+hero5Img.onload  = ()=>{ hero5ImgReady = true; };
+hero5Img.onerror = ()=>{ hero5ImgReady = false; };
+hero5Img.src = encodeURI(`./${HERO_IMG_FOLDER}/hero5.png`);//指定名稱
+
+const hero6Img = new Image();
+let hero6ImgReady = false;
+hero6Img.onload  = ()=>{ hero6ImgReady = true; };
+hero6Img.onerror = ()=>{ hero6ImgReady = false; };
+hero6Img.src = encodeURI(`./${HERO_IMG_FOLDER}/hero6.png`);//指定名稱
+
 // 守護者圖片：放 Tower Defense images/guardian.png；沒放或載入失敗時，退回 🗿 emoji。
 const GUARDIAN_IMG_FILE = 'guardian.png';        // 指定守護者圖片檔名
 const guardianImg = new Image();
@@ -3172,6 +3368,8 @@ const HERO_SKINS = [
   { id:2, name:'造型 2', icon:'🧊', unlockLevel:25, img:()=>hero2Img, ready:()=>hero2ImgReady },//第 25 關解鎖 hero2.png
   { id:3, name:'造型 3', icon:'⚡', unlockLevel:50, img:()=>hero3Img, ready:()=>hero3ImgReady },//第 50 關解鎖 hero3.png
   { id:4, name:'造型 4', icon:'🌟', unlockLevel:75, img:()=>hero4Img, ready:()=>hero4ImgReady },//第 75 關解鎖 hero4.png
+  { id:5, name:'造型 5', icon:'🔥', unlockLevel:100, img:()=>hero5Img, ready:()=>hero5ImgReady },//第 100 關解鎖 hero5.png
+  { id:6, name:'造型 6', icon:'👑', unlockLevel:125, img:()=>hero6Img, ready:()=>hero6ImgReady },//第 125 關解鎖 hero6.png
 ];
 function currentHeroSkin(){
   return HERO_SKINS.find(h=>h.id===(state.selectedHero||1)) || HERO_SKINS[0];
@@ -3220,7 +3418,7 @@ const MONSTER_IMG_PREFIX = 'monster';// 指定小怪名稱
 const BOSS_IMG_PREFIX = 'Boss';// 指定王名稱
 // 實際圖片總數：新增／刪除圖片只要改下面兩個數字
 const MONSTER_IMG_MAX = 22;
-const BOSS_IMG_MAX = 7;
+const BOSS_IMG_MAX = 5;
 //讀到這個張數就先讓玩家進遊戲，其餘在背景補齊，補好會加入怪物池
 const MONSTER_IMG_MIN_TO_ENTER = 5;
 const BOSS_IMG_MIN_TO_ENTER = 4;
@@ -3450,6 +3648,7 @@ function draw(){
       ctx.restore();
     }
     ctx.save();
+    if(e.stun > 0) ctx.translate((Math.random()-.5)*3, 0); // 麻痺：原地輕微抖動
     if(e.hit > 0){ ctx.globalAlpha = 0.55; }
     if(e.img){
       const d = e.r * 2.3; // 自訂圖片視覺直徑，比原本 emoji 略大一點比較有存在感
@@ -3463,6 +3662,13 @@ function draw(){
         ctx.fillStyle = e.boss ? '#ff3b6b' : '#c9663a';
         ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI*2); ctx.fill();
       }
+    }
+    if(e.lflash > 0){ // 閃電術 EX：全身淺紫閃光
+      const fa = Math.min(1, e.lflash/LIGHTNING_EX_FLASH);
+      ctx.globalAlpha = 1;
+      const fg = ctx.createRadialGradient(e.x,e.y,0,e.x,e.y,e.r*1.25);
+      fg.addColorStop(0,`rgba(246,238,255,${0.9*fa})`); fg.addColorStop(0.7,`rgba(205,176,255,${0.75*fa})`); fg.addColorStop(1,'rgba(180,140,255,0)');
+      ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(e.x,e.y,e.r*1.25,0,Math.PI*2); ctx.fill();
     }
     ctx.restore();
     // 血條
@@ -3501,6 +3707,7 @@ function draw(){
   drawIceBladeEx(); // 冰椎術 EX：冰刃本體
   drawEnemyLobs();  // 遠距敵人的拋物線火球（畫在土牆與怪物之上，看起來越過土牆）
   drawFireballEx(); // 火球術 EX：拋物線大火球與爆風
+  drawLightningEx(); // 閃電術 EX：小烏雲與落雷
 
   // 閃電連線：角色 → 敵人 → 敵人 → …，鋸齒狀連線，命中瞬間亮起、快速淡出
   run.bolts.forEach(b=>{
@@ -3905,6 +4112,8 @@ function renderSkills(){
       statusText = `光束寬度 ${beamWidth()}px　傷害 ${pct.toFixed(0)}% 攻擊`;
     } else if(key === 'icespike' && skillExOn('icespike')){
       statusText = `冰刃傷害 ${fmtNum(Math.round(pct*ICE_EX_DMG_MULT))}% 攻擊　冰痕每下 ${pct.toFixed(1)}%×4　寬度 ${ICE_EX_WIDTH}　攻速 ×${ICE_EX_SPD_MULT}`;
+    } else if(key === 'lightning' && skillExOn('lightning')){
+      statusText = `攻擊次數 ${Math.min(LIGHTNING_EX_MAX_HITS, stacks+1)}（連鎖數+1）　每下 ${fmtNum(Math.round(pct*LIGHTNING_EX_DMG_MULT))}% 攻擊　攻速 ×${LIGHTNING_EX_SPD_MULT}`;
     } else if(key === 'fireball' && skillExOn('fireball')){
       statusText = `大火球傷害 ${fmtNum(Math.round(pct*FIREBALL_EX_DMG_MULT))}% 攻擊　擴散 ${FIREBALL_EX_SPLASH_PCT*100}%（直徑 ${FIREBALL_EX_SPLASH_DIAMETER}）　攻速 ×${FIREBALL_EX_SPD_MULT}`;
     } else {
@@ -4061,6 +4270,7 @@ function syncUI(){
   checkEarthwallUnlock(); // 過關進度一旦超過門檻就自動補發土牆術 1 等
   checkBeamUnlock();      // 過關進度一旦超過門檻就自動補發光束砲 1 等
   checkSkillExUnlock();   // 過關進度超過 80 關時開放技能 EX 並提示一次
+  checkLightningExUnlock(); // 過關進度超過 90 關時開放閃電術 EX 並提示一次
   checkHatUnlock();       // 過關進度超過 75 關時解鎖帽子並提示一次
   checkOffhandUnlock();   // 過關進度超過 65 關時解鎖副武器並提示一次
   checkExUnlock();        // 過關進度超過 70 關時開放鍛造台 EX 並提示一次
@@ -4512,7 +4722,11 @@ async function boot(){
     arr => { bossImgs = arr; }
   );
 
-  const [qResult, iResult] = await Promise.all([questionsTask, imagesTask, monsterReadyTask, bossReadyTask, indigenousTask]);
+  const rangedBossReadyTask = probeImageSeries(
+    HERO_IMG_FOLDER, RANGED_BOSS_IMG_PREFIX, RANGED_BOSS_IMG_MAX, 1,
+    arr => { rangedBossImgs = arr; }
+  );
+  const [qResult, iResult] = await Promise.all([questionsTask, imagesTask, monsterReadyTask, bossReadyTask, rangedBossReadyTask, indigenousTask]);
 
   clearTimeout(skipTimer);
 
