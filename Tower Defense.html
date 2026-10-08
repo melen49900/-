@@ -901,7 +901,6 @@ const WHIRLWIND_SPEED_MULT = 0.2;//旋風術移動速度
 const WHIRLWIND_EX_UNLOCK_LEVEL = 90;     // 過關進度需超過此關卡數才開放（跟閃電術 EX 一樣）
 const WHIRLWIND_EX_SPD_MULT = 0.3;        // 施放頻率 ＝ 角色攻速 × 0.3（原本 ×0.1）；每次施放造成 WHIRLWIND_EX_HITS 下傷害
 const WHIRLWIND_EX_HITS = 5;              // 每次施放的傷害次數（每下分開計算暴擊）
-const WHIRLWIND_EX_HIT_GAP = 0.08;        // 5 下傷害之間的間隔（秒），讓傷害數字依序跳出
 const WHIRLWIND_EX_DMG_MULT = 1.2;        // 每一下傷害 ＝ 原本單下 × 1.2
 const WHIRLWIND_EX_MOVE_MULT = 0.25;      // 移動速度（原本 0.2）
 const WHIRLWIND_EX_RADIUS = 60;           // 傷害半徑（原本 45）
@@ -2975,7 +2974,7 @@ function castWhirlwind(){
 // 旋風術 EX：開場固定在場中央生成 1 道大旋風，整場戰鬥存在（不會消失）。
 function spawnWhirlwindEx(s){
   if(!skillExOn('whirlwind') || state.skills.whirlwind.draws < 1) return;
-  run.tornadoes.push({ ex:true, x:W/2, y:H/2, dmg:whirlwindAtk(s), age:0, tickTimer:0, rot:0, burstLeft:0, burstTimer:0, pulse:0, spin:0 });
+  run.tornadoes.push({ ex:true, x:W/2, y:H/2, dmg:whirlwindAtk(s), age:0, tickTimer:0, rot:0, burstLeft:0, pulse:0, spin:0 });
   run.whirlwindTimer = 1 / (s.spd * whirlwindSpdMult());
 }
 
@@ -3184,20 +3183,21 @@ function step(dt){
       // EX：排隊中的傷害次數依序打出（每下對圈內所有敵人各自分開計算暴擊）
       t.spin += dt * (1 + t.pulse*0.35); // 累積旋轉量：只增不減，打出傷害時略微加速
       if(t.pulse > 0) t.pulse = Math.max(0, t.pulse - dt*4);
-      t.burstTimer -= dt;
-      if(t.burstLeft > 0 && t.burstTimer <= 0){
-        t.burstLeft--; t.burstTimer = WHIRLWIND_EX_HIT_GAP; t.pulse = 1;
+      if(t.burstLeft > 0){
+        // 一次施放的所有下數同時打出；每個敵人頭上的傷害數字由下至上並排（同閃電術 EX）
+        const n = t.burstLeft; t.burstLeft = 0; t.pulse = 1;
         const base = t.dmg * WHIRLWIND_EX_DMG_MULT;
         let hitAny = false;
         for(const e of run.enemies){
           const dx = e.x-t.x, dy = e.y-t.y;
-          if(dx*dx+dy*dy <= WHIRLWIND_EX_RADIUS*WHIRLWIND_EX_RADIUS){
+          if(dx*dx+dy*dy > WHIRLWIND_EX_RADIUS*WHIRLWIND_EX_RADIUS) continue;
+          for(let i=0;i<n;i++){
             const crit = Math.random()*100 < s.crit;
             const dmg = enemyDmg(e, crit ? base * (s.critDmg/100) : base);
             e.hp -= dmg; e.hit = 0.12;
-            popText(e.x, e.y-e.r-4, fmtNum(dmg), crit);
-            hitAny = true;
+            popText(e.x, e.y - e.r - 6 - i*17, fmtNum(dmg), crit);
           }
+          hitAny = true;
         }
         if(hitAny) burst(t.x, t.y, '#9cffc4', 6);
       }
