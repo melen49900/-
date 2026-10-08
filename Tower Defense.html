@@ -775,7 +775,7 @@ const ICE_EX_TRAIL_LIFE = 1;     // 冰痕存在時間（秒）
 const ICE_EX_TICK = 0.25;        // 冰痕傷害間隔（秒），1 秒共 4 下
 const LIGHTNING_EX_UNLOCK_LEVEL = 90;      // 閃電術 EX：過關進度需超過第 90 關才開放（跟冰火的 80 不同）
 const LIGHTNING_EX_SPD_MULT = 0.4;         // 閃電術 EX：施放頻率 ＝ 角色攻速 × 0.4（原本 ×0.9）
-const LIGHTNING_EX_DMG_MULT = 2;           // 閃電術 EX：每一下傷害 ＝ 原本單下 × 2（各自獨立判定暴擊）
+const LIGHTNING_EX_DMG_MULT = 1.6;         // 閃電術 EX：每一下傷害 ＝ 原本單下 × 1.6
 const LIGHTNING_EX_MAX_HITS = 7;           // 閃電術 EX：攻擊次數 ＝ 連鎖敵人數(上限 6) + 1，最多 7 下
 const LIGHTNING_EX_STUN = 0.1;             // 閃電術 EX：鋼鐵敵人被擊中後無法動彈的時間（秒）
 const LIGHTNING_EX_CLOUD_DELAY = 0.2;      // 小烏雲出現後幾秒落雷
@@ -823,6 +823,9 @@ const SKILL_DEFS = {
     pctFn: ()=>whirlwindPct(),
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 20 關時會自動習得 1 等，之後也能從「召喚」抽到並疊加。`,
     desc:'召喚龍捲風，之後自動朝最近的敵人移動，對範圍內的敵人造成持續傷害。',
+    ex:true,
+    exLevel:90,   // 通關第 90 關後才開放 EX
+    exDesc:'EX：旋風合併成 1 道大旋風，一次對敵人造成數次傷害。',
   },
   earthwall: {
     name:'土牆術', icon:'🧱', innate:false,
@@ -894,6 +897,18 @@ function twRnd(i){ const x = Math.sin(i*127.1 + 311.7) * 43758.5453; return x - 
 const WHIRLWIND_TICK = 0.5;//旋風術傷害CD
 const WHIRLWIND_LIFE = 3.5;//旋風術持續時間
 const WHIRLWIND_SPEED_MULT = 0.2;//旋風術移動速度
+/* ── 旋風術 EX：通關第 90 關後開放，花 2000 💎 解鎖 ── */
+const WHIRLWIND_EX_UNLOCK_LEVEL = 90;     // 過關進度需超過此關卡數才開放（跟閃電術 EX 一樣）
+const WHIRLWIND_EX_SPD_MULT = 0.3;        // 施放頻率 ＝ 角色攻速 × 0.3（原本 ×0.1）；每次施放造成 WHIRLWIND_EX_HITS 下傷害
+const WHIRLWIND_EX_HITS = 5;              // 每次施放的傷害次數（每下分開計算暴擊）
+const WHIRLWIND_EX_HIT_GAP = 0.08;        // 5 下傷害之間的間隔（秒），讓傷害數字依序跳出
+const WHIRLWIND_EX_DMG_MULT = 1.2;        // 每一下傷害 ＝ 原本單下 × 1.2
+const WHIRLWIND_EX_MOVE_MULT = 0.25;      // 移動速度（原本 0.2）
+const WHIRLWIND_EX_RADIUS = 60;           // 傷害半徑（原本 45）
+const WHIRLWIND_EX_VISUAL_HEIGHT = 200;   // 純視覺：從底圈往上延伸的高度（原本 150）
+const WHIRLWIND_EX_VISUAL_TOP_RADIUS = 90;// 純視覺：頂端圓半徑；底部是完整的傷害圈（半徑 60）→ 圓錐台
+const WHIRLWIND_EX_LEAF_COUNT = 53;   // 純視覺：葉片數量（原 46 ×1.15）
+function whirlwindSpdMult(){ return skillExOn('whirlwind') ? WHIRLWIND_EX_SPD_MULT : SKILL_SPD_MULT.whirlwind; }
 // 若 unlockedLevel 已超過門檻但尚未自動給過 1 等，補發（新關卡解鎖、讀檔等情境都會呼叫到這裡）
 function checkWhirlwindUnlock(){
   if(state.unlockedLevel > WHIRLWIND_UNLOCK_LEVEL && state.skills.whirlwind.draws < 1){
@@ -951,6 +966,13 @@ function checkLightningExUnlock(){
     state.lightningExSeen = true;
     save();
     toast('⚡ 閃電術 EX 開放！到「技能」頁面可花 2000 💎 解鎖閃電術 EX');
+  }
+}
+function checkWhirlwindExUnlock(){
+  if(state.unlockedLevel > WHIRLWIND_EX_UNLOCK_LEVEL && !state.whirlwindExSeen){
+    state.whirlwindExSeen = true;
+    save();
+    setTimeout(()=>toast('🌪️ 旋風術 EX 開放！到「技能」頁面可花 2000 💎 解鎖旋風術 EX'), 2600); // 與閃電術 EX 提示錯開
   }
 }
 function checkBeamUnlock(){
@@ -1237,6 +1259,7 @@ function freshState(){
     refineBySlot:{ weapon:0, armor:0, trinket:0, offhand:0, hat:0 }, // { [部位]: 精煉等級 }——精煉綁定「武器／防具／飾品」這個部位，不管換上哪一件、哪個稀有度都沿用同一個等級
     skillEx:{ fireball:false, icespike:false, lightning:false, whirlwind:false, earthwall:false, beam:false }, // 技能 EX 是否已解鎖（每個 2000 💎）
     skillExSeen:false,                        // 技能 EX 開放提示是否已顯示過
+    whirlwindExSeen:false,                    // 旋風術 EX（第 90 關後）開放提示是否已顯示過
     lightningExSeen:false,                    // 閃電術 EX（第 90 關後）開放提示是否已顯示過
     skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0}, whirlwind:{draws:0}, earthwall:{draws:0}, beam:{draws:0} }, // 技能召喚抽到的次數（旋風術另外會在 unlockedLevel > 20、土牆術在 unlockedLevel > 40 時自動補發 1 等）
     quiz:QuizEngine.createProgress(),         // ← 出題引擎的進度資料，整包存檔
@@ -1261,11 +1284,11 @@ function fmtNum(n){
   n = fin(n, 0);
   const sign = n < 0 ? '-' : '';
   n = Math.abs(n);
-  // 超過 T（約 999.95T）改用 10 的次方表示，例如 7.6×10²³
+  // 超過 T（約 999.95T）改用 e 次方表示，例如 7.6e23
   if(n >= 999.95e12){
     const [m, ex] = n.toExponential(1).split('e');
-    const sup = String(parseInt(ex,10)).split('').map(ch=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[+ch]).join('');
-    return sign + m + '×10' + sup;
+    // 不使用上標字元（⁰¹²³…）：不同字型的上標高度與粗細不一致，會出現位置歪掉；改用 e 表示（例如 1.4e15），在所有裝置顯示一致
+    return sign + m + 'e' + parseInt(ex,10);
   }
   const units = [ {v:1e12, s:'T'}, {v:1e9, s:'B'}, {v:1e6, s:'M'}, {v:1e3, s:'K'} ];
   for(const u of units){
@@ -2216,6 +2239,7 @@ function startRun(level){
   document.getElementById('overlay').classList.remove('on');
   openStage();
   resizeCanvas();
+  spawnWhirlwindEx(s);     // 旋風術 EX：開場從場中央生成 1 道大旋風
   spawnEarthwall(s, true); // 土牆術：開場就生成（要等 resizeCanvas 算出場地高度之後）
   syncBattleHud();
 }
@@ -2739,6 +2763,85 @@ function lightningExZig(x1,y1,x2,y2,j){
   pts.push([x2,y2]); return pts;
 }
 function lightningExLine(p){ ctx.beginPath(); p.forEach((q,i)=> i ? ctx.lineTo(q[0],q[1]) : ctx.moveTo(q[0],q[1])); ctx.stroke(); }
+
+/* ── 旋風術 EX 視覺：下方完整圓（傷害圈，半徑 60）→ 上方大圓（半徑 90）的圓錐台，漂浮物是淺綠半透明葉片 ── */
+const WEX_Q = 0.3; // 與舊版相同的透視壓扁比例
+function wexR(h){ return WHIRLWIND_EX_RADIUS + (WHIRLWIND_EX_VISUAL_TOP_RADIUS - WHIRLWIND_EX_RADIUS) * h; }
+// 葉形＝兩個圓交會（vesica）：長 len、寬 wid，沿 x 軸方向，尖端在 (±len/2, 0)
+function wexLeafPath(len, wid){
+  const a = len/2, b = wid/2, R = (a*a + b*b) / (2*b), k = R - b;
+  ctx.beginPath();
+  ctx.arc(0,  k, R, Math.atan2(-k, a), Math.atan2(-k, -a), true);   // 上弧（圓心在下方）
+  ctx.arc(0, -k, R, Math.atan2( k,-a), Math.atan2( k,  a), true);   // 下弧（圓心在上方）
+  ctx.closePath();
+}
+function wexLeaf(x, y, len, wid, rot, flip, alpha, tone, vein){
+  const w = Math.max(0.6, wid * Math.abs(flip));          // flip＝葉片翻面（寬度壓縮）
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.fillStyle = `rgba(${(150+tone*40)|0},${(236+tone*18)|0},${(150+tone*30)|0},${alpha.toFixed(3)})`;
+  wexLeafPath(len, w); ctx.fill();
+  if(vein){ ctx.strokeStyle = `rgba(225,255,225,${(alpha*0.9).toFixed(3)})`; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(-len/2, 0); ctx.lineTo(len/2, 0); ctx.stroke(); }
+  ctx.restore();
+}
+// 圓錐台輪廓（底：完整圓、頂：大圓）
+function wexShell(fillA, lineA){
+  const Hh = WHIRLWIND_EX_VISUAL_HEIGHT, r0 = WHIRLWIND_EX_RADIUS, r1 = WHIRLWIND_EX_VISUAL_TOP_RADIUS;
+  ctx.beginPath();
+  ctx.moveTo(-r0, 0); ctx.lineTo(-r1, -Hh);
+  ctx.ellipse(0, -Hh, r1, r1*WEX_Q, 0, Math.PI, Math.PI*2);
+  ctx.lineTo(r0, 0);
+  ctx.ellipse(0, 0, r0, r0*WEX_Q, 0, 0, Math.PI);
+  ctx.closePath();
+  if(fillA > 0){
+    const g = ctx.createLinearGradient(0, 0, 0, -Hh);
+    g.addColorStop(0, `rgba(150,235,170,${fillA})`); g.addColorStop(1, `rgba(150,235,170,${fillA*0.3})`);
+    ctx.fillStyle = g; ctx.fill();
+  }
+  if(lineA > 0){
+    ctx.strokeStyle = `rgba(190,255,200,${lineA})`; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, -Hh, r1, r1*WEX_Q, 0, 0, Math.PI*2); ctx.stroke();
+  }
+}
+// 單片葉在 (h 高度比例, ang 環繞角) 的位置，並回傳是否在後側
+function wexPlace(h, ang, radK){
+  const rad = wexR(h) * radK;
+  return { x: Math.cos(ang)*rad, y: -h*WHIRLWIND_EX_VISUAL_HEIGHT + Math.sin(ang)*rad*WEX_Q,
+           tan: Math.atan2(Math.cos(ang)*WEX_Q, -Math.sin(ang)), back: Math.sin(ang) < 0 };
+}
+function drawWhirlwindEx(t){
+  const fade = Math.min(1, t.age/0.5), T = t.age, S = t.spin || 0, r0 = WHIRLWIND_EX_RADIUS;
+  ctx.save(); ctx.translate(t.x, t.y); ctx.globalAlpha = fade;
+  // 傷害圈（地面）：淡綠色＋虛線邊；打出傷害時微微閃亮
+  ctx.fillStyle = `rgba(140,230,160,${(0.12 + t.pulse*0.14).toFixed(3)})`;
+  ctx.beginPath(); ctx.arc(0, 0, r0, 0, Math.PI*2); ctx.fill();
+  ctx.setLineDash([6,5]); ctx.strokeStyle = `rgba(190,255,200,${(0.45 + t.pulse*0.35).toFixed(3)})`; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(0, 0, r0, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+
+  // 螺旋上升：葉片各自沿螺旋由底圈往上飄，越高越大越淡；每片葉子角速度固定、同向持續旋轉
+  wexShell(0, 0.10);
+  const leaves = [];
+  for(let i=0;i<WHIRLWIND_EX_LEAF_COUNT;i++){
+    const s1 = twRnd(i+7), s2 = twRnd(i+91), s3 = twRnd(i+170);
+    const h = (s1 + T*(0.10 + s2*0.10)) % 1;
+    const ang = S*(1.6 + s2*0.9) + s1*6.283;
+    leaves.push({ h, ang, radK:0.8 + s2*0.2, len:11 + s3*7 + h*6, wid:5 + s3*2.5 + h*2, flip:Math.cos(T*(2.5+s3*3) + i),
+      alpha:0.40 - h*0.16, tone:s2 });
+  }
+  // 後側的先畫、前側的後畫，形成前後遮蔽感
+  for(const pass of [true, false]){
+    for(const L of leaves){
+      const pl = wexPlace(L.h, L.ang, L.radK);
+      if(pl.back !== pass) continue;
+      const edge = Math.min(1, L.h*8, (1-L.h)*8);        // 底部與頂端淡入淡出
+      const al = Math.min(0.40, Math.max(0.20, L.alpha)) * (pass ? 0.85 : 1) * edge; // 透明度 20%～40%
+      if(al <= 0.01) continue;
+      wexLeaf(pl.x, pl.y, L.len, L.wid, pl.tan + Math.sin(T*2 + L.ang)*0.25, L.flip, al, L.tone, false);
+    }
+  }
+  ctx.restore();
+}
+
 function drawLightningEx(){
   run.exBolts.forEach(b=>{
     const cx = b.x, cy = Math.min(b.y - 12, Math.max(18, b.y - b.r - 62)), R0 = 44;
@@ -2852,6 +2955,11 @@ function pulseBeam(s){
 // 旋風術：尚未習得，或場上沒有敵人時不生成。
 function castWhirlwind(){
   if(state.skills.whirlwind.draws < 1) return; // 尚未解鎖
+  if(skillExOn('whirlwind')){ // EX：場上只有開場那道大旋風，每次施放＝讓它排入 5 下傷害
+    const t = run.tornadoes.find(x=>x.ex);
+    if(t) t.burstLeft += WHIRLWIND_EX_HITS;
+    return;
+  }
   if(run.enemies.length === 0) return;
   const s = stats();
   const origin = run.enemies[Math.floor(Math.random()*run.enemies.length)];
@@ -2862,6 +2970,13 @@ function castWhirlwind(){
     tickTimer: 0,
     rot: 0,
   });
+}
+
+// 旋風術 EX：開場固定在場中央生成 1 道大旋風，整場戰鬥存在（不會消失）。
+function spawnWhirlwindEx(s){
+  if(!skillExOn('whirlwind') || state.skills.whirlwind.draws < 1) return;
+  run.tornadoes.push({ ex:true, x:W/2, y:H/2, dmg:whirlwindAtk(s), age:0, tickTimer:0, rot:0, burstLeft:0, burstTimer:0, pulse:0, spin:0 });
+  run.whirlwindTimer = 1 / (s.spd * whirlwindSpdMult());
 }
 
 // 土牆術：固定在距離底部 EARTHWALL_Y_FROM_BOTTOM 的位置，左右整個場地都擋住。
@@ -2982,7 +3097,7 @@ function step(dt){
   run.lightningTimer -= dt;
   if(run.lightningTimer <= 0){ castLightning(); run.lightningTimer = 1 / (s.spd * lightningSpdMult()); }
   run.whirlwindTimer -= dt;
-  if(run.whirlwindTimer <= 0){ castWhirlwind(); run.whirlwindTimer = 1 / (s.spd * SKILL_SPD_MULT.whirlwind); }
+  if(run.whirlwindTimer <= 0){ castWhirlwind(); run.whirlwindTimer = 1 / (s.spd * whirlwindSpdMult()); }
   updateBeam(dt);
   run.beamTimer -= dt;
   if(run.beamTimer <= 0){ pulseBeam(s); run.beamTimer = 1 / (s.spd * SKILL_SPD_MULT.beam); }
@@ -3049,7 +3164,7 @@ function step(dt){
     const t = run.tornadoes[i];
     t.age += dt;
     t.rot += dt * 6; // 純視覺：持續旋轉
-    if(t.age >= WHIRLWIND_LIFE){ run.tornadoes.splice(i,1); continue; }
+    if(!t.ex && t.age >= WHIRLWIND_LIFE){ run.tornadoes.splice(i,1); continue; }
 
     // 朝場上「當下」最近的敵人移動；沒有敵人時原地不動
     let nearest = null, nd = Infinity;
@@ -3060,11 +3175,34 @@ function step(dt){
     if(nearest){
       const dx = nearest.x-t.x, dy = nearest.y-t.y;
       const dist = Math.hypot(dx,dy) || 1;
-      const spd = SHOT_SPEED_BASE * WHIRLWIND_SPEED_MULT * hScale;
+      const spd = SHOT_SPEED_BASE * (t.ex ? WHIRLWIND_EX_MOVE_MULT : WHIRLWIND_SPEED_MULT) * hScale;
       t.x += (dx/dist) * spd * dt;
       t.y += (dy/dist) * spd * dt;
     }
 
+    if(t.ex){
+      // EX：排隊中的傷害次數依序打出（每下對圈內所有敵人各自分開計算暴擊）
+      t.spin += dt * (1 + t.pulse*0.35); // 累積旋轉量：只增不減，打出傷害時略微加速
+      if(t.pulse > 0) t.pulse = Math.max(0, t.pulse - dt*4);
+      t.burstTimer -= dt;
+      if(t.burstLeft > 0 && t.burstTimer <= 0){
+        t.burstLeft--; t.burstTimer = WHIRLWIND_EX_HIT_GAP; t.pulse = 1;
+        const base = t.dmg * WHIRLWIND_EX_DMG_MULT;
+        let hitAny = false;
+        for(const e of run.enemies){
+          const dx = e.x-t.x, dy = e.y-t.y;
+          if(dx*dx+dy*dy <= WHIRLWIND_EX_RADIUS*WHIRLWIND_EX_RADIUS){
+            const crit = Math.random()*100 < s.crit;
+            const dmg = enemyDmg(e, crit ? base * (s.critDmg/100) : base);
+            e.hp -= dmg; e.hit = 0.12;
+            popText(e.x, e.y-e.r-4, fmtNum(dmg), crit);
+            hitAny = true;
+          }
+        }
+        if(hitAny) burst(t.x, t.y, '#9cffc4', 6);
+      }
+      continue;
+    }
     t.tickTimer -= dt;
     if(t.tickTimer <= 0){
       t.tickTimer = WHIRLWIND_TICK;
@@ -3735,9 +3873,9 @@ function draw(){
     ctx.restore();
   });
 
-  drawIceBladeEx(); // 冰椎術 EX：冰刃本體
-  drawEnemyLobs();  // 遠距敵人的拋物線火球（畫在土牆與怪物之上，看起來越過土牆）
-  drawFireballEx(); // 火球術 EX：拋物線大火球與爆風
+  drawIceBladeEx();  // 冰椎術 EX：冰刃本體
+  drawEnemyLobs();   // 遠距敵人的拋物線火球（畫在土牆與怪物之上，看起來越過土牆）
+  drawFireballEx();  // 火球術 EX：拋物線大火球與爆風
   drawLightningEx(); // 閃電術 EX：小烏雲與落雷
 
   // 閃電連線：角色 → 敵人 → 敵人 → …，鋸齒狀連線，命中瞬間亮起、快速淡出
@@ -3776,9 +3914,11 @@ function draw(){
     }
   }
 
-  // 旋風術：沙塵龍捲。底部固定在傷害圈（半徑 WHIRLWIND_RADIUS）的圓心，沙塵向上旋轉、越高越寬（純視覺）；
+  // (旋風術 EX 視覺見 drawWhirlwindEx)
+// 旋風術：沙塵龍捲。底部固定在傷害圈（半徑 WHIRLWIND_RADIUS）的圓心，沙塵向上旋轉、越高越寬（純視覺）；
   // 實際傷害只有腳下那個圓，圓外的沙塵不會傷到敵人。
   run.tornadoes.forEach(t=>{
+    if(t.ex){ drawWhirlwindEx(t); return; }
     const fade = Math.max(0, Math.min(1, t.age/0.3, (WHIRLWIND_LIFE - t.age)/0.4));
     ctx.save();
     ctx.translate(t.x, t.y);
@@ -3936,7 +4076,7 @@ function doPull(n, free){
   }).join('');
 }
 
-// 數值有可能是負的（例如巨錘犧牲攻速、項鍊犧牲生命），正負號要正確顯示
+// 數值有可能是負的（例如項鍊犧牲生命），正負號要正確顯示
 function signed(v, digits){
   const n = digits ? v.toFixed(digits) : fmtNum(Math.round(v)); // 整數部分（攻擊／生命）用 K／M／B／T（超過 T 改 10 的次方）縮寫
   return (v >= 0 ? '+' : '') + n;
@@ -4145,6 +4285,8 @@ function renderSkills(){
       statusText = `冰刃傷害 ${fmtNum(Math.round(pct*ICE_EX_DMG_MULT))}% 攻擊　冰痕每下 ${pct.toFixed(1)}%×4　寬度 ${ICE_EX_WIDTH}　攻速 ×${ICE_EX_SPD_MULT}`;
     } else if(key === 'lightning' && skillExOn('lightning')){
       statusText = `攻擊次數 ${Math.min(LIGHTNING_EX_MAX_HITS, stacks+1)}（連鎖數+1）　每下 ${fmtNum(Math.round(pct*LIGHTNING_EX_DMG_MULT))}% 攻擊　攻速 ×${LIGHTNING_EX_SPD_MULT}`;
+    } else if(key === 'whirlwind' && skillExOn('whirlwind')){
+      statusText = `大旋風 1 道　每次 ${WHIRLWIND_EX_HITS} 下　每下 ${fmtNum(Math.round(pct*WHIRLWIND_EX_DMG_MULT))}% 攻擊　攻速 ×${WHIRLWIND_EX_SPD_MULT}`;
     } else if(key === 'fireball' && skillExOn('fireball')){
       statusText = `大火球傷害 ${fmtNum(Math.round(pct*FIREBALL_EX_DMG_MULT))}% 攻擊　擴散 ${FIREBALL_EX_SPLASH_PCT*100}%（直徑 ${FIREBALL_EX_SPLASH_DIAMETER}）　攻速 ×${FIREBALL_EX_SPD_MULT}`;
     } else {
@@ -4297,16 +4439,17 @@ function renderEquip(){
    介面共用
    ══════════════════════════════════════════ */
 function syncUI(){
-  checkWhirlwindUnlock(); // 過關進度一旦超過門檻就自動補發旋風術 1 等
-  checkEarthwallUnlock(); // 過關進度一旦超過門檻就自動補發土牆術 1 等
-  checkBeamUnlock();      // 過關進度一旦超過門檻就自動補發光束砲 1 等
-  checkSkillExUnlock();   // 過關進度超過 80 關時開放技能 EX 並提示一次
+  checkWhirlwindUnlock();   // 過關進度一旦超過門檻就自動補發旋風術 1 等
+  checkEarthwallUnlock();   // 過關進度一旦超過門檻就自動補發土牆術 1 等
+  checkBeamUnlock();        // 過關進度一旦超過門檻就自動補發光束砲 1 等
+  checkSkillExUnlock();     // 過關進度超過 80 關時開放冰、火 EX 並提示一次
   checkLightningExUnlock(); // 過關進度超過 90 關時開放閃電術 EX 並提示一次
-  checkHatUnlock();       // 過關進度超過 75 關時解鎖帽子並提示一次
-  checkOffhandUnlock();   // 過關進度超過 65 關時解鎖副武器並提示一次
-  checkExUnlock();        // 過關進度超過 70 關時開放鍛造台 EX 並提示一次
-  checkHeroUnlock();      // 過關進度一旦超過門檻就自動解鎖對應造型並提示一次
-  checkUpgradeUnlocks();  // 過關進度一旦超過門檻就提示新解鎖的鍛造項目（金幣/鑽石/減傷/精煉成本）
+  checkWhirlwindExUnlock(); // 過關進度超過 90 關時開放旋風術 EX 並提示一次
+  checkHatUnlock();         // 過關進度超過 75 關時解鎖帽子並提示一次
+  checkOffhandUnlock();     // 過關進度超過 65 關時解鎖副武器並提示一次
+  checkExUnlock();          // 過關進度超過 70 關時開放鍛造台 EX 並提示一次
+  checkHeroUnlock();        // 過關進度一旦超過門檻就自動解鎖對應造型並提示一次
+  checkUpgradeUnlocks();    // 過關進度一旦超過門檻就提示新解鎖的鍛造項目（金幣/鑽石/減傷/精煉成本）
   document.getElementById('uiGem').textContent   = state.gem;
   document.getElementById('uiGold').textContent  = fmtNum(state.gold);
   document.getElementById('uiStone').textContent = fmtNum(state.stone);
