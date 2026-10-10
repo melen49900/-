@@ -240,7 +240,8 @@ body{
   background:linear-gradient(0deg,rgba(8,4,10,.95),rgba(8,4,10,0));
   pointer-events:none;
 }
-#hpBar{height:13px;background:rgba(0,0,0,.6);border:1px solid var(--stoneline);border-radius:99px;overflow:hidden}
+#hpBar{position:relative;height:13px;background:rgba(0,0,0,.6);border:1px solid var(--stoneline);border-radius:99px;overflow:hidden}
+#shieldFill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#2f7bff,#7fd0ff);transition:width .16s}
 #hpFill{height:100%;width:100%;background:linear-gradient(90deg,#ff3b6b,#ff8a5b);transition:width .16s}
 #hpText{
   text-align:center;font-size:11px;margin-top:4px;color:var(--bone-dim);
@@ -537,7 +538,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
           <div id="runLoot"><span id="runKill">☠ 0</span><span id="runGold">💰 0</span></div>
         </div>
         <div id="hpWrap">
-          <div id="hpBar"><div id="hpFill"></div></div>
+          <div id="hpBar"><div id="hpFill"></div><div id="shieldFill"></div></div>
           <div id="hpText">100 / 100</div>
         </div>
         <div id="overlay">
@@ -594,7 +595,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
           <div style="font-size:12px;color:var(--bone-dim);line-height:1.9">
             <div id="skillOddsInfo">技能機率　合計 30%</div>
             <div id="equipOddsInfo">裝備機率　合計 70%　普通 35%　精良 21%　稀有 10.5%　傳說 3.5%</div>
-            <div style="margin-top:6px">副武器（魔法書／盾牌／水晶）通關第 65 關後解鎖<br>帽子（草帽／頭盔／戰盔／羽帽）通關第 75 關後解鎖<br>重複裝備熔解：普通 +1　精良 +3　稀有 +8　傳說 +20 🔮</div>
+            <div style="margin-top:6px">副武器（魔法書／盾牌／水晶）通關第 65 關後解鎖<br>帽子（草帽／頭盔／戰盔／羽帽）通關第 75 關後解鎖<br>鞋子（皮靴／長靴／潛行靴／戰靴）通關第 100 關後解鎖<br>重複裝備熔解：普通 +1　精良 +3　稀有 +8　傳說 +20 🔮</div>
           </div>
         </div>
       </div>
@@ -953,6 +954,14 @@ function checkHatUnlock(){
     renderEquip(); renderRefine();
   }
 }
+function checkShoesUnlock(){
+  if(shoesUnlocked() && !state.shoesSeen){
+    state.shoesSeen = true;
+    save();
+    setTimeout(()=>toast('👢 解鎖鞋子欄位！可從「召喚」抽到皮靴、長靴、潛行靴、戰靴'), 3200);
+    renderEquip(); renderRefine();
+  }
+}
 function checkSkillExUnlock(){
   if(state.unlockedLevel > SKILL_EX_UNLOCK_LEVEL && !state.skillExSeen){
     state.skillExSeen = true;
@@ -1024,16 +1033,23 @@ const EQUIP_POOL = [
   { id:'h2', slot:'hat', name:'鋼鐵頭盔',   icon:'⛑️', hp:22 },
   { id:'h3', slot:'hat', name:'龍騎士戰盔', icon:'🪖', hp:30 },
   { id:'h4', slot:'hat', name:'獵人羽帽',   icon:'🎩', crit:1.5 },
+  // 鞋子（通關第 100 關後解鎖）
+  { id:'s1', slot:'shoes', name:'旅人皮靴',   icon:'🥾', hp:18 },
+  { id:'s2', slot:'shoes', name:'疾風長靴',   icon:'👢', atk:4, hp:8 },
+  { id:'s3', slot:'shoes', name:'暗影潛行靴', icon:'🩴', atk:2, crit:3 },
+  { id:'s4', slot:'shoes', name:'龍鱗戰靴',   icon:'🦶', hp:28, atk:1 },
 ];
-const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品', offhand:'副武器', hat:'帽子' };
+const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品', offhand:'副武器', hat:'帽子', shoes:'鞋子' };
 const OFFHAND_UNLOCK_LEVEL = 65;   // 通關第 65 關（進度超過 65）後解鎖副武器
-const SLOT_ICON = { weapon:'🗡️', armor:'🛡️', trinket:'💍', offhand:'📘', hat:'🎩' }; // 背包分組標題用的部位圖示
+const SLOT_ICON = { weapon:'🗡️', armor:'🛡️', trinket:'💍', offhand:'📘', hat:'🎩', shoes:'👢' }; // 背包分組標題用的部位圖示
 const bagFolded = {};              // 背包各部位是否收合（只存在記憶體，重開頁面會全部展開）
+const SHOES_UNLOCK_LEVEL = 100;     // 通關第 100 關（進度超過 100）後解鎖鞋子
 const HAT_UNLOCK_LEVEL = 75;       // 通關第 75 關（進度超過 75）後解鎖帽子
-const ALL_SLOTS = ['weapon','armor','trinket','offhand','hat'];
+const ALL_SLOTS = ['weapon','armor','trinket','offhand','hat','shoes'];
 function offhandUnlocked(){ return state.unlockedLevel > OFFHAND_UNLOCK_LEVEL; }
 function hatUnlocked(){ return state.unlockedLevel > HAT_UNLOCK_LEVEL; }
-function slotAvailable(s){ return (s !== 'offhand' || offhandUnlocked()) && (s !== 'hat' || hatUnlocked()); }
+function shoesUnlocked(){ return state.unlockedLevel > SHOES_UNLOCK_LEVEL; }
+function slotAvailable(s){ return (s !== 'offhand' || offhandUnlocked()) && (s !== 'hat' || hatUnlocked()) && (s !== 'shoes' || shoesUnlocked()); }
 function activeSlots(){ return ALL_SLOTS.filter(slotAvailable); }
 // 目前可被抽到的裝備池（副武器、帽子解鎖前排除）
 function availablePool(){ return EQUIP_POOL.filter(b=>slotAvailable(b.slot)); }
@@ -1060,8 +1076,8 @@ const EX_CRIT_PER_LV = 1.3;                 // 暴擊率 EX：每級 +1.3%（原
 const EX_CRITDMG_PER_LV = 1.3;              // 暴擊傷害 EX：每級 +1.3%（原版 1.2%）
 const EX_GOLD_PCT_PER_LV = 6;               // 金幣強化 EX：每級 +6%（原版 5%）
 const EX_GEM_PER_LV = 1.2;                  // 鑽石強化 EX：每級 +1.2 顆，總量無條件捨去（原版 1）
-const EX_REFINE_REDUCE_PER_LV = 2.7;        // 精煉成本 EX：每級 -2.7 強化石，總量無條件捨去（原版 1）
-const EX_MONSTER_WEAKEN_MULT_PER_LV = 0.987;// 怪物弱化 EX：每級怪物生命 ×0.987（原版 0.99）
+const EX_REFINE_REDUCE_PER_LV = 4;          // 精煉成本 EX：每級 -4 強化石，總量無條件捨去（原版 1）
+const EX_MONSTER_WEAKEN_MULT_PER_LV = 0.985;// 怪物弱化 EX：每級怪物生命 ×0.987（原版 0.99）
 const GUARDIAN_RADIUS_MIN_EX = 40;          // 守護半徑 EX：半徑下限由 80 降到 40
 const GUARDIAN_REDUCE_MIN_EX = 15;          // 守護能力 EX：守護減傷下限由 30% 降到 15%
 function exUnlocked(){ return state.unlockedLevel > EX_UNLOCK_LEVEL; }
@@ -1075,6 +1091,10 @@ function gemBoostAmount(){ const lv = fin(state.up.gemboost, 0); return exOn('ge
 function refineReduceTotal(){ const lv = fin(state.up.breakboost, 0); return exOn('breakboost') ? exFloor(lv*EX_REFINE_REDUCE_PER_LV) : lv*REFINE_COST_REDUCE_PER_LV; }
 function monsterWeakenMul(){ return Math.pow(exOn('monweaken') ? EX_MONSTER_WEAKEN_MULT_PER_LV : MONSTER_WEAKEN_MULT_PER_LV, fin(state.up.monweaken, 0)); }
 function exOutputMul(){ return exOn('spd') ? 1 + fin(state.up.spd, 0)*EX_OUTPUT_PCT_PER_LV : 1; }
+/* ── 魔法護盾：通關第 100 關後解鎖。護盾值 ＝ 主角最大生命 ×（1.01^等級 − 1）；EX：成長 −0.03、公式改 1.02^等級 − 1 ── */
+const SHIELD_BASE = 1.01, SHIELD_BASE_EX = 1.02;
+function shieldRatio(lv){ return Math.pow(exOn('shield') ? SHIELD_BASE_EX : SHIELD_BASE, lv) - 1; }
+function shieldValue(maxHp, lv){ if(lv == null) lv = fin(state.up.shield, 0); return Math.round(maxHp * shieldRatio(lv)); }
 const UPGRADES = [
   { key:'atk',  icon:'🗡️', name:'攻擊力',  base:40,  grow:1.11, per:3,    fmt:v=>'+'+fmtNum(v),
     // 每級：固定 +3，另外「全攻擊（本體＋鍛造＋裝備）」再 +0.5%（各級線性相加，例如 Lv.20 ＝ ×1.10）
@@ -1130,7 +1150,7 @@ const UPGRADES = [
     requiresLevel:50,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 50 關時解鎖。`,
     body:lv=>lv*REFINE_COST_REDUCE_PER_LV,   full:lv=>exOn('breakboost') ? exFloor(lv*EX_REFINE_REDUCE_PER_LV) : lv*REFINE_COST_REDUCE_PER_LV,
-    exGrow:1.12,   // EX 解鎖後費用成長 1.12（原版 1.11，反而變高）
+    exGrow:1.09,   // EX 解鎖後費用成長 1.09（原版 1.11，EX 後下降）
     perFmt:lv=>'-'+(exOn('breakboost') ? exFloor(lv*EX_REFINE_REDUCE_PER_LV) : lv*REFINE_COST_REDUCE_PER_LV),
     bodyFmt:v=>'-'+v.toFixed(0)+' 🔮/次' },
   // 怪物弱化：第 55 關才會解鎖，解鎖前在精煉成本下方以「？」顯示。解鎖後每級怪物生命 ×MONSTER_WEAKEN_MULT_PER_LV（預設 0.99，累乘）。
@@ -1143,7 +1163,7 @@ const UPGRADES = [
     bodyFmt:v=>'-'+v.toFixed(1)+'%' },
   // 守護半徑減少：第 60 關後解鎖。每級守護者的守護圈半徑 -1。
   // 上限：守護圈半徑（250+關卡數）最多減到只剩 80，所以上限 ＝ 170 + 過關進度。
-  { key:'guardradius', icon:'📏', name:'守護半徑減少', base:800, grow:1.19, exGrow:1.14, per:1, fmt:v=>'-'+v.toFixed(0),
+  { key:'guardradius', icon:'📏', name:'守護半徑減少', base:800, grow:1.19, exGrow:1.12, per:1, fmt:v=>'-'+v.toFixed(0),
     requiresLevel:60,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 60 關時解鎖。`,
     maxFn: ()=> Math.max(0, GUARDIAN_RADIUS_BASE + state.unlockedLevel - guardRadiusMin()),  // EX 解鎖後半徑下限 40，可再多減
@@ -1200,6 +1220,13 @@ const UPGRADES = [
     body:lv=>lv, full:lv=>lv,
     perFmt:lv=>'關卡加速加成 +'+Math.max(0, levelSpeedBonus(state.unlockedLevel) - lv),
     bodyFmt:v=>'加速加成 -'+v.toFixed(0) },
+  // 魔法護盾：第 100 關後解鎖。只顯示目前／下一級的護盾生命（不顯示括號總值）。初始 200 金幣、成長 1.08；EX 成長 1.05。
+  { key:'shield', icon:'🔵', name:'魔法護盾', base:200, grow:1.08, exGrow:1.05, per:1, fmt:v=>fmtNum(v),
+    requiresLevel:100,
+    lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 100 關時解鎖。`,
+    body:lv=>shieldValue(stats().maxHp, lv), full:lv=>shieldValue(stats().maxHp, lv),
+    perFmt:lv=>'',
+    bodyFmt:v=>fmtNum(Math.round(v)) },
 ];
 // 鍛造項目的等級上限：固定值 max，或依過關進度動態計算的 maxFn
 function upMax(u){ return u.maxFn ? u.maxFn() : (u.max != null ? u.max : null); }
@@ -1234,7 +1261,7 @@ const STARTER_GEAR = [
 ];
 function makeStarterKit(){
   const bag = STARTER_GEAR.map(g=>({ ...g }));
-  const equipped = { weapon:null, armor:null, trinket:null, offhand:null, hat:null };
+  const equipped = { weapon:null, armor:null, trinket:null, offhand:null, hat:null, shoes:null };
   bag.forEach(c=>{
     const base = EQUIP_POOL.find(e=>e.id===c.id);
     if(base) equipped[base.slot] = c; // 指向背包裡「同一個」物件
@@ -1248,14 +1275,14 @@ function freshState(){
   const kit = makeStarterKit();
   return {
     gem:0, gold:0, stone:0,
-    up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0, guardradius:0, guardpower:0, steelkiller:0, summon:0, rangedreduce:0, slow:0 },
-    exOn:{ atk:false, hp:false, spd:false, crit:false, critdmg:false, goldboost:false, gemboost:false, defense:false, breakboost:false, monweaken:false, guardradius:false, guardpower:false, steelkiller:false, summon:false, rangedreduce:false, slow:false }, // 鍛造台 EX 是否已解鎖（每項 2000 💎）
+    up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0, guardradius:0, guardpower:0, steelkiller:0, summon:0, rangedreduce:0, slow:0, shield:0 },
+    exOn:{ atk:false, hp:false, spd:false, crit:false, critdmg:false, goldboost:false, gemboost:false, defense:false, breakboost:false, monweaken:false, guardradius:false, guardpower:false, steelkiller:false, summon:false, rangedreduce:false, slow:false, shield:false }, // 鍛造台 EX 是否已解鎖（每項 2000 💎）
     exSeen:false,                             // 鍛造台 EX 解鎖提示是否已顯示過
     bag:kit.bag,                              // [{uid,id,rarity}]（新存檔內建新手三件裝備）（精煉等級改綁在裝備「部位」上，見 refineBySlot）
     equipped:kit.equipped,
     starterGiven:true,                        // 已發放新手裝備
     freePullUsed:false,                       // 新手免費十連抽是否已使用
-    refineBySlot:{ weapon:0, armor:0, trinket:0, offhand:0, hat:0 }, // { [部位]: 精煉等級 }——精煉綁定「武器／防具／飾品」這個部位，不管換上哪一件、哪個稀有度都沿用同一個等級
+    refineBySlot:{ weapon:0, armor:0, trinket:0, offhand:0, hat:0, shoes:0 }, // { [部位]: 精煉等級 }——精煉綁定「武器／防具／飾品」這個部位，不管換上哪一件、哪個稀有度都沿用同一個等級
     skillEx:{ fireball:false, icespike:false, lightning:false, whirlwind:false, earthwall:false, beam:false }, // 技能 EX 是否已解鎖（每個 2000 💎）
     skillExSeen:false,                        // 技能 EX 開放提示是否已顯示過
     whirlwindExSeen:false,                    // 旋風術 EX（第 90 關後）開放提示是否已顯示過
@@ -1269,7 +1296,7 @@ function freshState(){
     levelRecords:{},                          // { [level]: {cleared, bestWave, bestKills} }
     seenIntro:false,
     offhandSeen:false,                        // 副武器解鎖提示是否已顯示過
-    hatSeen:false,                            // 帽子解鎖提示是否已顯示過
+    hatSeen:false, shoesSeen:false,                            // 帽子解鎖提示是否已顯示過
     selectedHero:1,                           // 目前使用的角色造型 id（對應 HERO_SKINS）
     heroUnlockedSeen:[1],                     // 已經提示過解鎖的造型 id（避免重複跳提示）
     upgradeUnlockedSeen:[],                   // 已經提示過解鎖的鍛造項目 key（避免重複跳提示）
@@ -1801,9 +1828,9 @@ function answerIndigenous(choice, btn){
     state.qs.streak++;
     state.qs.best = Math.max(state.qs.best, state.qs.streak);
 
-    const bonus = Math.min(100, state.qs.streak * 1);
+    const bonus = Math.min(90, state.qs.streak * 1);
     const gemBoostAdd = gemBoostAmount();
-    const gain = 15 + bonus + (firstTry ? 10 : 0) + gemBoostAdd;
+    const gain = 15 + bonus + (firstTry ? 20 : 0) + gemBoostAdd;
     state.gem += gain;
 
     feed.className = 'ok';
@@ -1876,9 +1903,9 @@ function answer(choice, btn){
     state.qs.streak++;
     state.qs.best = Math.max(state.qs.best, state.qs.streak);
     
-    const bonus = Math.min(100, state.qs.streak * 1);// 鑽石獎勵：底 15，連勝每 1 次 +1（上限 +100），第一次就答對再 +10
+    const bonus = Math.min(90, state.qs.streak * 1);// 鑽石獎勵：底 15，連勝每 1 次 +1（上限 +100），第一次就答對再 +10
     const gemBoostAdd = gemBoostAmount();// 鍛造台「鑽石強化」（含 EX）：每級再固定加鑽石
-    const gain  = 15 + bonus + (firstTry ? 10 : 0) + gemBoostAdd;
+    const gain  = 15 + bonus + (firstTry ? 20 : 0) + gemBoostAdd;
     state.gem += gain;
 
     feed.className = 'ok';
@@ -2063,6 +2090,11 @@ const RANGED_DEF = { emoji:'🧙', hp:0.8, spd:0.8, r:15, gold:1.5, ranged:true,
 // ── 魔王攻擊疊加（所有關卡、所有階段）──
 // 魔王每打一下（打土牆或打主角、近戰或遠程火球都算），傷害就比上一下多 10%：100%、110%、121%、133%…
 // 近戰魔王改為「每 BOSS_ATTACK_INTERVAL 秒出手一次」（單下傷害 ＝ dps × 間隔，起始總 DPS 與原本相同）。
+// ── 小怪對土牆的疊加傷害（線性、全體共用）──
+// 小怪每攻擊土牆一次，全體共用的加成就 +5%（線性，傷害 ×(1+加成)）；只對土牆生效，主角與護盾不受影響；牆被擊破後歸零。
+// 近戰小怪打土牆改為每 MINION_ATTACK_INTERVAL 秒出手一次（單下傷害 ＝ dps × 間隔，基礎總 DPS 不變）；遠程小怪每顆火球落在土牆上算一次攻擊。
+const MINION_WALL_STACK_PER_HIT = 0.05;
+const MINION_ATTACK_INTERVAL = 1.0;
 const BOSS_ATK_STACK = 1.10;            // 每次攻擊比上一次多 10%
 const BOSS_ATTACK_INTERVAL = 1.0;       // 近戰魔王出手間隔（秒）
 function bossStrikeDmg(e, interval){    // 取出本次攻擊傷害，並讓疊加層數 +1
@@ -2121,7 +2153,7 @@ const run = {
   active:false, over:false,
   level:1,
   t:0, wave:1, spawned:0, waveQuota:0, spawnTimer:0,
-  hp:100, maxHp:100,
+  hp:100, maxHp:100, shield:0, maxShield:0, wallStack:0,
   heroX:W/2, targetX:W/2,
   fireTimer:0, iceTimer:0, lightningTimer:0, whirlwindTimer:0, earthwallTimer:0, earthwallCd:0, beamTimer:0,
   beam:{ target:null, ang:-Math.PI/2, pulse:0, active:false },
@@ -2230,6 +2262,7 @@ function startRun(level){
   run.level = level || run.level || 1;
   run.t=0; run.wave=1; run.spawned=0; run.waveQuota=waveQuotaFor(1); run.spawnTimer=0;
   run.maxHp=s.maxHp; run.hp=s.maxHp;
+  run.maxShield = shieldValue(s.maxHp); run.shield = run.maxShield; run.wallStack = 0;
   run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0; run.whirlwindTimer=0; run.earthwallTimer=0; run.earthwallCd=0; run.beamTimer=0;
   run.beam={ target:null, ang:-Math.PI/2, pulse:0, active:false };
   run.kills=0; run.gold=0;
@@ -3066,6 +3099,12 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 
+// 主角受傷：先扣魔法護盾，護盾耗盡才扣生命
+function hurtHero(d){
+  if(run.shield > 0){ const a = Math.min(run.shield, d); run.shield -= a; d -= a; }
+  if(d > 0) run.hp -= d;
+}
+
 function step(dt){
   run.t += dt;
 
@@ -3309,7 +3348,12 @@ function step(dt){
           burst(e.x, blockWall.y, '#ff3b6b', 10);
         }
       } else {
-        blockWall.hp -= e.dps * dmgTakenMul * dt;
+        e.atkTimer = (e.atkTimer||0) + dt;
+        if(e.atkTimer >= MINION_ATTACK_INTERVAL){
+          e.atkTimer -= MINION_ATTACK_INTERVAL;
+          blockWall.hp -= e.dps * MINION_ATTACK_INTERVAL * dmgTakenMul * (1 + run.wallStack); // 小怪疊加：全體共用的線性加成，只對土牆
+          run.wallStack += MINION_WALL_STACK_PER_HIT;
+        }
         blockWall.hit = 0.12;
       }
       if(blockWall.hp <= 0) e.wallStagger = EARTHWALL_BREAK_STAGGER;
@@ -3329,11 +3373,11 @@ function step(dt){
         e.atkTimer = (e.atkTimer||0) + dt;
         if(e.atkTimer >= BOSS_ATTACK_INTERVAL){
           e.atkTimer -= BOSS_ATTACK_INTERVAL;
-          run.hp -= bossStrikeDmg(e, BOSS_ATTACK_INTERVAL) * dmgTakenMul;
+          hurtHero(bossStrikeDmg(e, BOSS_ATTACK_INTERVAL) * dmgTakenMul);
           run.shake = Math.max(run.shake, 0.3);
         }
       } else {
-        run.hp -= e.dps * dmgTakenMul * dt;
+        hurtHero(e.dps * dmgTakenMul * dt);
       }
       e.hitTimer = (e.hitTimer||0) + dt;
       if(e.hitTimer >= 0.4){ // 每 0.4 秒一次視覺回饋，避免每幀爆量特效
@@ -3356,11 +3400,12 @@ function step(dt){
     run.eshots.splice(i,1);
     if(b.wall){
       if(run.walls.includes(b.wall) && b.wall.hp > 0){
-        b.wall.hp -= b.dmg * dmgTakenMul; b.wall.hit = 0.12;
+        b.wall.hp -= b.dmg * dmgTakenMul * (b.boss ? 1 : 1 + run.wallStack); b.wall.hit = 0.12;
+        if(!b.boss) run.wallStack += MINION_WALL_STACK_PER_HIT; // 遠程小怪火球打中土牆算一次攻擊
       }
       burst(b.ex, b.ey, '#ff8a3d', 10);
     } else {
-      run.hp -= b.dmg * dmgTakenMul;
+      hurtHero(b.dmg * dmgTakenMul);
       burst(b.ex, b.ey, '#ff3b6b', 10);
       run.shake = Math.max(run.shake, 0.12);
       if(run.hp <= 0){ run.hp = 0; syncBattleHud(); endRun(false); return; }
@@ -3373,6 +3418,7 @@ function step(dt){
       const w = run.walls[i];
       for(let k=0;k<6;k++) burst(W*(k+.5)/6, w.y, '#c99a5b', 8); // 整條牆崩塌的碎屑
       run.walls.splice(i,1);
+      run.wallStack = 0; // 牆被擊破，小怪疊加傷害歸零
       run.earthwallCd = earthwallInterval(s); // 冷卻結束才會重生新牆
     }
   }
@@ -3430,7 +3476,11 @@ function syncBattleHud(){
   document.getElementById('runGold').textContent = `💰 ${fmtNum(Math.round(fin(run.gold, 0) * gMul))}`;
   const pct = run.maxHp ? Math.max(0, run.hp/run.maxHp*100) : 0;
   document.getElementById('hpFill').style.width = pct + '%';
-  document.getElementById('hpText').textContent = `${fmtNum(Math.max(0,Math.ceil(run.hp)))} / ${fmtNum(Math.round(run.maxHp))}`;
+  const spct = run.maxShield > 0 ? Math.max(0, run.shield/run.maxShield*100) : 0;
+  document.getElementById('shieldFill').style.width = spct + '%';
+  document.getElementById('hpText').textContent =
+    (run.shield > 0 ? `🔵${fmtNum(Math.ceil(run.shield))}　` : '') +
+    `${fmtNum(Math.max(0,Math.ceil(run.hp)))} / ${fmtNum(Math.round(run.maxHp))}`;
 }
 
 /* 繪製 */
@@ -4447,6 +4497,7 @@ function syncUI(){
   checkWhirlwindExUnlock(); // 過關進度超過 90 關時開放旋風術 EX 並提示一次
   checkHatUnlock();         // 過關進度超過 75 關時解鎖帽子並提示一次
   checkOffhandUnlock();     // 過關進度超過 65 關時解鎖副武器並提示一次
+  checkShoesUnlock();       // 過關進度超過 100 關時解鎖鞋子並提示一次
   checkExUnlock();          // 過關進度超過 70 關時開放鍛造台 EX 並提示一次
   checkHeroUnlock();        // 過關進度一旦超過門檻就自動解鎖對應造型並提示一次
   checkUpgradeUnlocks();    // 過關進度一旦超過門檻就提示新解鎖的鍛造項目（金幣/鑽石/減傷/精煉成本）
