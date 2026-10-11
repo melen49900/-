@@ -836,6 +836,9 @@ const SKILL_DEFS = {
     pctFn: ()=>earthwallPct(),
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 40 關時會自動習得 1 等，之後也能從「召喚」抽到並疊加。`,
     desc:'開場在固定位置生成碎石牆，擋住所有敵人，會定時回復，被擊破後經過冷卻重生一道新牆。',
+    ex:true,
+    exLevel:100,   // 通關第 100 關後才開放 EX
+    exDesc:'EX：土牆進化出尖刺，對近戰敵人造成反擊傷害。',
   },
   beam: {
     name:'光束砲', icon:'🔆', innate:false,
@@ -992,7 +995,48 @@ function checkBeamUnlock(){
 }
 
 function earthwallY(){ return Math.max(50, H - EARTHWALL_Y_FROM_BOTTOM); }// 土牆血量上限：回復量×{50+(等級-1)×10)
-function earthwallMaxHpMult(){ return EARTHWALL_HP_MULT_BASE + (Math.max(1, skillStacks('earthwall')) - 1) * EARTHWALL_HP_MULT_STEP; }
+/* ── 土牆術 EX：通關第 100 關後開放，花 2000 💎 解鎖 ──
+   尖刺反擊：近戰敵人（小怪與王）每攻擊土牆一次就受到一次反擊傷害。
+   小怪：最大生命 ×（土牆等級 × 0.1%，上限 30%＝300 等）；王：主角攻擊 × 土牆等級 × 30%（可爆擊、無上限）。
+   平衡：生命上限倍率改為 20+(等級-1)×4（前六等 20～40 倍），回復速度不變。 */
+const EARTHWALL_EX_HP_MULT_BASE = 20;
+const EARTHWALL_EX_HP_MULT_STEP = 4;
+const EARTHWALL_EX_MINION_PCT = 0.001;   // 小怪：每等級 0.1% 最大生命
+const EARTHWALL_EX_MINION_CAP = 0.30;    // 小怪：上限 30%
+const EARTHWALL_EX_BOSS_PCT = 0.30;      // 王：每等級 30% 主角攻擊
+const EARTHWALL_EX_DRAW_OFFSET = 30;     // EX 牆體視覺下移量（只影響繪製，實際位置不動）
+function earthwallMaxHpMult(){
+  const lv = Math.max(1, skillStacks('earthwall'));
+  if(skillExOn('earthwall')) return EARTHWALL_EX_HP_MULT_BASE + (lv - 1) * EARTHWALL_EX_HP_MULT_STEP;
+  return EARTHWALL_HP_MULT_BASE + (lv - 1) * EARTHWALL_HP_MULT_STEP;
+}
+function checkEarthwallExUnlock(){
+  if(state.unlockedLevel > SKILL_DEFS.earthwall.exLevel && !state.earthwallExSeen){
+    state.earthwallExSeen = true;
+    save();
+    toast('🧱 土牆術 EX 開放！到「技能」頁面可花 2000 💎 解鎖土牆術 EX');
+  }
+}
+// 土牆術 EX 反擊：近戰敵人（含王）每攻擊土牆一次呼叫一次。遠程敵人不算；守護圈減傷、鋼鐵敵人固定 1 點都沿用 enemyDmg。
+function earthwallCounter(e, wall, s){
+  if(!skillExOn('earthwall') || e.ranged || e.hp <= 0) return;
+  const lv = state.skills.earthwall.draws;
+  if(lv < 1) return;
+  let base, crit = false;
+  if(e.boss){
+    base = s.atk * lv * EARTHWALL_EX_BOSS_PCT;
+    crit = Math.random()*100 < s.crit;
+    if(crit) base *= s.critDmg/100;
+  } else {
+    base = e.maxHp * Math.min(EARTHWALL_EX_MINION_CAP, lv * EARTHWALL_EX_MINION_PCT);
+  }
+  const d = enemyDmg(e, base);
+  e.hp -= d; e.hit = 0.12;
+  popText(e.x, e.y - e.r - 12, '-' + fmtNum(d), crit);
+  run.wallSpikes.push({ x:e.x, t:0 });
+  wall.jolt = 1; wall.shakeT = 0;
+  burst(e.x, wall.y + EARTHWALL_EX_DRAW_OFFSET - 18, '#ff6a4a', 9);
+}
 function earthwallPct(){ return 50 + skillOverCap('earthwall') * 2; }// 土牆係數
 function earthwallHp(s){
   return s.atk * (1 + s.crit/100) * (s.critDmg/100) * (earthwallPct()/100);// 回復量＝攻擊×(1+暴擊率)×暴擊傷害×土牆係數。
@@ -1207,19 +1251,17 @@ const UPGRADES = [
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）達到第 90 關時解鎖。`,
     maxFn: ()=> Math.max(0, RANGED_BASE_RANGE + state.unlockedLevel - RANGED_MIN_RANGE),
     body:lv=>lv, full:lv=>lv,
-    perFmt:lv=>'遠距攻擊距離 '+Math.max(RANGED_MIN_RANGE, RANGED_BASE_RANGE + state.unlockedLevel - lv),
-    bodyFmt:v=>'距離 -'+v.toFixed(0) },
+    perFmt:lv=>'距離 '+Math.max(RANGED_MIN_RANGE, RANGED_BASE_RANGE + state.unlockedLevel - lv),
+    bodyFmt:v=>'遠距距離 -'+v.toFixed(0) },
   // 緩速：通關第 95 關後解鎖（放在「遠距範圍減少」下方，未解鎖以「？」顯示）。
-  // 每級讓「關卡加速加成」-1（第 66 關起每關 +1 的那份），最多扣到加成歸零（見 slowedSpeedBonus）。
-  // 費用成長 1.49；EX 解鎖後成長降為 1.47（比照「遠距範圍減少」，只降低費用成長）。
-  // 等級上限 ＝ 過關進度的加速加成（unlockedLevel - 65），隨過關進度每關多 1。
+  // 每級讓移動速度加成-1，最多扣到加成歸零。
   { key:'slow', icon:'🐌', name:'緩速', base:2000, grow:1.49, exGrow:1.47, per:1, fmt:v=>'-'+v.toFixed(0),
     requiresLevel:95,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 95 關時解鎖。`,
     maxFn: ()=> slowMaxLevel(),
     body:lv=>lv, full:lv=>lv,
-    perFmt:lv=>'關卡加速加成 +'+Math.max(0, levelSpeedBonus(state.unlockedLevel) - lv),
-    bodyFmt:v=>'加速加成 -'+v.toFixed(0) },
+    perFmt:lv=>'速度加成 +'+Math.max(0, levelSpeedBonus(state.unlockedLevel) - lv),
+    bodyFmt:v=>'移動速度 -'+v.toFixed(0) },
   // 魔法護盾：第 100 關後解鎖。只顯示目前／下一級的護盾生命（不顯示括號總值）。初始 200 金幣、成長 1.08；EX 成長 1.05。
   { key:'shield', icon:'🔵', name:'魔法護盾', base:200, grow:1.08, exGrow:1.05, per:1, fmt:v=>fmtNum(v),
     requiresLevel:100,
@@ -1285,6 +1327,7 @@ function freshState(){
     refineBySlot:{ weapon:0, armor:0, trinket:0, offhand:0, hat:0, shoes:0 }, // { [部位]: 精煉等級 }——精煉綁定「武器／防具／飾品」這個部位，不管換上哪一件、哪個稀有度都沿用同一個等級
     skillEx:{ fireball:false, icespike:false, lightning:false, whirlwind:false, earthwall:false, beam:false }, // 技能 EX 是否已解鎖（每個 2000 💎）
     skillExSeen:false,                        // 技能 EX 開放提示是否已顯示過
+    earthwallExSeen:false,                    // 土牆術 EX（第 100 關後）開放提示是否已顯示過
     whirlwindExSeen:false,                    // 旋風術 EX（第 90 關後）開放提示是否已顯示過
     lightningExSeen:false,                    // 閃電術 EX（第 90 關後）開放提示是否已顯示過
     skills:{ fireball:{draws:0}, icespike:{draws:0}, lightning:{draws:0}, whirlwind:{draws:0}, earthwall:{draws:0}, beam:{draws:0} }, // 技能召喚抽到的次數（旋風術另外會在 unlockedLevel > 20、土牆術在 unlockedLevel > 40 時自動補發 1 等）
@@ -1587,10 +1630,11 @@ function getSelectedVoice(){
   return voices.find(v=>v.lang==='zh-TW') || voices.find(v=>v.lang && v.lang.startsWith('zh')) || null;
 }
 
-// 台灣／中國破音字唸法修正：只影響朗讀用的文字，不影響畫面上顯示的文字
+// 讀音修正區：只影響朗讀用的文字，不影響畫面上顯示的文字
 const TW_PRONOUNCE_FIX = [
   [/划/g, '滑'],      // 划船 應唸 huá；預設語音容易唸成 huà
   [/岔/g, '插'],
+  [/臟/g, '葬'],
 ];
 function applyPronounceFix(text){
   let r = text;
@@ -2158,7 +2202,7 @@ const run = {
   fireTimer:0, iceTimer:0, lightningTimer:0, whirlwindTimer:0, earthwallTimer:0, earthwallCd:0, beamTimer:0,
   beam:{ target:null, ang:-Math.PI/2, pulse:0, active:false },
   kills:0, gold:0,
-  enemies:[], shots:[], bits:[], pops:[], bolts:[], exBolts:[], tornadoes:[], walls:[],
+  enemies:[], shots:[], bits:[], pops:[], bolts:[], exBolts:[], tornadoes:[], walls:[], wallSpikes:[],
   iceBlades:[], // 冰椎術 EX：冰刃（含冰痕）
   eshots:[], // 遠距敵人的拋物線火球
   lobs:[], blasts:[], // 火球術 EX：飛行中的大火球／落地後的爆風
@@ -2266,7 +2310,7 @@ function startRun(level){
   run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0; run.whirlwindTimer=0; run.earthwallTimer=0; run.earthwallCd=0; run.beamTimer=0;
   run.beam={ target:null, ang:-Math.PI/2, pulse:0, active:false };
   run.kills=0; run.gold=0;
-  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.exBolts=[]; run.tornadoes=[]; run.walls=[]; run.lobs=[]; run.blasts=[]; run.eshots=[]; run.iceBlades=[]; run.shake=0;
+  run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.exBolts=[]; run.tornadoes=[]; run.walls=[]; run.wallSpikes=[]; run.lobs=[]; run.blasts=[]; run.eshots=[]; run.iceBlades=[]; run.shake=0;
   applyLevelTheme(run.level);
   document.getElementById('overlay').classList.remove('on');
   openStage();
@@ -3021,13 +3065,13 @@ function spawnEarthwall(s, full){
   const rocks = [];
   for(let i=0;i<n;i++){
     // 每顆岩塊的形狀在生成時固定下來，畫的時候不會每格重新亂數
-    rocks.push({ cx:-10 + (i+.5)*sw, w:sw*1.9, bh:24 + Math.random()*20, r:Math.random(), o:(i%2)*3 });
+    rocks.push({ cx:-10 + (i+.5)*sw, w:sw*1.9, bh:(skillExOn('earthwall') ? 10 + Math.random()*10 : 24 + Math.random()*20), r:Math.random(), o:(i%2)*3 });
   }
   run.walls.push({
     x: W/2, y: earthwallY(),
     width: W + 100,          // 比場地還寬，整條路線都擋住
     hp: full ? maxHp : regen, maxHp,
-    hit: 0, rise: 0, rocks,
+    hit: 0, rise: 0, rocks, jolt: 0, shakeT: 0,
   });
   run.earthwallTimer = earthwallInterval(s);
   run.earthwallCd = 0;
@@ -3261,7 +3305,8 @@ function step(dt){
   }
 
   // 土牆術：牆本身不會消失，只有被打壞（hp<=0）才移除；受擊的紅光回饋計時器倒數
-  for(const w of run.walls){ if(w.hit > 0) w.hit -= dt; if(w.rise < 1) w.rise = Math.min(1, w.rise + dt/0.5); }
+  for(const w of run.walls){ if(w.hit > 0) w.hit -= dt; if(w.rise < 1) w.rise = Math.min(1, w.rise + dt/0.5); if(w.jolt > 0) w.jolt = Math.max(0, w.jolt - dt/0.22); w.shakeT = (w.shakeT||0) + dt; }
+  for(let i=run.wallSpikes.length-1;i>=0;i--){ run.wallSpikes[i].t += dt; if(run.wallSpikes[i].t >= 1) run.wallSpikes.splice(i,1); }
 
   // 怪物
   const heroLine = H - 74;
@@ -3346,6 +3391,7 @@ function step(dt){
           blockWall.hp -= bossStrikeDmg(e, BOSS_ATTACK_INTERVAL) * dmgTakenMul;
           blockWall.hit = 0.12;
           burst(e.x, blockWall.y, '#ff3b6b', 10);
+          earthwallCounter(e, blockWall, s); // 土牆術 EX：尖刺反擊
         }
       } else {
         e.atkTimer = (e.atkTimer||0) + dt;
@@ -3353,6 +3399,7 @@ function step(dt){
           e.atkTimer -= MINION_ATTACK_INTERVAL;
           blockWall.hp -= e.dps * MINION_ATTACK_INTERVAL * dmgTakenMul * (1 + run.wallStack); // 小怪疊加：全體共用的線性加成，只對土牆
           run.wallStack += MINION_WALL_STACK_PER_HIT;
+          earthwallCounter(e, blockWall, s); // 土牆術 EX：尖刺反擊
         }
         blockWall.hit = 0.12;
       }
@@ -3419,6 +3466,7 @@ function step(dt){
       for(let k=0;k<6;k++) burst(W*(k+.5)/6, w.y, '#c99a5b', 8); // 整條牆崩塌的碎屑
       run.walls.splice(i,1);
       run.wallStack = 0; // 牆被擊破，小怪疊加傷害歸零
+      run.wallSpikes.length = 0;
       run.earthwallCd = earthwallInterval(s); // 冷卻結束才會重生新牆
     }
   }
@@ -3746,6 +3794,77 @@ function drawHeroFallback(x, y, size){
   ctx.restore();
 }
 
+function drawEarthwallEx(){
+  const SW = (W + 20) / EARTHWALL_ROCK_COUNT;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  run.walls.forEach(w=>{
+    const f = Math.max(0, w.hp / w.maxHp);
+    const base = w.y + EARTHWALL_EX_DRAW_OFFSET;
+    const rise = 1 - Math.pow(1 - (w.rise == null ? 1 : w.rise), 3);
+    const jolt = w.jolt || 0;
+    const k = Math.max(w.hit > 0 ? 0.4 : 0, jolt > 0.5 ? 0.25 : 0);
+    ctx.save();
+    ctx.translate(Math.sin((w.shakeT||0)*70) * 1.6 * jolt, 0);
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(0, base - 2, W, 5);
+    const tops = [];
+    w.rocks.forEach((r,i)=>{
+      const hg = r.bh * Math.max(.25, Math.min(1, f*1.2 + (r.r-.5)*.3)) * rise;
+      const cx = r.cx, rw = r.w, o = r.o;
+      const pts = [[cx-rw/2, base-o],[cx-rw*.45, base-hg*.6-o],[cx-rw*.2, base-hg-o],[cx+rw*.25, base-hg*.9-o],[cx+rw*.5, base-hg*.5-o],[cx+rw/2, base-o]];
+      ctx.fillStyle = mixHex(i%2 ? '#7d5e42' : '#8d6a4a', k);
+      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+      for(let j=1;j<pts.length;j++) ctx.lineTo(pts[j][0], pts[j][1]);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = mixHex('#b08a63', k);
+      ctx.beginPath(); ctx.moveTo(pts[1][0], pts[1][1]); ctx.lineTo(pts[2][0], pts[2][1]); ctx.lineTo(pts[3][0], pts[3][1]); ctx.lineTo(cx, base-hg*.55-o);
+      ctx.closePath(); ctx.fill();
+      tops.push({ cx, y: base - hg - o + 2 });
+    });
+    // 尖刺：平常縮成短石樁，被反擊觸發時附近的刺帶彈性伸長、根部泛紅光，隨後縮回
+    const spikeState = x=>{
+      let L = 4 * rise, glow = 0;
+      for(const h of run.wallSpikes){
+        const fo = Math.max(0, 1 - Math.abs(x - h.x) / 65);
+        let env;
+        if(h.t < 0.1){ const u = h.t / 0.1; env = 1 - Math.pow(1-u, 3) + Math.sin(u*Math.PI) * 0.12; }
+        else env = Math.max(0, 1 - (h.t - 0.1) / 0.45);
+        L += 26 * env * fo; glow = Math.max(glow, env * fo);
+      }
+      return { L: Math.min(L, 34), glow: Math.min(1, glow) };
+    };
+    tops.forEach(t=>[-.25,.25].forEach(d=>{
+      const st = spikeState(t.cx + d*SW);
+      if(st.glow > .02){
+        ctx.fillStyle = `rgba(255,80,50,${(st.glow*.45).toFixed(3)})`;
+        ctx.beginPath(); ctx.ellipse(t.cx + d*SW, t.y + 3, 13, 6, 0, 0, Math.PI*2); ctx.fill();
+      }
+    }));
+    tops.forEach(t=>[-.25,.25].forEach(d=>{
+      const x = t.cx + d*SW, st = spikeState(x), half = 4.5, ty = t.y - st.L;
+      const g = ctx.createLinearGradient(x, t.y, x, ty);
+      g.addColorStop(0, '#6a4f35'); g.addColorStop(1, '#a88660');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(x-half, t.y); ctx.lineTo(x, ty); ctx.lineTo(x+half, t.y); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.22)';
+      ctx.beginPath(); ctx.moveTo(x, t.y); ctx.lineTo(x, ty); ctx.lineTo(x+half, t.y); ctx.closePath(); ctx.fill();
+      if(st.glow > .05){
+        ctx.fillStyle = `rgba(255,110,80,${(st.glow*.7).toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(x, ty, 2 + st.glow*2, 0, Math.PI*2); ctx.fill();
+      }
+    }));
+    ctx.restore();
+    // 血條與數值
+    if(w.hp < w.maxHp){
+      const by = w.y - 42;
+      ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(10, by, W-20, 4);
+      ctx.fillStyle = '#c99a5b';
+      ctx.fillRect(10, by, (W-20)*f, 4);
+      ctx.font = '11px sans-serif'; ctx.fillStyle = '#e8d5b8'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(`${fmtNum(Math.max(0, Math.round(w.hp)))} / ${fmtNum(Math.round(w.maxHp))}`, W/2, by - 8);
+    }
+  });
+}
+
 function draw(){
   const rw = cv.width, rh = cv.height;
   if(!rw || !rh) return;
@@ -3782,7 +3901,8 @@ function draw(){
   ctx.textAlign='center'; ctx.textBaseline='middle';
 
   // 土牆術：橫貫全場的碎石堆。血量越低岩塊越矮（崩塌），受擊時短暫泛白，剛生成時從地面升起
-  run.walls.forEach(w=>{
+  const wallEx = skillExOn('earthwall');
+  if(!wallEx) run.walls.forEach(w=>{
     const f = Math.max(0, w.hp / w.maxHp);
     const base = w.y + 12;                                   // 岩塊底部；敵人停在 w.y，剛好踩在石堆上
     const rise = 1 - Math.pow(1 - (w.rise == null ? 1 : w.rise), 3);
@@ -3817,7 +3937,7 @@ function draw(){
     ctx.save();
     ctx.font = '12px sans-serif'; ctx.fillStyle = 'rgba(232,213,184,.65)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.setLineDash([6,5]); ctx.strokeStyle = 'rgba(232,213,184,.3)'; ctx.lineWidth = 1;
-    const y = earthwallY() + 12;
+    const y = earthwallY() + (wallEx ? EARTHWALL_EX_DRAW_OFFSET : 12);
     ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
     ctx.fillText(`土牆重生中 ${run.earthwallCd.toFixed(1)}s`, W/2, y - 10);
     ctx.restore();
@@ -3890,14 +4010,26 @@ function draw(){
       ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(e.x,e.y,e.r*1.25,0,Math.PI*2); ctx.fill();
     }
     ctx.restore();
-    // 血條
-    if(e.hp < e.maxHp){
+    // 血條（土牆術 EX 時改在牆體之後繪製，避免被尖刺蓋住）
+    if(!wallEx && e.hp < e.maxHp){
       const bw = e.r*2, bx = e.x-e.r, by = e.y-e.r-8;
       ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(bx,by,bw,3.5);
       ctx.fillStyle = e.boss ? '#ff3b6b' : (e.steel ? '#b8c4d6' : '#ff8a5b');
       ctx.fillRect(bx,by,bw*Math.max(0,e.hp/e.maxHp),3.5);
     }
   });
+  // 土牆術 EX：牆體畫在怪物之上（岩塊矮、視覺下移，怪物實際位置不動），再補畫怪物血條
+  if(wallEx){
+    drawEarthwallEx();
+    run.enemies.forEach(e=>{
+      if(e.hp < e.maxHp){
+        const bw = e.r*2, bx = e.x-e.r, by = e.y-e.r-8;
+        ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(bx,by,bw,3.5);
+        ctx.fillStyle = e.boss ? '#ff3b6b' : (e.steel ? '#b8c4d6' : '#ff8a5b');
+        ctx.fillRect(bx,by,bw*Math.max(0,e.hp/e.maxHp),3.5);
+      }
+    });
+  }
 
   // 子彈
   run.shots.forEach(b=>{
@@ -4329,6 +4461,9 @@ function renderSkills(){
     } else if(key === 'earthwall'){
       const st = stats();
       statusText = `生成血量 ×${earthwallMaxHpMult()}（${fmtNum(Math.round(earthwallMaxHp(st)))}）　每 ${earthwallInterval(st).toFixed(1)} 秒回復 ${fmtNum(Math.round(earthwallHp(st)))}　擊破後 ${earthwallInterval(st).toFixed(1)} 秒重生`;
+      if(skillExOn('earthwall')){
+        statusText += `　反擊：小怪 ${(Math.min(EARTHWALL_EX_MINION_CAP, draws*EARTHWALL_EX_MINION_PCT)*100).toFixed(1)}% 最大生命，王 ${fmtNum(draws*EARTHWALL_EX_BOSS_PCT*100)}% 攻擊（可爆擊）`;
+      }
     } else if(key === 'beam'){
       statusText = `光束寬度 ${beamWidth()}px　傷害 ${pct.toFixed(0)}% 攻擊`;
     } else if(key === 'icespike' && skillExOn('icespike')){
@@ -4495,6 +4630,7 @@ function syncUI(){
   checkSkillExUnlock();     // 過關進度超過 80 關時開放冰、火 EX 並提示一次
   checkLightningExUnlock(); // 過關進度超過 90 關時開放閃電術 EX 並提示一次
   checkWhirlwindExUnlock(); // 過關進度超過 90 關時開放旋風術 EX 並提示一次
+  checkEarthwallExUnlock(); // 過關進度超過 100 關時開放土牆術 EX 並提示一次
   checkHatUnlock();         // 過關進度超過 75 關時解鎖帽子並提示一次
   checkOffhandUnlock();     // 過關進度超過 65 關時解鎖副武器並提示一次
   checkShoesUnlock();       // 過關進度超過 100 關時解鎖鞋子並提示一次
