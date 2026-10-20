@@ -240,6 +240,11 @@ body{
   background:linear-gradient(0deg,rgba(8,4,10,.95),rgba(8,4,10,0));
   pointer-events:none;
 }
+#wallWrap{display:none;margin-bottom:6px}
+#wallWrap.on{display:block}
+#wallBar{height:9px;background:rgba(0,0,0,.6);border:1px solid var(--stoneline);border-radius:99px;overflow:hidden}
+#wallFill{height:100%;width:100%;background:linear-gradient(90deg,#8d6a4a,#c99a5b);transition:width .16s}
+#wallText{text-align:center;font-size:11px;margin-bottom:3px;color:#e8d5b8;font-variant-numeric:tabular-nums;font-weight:700}
 #hpBar{position:relative;height:13px;background:rgba(0,0,0,.6);border:1px solid var(--stoneline);border-radius:99px;overflow:hidden}
 #shieldFill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#2f7bff,#7fd0ff);transition:width .16s}
 #hpFill{height:100%;width:100%;background:linear-gradient(90deg,#ff3b6b,#ff8a5b);transition:width .16s}
@@ -538,6 +543,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
           <div id="runLoot"><span id="runKill">☠ 0</span><span id="runGold">💰 0</span></div>
         </div>
         <div id="hpWrap">
+          <div id="wallWrap"><div id="wallText"></div><div id="wallBar"><div id="wallFill"></div></div></div>
           <div id="hpBar"><div id="hpFill"></div><div id="shieldFill"></div></div>
           <div id="hpText">100 / 100</div>
         </div>
@@ -2096,10 +2102,17 @@ const FAR_MONSTER_SIZE_MUL = 1;       // 怪物大小倍率：1 ＝ 只隨視野
 const FAR_ENEMY_RANGE_MUL = 1;        // 遠程敵人（小怪與 Boss）射程倍率，之後調整攻擊距離用
 const FAR_ENEMY_SPEED_MULT = 0.55;    // 怪物速度倍率（主角在中央，怪物只需走約一半路程，所以約 0.55，維持原本的壓迫節奏）
 const FAR_HERO_TURN_RATE = 16;        // 主角轉向速度（越大越快轉到定位）
-let farMode = false, fz = 1;          // fz：目前座標系放大倍率（非 far 模式固定 1）
+let farMode = false, fz = 1, farLevel = 0;
+const FAR_VIEW_MARGIN = 40;          // 可視範圍比最大攻擊距離多留的邊距          // fz：目前座標系放大倍率（非 far 模式固定 1）
 function setFarMode(level){
   farMode = (level >= FAR_START_LEVEL);
+  farLevel = level;
   fz = farMode ? FAR_VIEW_H / FAR_BASE_H : 1;
+}
+// 畫面至少要完整看到的半徑：技能距離、土牆、遠程敵人（小怪／Boss）射程取最大者，再加邊距
+function farViewRadius(){
+  const rr = Math.max(rangedRangeFor(farLevel), RANGED_BOSS_RANGE) * FAR_ENEMY_RANGE_MUL;
+  return Math.max(FAR_SKILL_RANGE, FAR_WALL_RADIUS, rr) + FAR_VIEW_MARGIN;
 }
 function heroCY(){ return farMode ? H/2 : H - 74; }   // 主角身體中心 y
 function heroOY(){ return farMode ? H/2 : H - 96; }   // 技能發射點 y
@@ -2116,8 +2129,10 @@ function resizeCanvas(){
   dpr = Math.min(window.devicePixelRatio||1, 2);
   cv.width  = Math.round(r.width  * dpr);
   cv.height = Math.round(r.height * dpr);
+  const hn = 400 * (r.height / r.width);
+  if(farMode) fz = Math.max(FAR_VIEW_H / FAR_BASE_H, 2 * farViewRadius() / Math.min(400, hn)); // 視野放大到「短邊」也能容納整個攻擊圈
   W = 400 * fz;
-  H = Math.round(400 * (r.height / r.width) * fz);
+  H = Math.round(hn * fz);
   hScale = H / 700;           // 場地變高時，怪物速度等比放大，維持相同的壓迫節奏
   if(farMode && typeof run !== 'undefined'){ run.heroX = run.targetX = W/2; }
 }
@@ -3288,7 +3303,7 @@ function stepEnemyFar(e, dt, slowMul, s, dmgTakenMul){
   let blockWall = null;
   if(!ignoreWall){
     for(const w of run.walls){
-      if(preD < w.radius) continue;
+      if(preD < w.radius - 1) continue; // 容許 1 單位誤差：被牆擋住時座標被夾在牆圈上，浮點誤差可能讓下一幀誤判成「已在牆內」而穿牆
       if(!blockWall || w.radius > blockWall.radius) blockWall = w;
     }
   }
@@ -3733,6 +3748,17 @@ function syncBattleHud(){
   const gMul = fin(Math.pow(1.21, run.level-1), 1) * (1 + goldBoostPct() / 100);
   document.getElementById('runGold').textContent = `💰 ${fmtNum(Math.round(fin(run.gold, 0) * gMul))}`;
   const pct = run.maxHp ? Math.max(0, run.hp/run.maxHp*100) : 0;
+  // 121 關起：土牆血量顯示在角色血條上方
+  const ww = document.getElementById('wallWrap');
+  const showWall = farMode && state.skills.earthwall.draws >= 1;
+  ww.classList.toggle('on', showWall);
+  if(showWall){
+    const wl = run.walls[0];
+    document.getElementById('wallFill').style.width = (wl && wl.maxHp ? Math.max(0, wl.hp / wl.maxHp * 100) : 0) + '%';
+    document.getElementById('wallText').textContent = wl
+      ? `🧱 ${fmtNum(Math.max(0, Math.round(wl.hp)))} / ${fmtNum(Math.round(wl.maxHp))}`
+      : `🧱 土牆重生中 ${Math.max(0, run.earthwallCd).toFixed(1)}s`;
+  }
   document.getElementById('hpFill').style.width = pct + '%';
   const spct = run.maxShield > 0 ? Math.max(0, run.shield/run.maxShield*100) : 0;
   document.getElementById('shieldFill').style.width = spct + '%';
@@ -4070,15 +4096,6 @@ function drawEarthwallRing(ex){
       ctx.restore();
     });
     ctx.restore();
-    // 血條與數值（牆圈正上方）
-    if(w.hp < w.maxHp){
-      const bw = 260*S, by = w.y - R - 70*S;
-      ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(w.x - bw/2, by, bw, 4*S);
-      ctx.fillStyle = '#c99a5b';
-      ctx.fillRect(w.x - bw/2, by, bw*f, 4*S);
-      ctx.font = `${11*S}px sans-serif`; ctx.fillStyle = '#e8d5b8'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(`${fmtNum(Math.max(0, Math.round(w.hp)))} / ${fmtNum(Math.round(w.maxHp))}`, w.x, by - 8*S);
-    }
   });
 }
 
@@ -4460,10 +4477,7 @@ function draw(){
       const ar = 50*fz;
       ctx.beginPath(); ctx.moveTo(ar + 12*fz, 0); ctx.lineTo(ar, -7*fz); ctx.lineTo(ar, 7*fz); ctx.closePath(); ctx.fill();
       ctx.restore();
-      ctx.save();
-      ctx.translate(hx, hy); ctx.rotate(run.heroAng + Math.PI/2);  // 角色「頭朝上」的圖，轉到朝向面向
-      drawHero(0, 0, 38*fz);
-      ctx.restore();
+      drawHero(hx, hy, 38*fz);   // 角色圖不旋轉，只用前方箭頭表示面向
     } else {
       drawHero(hx, hy, 38);
     }
