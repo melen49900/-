@@ -705,7 +705,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 155;        // 所有怪物出完的時間點（2:35），清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 150;           // 共 150 關
+const LEVEL_COUNT = 170;           // 共 170 關
 const LEVEL_HP_GROWTH = 1.286;                                  // 血量成長係數
 const LEVEL_ATK_GROWTH = 1.21;                                  // 攻擊成長係數
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內血量差距3倍
@@ -1033,9 +1033,10 @@ function earthwallCounter(e, wall, s){
   const d = enemyDmg(e, base);
   e.hp -= d; e.hit = 0.12;
   popText(e.x, e.y - e.r - 12, '-' + fmtNum(d), crit);
-  run.wallSpikes.push({ x:e.x, t:0 });
+  run.wallSpikes.push({ x:e.x, a:Math.atan2(e.y - wall.y, e.x - wall.x), t:0 });
   wall.jolt = 1; wall.shakeT = 0;
-  burst(e.x, wall.y + EARTHWALL_EX_DRAW_OFFSET - 18, '#ff6a4a', 9);
+  if(wall.ring) burst(e.x, e.y, '#ff6a4a', 9);
+  else burst(e.x, wall.y + EARTHWALL_EX_DRAW_OFFSET - 18, '#ff6a4a', 9);
 }
 function earthwallPct(){ return 50 + skillOverCap('earthwall') * 2; }// 土牆係數
 function earthwallHp(s){
@@ -2072,9 +2073,42 @@ function stats(){
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
 // 邏輯座標系：寬固定 400，高依實際容器比例算，避免畫面被拉伸
-const W = 400;
+let W = 400;
 let H = 700, hScale = 1;
 let dpr = 1;
+
+/* ══════════════════════════════════════════
+   第 121 關起：「環形遠景模式」(farMode)
+   ① 主角固定在畫面正中央，只能旋轉（拖曳／點擊畫面決定面向）
+   ② 場地由「最上到最下 700」放大成 FAR_VIEW_H（1500），其他裝置依比例縮放（座標系整體 × fz）
+   ③ 土牆改成以主角為圓心的圓形牆
+   ④ 怪物大小 × FAR_MONSTER_SIZE_MUL（座標系放大後，畫面上自然縮小成原本的 700/1500）
+   ⑤ 除土牆外，技能要有怪物「進入 FAR_SKILL_RANGE 且出現在畫面」才會動作
+   ⑥ 冰椎／冰椎 EX 朝主角面向發射
+   ⑦ Boss 固定從正上或正下出現，小怪 360° 隨機
+   ══════════════════════════════════════════ */
+const FAR_START_LEVEL = 121;          // 第幾關（含）起啟用
+const FAR_BASE_H = 700;               // 原本最上到最下的距離
+const FAR_VIEW_H = 1500;              // 新模式最上到最下的距離（座標系放大倍率 fz ＝ FAR_VIEW_H / FAR_BASE_H）
+const FAR_SKILL_RANGE = 650;          // 技能基礎攻擊距離（土牆除外）：怪物進入此距離且在畫面內才會施放
+const FAR_WALL_RADIUS = EARTHWALL_Y_FROM_BOTTOM - 74; // 圓形土牆半徑 ＝ 原本土牆到主角的距離（350 − 74 = 276）
+const FAR_MONSTER_SIZE_MUL = 1;       // 怪物大小倍率：1 ＝ 只隨視野縮小（畫面上為原本的 700/1500）；之後要調整比例改這裡
+const FAR_ENEMY_RANGE_MUL = 1;        // 遠程敵人（小怪與 Boss）射程倍率，之後調整攻擊距離用
+const FAR_ENEMY_SPEED_MULT = 0.55;    // 怪物速度倍率（主角在中央，怪物只需走約一半路程，所以約 0.55，維持原本的壓迫節奏）
+const FAR_HERO_TURN_RATE = 16;        // 主角轉向速度（越大越快轉到定位）
+let farMode = false, fz = 1;          // fz：目前座標系放大倍率（非 far 模式固定 1）
+function setFarMode(level){
+  farMode = (level >= FAR_START_LEVEL);
+  fz = farMode ? FAR_VIEW_H / FAR_BASE_H : 1;
+}
+function heroCY(){ return farMode ? H/2 : H - 74; }   // 主角身體中心 y
+function heroOY(){ return farMode ? H/2 : H - 96; }   // 技能發射點 y
+function enemyOnScreen(e){ return e.x + e.r > 0 && e.x - e.r < W && e.y + e.r > 0 && e.y - e.r < H; }
+function enemyHeroDist(e){ return Math.hypot(e.x - run.heroX, e.y - heroCY()); }
+function farTargetable(e){ return e.hp > 0 && enemyOnScreen(e) && enemyHeroDist(e) <= FAR_SKILL_RANGE; }
+function anyFarTarget(){ return run.enemies.some(farTargetable); }
+function targetScore(e){ return farMode ? -enemyHeroDist(e) : e.y; }  // 越大越優先：舊版＝壓得最深（y 最大），新版＝離主角最近
+function enemySpeedScale(){ return farMode ? hScale * FAR_ENEMY_SPEED_MULT : hScale; }
 
 function resizeCanvas(){
   const r = cv.getBoundingClientRect();
@@ -2082,8 +2116,10 @@ function resizeCanvas(){
   dpr = Math.min(window.devicePixelRatio||1, 2);
   cv.width  = Math.round(r.width  * dpr);
   cv.height = Math.round(r.height * dpr);
-  H = Math.round(W * (r.height / r.width));
+  W = 400 * fz;
+  H = Math.round(400 * (r.height / r.width) * fz);
   hScale = H / 700;           // 場地變高時，怪物速度等比放大，維持相同的壓迫節奏
+  if(farMode && typeof run !== 'undefined'){ run.heroX = run.targetX = W/2; }
 }
 window.addEventListener('resize', resizeCanvas);
 
@@ -2198,7 +2234,7 @@ const run = {
   level:1,
   t:0, wave:1, spawned:0, waveQuota:0, spawnTimer:0,
   hp:100, maxHp:100, shield:0, maxShield:0, wallStack:0,
-  heroX:W/2, targetX:W/2,
+  heroX:W/2, targetX:W/2, heroAng:-Math.PI/2, targetAng:-Math.PI/2,
   fireTimer:0, iceTimer:0, lightningTimer:0, whirlwindTimer:0, earthwallTimer:0, earthwallCd:0, beamTimer:0,
   beam:{ target:null, ang:-Math.PI/2, pulse:0, active:false },
   kills:0, gold:0,
@@ -2260,6 +2296,7 @@ function renderLevelSelect(){
 
 // 開始前的確認畫面：顯示這關大概多硬，畫布背景也先換成該關主題色
 function openLevelConfirm(level){
+  setFarMode(level);
   applyLevelTheme(level);
   openStage();
   resizeCanvas();
@@ -2267,7 +2304,10 @@ function openLevelConfirm(level){
   const hpMul = Math.pow(LEVEL_HP_GROWTH, level-1);
   document.getElementById('ovTitle').textContent = `第 ${level} 關`;
   document.getElementById('ovSub').innerHTML =
-    `本關共 ${WAVES_PER_LEVEL} 波，怪物基礎血量約為第 1 關的 ${fmtMul(hpMul)} 倍。<br>拖曳畫面移動法師，攻擊會自動施放。`;
+    `本關共 ${WAVES_PER_LEVEL} 波，怪物基礎血量約為第 1 關的 ${fmtMul(hpMul)} 倍。<br>` +
+    (level >= FAR_START_LEVEL
+      ? `法師固定在畫面中央，拖曳或點擊畫面可轉動面向（冰椎會朝面向發射）。<br>怪物進入 ${FAR_SKILL_RANGE} 距離且出現在畫面時，技能才會施放。`
+      : `拖曳畫面移動法師，攻擊會自動施放。`);
   const loot = document.getElementById('ovLoot');
   loot.className = ''; loot.innerHTML = '';
 
@@ -2304,6 +2344,8 @@ function startRun(level){
   const s = stats();
   run.active=true; run.over=false;
   run.level = level || run.level || 1;
+  setFarMode(run.level);
+  run.heroAng = -Math.PI/2; run.targetAng = -Math.PI/2;
   run.t=0; run.wave=1; run.spawned=0; run.waveQuota=waveQuotaFor(1); run.spawnTimer=0;
   run.maxHp=s.maxHp; run.hp=s.maxHp;
   run.maxShield = shieldValue(s.maxHp); run.shield = run.maxShield; run.wallStack = 0;
@@ -2315,6 +2357,7 @@ function startRun(level){
   document.getElementById('overlay').classList.remove('on');
   openStage();
   resizeCanvas();
+  run.heroX = run.targetX = W/2;   // 場地寬度會依關卡模式改變（400 ⇄ 400×fz），resize 之後再置中
   spawnWhirlwindEx(s);     // 旋風術 EX：開場從場中央生成 1 道大旋風
   spawnEarthwall(s, true); // 土牆術：開場就生成（要等 resizeCanvas 算出場地高度之後）
   syncBattleHud();
@@ -2399,14 +2442,27 @@ function pointerX(e){
   return Math.max(24, Math.min(W-24, cx / r.width * W));
 }
 let dragging = false;
-cv.addEventListener('pointerdown', e=>{ if(!run.active) return; dragging=true; run.targetX=pointerX(e); cv.setPointerCapture(e.pointerId); });
-cv.addEventListener('pointermove', e=>{ if(dragging && run.active) run.targetX=pointerX(e); });
+// far 模式：拖曳／點擊 ＝ 指定面向（角色位置不動）
+function aimFromPointer(e){
+  const r = cv.getBoundingClientRect();
+  const cx = ((e.touches ? e.touches[0].clientX : e.clientX) - r.left) / r.width  * W;
+  const cy = ((e.touches ? e.touches[0].clientY : e.clientY) - r.top ) / r.height * H;
+  const dx = cx - W/2, dy = cy - H/2;
+  if(dx*dx + dy*dy < 16*16) return;   // 太靠近中心時方向不穩，忽略
+  run.targetAng = Math.atan2(dy, dx);
+}
+cv.addEventListener('pointerdown', e=>{ if(!run.active) return; dragging=true; if(farMode) aimFromPointer(e); else run.targetX=pointerX(e); cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e=>{ if(dragging && run.active){ if(farMode) aimFromPointer(e); else run.targetX=pointerX(e); } });
 cv.addEventListener('pointerup',   ()=>{ dragging=false; });
 cv.addEventListener('pointercancel',()=>{ dragging=false; });
 
 /* 遠距敵人火球：地面座標等速前進、高度 z ＝ 4h·u·(1-u) 的拋物線，球會飛越土牆 */
 function fireEnemyLob(e, wall){
-  const ex = wall ? e.x : run.heroX, ey = wall ? wall.y : (H - 74);
+  let ex, ey;
+  if(wall && wall.ring){ // 圓形土牆：落點在「怪物 → 主角」連線與牆圈的交點
+    const cx = run.heroX, cy = heroCY(), d = Math.hypot(e.x - cx, e.y - cy) || 1;
+    ex = cx + (e.x - cx) / d * wall.radius; ey = cy + (e.y - cy) / d * wall.radius;
+  } else { ex = wall ? e.x : run.heroX; ey = wall ? wall.y : heroCY(); }
   const dist = Math.hypot(ex - e.x, ey - e.y);
   run.eshots.push({
     sx:e.x, sy:e.y, ex, ey, wall: wall || null,
@@ -2470,13 +2526,26 @@ function spawnEnemy(){
   const weakenMul = monsterWeakenMul();
   const hp = base.steel ? steelHpFor(run.level) : enemyHpFor(run.level, w) * base.hp * (isBoss ? 14 : 1) * weakenMul;
   const dps = (isBoss ? 13 : 4) * Math.pow(LEVEL_ATK_GROWTH, run.level-1);
+  const sizeMul = farMode ? FAR_MONSTER_SIZE_MUL : 1;
+  let spx = 32 + Math.random()*(W-64), spy = -30, spvx = (Math.random()-0.5) * 12;
+  if(farMode){
+    // Boss：固定從正上或正下出現；小怪：360° 任意方向，從畫面邊緣外一點點生成
+    const m = (isBoss ? 34 : base.r) * sizeMul + 30;
+    spvx = 0;
+    if(isBoss){ spx = W/2; spy = Math.random() < 0.5 ? -m : H + m; }
+    else {
+      const a = Math.random() * Math.PI * 2, c = Math.cos(a), sn = Math.sin(a);
+      const t = Math.min((W/2) / Math.max(1e-6, Math.abs(c)), (H/2) / Math.max(1e-6, Math.abs(sn)));
+      spx = W/2 + c * (t + m); spy = H/2 + sn * (t + m);
+    }
+  }
   run.enemies.push({
-    x: 32 + Math.random()*(W-64),
-    y: -30,
-    vx: (Math.random()-0.5) * 12,
+    x: spx,
+    y: spy,
+    vx: spvx,
     hp, maxHp:hp,
-    spd: ((isBoss ? 11 : 17 * base.spd) + slowedSpeedBonus(run.level)) * waveSpeedMulFor(w) * hScale,
-    r: isBoss ? 34 : base.r,
+    spd: ((isBoss ? 11 : 17 * base.spd) + slowedSpeedBonus(run.level)) * waveSpeedMulFor(w) * enemySpeedScale(),
+    r: (isBoss ? 34 : base.r) * sizeMul,
     emoji: isBoss ? (bossRanged ? RANGED_BOSSES : BOSSES)[Math.floor(Math.random()*(bossRanged ? RANGED_BOSSES : BOSSES).length)] : base.emoji,
     img: isBoss ? pickRandomImg(bossRanged && rangedBossImgs.length ? rangedBossImgs : bossImgs) : (base.guardian ? (guardianImgReady ? guardianImg : null) : pickRandomImg(monsterImgs)),
     guardian: !!base.guardian,
@@ -2522,11 +2591,16 @@ function lobPos(l){
    ══════════════════════════════════════════ */
 function spawnIceBlade(){
   const s = stats();
-  const y0 = H - 74;
+  const y0 = heroCY();
+  // 冰刃沿「面向」直線前進（舊版固定往上 ＝ 角度 -90°）；沿軸距離 a、橫向偏移 perp
+  const ang = farMode ? run.heroAng : -Math.PI/2;
+  const len = farMode ? Math.hypot(W, H) + 80 : y0 + 40;
   const shards = [];
-  for(let i=0;i<46;i++) shards.push({ x:(Math.random()-.5)*(ICE_EX_WIDTH-12), y:y0 - Math.random()*(y0+40), h:20+Math.random()*30, w:6+Math.random()*7, tilt:(Math.random()-.5)*.6, p:Math.random() });
+  for(let i=0;i<46;i++) shards.push({ x:(Math.random()-.5)*(ICE_EX_WIDTH-12), a:Math.random()*len, h:20+Math.random()*30, w:6+Math.random()*7, tilt:(Math.random()-.5)*.6, p:Math.random() });
   run.iceBlades.push({
-    x: run.heroX, y0, y: y0, t: 0, spd: SHOT_SPEED_BASE * hScale,
+    x: run.heroX, y: y0, ox: run.heroX, oy: y0,
+    ang, dx: farMode ? Math.cos(ang) : 0, dy: farMode ? Math.sin(ang) : -1, len,
+    t: 0, spd: SHOT_SPEED_BASE * hScale,
     dmg: icespikeAtk(s) * ICE_EX_DMG_MULT,
     crit: Math.random()*100 < s.crit,
     hit: new Set(),     // 已被冰刃本體命中的敵人
@@ -2537,14 +2611,18 @@ function spawnIceBlade(){
 function updateIceEx(dt, s){
   for(let i=run.iceBlades.length-1;i>=0;i--){
     const b = run.iceBlades[i];
-    b.t += dt; b.y = b.y0 - b.spd * b.t;
+    b.t += dt;
+    b.x = b.ox + b.dx * b.spd * b.t; b.y = b.oy + b.dy * b.spd * b.t;
     const half = ICE_EX_WIDTH/2;
     for(const e of run.enemies){
       if(e.hp <= 0) continue;
-      const inX = Math.abs(e.x - b.x) <= half + e.r*0.5;
-      if(!inX) continue;
+      const rx = e.x - b.ox, ry = e.y - b.oy;
+      const along = rx*b.dx + ry*b.dy;                 // 敵人在冰刃前進方向上的距離
+      const perp  = Math.abs(rx*b.dy - ry*b.dx);       // 到冰刃中線的橫向距離
+      if(perp > half + e.r*0.5) continue;
+      if(farMode && along < -(e.r + 10)) continue;     // 主角背後的敵人不算
       // 冰刃本體：刃尖到達敵人位置時命中一次（不消失）
-      if(!b.hit.has(e) && b.y <= e.y + e.r*0.5){
+      if(!b.hit.has(e) && b.spd * b.t >= along - e.r*0.5){
         b.hit.add(e);
         const d = enemyDmg(e, b.crit ? b.dmg * (s.critDmg/100) : b.dmg);
         e.hp -= d; e.hit = 0.12;
@@ -2553,7 +2631,7 @@ function updateIceEx(dt, s){
         burst(e.x, e.y, b.crit ? '#d6faff' : '#7fe3ff', b.crit?9:5);
       }
       // 冰痕：敵人所在位置的冰痕還在（存在 1 秒）時，每 0.25 秒跳一下，最多 4 下，不更新緩速
-      const age = b.t - (b.y0 - e.y)/b.spd;
+      const age = b.t - along/b.spd;
       if(age >= 0 && age <= ICE_EX_TRAIL_LIFE){
         let k = b.ticks.get(e); if(!k){ k = { n:0, acc:0 }; b.ticks.set(e,k); }
         k.acc += dt;
@@ -2566,11 +2644,11 @@ function updateIceEx(dt, s){
         }
       }
     }
-    if(b.t > (b.y0 + 40)/b.spd + ICE_EX_TRAIL_LIFE) run.iceBlades.splice(i,1);
+    if(b.t > b.len/b.spd + ICE_EX_TRAIL_LIFE) run.iceBlades.splice(i,1);
   }
 }
-function iceRow(b, y){ // 位置 y 的冰痕狀態；冰刃還沒經過或已消失則回傳 null
-  const age = b.t - (b.y0 - y)/b.spd;
+function iceRow(b, a){ // 沿軸距離 a 處的冰痕狀態；冰刃還沒經過或已消失則回傳 null
+  const age = b.t - a/b.spd;
   if(age < 0 || age > ICE_EX_TRAIL_LIFE) return null;
   const fade = age > ICE_EX_TRAIL_LIFE-.25 ? (ICE_EX_TRAIL_LIFE-age)/.25 : 1;
   return { age, fade, pop:Math.min(1, age/.12), tk:((age%ICE_EX_TICK) < .07 && age > .02) ? 1 : 0 };
@@ -2579,22 +2657,23 @@ function drawIceTrailEx(){
   const hw = ICE_EX_WIDTH/2;
   run.iceBlades.forEach(b=>{
     ctx.save();
-    for(let y=b.y0; y>-46; y-=6){
-      const r = iceRow(b, y); if(!r) continue;
+    ctx.translate(b.ox, b.oy); ctx.rotate(b.ang);   // 區域座標：+x ＝ 冰刃前進方向，+y ＝ 橫向（舊版往上時 +y ＝ 世界 +x）
+    for(let a=0; a<b.len+6; a+=6){
+      const r = iceRow(b, a); if(!r) continue;
       ctx.fillStyle = `rgba(150,215,255,${(.16+.14*r.tk)*r.fade})`;
-      ctx.fillRect(b.x-hw, y-6, ICE_EX_WIDTH, 6);
+      ctx.fillRect(a, -hw, 6, ICE_EX_WIDTH);
     }
     // 兩側霜線
-    for(let y=b.y0; y>-46; y-=14){
-      const r = iceRow(b, y); if(!r) continue;
+    for(let a=0; a<b.len+6; a+=14){
+      const r = iceRow(b, a); if(!r) continue;
       ctx.globalAlpha = .5*r.fade; ctx.fillStyle = '#d8f3ff';
-      ctx.fillRect(b.x-hw, y, 2, 8); ctx.fillRect(b.x+hw-2, y, 2, 8);
+      ctx.fillRect(a-8, -hw, 8, 2); ctx.fillRect(a-8, hw-2, 8, 2);
     }
     // 霜晶碎片
     b.shards.forEach(k=>{
-      const r = iceRow(b, k.y); if(!r) return;
+      const r = iceRow(b, k.a); if(!r) return;
       const h = k.h * r.pop;
-      ctx.save(); ctx.translate(b.x + k.x, k.y); ctx.rotate(k.tilt);
+      ctx.save(); ctx.translate(k.a, k.x); ctx.rotate(k.tilt + Math.PI/2);
       ctx.globalAlpha = (.5+.3*r.tk)*r.fade;
       const g = ctx.createLinearGradient(0,-h,0,0); g.addColorStop(0,'#ecfbff'); g.addColorStop(1,'#7cc8f5');
       ctx.fillStyle = g;
@@ -2610,14 +2689,15 @@ function drawIceTrailEx(){
 function drawIceBladeEx(){
   const hw = ICE_EX_WIDTH/2;
   run.iceBlades.forEach(b=>{
-    if(b.y < -50) return;
-    const y = b.y, x = b.x;
-    ctx.save(); ctx.shadowBlur = 18; ctx.shadowColor = b.crit ? '#ffffff' : '#bfeaff';
-    const g = ctx.createLinearGradient(0,y-30,0,y+8); g.addColorStop(0, b.crit ? '#ffffff' : '#f2fcff'); g.addColorStop(1,'#8fd6ff');
+    if(b.t*b.spd > b.len + 10) return;
+    ctx.save();
+    ctx.translate(b.x, b.y); ctx.rotate(b.ang + Math.PI/2);   // 刃尖朝前進方向（舊版往上 ＝ 不旋轉）
+    ctx.shadowBlur = 18; ctx.shadowColor = b.crit ? '#ffffff' : '#bfeaff';
+    const g = ctx.createLinearGradient(0,-30,0,8); g.addColorStop(0, b.crit ? '#ffffff' : '#f2fcff'); g.addColorStop(1,'#8fd6ff');
     ctx.fillStyle = g;
-    ctx.beginPath(); ctx.moveTo(x-hw,y+8); ctx.quadraticCurveTo(x,y-46,x+hw,y+8); ctx.quadraticCurveTo(x,y-14,x-hw,y+8); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-hw,8); ctx.quadraticCurveTo(0,-46,hw,8); ctx.quadraticCurveTo(0,-14,-hw,8); ctx.closePath(); ctx.fill();
     ctx.globalAlpha = .4; ctx.lineWidth = 2; ctx.strokeStyle = '#fff';
-    ctx.beginPath(); ctx.moveTo(x-40,y+3); ctx.quadraticCurveTo(x,y-34,x+40,y+3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-40,3); ctx.quadraticCurveTo(0,-34,40,3); ctx.stroke();
     ctx.restore();
   });
 }
@@ -2727,12 +2807,15 @@ function drawFireballEx(){
 const SHOT_SPEED_BASE = 620;
 function fire(){
   const s = stats();
-  const ox = run.heroX, oy = H - 96;
+  const ox = run.heroX, oy = heroOY();
 
   let target = null, deepest = -Infinity;
   for(const e of run.enemies){
-    if(e.y > -10 && e.y > deepest){ deepest = e.y; target = e; }
+    if(farMode ? !farTargetable(e) : !(e.y > -10)) continue;
+    const sc = targetScore(e);
+    if(sc > deepest){ deepest = sc; target = e; }
   }
+  if(farMode && !target) return; // 遠景模式：沒有怪物進入攻擊距離就不發射
   // 火球術 EX：改成發射 1 顆拋物線大火球（沒有目標就不發射）
   if(skillExOn('fireball')){ if(target) fireLob(s, target, ox, oy); return; }
   // 沒有目標就往正上方打
@@ -2759,6 +2842,7 @@ function fire(){
 
 // 冰椎術：從角色當下位置往正上方發射。
 function queueIceSpikes(){
+  if(farMode && !anyFarTarget()) return; // 遠景模式：沒有怪物進入攻擊距離就不發射
   const n = icespikeBullets();
   if(skillExOn('icespike')){ // EX：有目標才發射 1 道冰刃，彈道數加成無效
     if(n > 0 && run.enemies.some(e=>e.y > -10)) spawnIceBlade();
@@ -2768,10 +2852,11 @@ function queueIceSpikes(){
 }
 function spawnIceSpike(){
   const s = stats();
+  const ia = farMode ? run.heroAng : -Math.PI/2; // 遠景模式：朝主角目前面向發射
   run.shots.push({
     kind:'ice',
-    x: run.heroX, y: H - 74,// 發射點改成跟主角實際站位同高，確保打到貼臉敵人
-    vx: 0, vy: -SHOT_SPEED_BASE * hScale,
+    x: run.heroX, y: heroCY(),// 發射點改成跟主角實際站位同高，確保打到貼臉敵人
+    vx: farMode ? Math.cos(ia) * SHOT_SPEED_BASE * hScale : 0, vy: farMode ? Math.sin(ia) * SHOT_SPEED_BASE * hScale : -SHOT_SPEED_BASE * hScale,
     dmg: icespikeAtk(s),
     crit: Math.random()*100 < s.crit,
     r: 7,
@@ -2797,9 +2882,9 @@ function castLightningEx(){
   if(n <= 0) return;
   let target = null, bp = 99, deepest = -Infinity;
   for(const e of run.enemies){
-    if(e.hp <= 0 || e.y <= 8) continue;
-    const pr = lightningExPriority(e);
-    if(pr < bp || (pr === bp && e.y > deepest)){ target = e; bp = pr; deepest = e.y; }
+    if(farMode ? !farTargetable(e) : (e.hp <= 0 || e.y <= 8)) continue;
+    const pr = lightningExPriority(e), sc = targetScore(e);
+    if(pr < bp || (pr === bp && sc > deepest)){ target = e; bp = pr; deepest = sc; }
   }
   if(!target) return;
   run.exBolts.push({ e:target, x:target.x, y:target.y, r:target.r, hits:Math.min(LIGHTNING_EX_MAX_HITS, n+1), t:0, struck:false, flick:0 });
@@ -2817,7 +2902,7 @@ function lightningExStrike(b){
     const d = alive ? enemyDmg(e, crit ? base*(s.critDmg/100) : base) : 0;
     if(alive){ e.hp -= d; e.hit = 0.12; }
     // 傷害數字同時出現，由下至上並排
-    popText(b.x, b.y - b.r - 6 - i*17, fmtNum(alive ? d : 0), crit);
+    popText(b.x, b.y - b.r - 6 - i*17*fz, fmtNum(alive ? d : 0), crit);
   }
   if(alive && e.steel){ e.stun = LIGHTNING_EX_STUN; e.lflash = LIGHTNING_EX_FLASH; }
   burst(b.x, b.y, anyCrit ? '#fff3ff' : '#e0ccff', anyCrit ? 18 : 12);
@@ -2920,7 +3005,7 @@ function drawWhirlwindEx(t){
 
 function drawLightningEx(){
   run.exBolts.forEach(b=>{
-    const cx = b.x, cy = Math.min(b.y - 12, Math.max(18, b.y - b.r - 62)), R0 = 44;
+    const cx = b.x, cy = Math.min(b.y - 12*fz, Math.max(18*fz, b.y - b.r - 62*fz)), R0 = 44*fz;
     const bt = b.t - LIGHTNING_EX_CLOUD_DELAY;
     const a = b.t < LIGHTNING_EX_CLOUD_DELAY ? b.t/LIGHTNING_EX_CLOUD_DELAY : Math.max(0, 1 - (bt-0.25)/LIGHTNING_EX_CLOUD_FADE);
     // 小烏雲：半透明灰黑，雲內有淺紫電弧
@@ -2942,8 +3027,8 @@ function drawLightningEx(){
     if(bt < 0.14){
       const f = 1 - bt/0.14, main = lightningExZig(cx,cy,cx,b.y-2,18);
       ctx.save(); ctx.globalAlpha = f; ctx.lineJoin = ctx.lineCap = 'round';
-      ctx.shadowColor = '#b388ff'; ctx.shadowBlur = 24; ctx.strokeStyle = '#cdb0ff'; ctx.lineWidth = 9; lightningExLine(main);
-      ctx.shadowBlur = 0; ctx.strokeStyle = '#f7f0ff'; ctx.lineWidth = 3.2; lightningExLine(main);
+      ctx.shadowColor = '#b388ff'; ctx.shadowBlur = 24; ctx.strokeStyle = '#cdb0ff'; ctx.lineWidth = 9*fz; lightningExLine(main);
+      ctx.shadowBlur = 0; ctx.strokeStyle = '#f7f0ff'; ctx.lineWidth = 3.2*fz; lightningExLine(main);
       ctx.restore();
     }
     // 衝擊環（已移除圓形閃光，避免打王時太刺眼）
@@ -2964,7 +3049,7 @@ function castLightning(){
   const dmg = crit ? baseDmg * (s.critDmg/100) : baseDmg;
 
   // 從場上敵人隨機抽出最多 n 位、不重複
-  const pool = run.enemies.slice();
+  const pool = farMode ? run.enemies.filter(farTargetable) : run.enemies.slice();
   const targets = [];
   while(targets.length < n && pool.length){
     const idx = Math.floor(Math.random()*pool.length);
@@ -2980,14 +3065,14 @@ function castLightning(){
   burst(targets[0].x, targets[0].y, crit ? '#fff9c4' : '#ffe066', crit?9:5);
 
   // 連線點：角色 → 第一位敵人 → 第二位敵人 → …
-  const points = [{x:run.heroX, y:H-96}, ...targets.map(e=>({x:e.x, y:e.y}))];
+  const points = [{x:run.heroX, y:heroOY()}, ...targets.map(e=>({x:e.x, y:e.y}))];
   run.bolts.push({ points, age:0, life:0.22, crit });
 }
 
 // 光束砲：光束持續存在，鎖定一名隨機敵人並跟著他轉；目標死亡（或離場）就立刻換下一名。
 // 光束從主角出發、沿著「主角→目標」的方向一路貫穿到畫面盡頭，傷害在 pulseBeam()（依攻速計時）結算。
-function beamOrigin(){ return { x: run.heroX, y: H - 96 }; }
-function beamVisible(e){ return e.hp > 0 && e.y + e.r > 0; }
+function beamOrigin(){ return { x: run.heroX, y: heroOY() }; }
+function beamVisible(e){ return farMode ? farTargetable(e) : (e.hp > 0 && e.y + e.r > 0); } // 遠景模式：目標要在攻擊距離內且在畫面中
 function updateBeam(dt){
   const b = run.beam;
   if(state.skills.beam.draws < 1){ b.active = false; return; }
@@ -3009,7 +3094,7 @@ function beamHits(){
   const b = run.beam, o = beamOrigin();
   const dx = Math.cos(b.ang), dy = Math.sin(b.ang), half = beamWidth()/2;
   return run.enemies.filter(e=>{
-    if(!beamVisible(e)) return false;
+    if(farMode ? !(e.hp > 0 && enemyOnScreen(e)) : !beamVisible(e)) return false; // 遠景模式：光束貫穿畫面內所有敵人
     const px = e.x - o.x, py = e.y - o.y;
     if(px*dx + py*dy < 0) return false;            // 在主角背後不算
     return Math.abs(px*dy - py*dx) <= half + e.r;  // 到光束中線的垂直距離
@@ -3032,13 +3117,16 @@ function pulseBeam(s){
 function castWhirlwind(){
   if(state.skills.whirlwind.draws < 1) return; // 尚未解鎖
   if(skillExOn('whirlwind')){ // EX：場上只有開場那道大旋風，每次施放＝讓它排入 5 下傷害
+    if(farMode && !anyFarTarget()) return; // 遠景模式：沒有怪物進入攻擊距離就不動作
     const t = run.tornadoes.find(x=>x.ex);
     if(t) t.burstLeft += WHIRLWIND_EX_HITS;
     return;
   }
   if(run.enemies.length === 0) return;
+  const wpool = farMode ? run.enemies.filter(farTargetable) : run.enemies;
+  if(!wpool.length) return;
   const s = stats();
-  const origin = run.enemies[Math.floor(Math.random()*run.enemies.length)];
+  const origin = wpool[Math.floor(Math.random()*wpool.length)];
   run.tornadoes.push({
     x: origin.x, y: origin.y,
     dmg: whirlwindAtk(s),
@@ -3061,6 +3149,21 @@ function spawnEarthwall(s, full){
   if(state.skills.earthwall.draws < 1) return; // 尚未解鎖
   const regen = earthwallHp(s);
   const maxHp = regen * earthwallMaxHpMult();
+  if(farMode){ // 圓形土牆：以主角為圓心、半徑 FAR_WALL_RADIUS，岩塊沿圓周排列
+    const R = FAR_WALL_RADIUS, nr = Math.round(2*Math.PI*R / ((W + 20) / EARTHWALL_ROCK_COUNT)), swr = 2*Math.PI*R / nr;
+    const rocksR = [];
+    for(let i=0;i<nr;i++){
+      rocksR.push({ ang:(i+.5)/nr * Math.PI*2, w:swr*1.9, bh:(skillExOn('earthwall') ? 10 + Math.random()*10 : 24 + Math.random()*20), r:Math.random(), o:(i%2)*3 });
+    }
+    run.walls.push({
+      ring:true, radius:R, x:W/2, y:H/2, width:R*2,
+      hp: full ? maxHp : regen, maxHp,
+      hit: 0, rise: 0, rocks:rocksR, jolt: 0, shakeT: 0,
+    });
+    run.earthwallTimer = earthwallInterval(s);
+    run.earthwallCd = 0;
+    return;
+  }
   const n = EARTHWALL_ROCK_COUNT, sw = (W + 20) / n;
   const rocks = [];
   for(let i=0;i<n;i++){
@@ -3081,7 +3184,7 @@ function updateEarthwall(dt, s){
   if(state.skills.earthwall.draws < 1) return;
   const wall = run.walls[0];
   if(wall){
-    wall.y = earthwallY(); // 視窗大小改變時跟著調整
+    if(wall.ring){ wall.x = W/2; wall.y = H/2; } else wall.y = earthwallY(); // 視窗大小改變時跟著調整
     run.earthwallTimer -= dt;
     if(run.earthwallTimer <= 0){
       wall.hp = Math.min(wall.maxHp, wall.hp + earthwallHp(s));
@@ -3097,12 +3200,12 @@ function updateEarthwall(dt, s){
 /* 爆點與傷害數字 */
 function burst(x,y,color,count){
   for(let i=0;i<count;i++){
-    const a = Math.random()*Math.PI*2, sp = 40 + Math.random()*150;
-    run.bits.push({ x,y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:.45+Math.random()*.3, age:0, c:color, r:1.5+Math.random()*2.5 });
+    const a = Math.random()*Math.PI*2, sp = (40 + Math.random()*150) * fz;
+    run.bits.push({ x,y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:.45+Math.random()*.3, age:0, c:color, r:(1.5+Math.random()*2.5) * fz });
   }
 }
 function popText(x,y,txt,crit){
-  run.pops.push({ x,y, txt, crit, age:0, life:.7, vy:-46 });
+  run.pops.push({ x,y, txt, crit, age:0, life:.7, vy:-46 * fz });
 }
 // 閃電連線：在兩點之間畫出鋸齒狀線段，模擬電擊視覺效果
 function drawBoltSegment(x1,y1,x2,y2){
@@ -3114,8 +3217,8 @@ function drawBoltSegment(x1,y1,x2,y2){
   ctx.moveTo(x1,y1);
   for(let i=1;i<segs;i++){
     const t = i/segs;
-    const px = x1 + dx*t + nx*(Math.random()-0.5)*14;
-    const py = y1 + dy*t + ny*(Math.random()-0.5)*14;
+    const px = x1 + dx*t + nx*(Math.random()-0.5)*14*fz;
+    const py = y1 + dy*t + ny*(Math.random()-0.5)*14*fz;
     ctx.lineTo(px,py);
   }
   ctx.lineTo(x2,y2);
@@ -3149,6 +3252,100 @@ function hurtHero(d){
   if(d > 0) run.hp -= d;
 }
 
+/* 遠景模式的敵人行為：朝正中央的主角直線前進；圓形土牆擋在半徑 R 處；遠程敵人進射程就停下拋火球。
+   回傳 true ＝ 主角倒下（step 必須立刻結束）。 */
+function stepEnemyFar(e, dt, slowMul, s, dmgTakenMul){
+  const cx = run.heroX, cy = heroCY();
+  let dx = cx - e.x, dy = cy - e.y;
+  let d = Math.hypot(dx, dy) || 1;
+  const baseRange = e.ranged ? (e.boss ? e.range : rangedRangeFor(run.level)) : 0;
+  const range = baseRange * FAR_ENEMY_RANGE_MUL;
+
+  // 遠距敵人：進入射程就停下來拋火球（射程 ≤ 350 才會去打土牆，否則無視土牆直接打主角）
+  if(e.ranged){
+    let tgtWall = null;
+    if(baseRange <= EARTHWALL_Y_FROM_BOTTOM){
+      for(const w of run.walls){
+        if(w.hp > 0 && d >= w.radius && d - w.radius <= range) tgtWall = w;
+      }
+    }
+    if(tgtWall || d <= range){
+      e.touching = true;
+      if(e.hit > 0) e.hit -= dt;
+      e.shootTimer -= dt;
+      if(e.shootTimer <= 0){ e.shootTimer = RANGED_SHOOT_INTERVAL; fireEnemyLob(e, tgtWall); }
+      return false;
+    }
+  }
+  const ignoreWall = e.ranged && baseRange > EARTHWALL_Y_FROM_BOTTOM;
+  const preD = d;
+  const mv = e.spd * dt * slowMul;
+  e.x += dx / d * mv; e.y += dy / d * mv;
+  if(e.hit > 0) e.hit -= dt;
+  dx = cx - e.x; dy = cy - e.y; d = Math.hypot(dx, dy) || 1;
+
+  // 圓形土牆：移動前在牆外、移動後碰到牆圈 → 被擋在牆上（已在牆內的敵人不會被擋）
+  let blockWall = null;
+  if(!ignoreWall){
+    for(const w of run.walls){
+      if(preD < w.radius) continue;
+      if(!blockWall || w.radius > blockWall.radius) blockWall = w;
+    }
+  }
+  if(blockWall && d <= blockWall.radius){
+    const R = blockWall.radius;
+    e.x = cx - dx / d * R; e.y = cy - dy / d * R;
+    e.touching = true;
+    if(e.boss){
+      e.atkTimer = (e.atkTimer||0) + dt;
+      if(e.atkTimer >= BOSS_ATTACK_INTERVAL){
+        e.atkTimer -= BOSS_ATTACK_INTERVAL;
+        blockWall.hp -= bossStrikeDmg(e, BOSS_ATTACK_INTERVAL) * dmgTakenMul;
+        blockWall.hit = 0.12;
+        burst(e.x, e.y, '#ff3b6b', 10);
+        earthwallCounter(e, blockWall, s);
+      }
+    } else {
+      e.atkTimer = (e.atkTimer||0) + dt;
+      if(e.atkTimer >= MINION_ATTACK_INTERVAL){
+        e.atkTimer -= MINION_ATTACK_INTERVAL;
+        blockWall.hp -= e.dps * MINION_ATTACK_INTERVAL * dmgTakenMul * (1 + run.wallStack);
+        run.wallStack += MINION_WALL_STACK_PER_HIT;
+        earthwallCounter(e, blockWall, s);
+      }
+      blockWall.hit = 0.12;
+    }
+    if(blockWall.hp <= 0) e.wallStagger = EARTHWALL_BREAK_STAGGER;
+    e.hitTimer = (e.hitTimer||0) + dt;
+    if(e.hitTimer >= 0.4){ e.hitTimer = 0; burst(e.x, e.y, '#c99a5b', e.boss ? 12 : 6); }
+    return false;
+  }
+  // 貼到主角 → 停在原地持續攻擊
+  const contact = 18 * fz;
+  if(d <= contact){
+    e.x = cx - dx / d * contact; e.y = cy - dy / d * contact;
+    e.touching = true;
+    if(e.boss){
+      e.atkTimer = (e.atkTimer||0) + dt;
+      if(e.atkTimer >= BOSS_ATTACK_INTERVAL){
+        e.atkTimer -= BOSS_ATTACK_INTERVAL;
+        hurtHero(bossStrikeDmg(e, BOSS_ATTACK_INTERVAL) * dmgTakenMul);
+        run.shake = Math.max(run.shake, 0.3);
+      }
+    } else {
+      hurtHero(e.dps * dmgTakenMul * dt);
+    }
+    e.hitTimer = (e.hitTimer||0) + dt;
+    if(e.hitTimer >= 0.4){
+      e.hitTimer = 0;
+      burst(e.x, e.y, '#ff3b6b', e.boss ? 12 : 6);
+      run.shake = Math.max(run.shake, e.boss ? 0.3 : 0.12);
+    }
+    if(run.hp <= 0){ run.hp = 0; syncBattleHud(); endRun(false); return true; }
+  }
+  return false;
+}
+
 function step(dt){
   run.t += dt;
 
@@ -3168,7 +3365,16 @@ function step(dt){
   }
 
   // 主角移動（平滑跟隨）
-  run.heroX += (run.targetX - run.heroX) * Math.min(1, dt*13);
+  if(farMode){
+    // 遠景模式：位置固定在正中央，只能轉動（走最短弧度）
+    run.heroX = W/2;
+    let da = run.targetAng - run.heroAng;
+    while(da > Math.PI) da -= Math.PI*2;
+    while(da < -Math.PI) da += Math.PI*2;
+    run.heroAng += da * Math.min(1, dt*FAR_HERO_TURN_RATE);
+  } else {
+    run.heroX += (run.targetX - run.heroX) * Math.min(1, dt*13);
+  }
 
   // 開火：三個技能各自獨立計時，頻率＝角色攻速 × SKILL_SPD_MULT。
   const s = stats();
@@ -3251,6 +3457,7 @@ function step(dt){
     // 朝場上「當下」最近的敵人移動；沒有敵人時原地不動
     let nearest = null, nd = Infinity;
     for(const e of run.enemies){
+      if(farMode && !farTargetable(e)) continue;
       const dx = e.x-t.x, dy = e.y-t.y, d = dx*dx+dy*dy;
       if(d < nd){ nd = d; nearest = e; }
     }
@@ -3278,7 +3485,7 @@ function step(dt){
             const crit = Math.random()*100 < s.crit;
             const dmg = enemyDmg(e, crit ? base * (s.critDmg/100) : base);
             e.hp -= dmg; e.hit = 0.12;
-            popText(e.x, e.y - e.r - 6 - i*17, fmtNum(dmg), crit);
+            popText(e.x, e.y - e.r - 6 - i*17*fz, fmtNum(dmg), crit);
           }
           hitAny = true;
         }
@@ -3347,6 +3554,8 @@ function step(dt){
       if(e.hit > 0) e.hit -= dt;
       continue;
     }
+
+    if(farMode){ if(stepEnemyFar(e, dt, slowMul, s, dmgTakenMul)) return; continue; }
 
     // 遠距敵人：進入射程就停下來拋火球
     if(e.ranged){
@@ -3440,7 +3649,7 @@ function step(dt){
   for(let i=run.eshots.length-1;i>=0;i--){
     const b = run.eshots[i];
     b.age += dt;
-    if(!b.wall) b.ex = run.heroX; // 打主角的火球落點跟著主角
+    if(!b.wall){ b.ex = run.heroX; b.ey = heroCY(); } // 打主角的火球落點跟著主角
     const p = enemyLobPos(b);
     b.trail.push({x:p.x, y:p.y}); if(b.trail.length > 9) b.trail.shift();
     if(b.age < b.T) continue;
@@ -3463,7 +3672,8 @@ function step(dt){
   for(let i=run.walls.length-1;i>=0;i--){
     if(run.walls[i].hp <= 0){
       const w = run.walls[i];
-      for(let k=0;k<6;k++) burst(W*(k+.5)/6, w.y, '#c99a5b', 8); // 整條牆崩塌的碎屑
+      if(w.ring){ for(let k=0;k<12;k++){ const a = k/12*Math.PI*2; burst(w.x + Math.cos(a)*w.radius, w.y + Math.sin(a)*w.radius, '#c99a5b', 6); } } // 圓形牆崩塌的碎屑
+      else for(let k=0;k<6;k++) burst(W*(k+.5)/6, w.y, '#c99a5b', 8); // 整條牆崩塌的碎屑
       run.walls.splice(i,1);
       run.wallStack = 0; // 牆被擊破，小怪疊加傷害歸零
       run.wallSpikes.length = 0;
@@ -3794,6 +4004,84 @@ function drawHeroFallback(x, y, size){
   ctx.restore();
 }
 
+// 遠景模式的圓形土牆（普通版／EX 版）：岩塊沿圓周排列、朝外隆起；尺寸以 fz 放大，畫面上看起來跟舊版一樣粗
+function drawEarthwallRing(ex){
+  const S = fz;
+  run.walls.forEach(w=>{
+    if(!w.ring) return;
+    const R = w.radius, n = w.rocks.length, SW = 2*Math.PI*R / n;
+    const f = Math.max(0, w.hp / w.maxHp);
+    const baseOff = (ex ? EARTHWALL_EX_DRAW_OFFSET : 12) * S;
+    const rise = 1 - Math.pow(1 - (w.rise == null ? 1 : w.rise), 3);
+    const jolt = ex ? (w.jolt || 0) : 0;
+    const k = ex ? Math.max(w.hit > 0 ? 0.4 : 0, jolt > 0.5 ? 0.25 : 0) : (w.hit > 0 ? 0.4 : 0);
+    ctx.save();
+    ctx.translate(w.x, w.y);
+    ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 5*S;
+    ctx.beginPath(); ctx.arc(0, 0, R - baseOff - 0.5*S, 0, Math.PI*2); ctx.stroke();
+    const angDiff = (a,b)=>{ let d = a-b; while(d > Math.PI) d -= Math.PI*2; while(d < -Math.PI) d += Math.PI*2; return d; };
+    const spikeState = (ang)=>{
+      let L = 4 * rise, glow = 0;
+      for(const h of run.wallSpikes){
+        const fo = Math.max(0, 1 - Math.abs(angDiff(ang, h.a)) * R / (65*S));
+        let env;
+        if(h.t < 0.1){ const u = h.t / 0.1; env = 1 - Math.pow(1-u, 3) + Math.sin(u*Math.PI) * 0.12; }
+        else env = Math.max(0, 1 - (h.t - 0.1) / 0.45);
+        L += 26 * env * fo; glow = Math.max(glow, env * fo);
+      }
+      return { L: Math.min(L, 34) * S, glow: Math.min(1, glow) };
+    };
+    w.rocks.forEach((r,i)=>{
+      const hg = r.bh * S * Math.max(.25, Math.min(1, f*1.2 + (r.r-.5)*.3)) * rise;
+      const rw = r.w, o = r.o * S, base = baseOff;
+      ctx.save();
+      ctx.translate(Math.cos(r.ang)*R, Math.sin(r.ang)*R);
+      ctx.rotate(r.ang + Math.PI/2);                              // 區域 -y ＝ 朝外（敵人來的方向）
+      if(jolt) ctx.translate(Math.sin((w.shakeT||0)*70) * 1.6 * jolt * S, 0);
+      const pts = [[-rw/2, base-o],[-rw*.45, base-hg*.6-o],[-rw*.2, base-hg-o],[rw*.25, base-hg*.9-o],[rw*.5, base-hg*.5-o],[rw/2, base-o]];
+      ctx.fillStyle = mixHex(i%2 ? '#7d5e42' : '#8d6a4a', k);
+      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+      for(let j=1;j<pts.length;j++) ctx.lineTo(pts[j][0], pts[j][1]);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = mixHex('#b08a63', k);
+      ctx.beginPath(); ctx.moveTo(pts[1][0], pts[1][1]); ctx.lineTo(pts[2][0], pts[2][1]); ctx.lineTo(pts[3][0], pts[3][1]); ctx.lineTo(0, base-hg*.55-o);
+      ctx.closePath(); ctx.fill();
+      if(ex){
+        const ty = base - hg - o + 2*S;
+        [-.25,.25].forEach(d=>{
+          const st = spikeState(r.ang + d*SW/R);
+          const x = d*SW, half = 4.5*S, tip = ty - st.L;
+          if(st.glow > .02){
+            ctx.fillStyle = `rgba(255,80,50,${(st.glow*.45).toFixed(3)})`;
+            ctx.beginPath(); ctx.ellipse(x, ty + 3*S, 13*S, 6*S, 0, 0, Math.PI*2); ctx.fill();
+          }
+          const g = ctx.createLinearGradient(x, ty, x, tip);
+          g.addColorStop(0, '#6a4f35'); g.addColorStop(1, '#a88660');
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.moveTo(x-half, ty); ctx.lineTo(x, tip); ctx.lineTo(x+half, ty); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,.22)';
+          ctx.beginPath(); ctx.moveTo(x, ty); ctx.lineTo(x, tip); ctx.lineTo(x+half, ty); ctx.closePath(); ctx.fill();
+          if(st.glow > .05){
+            ctx.fillStyle = `rgba(255,110,80,${(st.glow*.7).toFixed(3)})`;
+            ctx.beginPath(); ctx.arc(x, tip, (2 + st.glow*2)*S, 0, Math.PI*2); ctx.fill();
+          }
+        });
+      }
+      ctx.restore();
+    });
+    ctx.restore();
+    // 血條與數值（牆圈正上方）
+    if(w.hp < w.maxHp){
+      const bw = 260*S, by = w.y - R - 70*S;
+      ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(w.x - bw/2, by, bw, 4*S);
+      ctx.fillStyle = '#c99a5b';
+      ctx.fillRect(w.x - bw/2, by, bw*f, 4*S);
+      ctx.font = `${11*S}px sans-serif`; ctx.fillStyle = '#e8d5b8'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(`${fmtNum(Math.max(0, Math.round(w.hp)))} / ${fmtNum(Math.round(w.maxHp))}`, w.x, by - 8*S);
+    }
+  });
+}
+
 function drawEarthwallEx(){
   const SW = (W + 20) / EARTHWALL_ROCK_COUNT;
   ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -3876,7 +4164,7 @@ function draw(){
 
   // 震動
   if(run.shake > 0){
-    ctx.translate((Math.random()-0.5)*run.shake*16, (Math.random()-0.5)*run.shake*16);
+    ctx.translate((Math.random()-0.5)*run.shake*16*fz, (Math.random()-0.5)*run.shake*16*fz);
   }
 
   // 背景：地牢深處（隨關卡變色）
@@ -3885,10 +4173,20 @@ function draw(){
   ctx.fillStyle = g; ctx.fillRect(-30,-30,W+60,H+60);
 
   // 遠處火光（隨關卡變色）
-  const glow = ctx.createRadialGradient(W/2, H-70, 8, W/2, H-70, 240);
+  const glowY = farMode ? H/2 : H-70;
+  const glow = ctx.createRadialGradient(W/2, glowY, 8, W/2, glowY, 240 * fz);
   glow.addColorStop(0,currentTheme.glow); glow.addColorStop(1,'rgba(255,120,40,0)');
   ctx.fillStyle = glow; ctx.fillRect(-30,-30,W+60,H+60);
 
+  if(farMode){
+    // 遠景模式：以主角為中心的圓形場地，淡淡的虛線圈標示技能攻擊距離
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,160,90,.10)'; ctx.lineWidth = 1.5*fz;
+    ctx.beginPath(); ctx.arc(W/2, H/2, FAR_SKILL_RANGE, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([10*fz, 8*fz]); ctx.strokeStyle = 'rgba(255,200,120,.16)';
+    ctx.beginPath(); ctx.arc(W/2, H/2, FAR_SKILL_RANGE, 0, Math.PI*2); ctx.stroke();
+    ctx.restore();
+  } else {
   // 地面石階
   ctx.fillStyle = '#1b1020';
   ctx.fillRect(-30, H-58, W+60, 88);
@@ -3897,12 +4195,14 @@ function draw(){
     ctx.beginPath(); ctx.moveTo(x, H-58); ctx.lineTo(x, H); ctx.stroke();
   }
   ctx.beginPath(); ctx.moveTo(-30,H-58); ctx.lineTo(W+30,H-58); ctx.stroke();
+  }
 
   ctx.textAlign='center'; ctx.textBaseline='middle';
 
   // 土牆術：橫貫全場的碎石堆。血量越低岩塊越矮（崩塌），受擊時短暫泛白，剛生成時從地面升起
   const wallEx = skillExOn('earthwall');
-  if(!wallEx) run.walls.forEach(w=>{
+  if(farMode && !wallEx) drawEarthwallRing(false);
+  if(!wallEx && !farMode) run.walls.forEach(w=>{
     const f = Math.max(0, w.hp / w.maxHp);
     const base = w.y + 12;                                   // 岩塊底部；敵人停在 w.y，剛好踩在石堆上
     const rise = 1 - Math.pow(1 - (w.rise == null ? 1 : w.rise), 3);
@@ -3937,9 +4237,15 @@ function draw(){
     ctx.save();
     ctx.font = '12px sans-serif'; ctx.fillStyle = 'rgba(232,213,184,.65)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.setLineDash([6,5]); ctx.strokeStyle = 'rgba(232,213,184,.3)'; ctx.lineWidth = 1;
+    if(farMode){
+      ctx.font = `${12*fz}px sans-serif`; ctx.lineWidth = fz;
+      ctx.beginPath(); ctx.arc(W/2, H/2, FAR_WALL_RADIUS, 0, Math.PI*2); ctx.stroke();
+      ctx.fillText(`土牆重生中 ${run.earthwallCd.toFixed(1)}s`, W/2, H/2 - FAR_WALL_RADIUS - 12*fz);
+    } else {
     const y = earthwallY() + (wallEx ? EARTHWALL_EX_DRAW_OFFSET : 12);
     ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
     ctx.fillText(`土牆重生中 ${run.earthwallCd.toFixed(1)}s`, W/2, y - 10);
+    }
     ctx.restore();
   }
 
@@ -4012,21 +4318,21 @@ function draw(){
     ctx.restore();
     // 血條（土牆術 EX 時改在牆體之後繪製，避免被尖刺蓋住）
     if(!wallEx && e.hp < e.maxHp){
-      const bw = e.r*2, bx = e.x-e.r, by = e.y-e.r-8;
-      ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(bx,by,bw,3.5);
+      const bw = e.r*2, bx = e.x-e.r, by = e.y-e.r-8*fz, bh = 3.5*fz;
+      ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(bx,by,bw,bh);
       ctx.fillStyle = e.boss ? '#ff3b6b' : (e.steel ? '#b8c4d6' : '#ff8a5b');
-      ctx.fillRect(bx,by,bw*Math.max(0,e.hp/e.maxHp),3.5);
+      ctx.fillRect(bx,by,bw*Math.max(0,e.hp/e.maxHp),bh);
     }
   });
   // 土牆術 EX：牆體畫在怪物之上（岩塊矮、視覺下移，怪物實際位置不動），再補畫怪物血條
   if(wallEx){
-    drawEarthwallEx();
+    if(farMode) drawEarthwallRing(true); else drawEarthwallEx();
     run.enemies.forEach(e=>{
       if(e.hp < e.maxHp){
-        const bw = e.r*2, bx = e.x-e.r, by = e.y-e.r-8;
-        ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(bx,by,bw,3.5);
+        const bw = e.r*2, bx = e.x-e.r, by = e.y-e.r-8*fz, bh = 3.5*fz;
+        ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(bx,by,bw,bh);
         ctx.fillStyle = e.boss ? '#ff3b6b' : (e.steel ? '#b8c4d6' : '#ff8a5b');
-        ctx.fillRect(bx,by,bw*Math.max(0,e.hp/e.maxHp),3.5);
+        ctx.fillRect(bx,by,bw*Math.max(0,e.hp/e.maxHp),bh);
       }
     });
   }
@@ -4039,10 +4345,12 @@ function draw(){
       ctx.shadowBlur = 12; ctx.shadowColor = b.crit ? '#d6faff' : '#5fd8ff';
       ctx.fillStyle = b.crit ? '#e8fdff' : '#7fe3ff';
       const cw = b.r*1.5, ch = b.r*3.4;
+      ctx.translate(b.x, b.y);
+      if(farMode) ctx.rotate(Math.atan2(b.vy, b.vx) + Math.PI/2); // 尖端朝飛行方向
       ctx.beginPath();
-      ctx.moveTo(b.x, b.y - ch*0.6);
-      ctx.lineTo(b.x - cw/2, b.y + ch*0.4);
-      ctx.lineTo(b.x + cw/2, b.y + ch*0.4);
+      ctx.moveTo(0, - ch*0.6);
+      ctx.lineTo(- cw/2, ch*0.4);
+      ctx.lineTo(cw/2, ch*0.4);
       ctx.closePath();
       ctx.fill();
     } else {
@@ -4066,7 +4374,7 @@ function draw(){
     ctx.save();
     ctx.globalAlpha = a;
     ctx.lineCap = 'round';
-    ctx.lineWidth = b.crit ? 3.2 : 2.2;
+    ctx.lineWidth = (b.crit ? 3.2 : 2.2) * fz;
     ctx.shadowBlur = 16;
     ctx.shadowColor = b.crit ? '#fff9c4' : '#ffe066';
     ctx.strokeStyle = b.crit ? '#fffbe0' : '#ffe066';
@@ -4140,11 +4448,25 @@ function draw(){
 
   // 主角
   if(run.active || run.over){
-    const hx = run.heroX, hy = H - 74;
-    const hg = ctx.createRadialGradient(hx,hy,2,hx,hy,40);
+    const hx = run.heroX, hy = heroCY();
+    const hg = ctx.createRadialGradient(hx,hy,2*fz,hx,hy,40*fz);
     hg.addColorStop(0,'rgba(255,170,60,.42)'); hg.addColorStop(1,'rgba(255,120,30,0)');
-    ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(hx,hy,40,0,Math.PI*2); ctx.fill();
-    drawHero(hx, hy, 38);
+    ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(hx,hy,40*fz,0,Math.PI*2); ctx.fill();
+    if(farMode){
+      // 面向指示：主角前方一個小箭頭，冰椎會朝這個方向發射
+      ctx.save();
+      ctx.translate(hx, hy); ctx.rotate(run.heroAng);
+      ctx.fillStyle = 'rgba(160,230,255,.85)'; ctx.shadowBlur = 8; ctx.shadowColor = '#5fd8ff';
+      const ar = 50*fz;
+      ctx.beginPath(); ctx.moveTo(ar + 12*fz, 0); ctx.lineTo(ar, -7*fz); ctx.lineTo(ar, 7*fz); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.translate(hx, hy); ctx.rotate(run.heroAng + Math.PI/2);  // 角色「頭朝上」的圖，轉到朝向面向
+      drawHero(0, 0, 38*fz);
+      ctx.restore();
+    } else {
+      drawHero(hx, hy, 38);
+    }
   }
 
   // 粒子
@@ -4161,7 +4483,7 @@ function draw(){
     const a = 1 - p.age/p.life;
     ctx.globalAlpha = a;
     ctx.fillStyle = p.crit ? '#ffd046' : '#ffe9d6';
-    ctx.font = `800 ${p.crit?19:14}px system-ui, sans-serif`;
+    ctx.font = `800 ${(p.crit?19:14)*fz}px system-ui, sans-serif`;
     ctx.fillText(p.txt, p.x, p.y);
   });
   ctx.globalAlpha = 1;
