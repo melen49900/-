@@ -730,7 +730,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 155;        // 所有怪物出完的時間點（2:35），清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 170;           // 共 170 關
+const LEVEL_COUNT = 250;           // 共 250 關
 const LEVEL_HP_GROWTH = 1.286;                                  // 血量成長係數
 const LEVEL_ATK_GROWTH = 1.21;                                  // 攻擊成長係數
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內血量差距3倍
@@ -1161,8 +1161,8 @@ function gemBoostAmount(){ const lv = fin(state.up.gemboost, 0); return exOn('ge
 function refineReduceTotal(){ const lv = fin(state.up.breakboost, 0); return exOn('breakboost') ? exFloor(lv*EX_REFINE_REDUCE_PER_LV) : lv*REFINE_COST_REDUCE_PER_LV; }
 function monsterWeakenMul(){ return Math.pow(exOn('monweaken') ? EX_MONSTER_WEAKEN_MULT_PER_LV : MONSTER_WEAKEN_MULT_PER_LV, fin(state.up.monweaken, 0)); }
 function exOutputMul(){ return exOn('spd') ? 1 + fin(state.up.spd, 0)*EX_OUTPUT_PCT_PER_LV : 1; }
-/* ── 魔法護盾：通關第 100 關後解鎖。護盾值 ＝ 主角最大生命 ×（1.01^等級 − 1）；EX：成長 −0.03、公式改 1.02^等級 − 1 ── */
-const SHIELD_BASE = 1.01, SHIELD_BASE_EX = 1.02;
+/* ── 魔法護盾：通關第 100 關後解鎖。護盾值 ＝ 主角最大生命 ×（1.012^等級 − 1）；EX：成長 −0.03、公式改 1.024^等級 − 1 ── */
+const SHIELD_BASE = 1.012, SHIELD_BASE_EX = 1.024;
 function shieldRatio(lv){ return Math.pow(exOn('shield') ? SHIELD_BASE_EX : SHIELD_BASE, lv) - 1; }
 function shieldValue(maxHp, lv){ if(lv == null) lv = fin(state.up.shield, 0); return Math.round(maxHp * shieldRatio(lv)); }
 const UPGRADES = [
@@ -1288,8 +1288,8 @@ const UPGRADES = [
     body:lv=>lv, full:lv=>lv,
     perFmt:lv=>'速度加成 +'+Math.max(0, levelSpeedBonus(state.unlockedLevel) - lv),
     bodyFmt:v=>'移動速度 -'+v.toFixed(0) },
-  // 魔法護盾：第 100 關後解鎖。只顯示目前／下一級的護盾生命（不顯示括號總值）。初始 200 金幣、成長 1.08；EX 成長 1.05。
-  { key:'shield', icon:'🔵', name:'魔法護盾', base:200, grow:1.08, exGrow:1.05, per:1, fmt:v=>fmtNum(v),
+  // 魔法護盾：第 100 關後解鎖。只顯示目前／下一級的護盾生命（不顯示括號總值）。初始 200 金幣、成長 1.07；EX 成長 1.04。
+  { key:'shield', icon:'🔵', name:'魔法護盾', base:200, grow:1.07, exGrow:1.04, per:1, fmt:v=>fmtNum(v),
     requiresLevel:100,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 100 關時解鎖。`,
     body:lv=>shieldValue(stats().maxHp, lv), full:lv=>shieldValue(stats().maxHp, lv),
@@ -1658,6 +1658,10 @@ function getSelectedVoice(){
 
 // 讀音修正區：只影響朗讀用的文字，不影響畫面上顯示的文字
 const TW_PRONOUNCE_FIX = [
+  // ── 詞組規則（優先處理）──
+  [/長高/g, '掌高'],  [/長大/g, '掌大'],  [/長得/g, '掌得'],  [/生長/g, '生掌'],  [/成長/g, '成掌'],  [/長輩/g, '掌輩'],  [/班長/g, '班掌'],  [/校長/g, '校掌'],  [/隊長/g, '隊掌'],  [/組長/g, '組掌'],
+  [/好奇/g, '號奇'],  [/好吃/g, '郝吃'],
+  // ── 單字規則（放最後，只處理沒有歧義的字）──
   [/划/g, '滑'],      // 划船 應唸 huá；預設語音容易唸成 huà
   [/岔/g, '插'],
   [/臟/g, '葬'],
