@@ -174,6 +174,18 @@ body{
 /* ── 選關畫面 ──────────────────────────────── */
 #levelSelectPanel{flex:1;overflow-y:auto;overscroll-behavior:contain}
 #levelSelectPanel.hidden{display:none}
+#lvNav{display:flex;align-items:stretch;gap:9px;margin-top:8px}
+#lvNav button{flex:0 0 56px;border-radius:13px;border:1px solid var(--stoneline);background:rgba(0,0,0,.3);color:var(--bone);font-size:22px;font-weight:900;font-family:inherit;cursor:pointer}
+#lvNav button:active{transform:translateY(2px)}
+#lvNav button:disabled{opacity:.3;cursor:not-allowed}
+#lvNavMid{flex:1;border-radius:13px;border:1px solid var(--ember);box-shadow:0 0 14px rgba(255,106,31,.25);background:rgba(0,0,0,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 6px}
+#lvNavNum{font-size:26px;font-weight:900}
+#lvNavSub{font-size:11px;color:var(--bone-dim)}
+#lvNavChip{width:14px;height:14px;border-radius:99px;box-shadow:0 0 9px currentColor}
+#lvGo{margin-top:10px}
+#lvGridToggle{margin-top:10px;width:100%}
+#levelGrid.hidden{display:none}
+.lvCard.sel{border-color:#fff;box-shadow:0 0 0 2px #fff}
 #levelGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:6px}
 .lvCard{
   position:relative;aspect-ratio:1/1;border-radius:13px;border:1px solid var(--stoneline);
@@ -531,7 +543,14 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
       <div id="levelSelectPanel" class="pad">
         <h2 class="sec">烈焰試煉場</h2>
         <p class="sub">每關 20 波，關內怪物只會小幅變強，換關卡才會難度跳升。</p>
-        <div id="levelGrid"></div>
+        <div id="lvNav">
+          <button type="button" id="lvPrev" aria-label="上一關">◀</button>
+          <div id="lvNavMid"><span id="lvNavChip"></span><b id="lvNavNum">第 1 關</b><span id="lvNavSub"></span></div>
+          <button type="button" id="lvNext" aria-label="下一關">▶</button>
+        </div>
+        <button type="button" class="btn" id="lvGo">挑戰</button>
+        <button type="button" class="btn ghost sm" id="lvGridToggle">展開全部關卡</button>
+        <div id="levelGrid" class="hidden"></div>
       </div>
 
       <div id="stage" class="hidden">
@@ -1673,6 +1692,13 @@ function _doSpeak(text, lang){
   }
 }
 
+// 自動朗讀：只有「答題」頁正在顯示才唸；進遊戲停在選關畫面時先不唸，等玩家第一次按答題頁再唸
+let speakPending = false;
+function autoSpeakQuestion(){
+  const qs = document.getElementById('screen-quiz');
+  if(qs && qs.classList.contains('on')){ speakPending = false; speakQuestion(); }
+  else speakPending = true;
+}
 // 朗讀目前題目：依科目把符號轉成國字，數學把「？」唸成「多少」、運算符號唸成加減乘除
 function speakQuestion(){
   if(!curQ) return;
@@ -1809,7 +1835,7 @@ function renderQuestion(){
   document.getElementById('qFeed').className = '';
   document.getElementById('qNext').style.display = 'none';
   syncQuizMeta();
-  speakQuestion(); // 進入新題目時自動朗讀一次題目
+  autoSpeakQuestion(); // 進入新題目時自動朗讀一次題目（答題頁沒開著就先等著）
 }
 
 // 族語題的畫面：選項是 {id,label,audio} 物件(不是純文字)，跟其他五科分開處理。
@@ -1851,7 +1877,7 @@ function renderIndigenousQuestion(){
   document.getElementById('qFeed').className = '';
   document.getElementById('qNext').style.display = 'none';
   syncQuizMeta();
-  speakQuestion(); // 進題自動朗讀一次：有錄音播錄音，題目是中文就用 TTS
+  autoSpeakQuestion(); // 進題自動朗讀一次：有錄音播錄音，題目是中文就用 TTS（答題頁沒開著就先等著）
 }
 
 // 族語題的獎勵同其他題目。
@@ -2098,7 +2124,8 @@ const FAR_BASE_H = 700;               // 原本最上到最下的距離
 const FAR_VIEW_H = 1500;              // 新模式最上到最下的距離（座標系放大倍率 fz ＝ FAR_VIEW_H / FAR_BASE_H）
 const FAR_SKILL_RANGE = 650;          // 技能基礎攻擊距離（土牆除外）：怪物進入此距離且在畫面內才會施放
 const FAR_WALL_RADIUS = EARTHWALL_Y_FROM_BOTTOM - 74; // 圓形土牆半徑 ＝ 原本土牆到主角的距離（350 − 74 = 276）
-const FAR_MONSTER_SIZE_MUL = 1;       // 怪物大小倍率：1 ＝ 只隨視野縮小（畫面上為原本的 700/1500）；之後要調整比例改這裡
+const FAR_MONSTER_VISUAL_MUL = 3;     // 怪物「外觀」倍率：只放大／縮小畫面上的圖，不改變受擊判定範圍
+const FAR_MONSTER_SIZE_MUL = 1.5;       // 怪物大小倍率：1 ＝ 只隨視野縮小（畫面上為原本的 700/1500）；之後要調整比例改這裡
 const FAR_ENEMY_RANGE_MUL = 1;        // 遠程敵人（小怪與 Boss）射程倍率，之後調整攻擊距離用
 const FAR_ENEMY_SPEED_MULT = 0.55;    // 怪物速度倍率（主角在中央，怪物只需走約一半路程，所以約 0.55，維持原本的壓迫節奏）
 const FAR_HERO_TURN_RATE = 16;        // 主角轉向速度（越大越快轉到定位）
@@ -2286,9 +2313,24 @@ function openStage(){
   document.getElementById('stage').classList.remove('hidden');
 }
 
+/* 選關：預設停在「最近已通關（最高已過關）」的關卡，左右鍵一關一關切換，「挑戰」進入；全部關卡格子可展開直接點選 */
+let selectedLevel = null;
+function defaultSelectedLevel(){
+  let best = 0;
+  for(const k in state.levelRecords){ if(state.levelRecords[k] && state.levelRecords[k].cleared) best = Math.max(best, Number(k)); }
+  return Math.max(1, Math.min(LEVEL_COUNT, best || 1));
+}
+function selectLevel(lv){
+  const maxLv = Math.min(LEVEL_COUNT, state.unlockedLevel);
+  selectedLevel = Math.max(1, Math.min(maxLv, lv));
+  renderLevelSelect();
+}
 function renderLevelSelect(){
   const grid = document.getElementById('levelGrid');
-  const nextLevel = Math.min(LEVEL_COUNT, state.unlockedLevel);
+  const maxLv = Math.min(LEVEL_COUNT, state.unlockedLevel);
+  if(selectedLevel == null) selectedLevel = defaultSelectedLevel();
+  selectedLevel = Math.max(1, Math.min(maxLv, selectedLevel));
+  const nextLevel = maxLv;
   let html = '';
   for(let lv=1; lv<=LEVEL_COUNT; lv++){
     const locked = lv > state.unlockedLevel;
@@ -2296,7 +2338,7 @@ function renderLevelSelect(){
     const cleared = !!(rec && rec.cleared);
     const isNext = (lv === nextLevel && !cleared);
     const theme = levelTheme(lv);
-    html += `<button class="lvCard${locked?' locked':''}${isNext?' current':''}" data-lv="${lv}" ${locked?'disabled':''}>
+    html += `<button class="lvCard${locked?' locked':''}${isNext?' current':''}${lv===selectedLevel?' sel':''}" data-lv="${lv}" ${locked?'disabled':''}>
       <span class="lvChip" style="background:${theme.chip}"></span>
       <span class="lvNum">${locked?'🔒':lv}</span>
       ${cleared?'<span class="lvStar">✓ 已過關</span>':''}
@@ -2305,12 +2347,43 @@ function renderLevelSelect(){
   grid.innerHTML = html;
   grid.querySelectorAll('.lvCard').forEach(el=>{
     if(el.disabled) return;
-    el.onclick = ()=> openLevelConfirm(Number(el.dataset.lv));
+    el.onclick = ()=> selectLevel(Number(el.dataset.lv));
   });
+  // 左右選關列
+  const rec = state.levelRecords[selectedLevel];
+  const cleared = !!(rec && rec.cleared);
+  document.getElementById('lvNavNum').textContent = `第 ${selectedLevel} 關`;
+  document.getElementById('lvNavChip').style.background = levelTheme(selectedLevel).chip;
+  document.getElementById('lvNavSub').textContent = (cleared ? '✓ 已過關' : '尚未過關') + (selectedLevel >= FAR_START_LEVEL ? '　・環形遠景關卡' : '');
+  document.getElementById('lvPrev').disabled = selectedLevel <= 1;
+  document.getElementById('lvNext').disabled = selectedLevel >= maxLv;
+  document.getElementById('lvGo').textContent = `挑戰第 ${selectedLevel} 關`;
+  const sel = grid.querySelector('.lvCard.sel');
+  if(sel && !grid.classList.contains('hidden')) sel.scrollIntoView({ block:'nearest' });
 }
+document.getElementById('lvPrev').onclick = ()=> selectLevel((selectedLevel||1) - 1);
+document.getElementById('lvNext').onclick = ()=> selectLevel((selectedLevel||1) + 1);
+document.getElementById('lvGo').onclick   = ()=> openLevelConfirm(selectedLevel || 1);
+document.getElementById('lvGridToggle').onclick = ()=>{
+  const g = document.getElementById('levelGrid');
+  const hide = !g.classList.contains('hidden');
+  g.classList.toggle('hidden', hide);
+  document.getElementById('lvGridToggle').textContent = hide ? '展開全部關卡' : '收合全部關卡';
+  if(!hide) renderLevelSelect();
+};
+// 鍵盤 ← → 也能切關（選關畫面顯示中、且沒有在輸入文字時）
+document.addEventListener('keydown', e=>{
+  if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  if(document.getElementById('levelSelectPanel').classList.contains('hidden')) return;
+  if(!document.getElementById('screen-battle').classList.contains('on')) return;
+  const t = e.target && e.target.tagName;
+  if(t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
+  selectLevel((selectedLevel||1) + (e.key === 'ArrowLeft' ? -1 : 1));
+});
 
 // 開始前的確認畫面：顯示這關大概多硬，畫布背景也先換成該關主題色
 function openLevelConfirm(level){
+  selectedLevel = level;
   setFarMode(level);
   applyLevelTheme(level);
   openStage();
@@ -2360,6 +2433,7 @@ function startRun(level){
   run.active=true; run.over=false;
   run.level = level || run.level || 1;
   setFarMode(run.level);
+  selectedLevel = run.level;
   run.heroAng = -Math.PI/2; run.targetAng = -Math.PI/2;
   run.t=0; run.wave=1; run.spawned=0; run.waveQuota=waveQuotaFor(1); run.spawnTimer=0;
   run.maxHp=s.maxHp; run.hp=s.maxHp;
@@ -2545,7 +2619,7 @@ function spawnEnemy(){
   let spx = 32 + Math.random()*(W-64), spy = -30, spvx = (Math.random()-0.5) * 12;
   if(farMode){
     // Boss：固定從正上或正下出現；小怪：360° 任意方向，從畫面邊緣外一點點生成
-    const m = (isBoss ? 34 : base.r) * sizeMul + 30;
+    const m = (isBoss ? 34 : base.r) * sizeMul * Math.max(1, FAR_MONSTER_VISUAL_MUL) + 30;
     spvx = 0;
     if(isBoss){ spx = W/2; spy = Math.random() < 0.5 ? -m : H + m; }
     else {
@@ -2560,7 +2634,8 @@ function spawnEnemy(){
     vx: spvx,
     hp, maxHp:hp,
     spd: ((isBoss ? 11 : 17 * base.spd) + slowedSpeedBonus(run.level)) * waveSpeedMulFor(w) * enemySpeedScale(),
-    r: (isBoss ? 34 : base.r) * sizeMul,
+    r: (isBoss ? 34 : base.r) * sizeMul,   // 判定半徑（子彈、冰刃、光束、爆風、擋牆都用這個）
+    vr: (isBoss ? 34 : base.r) * sizeMul * (farMode ? FAR_MONSTER_VISUAL_MUL : 1), // 只用在繪製（圖片、光環、血條），不影響判定
     emoji: isBoss ? (bossRanged ? RANGED_BOSSES : BOSSES)[Math.floor(Math.random()*(bossRanged ? RANGED_BOSSES : BOSSES).length)] : base.emoji,
     img: isBoss ? pickRandomImg(bossRanged && rangedBossImgs.length ? rangedBossImgs : bossImgs) : (base.guardian ? (guardianImgReady ? guardianImg : null) : pickRandomImg(monsterImgs)),
     guardian: !!base.guardian,
@@ -4292,50 +4367,50 @@ function draw(){
       ctx.save();
       ctx.globalAlpha = 0.25 + e.slowStacks.length*0.12;
       ctx.strokeStyle = '#7fe3ff'; ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.arc(e.x, e.y, e.r+4, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.vr+4, 0, Math.PI*2); ctx.stroke();
       ctx.restore();
     }
     if(e.ranged){
       // 遠距敵人：橘色虛線光環
       ctx.save();
       ctx.strokeStyle = 'rgba(255,150,70,.85)'; ctx.lineWidth = 2; ctx.setLineDash([4,3]);
-      ctx.beginPath(); ctx.arc(e.x, e.y, e.r+3, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.vr+3, 0, Math.PI*2); ctx.stroke();
       ctx.restore();
     }
     if(e.steel){
       // 鋼鐵敵人：外圈一道金屬色光環
       ctx.save();
       ctx.strokeStyle = 'rgba(190,200,215,.9)'; ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.arc(e.x, e.y, e.r+2, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.vr+2, 0, Math.PI*2); ctx.stroke();
       ctx.restore();
     }
     ctx.save();
     if(e.stun > 0) ctx.translate((Math.random()-.5)*3, 0); // 麻痺：原地輕微抖動
     if(e.hit > 0){ ctx.globalAlpha = 0.55; }
     if(e.img){
-      const d = e.r * 2.3; // 自訂圖片視覺直徑，比原本 emoji 略大一點比較有存在感
+      const d = e.vr * 2.3; // 自訂圖片視覺直徑，比原本 emoji 略大一點比較有存在感
       ctx.drawImage(e.img, e.x - d/2, e.y - d/2, d, d);
     } else {
-      const enemyFont = `${e.r*2}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif`;
+      const enemyFont = `${e.vr*2}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif`;
       if(canvasCanRenderGlyph(e.emoji + '\uFE0F', enemyFont)){
         fillEmojiCentered(e.emoji + '\uFE0F', e.x, e.y, enemyFont);
       } else {
         // 備援：畫不出這個怪物 emoji 時，至少畫一顆有辨識度的色塊，不要整隻消失
         ctx.fillStyle = e.boss ? '#ff3b6b' : '#c9663a';
-        ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(e.x, e.y, e.vr, 0, Math.PI*2); ctx.fill();
       }
     }
     if(e.lflash > 0){ // 閃電術 EX：全身淺紫閃光
       const fa = Math.min(1, e.lflash/LIGHTNING_EX_FLASH);
       ctx.globalAlpha = 1;
-      const fg = ctx.createRadialGradient(e.x,e.y,0,e.x,e.y,e.r*1.25);
+      const fg = ctx.createRadialGradient(e.x,e.y,0,e.x,e.y,e.vr*1.25);
       fg.addColorStop(0,`rgba(246,238,255,${0.9*fa})`); fg.addColorStop(0.7,`rgba(205,176,255,${0.75*fa})`); fg.addColorStop(1,'rgba(180,140,255,0)');
-      ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(e.x,e.y,e.r*1.25,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(e.x,e.y,e.vr*1.25,0,Math.PI*2); ctx.fill();
     }
     ctx.restore();
     // 血條（土牆術 EX 時改在牆體之後繪製，避免被尖刺蓋住）
     if(!wallEx && e.hp < e.maxHp){
-      const bw = e.r*2, bx = e.x-e.r, by = e.y-e.r-8*fz, bh = 3.5*fz;
+      const bw = e.vr*2, bx = e.x-e.vr, by = e.y-e.vr-8*fz, bh = 3.5*fz;
       ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(bx,by,bw,bh);
       ctx.fillStyle = e.boss ? '#ff3b6b' : (e.steel ? '#b8c4d6' : '#ff8a5b');
       ctx.fillRect(bx,by,bw*Math.max(0,e.hp/e.maxHp),bh);
@@ -4346,7 +4421,7 @@ function draw(){
     if(farMode) drawEarthwallRing(true); else drawEarthwallEx();
     run.enemies.forEach(e=>{
       if(e.hp < e.maxHp){
-        const bw = e.r*2, bx = e.x-e.r, by = e.y-e.r-8*fz, bh = 3.5*fz;
+        const bw = e.vr*2, bx = e.x-e.vr, by = e.y-e.vr-8*fz, bh = 3.5*fz;
         ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(bx,by,bw,bh);
         ctx.fillStyle = e.boss ? '#ff3b6b' : (e.steel ? '#b8c4d6' : '#ff8a5b');
         ctx.fillRect(bx,by,bw*Math.max(0,e.hp/e.maxHp),bh);
@@ -4416,7 +4491,7 @@ function draw(){
     if(b.target){
       ctx.save();
       ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(b.target.x, b.target.y, b.target.r + 5, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(b.target.x, b.target.y, b.target.vr + 5, 0, Math.PI*2); ctx.stroke();
       ctx.restore();
     }
   }
@@ -5035,6 +5110,7 @@ function show(name){
   if(name==='equip')  renderEquip();
   if(name==='skills') renderSkills();
   if(name==='battle') resizeCanvas();
+  if(name==='quiz' && speakPending){ speakPending = false; speakQuestion(); } // 補唸進遊戲時還沒唸的題目
 }
 document.querySelectorAll('.tab').forEach(t=>{
   t.onclick = ()=>show(t.dataset.s);
