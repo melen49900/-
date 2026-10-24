@@ -18,7 +18,7 @@
   { "id": 17, "meaning": "魚",    "spelling": "iskaan",  "audio": "./audio/17.mp3", "category": "動物" },
   { "id": 18, "meaning": "雞",    "spelling": "tulkuk",  "audio": "./audio/18.mp3", "category": "動物" },
   { "id": 19, "meaning": "猴子",  "spelling": "utung",   "audio": "./audio/19.mp3", "category": "動物" },
-  { "id": 20, "meaning": "牛",    "spelling": "hanvangpushiv", "audio": "./audio/20.mp3", "category": "動物" },
+  { "id": 20, "meaning": "牛",    "spelling": "hanvang", "audio": "./audio/20.mp3", "category": "動物" },
   { "id": 21, "meaning": "老鼠",  "spelling": "aluaz",   "audio": "./audio/21.mp3", "category": "動物" },
   { "id": 22, "meaning": "青蛙",  "spelling": "takula",  "audio": "./audio/22.mp3", "category": "動物" },
   { "id": 23, "meaning": "貓頭鷹","spelling": "ithuu",   "audio": "./audio/23.mp3", "category": "動物" }
