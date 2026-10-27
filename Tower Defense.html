@@ -868,11 +868,14 @@ const SKILL_DEFS = {
   beam: {
     name:'光束砲', icon:'🔆', innate:false,
     requiresLevel:60,   // 過關進度（unlockedLevel）需超過此關卡數才會自動解鎖
-    stackLabel:'光束寬度',
+    get stackLabel(){ return skillExOn('beam') ? '掃動角度' : '光束寬度'; },
     stacksFn: ()=>skillStacks('beam'),
     pctFn: ()=>beamPct(),
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 60 關時會自動習得 1 等，之後也能從「召喚」抽到並疊加。`,
     desc:'該隨機一名敵人射出一道貫穿的光束，路徑上所有敵人都會受傷。',
+    ex:true,
+    exLevel:100,   // 通關第 100 關後才開放 EX（跟土牆術 EX 一樣）
+    exDesc:'EX：光束改成掃射敵人，一次對敵人造成數次傷害。',
   },
 };
 // 各技能施放頻率＝角色攻速 × 對應倍率（各自獨立計時，不是三個技能綁在同一顆計時器上）：
@@ -963,7 +966,29 @@ function checkEarthwallUnlock(){
 // 光束砲
 const BEAM_UNLOCK_LEVEL = 60;//過關進度超過第 60 關時自動習得 1 等。
 const BEAM_PULSE_VISUAL = 0.03; // 純視覺：每次結算傷害時光束閃亮加粗的時間
-function beamWidth(){ return 7 + skillStacks('beam') * 3; }// 寬度＝7+等級×3
+/* ── 光束砲 EX：通關第 100 關後開放，花 2000 💎 解鎖 ──
+   光束改成「掃射」：以隨機敵人方向為中央，由左往右掃過扇形；施放頻率 ＝ 角色攻速 × 0.05，
+   一次掃射在掃動期間平均打出 6 下，每下傷害 ＝ 原本單下 × 3、各自判定暴擊。
+   寬度固定為 1 等寬度；前六等的等級改為提升掃動角度（28 + 等級×2 度，6 等 40 度，掃動速度每秒 100 度）。 */
+const BEAM_EX_SPD_MULT = 0.05;       // 施放頻率 ＝ 角色攻速 × 0.05（原本 ×1.1）
+const BEAM_EX_DMG_MULT = 3;          // 每一下傷害 ＝ 原本單下 × 3
+const BEAM_EX_HITS = 6;              // 一次掃射的傷害次數（每下分開計算暴擊）
+const BEAM_EX_SWEEP_DEG_PER_SEC = 100; // 掃動速度（度／秒）
+const BEAM_EX_ANGLE_BASE = 28;       // 掃動角度 ＝ 28 + 等級 × 2（度）
+const BEAM_EX_ANGLE_PER_LV = 2;
+const BEAM_EX_WIDTH_LV = 1;          // 寬度固定為 1 等的寬度
+function beamSpdMult(){ return skillExOn('beam') ? BEAM_EX_SPD_MULT : SKILL_SPD_MULT.beam; }
+function beamExLevel(){ return Math.max(1, skillStacks('beam')); }
+function beamExSweepDeg(){ return BEAM_EX_ANGLE_BASE + beamExLevel() * BEAM_EX_ANGLE_PER_LV; }
+function beamExSweepTime(){ return beamExSweepDeg() / BEAM_EX_SWEEP_DEG_PER_SEC; } // 6 等 0.4 秒；之後可再加「延長持續時間」的機制
+function checkBeamExUnlock(){
+  if(state.unlockedLevel > SKILL_DEFS.beam.exLevel && !state.beamExSeen){
+    state.beamExSeen = true;
+    save();
+    setTimeout(()=>toast('🔆 光束砲 EX 開放！到「技能」頁面可花 2000 💎 解鎖光束砲 EX'), 2600); // 與土牆術 EX 提示錯開
+  }
+}
+function beamWidth(){ return 7 + (skillExOn('beam') ? BEAM_EX_WIDTH_LV : skillStacks('beam')) * 3; }// 寬度＝7+等級×3（EX：固定 1 等寬度）
 function beamPct(){ return 50 + skillOverCap('beam') * 5; }// 傷害＝攻擊力 ×(50%+額外等級×5%)
 function beamAtk(s){ return s.atk * beamPct() / 100; }
 function checkOffhandUnlock(){
@@ -1353,6 +1378,7 @@ function freshState(){
     refineBySlot:{ weapon:0, armor:0, trinket:0, offhand:0, hat:0, shoes:0 }, // { [部位]: 精煉等級 }——精煉綁定「武器／防具／飾品」這個部位，不管換上哪一件、哪個稀有度都沿用同一個等級
     skillEx:{ fireball:false, icespike:false, lightning:false, whirlwind:false, earthwall:false, beam:false }, // 技能 EX 是否已解鎖（每個 2000 💎）
     skillExSeen:false,                        // 技能 EX 開放提示是否已顯示過
+    beamExSeen:false,                         // 光束砲 EX（第 100 關後）開放提示是否已顯示過
     earthwallExSeen:false,                    // 土牆術 EX（第 100 關後）開放提示是否已顯示過
     whirlwindExSeen:false,                    // 旋風術 EX（第 90 關後）開放提示是否已顯示過
     lightningExSeen:false,                    // 閃電術 EX（第 90 關後）開放提示是否已顯示過
@@ -2282,7 +2308,7 @@ const run = {
   hp:100, maxHp:100, shield:0, maxShield:0, wallStack:0,
   heroX:W/2, targetX:W/2, heroAng:-Math.PI/2, targetAng:-Math.PI/2,
   fireTimer:0, iceTimer:0, lightningTimer:0, whirlwindTimer:0, earthwallTimer:0, earthwallCd:0, beamTimer:0,
-  beam:{ target:null, ang:-Math.PI/2, pulse:0, active:false },
+  beam:{ target:null, ang:-Math.PI/2, pulse:0, active:false, sweep:null },
   kills:0, gold:0,
   enemies:[], shots:[], bits:[], pops:[], bolts:[], exBolts:[], tornadoes:[], walls:[], wallSpikes:[],
   iceBlades:[], // 冰椎術 EX：冰刃（含冰痕）
@@ -2443,7 +2469,7 @@ function startRun(level){
   run.maxHp=s.maxHp; run.hp=s.maxHp;
   run.maxShield = shieldValue(s.maxHp); run.shield = run.maxShield; run.wallStack = 0;
   run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0; run.whirlwindTimer=0; run.earthwallTimer=0; run.earthwallCd=0; run.beamTimer=0;
-  run.beam={ target:null, ang:-Math.PI/2, pulse:0, active:false };
+  run.beam={ target:null, ang:-Math.PI/2, pulse:0, active:false, sweep:null };
   run.kills=0; run.gold=0;
   run.enemies=[]; run.shots=[]; run.bits=[]; run.pops=[]; run.iceQueue=[]; run.bolts=[]; run.exBolts=[]; run.tornadoes=[]; run.walls=[]; run.wallSpikes=[]; run.lobs=[]; run.blasts=[]; run.eshots=[]; run.iceBlades=[]; run.shake=0;
   applyLevelTheme(run.level);
@@ -3167,9 +3193,51 @@ function castLightning(){
 // 光束從主角出發、沿著「主角→目標」的方向一路貫穿到畫面盡頭，傷害在 pulseBeam()（依攻速計時）結算。
 function beamOrigin(){ return { x: run.heroX, y: heroOY() }; }
 function beamVisible(e){ return farMode ? farTargetable(e) : (e.hp > 0 && e.y + e.r > 0); } // 遠景模式：目標要在攻擊距離內且在畫面中
+// 光束砲 EX：開始一次掃射。以隨機敵人的方向為扇形中央，由左往右（順時針）掃過；沒有目標就不發射（回傳 false，計時器不重置）。
+function castBeamEx(){
+  const b = run.beam;
+  if(b.sweep) return false;
+  const pool = run.enemies.filter(beamVisible);
+  if(!pool.length) return false;
+  const tg = pool[Math.floor(Math.random()*pool.length)], o = beamOrigin();
+  const center = Math.atan2(tg.y - o.y, tg.x - o.x);
+  const half = beamExSweepDeg() * Math.PI/180 / 2;
+  b.sweep = { t:0, dur:beamExSweepTime(), start:center - half, end:center + half, ticks:0 };
+  b.ang = b.sweep.start; b.active = true; b.target = null;
+  return true;
+}
+function updateBeamEx(dt){
+  const b = run.beam, sw = b.sweep;
+  if(!sw){ b.active = false; return; }
+  sw.t += dt;
+  const u = Math.min(1, sw.t / sw.dur);
+  b.ang = sw.start + (sw.end - sw.start) * u;
+  b.active = true;
+  const s = stats();
+  // 6 下平均分布在掃動時間內，每下依「當下」光束位置判定
+  while(sw.ticks < BEAM_EX_HITS && sw.t >= (sw.ticks + 0.5) / BEAM_EX_HITS * sw.dur){
+    const k = (sw.ticks + 0.5) / BEAM_EX_HITS;
+    const keep = b.ang; b.ang = sw.start + (sw.end - sw.start) * k;
+    pulseBeamEx(s);
+    b.ang = keep;
+    sw.ticks++;
+  }
+  if(sw.t >= sw.dur){ b.sweep = null; b.active = false; }
+}
+function pulseBeamEx(s){
+  const base = beamAtk(s) * BEAM_EX_DMG_MULT;
+  beamHits().forEach(e=>{
+    const crit = Math.random()*100 < s.crit;
+    const dmg = enemyDmg(e, crit ? base * (s.critDmg/100) : base);
+    e.hp -= dmg; e.hit = 0.12;
+    popText(e.x, e.y-e.r-4, fmtNum(dmg), crit);
+    burst(e.x, e.y, '#ff6b6b', 4);
+  });
+}
 function updateBeam(dt){
   const b = run.beam;
-  if(state.skills.beam.draws < 1){ b.active = false; return; }
+  if(state.skills.beam.draws < 1){ b.active = false; b.sweep = null; return; }
+  if(skillExOn('beam')){ updateBeamEx(dt); return; }
   if(b.pulse > 0) b.pulse = Math.max(0, b.pulse - dt);
   if(!b.target || !run.enemies.includes(b.target) || !beamVisible(b.target)){
     const pool = run.enemies.filter(beamVisible);
@@ -3482,7 +3550,11 @@ function step(dt){
   if(run.whirlwindTimer <= 0){ castWhirlwind(); run.whirlwindTimer = 1 / (s.spd * whirlwindSpdMult()); }
   updateBeam(dt);
   run.beamTimer -= dt;
-  if(run.beamTimer <= 0){ pulseBeam(s); run.beamTimer = 1 / (s.spd * SKILL_SPD_MULT.beam); }
+  if(run.beamTimer <= 0){
+    if(skillExOn('beam')){
+      if(state.skills.beam.draws >= 1 && castBeamEx()) run.beamTimer = 1 / (s.spd * beamSpdMult()); // 沒有目標時不重置，下一格再試
+    } else { pulseBeam(s); run.beamTimer = 1 / (s.spd * beamSpdMult()); }
+  }
   updateEarthwall(dt, s);
 
   // 冰椎術佇列：各自倒數，時間到才真正生成
@@ -4484,15 +4556,16 @@ function draw(){
   // 光束砲：持續存在的貫穿光束，每次結算傷害時會閃亮加粗一下
   if(run.beam.active){
     const b = run.beam, o = beamOrigin();
-    const boost = b.pulse > 0 ? 1 + b.pulse/BEAM_PULSE_VISUAL*0.35 : 1;
+    const bex = skillExOn('beam');
+    const boost = (!bex && b.pulse > 0) ? 1 + b.pulse/BEAM_PULSE_VISUAL*0.35 : 1; // EX：取消傷害時的放大縮小
     const w = beamWidth() * boost, len = (W + H) * 1.5;
     ctx.save();
     ctx.translate(o.x, o.y); ctx.rotate(b.ang);
-    ctx.globalAlpha = .28; ctx.fillStyle = '#85b7eb'; ctx.fillRect(0, -w*.9, len, w*1.8);
-    ctx.globalAlpha = .75; ctx.fillStyle = '#378add'; ctx.fillRect(0, -w/2, len, w);
-    ctx.globalAlpha = 1;   ctx.fillStyle = '#e6f1fb'; ctx.fillRect(0, -Math.max(2, w*.3), len, Math.max(4, w*.6));
+    ctx.globalAlpha = .28; ctx.fillStyle = bex ? '#b91c1c' : '#85b7eb'; ctx.fillRect(0, -w*.9, len, w*1.8);
+    ctx.globalAlpha = .75; ctx.fillStyle = bex ? '#7f1d1d' : '#378add'; ctx.fillRect(0, -w/2, len, w);
+    ctx.globalAlpha = 1;   ctx.fillStyle = bex ? '#ff6b6b' : '#e6f1fb'; ctx.fillRect(0, -Math.max(2, w*.3), len, Math.max(4, w*.6));
     ctx.restore();
-    if(b.target){
+    if(b.target && !bex){
       ctx.save();
       ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(b.target.x, b.target.y, b.target.vr + 5, 0, Math.PI*2); ctx.stroke();
@@ -4880,7 +4953,9 @@ function renderSkills(){
         statusText += `　反擊：小怪 ${(Math.min(EARTHWALL_EX_MINION_CAP, draws*EARTHWALL_EX_MINION_PCT)*100).toFixed(1)}% 最大生命，王 ${fmtNum(draws*EARTHWALL_EX_BOSS_PCT*100)}% 攻擊（可爆擊）`;
       }
     } else if(key === 'beam'){
-      statusText = `光束寬度 ${beamWidth()}px　傷害 ${pct.toFixed(0)}% 攻擊`;
+      statusText = skillExOn('beam')
+        ? `掃動角度 ${beamExSweepDeg()}°（${beamExSweepTime().toFixed(2)} 秒）　${BEAM_EX_HITS} 下，每下 ${fmtNum(Math.round(pct*BEAM_EX_DMG_MULT))}% 攻擊　光束寬度 ${beamWidth()}px　攻速 ×${BEAM_EX_SPD_MULT}`
+        : `光束寬度 ${beamWidth()}px　傷害 ${pct.toFixed(0)}% 攻擊`;
     } else if(key === 'icespike' && skillExOn('icespike')){
       statusText = `冰刃傷害 ${fmtNum(Math.round(pct*ICE_EX_DMG_MULT))}% 攻擊　冰痕每下 ${pct.toFixed(1)}%×4　寬度 ${ICE_EX_WIDTH}　攻速 ×${ICE_EX_SPD_MULT}`;
     } else if(key === 'lightning' && skillExOn('lightning')){
@@ -5046,6 +5121,7 @@ function syncUI(){
   checkLightningExUnlock(); // 過關進度超過 90 關時開放閃電術 EX 並提示一次
   checkWhirlwindExUnlock(); // 過關進度超過 90 關時開放旋風術 EX 並提示一次
   checkEarthwallExUnlock(); // 過關進度超過 100 關時開放土牆術 EX 並提示一次
+  checkBeamExUnlock();      // 過關進度超過 100 關時開放光束砲 EX 並提示一次
   checkHatUnlock();         // 過關進度超過 75 關時解鎖帽子並提示一次
   checkOffhandUnlock();     // 過關進度超過 65 關時解鎖副武器並提示一次
   checkShoesUnlock();       // 過關進度超過 100 關時解鎖鞋子並提示一次
