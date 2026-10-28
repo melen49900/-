@@ -635,7 +635,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
         <button class="btn ghost sm" id="upAllBtn" style="margin-bottom:11px">💰 一鍵強化（自動選最便宜的項目）</button>
         <div class="card" id="upList"></div>
         <h2 class="sec" style="margin-top:18px">裝備精煉</h2>
-        <p class="sub">用強化石精煉已裝備的物品，強化倍率為 1＋0.1×(4^精煉等級−1)，精煉成本為 4^(精煉等級+1)。</p>
+        <p class="sub">用強化石精煉已裝備的物品，強化倍率為 1＋0.1×(2^精煉等級−1)，精煉成本為 4^(精煉等級+1)。</p>
         <button class="btn ghost sm" id="refineAllBtn" style="margin-bottom:11px">🔮 一鍵強化（自動選最便宜的裝備）</button>
         <div class="card" id="refineList"></div>
       </div>
@@ -1238,9 +1238,9 @@ const HP_PCT_PER_LV  = 0.005; // 生命值鍛造：每級額外 +0.5% 全生命�
 const REFINE_COST_REDUCE_PER_LV = 3; // 精煉成本：每級減少每次精煉消耗的強化石（最低為 1）
 /* ── 裝備精煉（指數版）──
    精煉成本 ＝ 4^(部位精煉等級+1)，再扣掉鍛造台「精煉成本」的減免（最低為 1）。
-   精煉強化倍率 ＝ 1 + 0.1 × (4^(部位精煉等級) − 1)，0 等為 ×1，乘在該裝備的全部能力上（含暴擊率，溢出照舊轉暴擊傷害）。 */
+   精煉強化倍率 ＝ 1 + 0.1 × (2^(部位精煉等級) − 1)，0 等為 ×1，乘在該裝備的全部能力上（含暴擊率，溢出照舊轉暴擊傷害）。 */
 const REFINE_COST_BASE = 4;                 // 成本底數：4^(等級+1)
-const REFINE_POWER_BASE = 4;                // 強化底數：1 + 0.1×4^等級
+const REFINE_POWER_BASE = 2;                // 強化底數：1 + 0.1×2^等級
 const REFINE_POWER_COEF = 0.1;
 const REFINE_LV_CAP = 400;                  // 防呆：避免指數溢位成 Infinity／NaN
 function refineMul(lv){ lv = Math.min(REFINE_LV_CAP, Math.max(0, Math.round(fin(lv, 0)))); return 1 + REFINE_POWER_COEF * (Math.pow(REFINE_POWER_BASE, lv) - 1); }
