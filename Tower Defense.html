@@ -635,7 +635,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
         <button class="btn ghost sm" id="upAllBtn" style="margin-bottom:11px">💰 一鍵強化（自動選最便宜的項目）</button>
         <div class="card" id="upList"></div>
         <h2 class="sec" style="margin-top:18px">裝備精煉</h2>
-        <p class="sub">用強化石精煉已裝備的物品，強化倍率為 1＋0.1×(2^精煉等級−1)，精煉成本為 4^(精煉等級+1)。</p>
+        <p class="sub">用強化石精煉已裝備的物品，強化倍率為 1＋0.1×(2.5^精煉等級−1)，精煉成本為 4^(精煉等級+1)。</p>
         <button class="btn ghost sm" id="refineAllBtn" style="margin-bottom:11px">🔮 一鍵強化（自動選最便宜的裝備）</button>
         <div class="card" id="refineList"></div>
       </div>
@@ -782,14 +782,18 @@ const RELICS = [
   { key:'horn',    icon:'📯', name:'勝利號角',       max:80,
     desc:'答題連勝中斷時不會歸零，剩餘連勝為：神器等級 × 1%（無條件進位，上限 80 等）',
     eff:lv=>`連勝中斷時保留 ${lv}%（無條件進位）` },
+  { key:'dragon',  icon:'🐲', name:'龍骨重鎧',       max:100,
+    desc:'生命值額外增加（連乘）：〈裝備總等級〉× 神器等級 × 1%（上限 100 等）',
+    eff:lv=>`最大生命 ×${(1+equipTotalLevel()*lv*0.01).toFixed(2)}（裝備總等級 ${equipTotalLevel()}）` },
   { key:'refine',  icon:'📔', name:'精煉大師日記',   max:100,
     desc:'強化石獲得額外增加：〈精煉成本等級〉× 神器等級 × 0.1%（上限 100 等）',
     eff:lv=>`強化石 +${fmtPct(fin(state.up.breakboost,0)*lv*0.1,1)}%（精煉成本 Lv.${fin(state.up.breakboost,0)}）` },
 ];
 // 神器效果（供各處呼叫）
 function critCap(){ return CRIT_CAP + relicLv('blood'); }
-function relicHpMul(){ return 1 + fin(state.up.hp,0) * relicLv('aurora') * 0.001; }
-function relicAtkMul(){ return 1 + (skillTotalLevel() * relicLv('soul') + relicTotalLevel() * relicLv('sun')) * 0.001; } // 靈魂迴響與烈陽之心：加算
+function equipTotalLevel(){ return activeSlots().reduce((t,s)=>t+getRefine(s), 0); } // 裝備總等級＝各部位精煉等級總和
+function relicHpMul(){ return (1 + fin(state.up.hp,0) * relicLv('aurora') * 0.001) * (1 + equipTotalLevel() * relicLv('dragon') * 0.01); } // 極光法陣守護 × 龍骨重鎧：連乘
+function relicAtkMul(){ return (1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001); } // 靈魂迴響 × 烈陽之心：連乘
 function relicGoldExtraPct(){ return fin(state.up.goldboost,0) * relicLv('gold') * 0.1; }
 function relicStoneMul(){ return 1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001; }
 function streakAfterBreak(){
@@ -1238,14 +1242,14 @@ const HP_PCT_PER_LV  = 0.005; // 生命值鍛造：每級額外 +0.5% 全生命�
 const REFINE_COST_REDUCE_PER_LV = 3; // 精煉成本：每級減少每次精煉消耗的強化石（最低為 1）
 /* ── 裝備精煉（指數版）──
    精煉成本 ＝ 4^(部位精煉等級+1)，再扣掉鍛造台「精煉成本」的減免（最低為 1）。
-   精煉強化倍率 ＝ 1 + 0.1 × (2^(部位精煉等級) − 1)，0 等為 ×1，乘在該裝備的全部能力上（含暴擊率，溢出照舊轉暴擊傷害）。 */
+   精煉強化倍率 ＝ 1 + 0.1 × (4^(部位精煉等級) − 1)，0 等為 ×1，乘在該裝備的全部能力上（含暴擊率，溢出照舊轉暴擊傷害）。 */
 const REFINE_COST_BASE = 4;                 // 成本底數：4^(等級+1)
-const REFINE_POWER_BASE = 2;                // 強化底數：1 + 0.1×2^等級
+const REFINE_POWER_BASE = 2.5;               // 強化底數：1 + 0.1×4^等級
 const REFINE_POWER_COEF = 0.1;
 const REFINE_LV_CAP = 400;                  // 防呆：避免指數溢位成 Infinity／NaN
 function refineMul(lv){ lv = Math.min(REFINE_LV_CAP, Math.max(0, Math.round(fin(lv, 0)))); return 1 + REFINE_POWER_COEF * (Math.pow(REFINE_POWER_BASE, lv) - 1); }
 // 舊存檔換算（舊版線性等級 → 新版指數等級）：新等級 ＝ 滿足 4^n ≤ 舊等級 的最大 n，舊等級 0～3 ＝ 0 等
-function refineLegacyToExp(old){ old = Math.max(0, Math.floor(fin(old, 0))); let n = 0; while(Math.pow(REFINE_POWER_BASE, n+1) <= old) n++; return n; }
+function refineLegacyToExp(old){ old = Math.max(0, Math.floor(fin(old, 0))); let n = 0; while(Math.pow(REFINE_COST_BASE, n+1) <= old) n++; return n; }
 const MONSTER_WEAKEN_MULT_PER_LV = 0.99; // 怪物弱化：每級怪物生命 ×0.99（累乘），例如 Lv.10 ＝ ×0.904
 const DEFENSE_MULT_PER_LV = 0.99; // 減傷：每級受到的傷害 ×0.99（累乘），例如 Lv.10 ＝ ×0.904
 /* ── 鍛造台 EX：通關第 70 關後，每項能力可花 2000 鑽石「解鎖」EX 強化版（一次性）。
@@ -2617,6 +2621,8 @@ function startRun(level){
   syncBattleHud();
 }
 
+const GEM_CLEAR_CAP = 450; // 通關鑽石上限
+function levelTotalEnemies(){ let t = 0; for(let w=1; w<=WAVES_PER_LEVEL; w++) t += waveQuotaFor(w); return Math.max(1, t); }
 function endRun(win){
   run.active=false; run.over=true;
 
@@ -2625,7 +2631,9 @@ function endRun(win){
   const goldGain  = Math.round(fin(run.gold, 0) * levelMul * goldBoostMul);
   const stoneGain = Math.round((Math.floor(run.wave/3) + (win?3:0)) * levelMul * relicStoneMul());
   const gemBoostAdd = gemBoostAmount();                        // 鍛造台「鑽石強化」（含 EX）：每級固定加鑽石
-  const gemGain   = 10 + run.level*2 + gemBoostAdd; // 鑽石固定為 10 + 關卡數 ×2，再加鑽石強化加成
+  // 通關鑽石 ＝ 10 + 關卡數 ×2 + 鑽石強化加成，上限 GEM_CLEAR_CAP；未通關 ＝ 該關通關獎勵 × 擊殺數比例（四捨五入）
+  const gemFull   = Math.min(GEM_CLEAR_CAP, 10 + run.level*2 + gemBoostAdd);
+  const gemGain   = win ? gemFull : Math.round(gemFull * Math.min(1, run.kills / levelTotalEnemies()));
   state.gold  = Math.max(0, fin(state.gold, 0) + fin(goldGain, 0));
   state.stone = Math.max(0, fin(state.stone, 0) + fin(stoneGain, 0));
   state.gem   = Math.max(0, fin(state.gem, 0) + fin(gemGain, 0));
@@ -3157,7 +3165,7 @@ function lightningExStrike(b){
     const d = alive ? enemyDmg(e, crit ? base*(s.critDmg/100) : base) : 0;
     if(alive){ e.hp -= d; e.hit = 0.12; }
     // 傷害數字同時出現，由下至上並排
-    popText(b.x, b.y - b.r - 6 - i*17*fz, fmtNum(alive ? d : 0), crit);
+    if(alive) popText(b.x, b.y - b.r - 6 - i*17*fz, fmtNum(d), crit); // 沒擊中（目標已死）不顯示 0，特效保留
   }
   if(alive && e.steel){ e.stun = LIGHTNING_EX_STUN; e.lflash = LIGHTNING_EX_FLASH; }
   burst(b.x, b.y, anyCrit ? '#fff3ff' : '#e0ccff', anyCrit ? 18 : 12);
