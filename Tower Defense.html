@@ -875,7 +875,7 @@ const SKILL_DEFS = {
     desc:'該隨機一名敵人射出一道貫穿的光束，路徑上所有敵人都會受傷。',
     ex:true,
     exLevel:100,   // 通關第 100 關後才開放 EX（跟土牆術 EX 一樣）
-    exDesc:'EX：光束改成掃射敵人，一次對敵人造成數次傷害。',
+    exDesc:'EX：光束改成掃射，被掃過的每一位敵人（包含範圍外但被掃過的）都會受到 6 次傷害。',
   },
 };
 // 各技能施放頻率＝角色攻速 × 對應倍率（各自獨立計時，不是三個技能綁在同一顆計時器上）：
@@ -3239,34 +3239,39 @@ function castBeamEx(){
 function updateBeamEx(dt){
   const b = run.beam, sw = b.sweep;
   if(!sw){ b.active = false; return; }
+  const prevU = sw.u || 0;
   sw.t += dt;
-  const u = Math.min(1, sw.t / sw.dur);
-  b.ang = sw.start + (sw.end - sw.start) * u;
+  const k = Math.min(1, sw.t / sw.dur);
+  b.ang = sw.start + (sw.end - sw.start) * k;
   b.active = true;
-  const s = stats();
-  // 6 下平均分布在掃動時間內，每下依「當下」光束位置判定
-  while(sw.ticks < BEAM_EX_HITS && sw.t >= (sw.ticks + 0.5) / BEAM_EX_HITS * sw.dur){
-    const k = (sw.ticks + 0.5) / BEAM_EX_HITS;
-    const keep = b.ang; b.ang = sw.start + (sw.end - sw.start) * k;
-    pulseBeamEx(s);
-    b.ang = keep;
-    sw.ticks++;
+  const uCur = (sw.end - sw.start) * k;   // 這一格光束掃過的角度區間：[prevU, uCur]（相對起點）
+  sw.u = uCur;
+  if(!sw.hitSet) sw.hitSet = new Set();
+  const s = stats(), o = beamOrigin(), half = beamWidth() / 2;
+  const base = beamAtk(s) * BEAM_EX_DMG_MULT;
+  for(const e of run.enemies){
+    if(sw.hitSet.has(e)) continue;
+    if(farMode ? !(e.hp > 0 && enemyOnScreen(e)) : !beamVisible(e)) continue;
+    const dx = e.x - o.x, dy = e.y - o.y, dist = Math.hypot(dx, dy);
+    if(dist < 1) continue;
+    // 敵人（含身體半徑與光束寬度）所佔的角度區間，只要跟光束掃過的區間有交集就算被掃過，
+    // 不管光束掃到時剛好有沒有「當下」照在他身上
+    const aw = Math.asin(Math.min(1, (half + e.r) / dist));
+    let d = Math.atan2(dy, dx) - sw.start;
+    while(d > Math.PI) d -= Math.PI*2;
+    while(d < -Math.PI) d += Math.PI*2;
+    if(d + aw < prevU || d - aw > uCur) continue;
+    sw.hitSet.add(e);
+    // 被掃過的敵人一次受到 BEAM_EX_HITS 下傷害，各自判定暴擊，傷害數字由下往上並排
+    for(let i = 0; i < BEAM_EX_HITS; i++){
+      const crit = Math.random()*100 < s.crit;
+      const dmg = enemyDmg(e, crit ? base * (s.critDmg/100) : base);
+      e.hp -= dmg; e.hit = 0.12;
+      popText(e.x, e.y - e.r - 6 - i*17*fz, fmtNum(dmg), crit);
+    }
+    burst(e.x, e.y, '#ff6b6b', 6);
   }
   if(sw.t >= sw.dur){ b.sweep = null; b.active = false; }
-}
-function pulseBeamEx(s){
-  const base = beamAtk(s) * BEAM_EX_DMG_MULT;
-  const sw = run.beam.sweep;
-  if(sw && !sw.hitCount) sw.hitCount = new Map(); // 本次掃射中，每隻敵人已被打到幾下（用來把傷害數字並列）
-  beamHits().forEach(e=>{
-    const crit = Math.random()*100 < s.crit;
-    const dmg = enemyDmg(e, crit ? base * (s.critDmg/100) : base);
-    e.hp -= dmg; e.hit = 0.12;
-    const n = sw ? (sw.hitCount.get(e) || 0) : 0;
-    if(sw) sw.hitCount.set(e, n + 1);
-    popText(e.x, e.y - e.r - 6 - n*17*fz, fmtNum(dmg), crit); // 第 n 下往上疊一格，同旋風術 EX
-    burst(e.x, e.y, '#ff6b6b', 4);
-  });
 }
 function updateBeam(dt){
   const b = run.beam;
