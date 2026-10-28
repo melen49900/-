@@ -619,6 +619,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
         <div class="card" style="margin-top:14px">
           <div style="font-size:12px;color:var(--bone-dim);line-height:1.9">
             <div id="skillOddsInfo">技能機率　合計 30%</div>
+            <div id="relicInfo" style="display:none">🏺 神器：裝備齊全後，十連抽固定 8 技能＋2 神器（單抽 80% 技能／20% 神器）</div>
             <div id="equipOddsInfo">裝備機率　合計 70%　普通 35%　精良 21%　稀有 10.5%　傳說 3.5%</div>
             <div style="margin-top:6px">副武器（魔法書／盾牌／水晶）通關第 65 關後解鎖<br>帽子（草帽／頭盔／戰盔／羽帽）通關第 75 關後解鎖<br>鞋子（皮靴／長靴／潛行靴／戰靴）通關第 100 關後解鎖<br>重複裝備熔解：普通 +1　精良 +3　稀有 +8　傳說 +20 🔮</div>
           </div>
@@ -634,7 +635,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
         <button class="btn ghost sm" id="upAllBtn" style="margin-bottom:11px">💰 一鍵強化（自動選最便宜的項目）</button>
         <div class="card" id="upList"></div>
         <h2 class="sec" style="margin-top:18px">裝備精煉</h2>
-        <p class="sub">用強化石精煉已裝備的物品，每次精煉提升該裝備 10% 全能力。</p>
+        <p class="sub">用強化石精煉已裝備的物品，強化倍率為 1＋0.1×(4^精煉等級−1)，精煉成本為 4^(精煉等級+1)。</p>
         <button class="btn ghost sm" id="refineAllBtn" style="margin-bottom:11px">🔮 一鍵強化（自動選最便宜的裝備）</button>
         <div class="card" id="refineList"></div>
       </div>
@@ -656,6 +657,16 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
       </div>
     </section>
 
+    <!-- 神器 -->
+    <section class="screen" id="screen-relic">
+      <div class="pad">
+        <h2 class="sec">神器</h2>
+        <p class="sub">裝備收集齊全後，從「召喚」獲得。每次十連抽固定獲得 8 個隨機技能＋2 個隨機神器（單抽 80% 技能／20% 神器）；已滿級的神器不會再抽到，全部滿級後回到全技能。</p>
+        <div class="card" id="relicSummary" style="font-size:12px;color:var(--bone-dim);line-height:1.8"></div>
+        <div class="card" id="relicList"></div>
+      </div>
+    </section>
+
     <!-- 技能 -->
     <section class="screen" id="screen-skills">
       <div class="pad">
@@ -673,6 +684,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
     <button class="tab" data-s="gacha" id="tabGacha"><i>🔥</i>召喚<span class="dot" id="dotGacha"></span></button>
     <button class="tab" data-s="upgrade"><i>🔨</i>鍛造</button>
     <button class="tab" data-s="equip"><i>🎒</i>裝備</button>
+    <button class="tab" data-s="relic" id="tabRelic" style="display:none"><i>🏺</i>神器<span class="dot" id="dotRelic"></span></button>
     <button class="tab" data-s="skills"><i>🎇</i>技能</button>
   </nav>
 
@@ -735,6 +747,74 @@ const LEVEL_HP_GROWTH = 1.286;                                  // 血量成長�
 const LEVEL_ATK_GROWTH = 1.21;                                  // 攻擊成長係數
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內血量差距3倍
 const WAVE_SPD_GROWTH = 0.1;                                    // 關內移速差距10%
+
+/* ── 神器 ─────────────────────────────────
+   解鎖（需同時滿足，開啟後永久不再隱藏）：通關第 50 關（進度超過 50）＋裝備齊全（全 SSR）。
+   獲得：只能從「召喚」抽到，裝備齊全時十連抽固定 8 技能＋2 神器（單抽 80%／20%）。
+   單一神器滿級後不再抽到；全部滿級後回到全技能。 */
+const RELIC_UNLOCK_LEVEL = 50;
+const RELIC_SINGLE_PULL_CHANCE = 0.2;
+function relicLv(k){ return Math.max(0, Math.round(fin(state.relics && state.relics[k], 0))); }
+function relicTotalLevel(){ return RELICS.reduce((t,r)=>t+relicLv(r.key), 0); }
+function skillTotalLevel(){ return Object.keys(SKILL_DEFS).reduce((t,k)=>t+Math.max(0, fin(state.skills[k] && state.skills[k].draws, 0)), 0); }
+const RELICS = [
+  { key:'blood',   icon:'🩸', name:'嗜血匕首',       max:10,
+    desc:'暴擊率上限增加：神器等級 × 1%（上限 10 等）',
+    eff:lv=>`暴擊率上限 ${CRIT_CAP + lv}%（+${lv}%）` },
+  { key:'aurora',  icon:'🌌', name:'極光法陣守護',   max:200,
+    desc:'生命值額外增加：〈生命值等級〉× 神器等級 × 0.1%（上限 200 等）',
+    eff:lv=>`最大生命 +${fmtPct(fin(state.up.hp,0)*lv*0.1,1)}%（生命值 Lv.${fin(state.up.hp,0)}）` },
+  { key:'soul',    icon:'👻', name:'靈魂迴響',       max:200,
+    desc:'攻擊力額外增加：〈技能總等級〉× 神器等級 × 0.1%（上限 200 等）',
+    eff:lv=>`攻擊力 +${fmtPct(skillTotalLevel()*lv*0.1,1)}%（技能總等級 ${skillTotalLevel()}）` },
+  { key:'holy',    icon:'🕊️', name:'聖光庇護',       max:50,
+    desc:'額外增加減傷等級（不影響鍛造成本）：神器等級 × 1（上限 50 等）',
+    eff:lv=>`減傷等級 +${lv}（有效 Lv.${fin(state.up.defense,0)+lv}）` },
+  { key:'wrath',   icon:'🌩️', name:'神怒天罰',       max:50,
+    desc:'額外增加怪物弱化等級（不影響鍛造成本）：神器等級 × 1（上限 50 等）',
+    eff:lv=>`怪物弱化等級 +${lv}（有效 Lv.${fin(state.up.monweaken,0)+lv}）` },
+  { key:'sun',     icon:'☀️', name:'烈陽之心',       max:100,
+    desc:'攻擊力額外增加：〈神器總等級〉× 神器等級 × 0.1%（上限 100 等）',
+    eff:lv=>`攻擊力 +${fmtPct(relicTotalLevel()*lv*0.1,1)}%（神器總等級 ${relicTotalLevel()}）` },
+  { key:'gold',    icon:'👑', name:'金碧輝煌',       max:100,
+    desc:'獲得金幣額外增加：〈金幣強化等級〉× 神器等級 × 0.1%（上限 100 等）',
+    eff:lv=>`金幣 +${fmtPct(fin(state.up.goldboost,0)*lv*0.1,1)}%（金幣強化 Lv.${fin(state.up.goldboost,0)}）` },
+  { key:'horn',    icon:'📯', name:'勝利號角',       max:80,
+    desc:'答題連勝中斷時不會歸零，剩餘連勝為：神器等級 × 1%（無條件進位，上限 80 等）',
+    eff:lv=>`連勝中斷時保留 ${lv}%（無條件進位）` },
+  { key:'refine',  icon:'📔', name:'精煉大師日記',   max:100,
+    desc:'強化石獲得額外增加：〈精煉成本等級〉× 神器等級 × 0.1%（上限 100 等）',
+    eff:lv=>`強化石 +${fmtPct(fin(state.up.breakboost,0)*lv*0.1,1)}%（精煉成本 Lv.${fin(state.up.breakboost,0)}）` },
+];
+// 神器效果（供各處呼叫）
+function critCap(){ return CRIT_CAP + relicLv('blood'); }
+function relicHpMul(){ return 1 + fin(state.up.hp,0) * relicLv('aurora') * 0.001; }
+function relicAtkMul(){ return 1 + (skillTotalLevel() * relicLv('soul') + relicTotalLevel() * relicLv('sun')) * 0.001; } // 靈魂迴響與烈陽之心：加算
+function relicGoldExtraPct(){ return fin(state.up.goldboost,0) * relicLv('gold') * 0.1; }
+function relicStoneMul(){ return 1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001; }
+function streakAfterBreak(){
+  const lv = relicLv('horn');
+  if(lv <= 0) return 0;
+  return Math.min(state.qs.streak, Math.ceil(state.qs.streak * lv * 0.01 - 1e-9));
+}
+function relicAvailableList(){ return RELICS.filter(r=>relicLv(r.key) < r.max); }
+function relicPullActive(){ return !!state.relicUnlocked && gearCollectionComplete() && relicAvailableList().length > 0; }
+function relicPullOnce(){
+  const pool = relicAvailableList();
+  if(!pool.length) return null;
+  const r = pool[Math.floor(Math.random()*pool.length)];
+  if(!state.relics) state.relics = {};
+  state.relics[r.key] = relicLv(r.key) + 1;
+  return { kind:'relic', def:r, lv:relicLv(r.key) };
+}
+function checkRelicUnlock(){
+  if(!state.relicUnlocked && state.unlockedLevel > RELIC_UNLOCK_LEVEL && gearCollectionComplete()){
+    state.relicUnlocked = true;
+    state.relicSeen = false;
+    save();
+    toast('🏺 解鎖神器頁面！裝備齊全後，召喚可抽到神器');
+  }
+}
 
 /* ── 裝備資料 ─────────────────────────────── */
 const RARITY = {
@@ -1155,7 +1235,17 @@ function availablePool(){ return EQUIP_POOL.filter(b=>slotAvailable(b.slot)); }
 // bodyFmt：數值的顯示格式（不加正負號，純數值）
 const ATK_PCT_PER_LV = 0.005; // 攻擊力鍛造：每級額外 +0.5% 全攻擊（含裝備）
 const HP_PCT_PER_LV  = 0.005; // 生命值鍛造：每級額外 +0.5% 全生命（含裝備）
-const REFINE_COST_REDUCE_PER_LV = 1; // 精煉成本：每級減少每次精煉消耗的強化石（最低為 1）
+const REFINE_COST_REDUCE_PER_LV = 3; // 精煉成本：每級減少每次精煉消耗的強化石（最低為 1）
+/* ── 裝備精煉（指數版）──
+   精煉成本 ＝ 4^(部位精煉等級+1)，再扣掉鍛造台「精煉成本」的減免（最低為 1）。
+   精煉強化倍率 ＝ 1 + 0.1 × (4^(部位精煉等級) − 1)，0 等為 ×1，乘在該裝備的全部能力上（含暴擊率，溢出照舊轉暴擊傷害）。 */
+const REFINE_COST_BASE = 4;                 // 成本底數：4^(等級+1)
+const REFINE_POWER_BASE = 4;                // 強化底數：1 + 0.1×4^等級
+const REFINE_POWER_COEF = 0.1;
+const REFINE_LV_CAP = 400;                  // 防呆：避免指數溢位成 Infinity／NaN
+function refineMul(lv){ lv = Math.min(REFINE_LV_CAP, Math.max(0, Math.round(fin(lv, 0)))); return 1 + REFINE_POWER_COEF * (Math.pow(REFINE_POWER_BASE, lv) - 1); }
+// 舊存檔換算（舊版線性等級 → 新版指數等級）：新等級 ＝ 滿足 4^n ≤ 舊等級 的最大 n，舊等級 0～3 ＝ 0 等
+function refineLegacyToExp(old){ old = Math.max(0, Math.floor(fin(old, 0))); let n = 0; while(Math.pow(REFINE_POWER_BASE, n+1) <= old) n++; return n; }
 const MONSTER_WEAKEN_MULT_PER_LV = 0.99; // 怪物弱化：每級怪物生命 ×0.99（累乘），例如 Lv.10 ＝ ×0.904
 const DEFENSE_MULT_PER_LV = 0.99; // 減傷：每級受到的傷害 ×0.99（累乘），例如 Lv.10 ＝ ×0.904
 /* ── 鍛造台 EX：通關第 70 關後，每項能力可花 2000 鑽石「解鎖」EX 強化版（一次性）。
@@ -1173,7 +1263,7 @@ const EX_CRITDMG_PER_LV = 1;                // 暴擊傷害 EX：每級 +1%，�
 const EX_CRITDMG_TOTAL_PCT_PER_LV = 0.01;   // 暴擊傷害 EX：總量每級額外 +1%
 const EX_GOLD_PCT_PER_LV = 6;               // 金幣強化 EX：每級 +6%（原版 5%）
 const EX_GEM_PER_LV = 1.2;                  // 鑽石強化 EX：每級 +1.2 顆，總量無條件捨去（原版 1）
-const EX_REFINE_REDUCE_PER_LV = 4;          // 精煉成本 EX：每級 -4 強化石，總量無條件捨去（原版 1）
+const EX_REFINE_REDUCE_PCT_PER_LV = 0.01;   // 精煉成本 EX：每級 -0.01% 精煉成本（原版每級 -3 強化石）
 const EX_MONSTER_WEAKEN_MULT_PER_LV = 0.985;// 怪物弱化 EX：每級怪物生命 ×0.987（原版 0.99）
 const GUARDIAN_RADIUS_MIN_EX = 40;          // 守護半徑 EX：半徑下限由 80 降到 40
 const GUARDIAN_REDUCE_MIN_EX = 15;          // 守護能力 EX：守護減傷下限由 30% 降到 15%
@@ -1183,10 +1273,9 @@ function exTri(n){ return n*(n+1)/2; }      // 第 N 級增量為 N 時的累計
 function exFloor(x){ return Math.floor(x + 1e-9); } // 無條件捨去（加極小值避免浮點誤差，例如 35×1.2 算成 41.999…）
 function guardRadiusMin(){ return exOn('guardradius') ? GUARDIAN_RADIUS_MIN_EX : GUARDIAN_RADIUS_MIN; }
 // 套用 EX 之後的實際效果
-function goldBoostPct(){ return fin(state.up.goldboost, 0) * (exOn('goldboost') ? EX_GOLD_PCT_PER_LV : 5); }
+function goldBoostPct(){ return fin(state.up.goldboost, 0) * (exOn('goldboost') ? EX_GOLD_PCT_PER_LV : 5) + relicGoldExtraPct(); }
 function gemBoostAmount(){ const lv = fin(state.up.gemboost, 0); return exOn('gemboost') ? exFloor(lv*EX_GEM_PER_LV) : lv; }
-function refineReduceTotal(){ const lv = fin(state.up.breakboost, 0); return exOn('breakboost') ? exFloor(lv*EX_REFINE_REDUCE_PER_LV) : lv*REFINE_COST_REDUCE_PER_LV; }
-function monsterWeakenMul(){ return Math.pow(exOn('monweaken') ? EX_MONSTER_WEAKEN_MULT_PER_LV : MONSTER_WEAKEN_MULT_PER_LV, fin(state.up.monweaken, 0)); }
+function monsterWeakenMul(){ return Math.pow(exOn('monweaken') ? EX_MONSTER_WEAKEN_MULT_PER_LV : MONSTER_WEAKEN_MULT_PER_LV, fin(state.up.monweaken, 0) + relicLv('wrath')); }
 function exOutputMul(){ return exOn('spd') ? 1 + fin(state.up.spd, 0)*EX_OUTPUT_PCT_PER_LV : 1; }
 /* ── 魔法護盾：通關第 100 關後解鎖。護盾值 ＝ 主角最大生命 ×（1.012^等級 − 1）；EX：成長 −0.03、公式改 1.024^等級 − 1 ── */
 const SHIELD_BASE = 1.013, SHIELD_BASE_EX = 1.026;
@@ -1221,7 +1310,7 @@ const UPGRADES = [
     // 暴擊率（等級+裝備疊加後）超過 80% 上限的部分，會在 stats() 裡 1:1 轉成額外暴擊傷害疊加。
     body:lv=>Math.min(80, 5 + lv*1.2),     full:lv=>exOn('crit') ? (5 + lv*EX_CRIT_PER_LV + sumEquip('crit')) * (1 + lv*EX_CRIT_TOTAL_PCT_PER_LV) : 5 + lv*1.2 + sumEquip('crit'),
     perFmt:lv=>exOn('crit') ? '+'+(lv*EX_CRIT_PER_LV).toFixed(1)+'% 且總量×'+(1+lv*EX_CRIT_TOTAL_PCT_PER_LV).toFixed(2) : '+'+(lv*1.2).toFixed(1)+'%',
-    bodyFmt:v=>Math.min(80, v).toFixed(1)+'%' },
+    bodyFmt:v=>Math.min(critCap(), v).toFixed(1)+'%' },
   // 暴擊傷害：基礎倍率 200%，每級 +1%。
   { key:'critdmg', icon:'💥', name:'暴擊傷害', base:100, grow:1.2, per:1.2, fmt:v=>'+'+fmtPct(v,0)+'%',
     body:lv=>200 + lv*1.2,                   full:lv=>exOn('critdmg') ? (200 + lv*EX_CRITDMG_PER_LV + sumEquip('critdmg')) * (1 + lv*EX_CRITDMG_TOTAL_PCT_PER_LV) : 200 + lv*1.2 + sumEquip('critdmg'),
@@ -1254,10 +1343,11 @@ const UPGRADES = [
   { key:'breakboost', icon:'♻️', name:'精煉成本', base:40, grow:1.11, per:1, fmt:v=>'-'+v.toFixed(0),
     requiresLevel:50,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 50 關時解鎖。`,
-    body:lv=>lv*REFINE_COST_REDUCE_PER_LV,   full:lv=>exOn('breakboost') ? exFloor(lv*EX_REFINE_REDUCE_PER_LV) : lv*REFINE_COST_REDUCE_PER_LV,
+    // 原版：每級 -3 強化石；EX：每級 -0.01% 精煉成本（full 回傳的是「百分比數值」）
+    body:lv=>lv*REFINE_COST_REDUCE_PER_LV,   full:lv=>exOn('breakboost') ? lv*EX_REFINE_REDUCE_PCT_PER_LV : lv*REFINE_COST_REDUCE_PER_LV,
     exGrow:1.09,   // EX 解鎖後費用成長 1.09（原版 1.11，EX 後下降）
-    perFmt:lv=>'-'+(exOn('breakboost') ? exFloor(lv*EX_REFINE_REDUCE_PER_LV) : lv*REFINE_COST_REDUCE_PER_LV),
-    bodyFmt:v=>'-'+v.toFixed(0)+' 🔮/次' },
+    perFmt:lv=>exOn('breakboost') ? '-'+(lv*EX_REFINE_REDUCE_PCT_PER_LV).toFixed(2)+'%' : '-'+(lv*REFINE_COST_REDUCE_PER_LV),
+    bodyFmt:v=>exOn('breakboost') ? '-'+v.toFixed(2)+'% 🔮/次' : '-'+v.toFixed(0)+' 🔮/次' },
   // 怪物弱化：第 55 關才會解鎖，解鎖前在精煉成本下方以「？」顯示。解鎖後每級怪物生命 ×MONSTER_WEAKEN_MULT_PER_LV（預設 0.99，累乘）。
   { key:'monweaken', icon:'☠️', name:'怪物弱化', base:95, grow:1.16, per:1, fmt:v=>'-'+v.toFixed(1)+'%',
     requiresLevel:55,   // 過關進度（unlockedLevel）需超過此關卡數才會解鎖
@@ -1392,6 +1482,7 @@ function freshState(){
     equipped:kit.equipped,
     starterGiven:true,                        // 已發放新手裝備
     freePullUsed:false,                       // 新手免費十連抽是否已使用
+    refineExp:true,                           // 精煉已是指數版等級（舊存檔沒有這個旗標，讀檔時會一次性換算）
     refineBySlot:{ weapon:0, armor:0, trinket:0, offhand:0, hat:0, shoes:0 }, // { [部位]: 精煉等級 }——精煉綁定「武器／防具／飾品」這個部位，不管換上哪一件、哪個稀有度都沿用同一個等級
     skillEx:{ fireball:false, icespike:false, lightning:false, whirlwind:false, earthwall:false, beam:false }, // 技能 EX 是否已解鎖（每個 2000 💎）
     skillExSeen:false,                        // 技能 EX 開放提示是否已顯示過
@@ -1412,6 +1503,9 @@ function freshState(){
     selectedHero:1,                           // 目前使用的角色造型 id（對應 HERO_SKINS）
     heroUnlockedSeen:[1],                     // 已經提示過解鎖的造型 id（避免重複跳提示）
     upgradeUnlockedSeen:[],                   // 已經提示過解鎖的鍛造項目 key（避免重複跳提示）
+    relics:{},                                // 神器等級 { [key]: 等級 }
+    relicUnlocked:false,                      // 神器頁面是否已解鎖（解鎖後永久顯示）
+    relicSeen:false,                          // 玩家是否已點開過神器頁面（用來控制紅點）
   };
 }
 
@@ -1475,6 +1569,8 @@ function sanitizeState(){
     state.selectedHero = 1;
   }
   if(!Array.isArray(state.upgradeUnlockedSeen)) state.upgradeUnlockedSeen = [];
+  if(!state.relics || typeof state.relics !== 'object') state.relics = {};
+  RELICS.forEach(r=>{ state.relics[r.key] = Math.min(r.max, relicLv(r.key)); });
 }
 function save(){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
@@ -1506,6 +1602,7 @@ function load(){
       beam: Object.assign({draws:0}, (d.skills&&d.skills.beam)||{}),
     };
     state.levelRecords = Object.assign({}, d.levelRecords||{});
+    state.relics = Object.assign({}, d.relics||{});
     state.unlockedLevel = Math.max(1, Math.min(LEVEL_COUNT, d.unlockedLevel || 1));
     // 關卡數擴充後的搬家：舊存檔若已通關當時的最後一關（進度卡在最後一關且已過關），自動開放下一關
     {
@@ -1518,19 +1615,27 @@ function load(){
     // 進度資料還原：補上舊存檔可能缺少的欄位，避免引擎讀到 undefined
     state.quiz     = Object.assign(QuizEngine.createProgress(), d.quiz||{});
     state.indigTier = Object.assign(IndigenousQuiz.createTierState(), d.indigTier||{});
-    // 舊存檔搬家 1：精煉等級從單一卡片改依所屬部位
-    [...(d.bag||[]), ...Object.values(d.equipped||{})].forEach(c=>{
-      if(c && c.id && Number.isFinite(c.refine)){
-        const base = EQUIP_POOL.find(e=>e.id===c.id);
-        if(base) state.refineBySlot[base.slot] = Math.max(fin(state.refineBySlot[base.slot], 0), c.refine);
-      }
-    });
-    // 舊存檔搬家 2
-    if(d.refineByBase){
-      Object.entries(d.refineByBase).forEach(([id, lv])=>{
-        const base = EQUIP_POOL.find(e=>e.id===id);
-        if(base && Number.isFinite(lv)) state.refineBySlot[base.slot] = Math.max(fin(state.refineBySlot[base.slot], 0), lv);
+    // 精煉指數化前的舊存檔（沒有 refineExp 旗標）：先跑舊搬家（舊線性等級），最後一次性換算成新指數等級。
+    // 已換算過的存檔不能再跑舊搬家，否則 refineByBase 等舊欄位的大數字會用 Math.max 把新等級蓋回去。
+    if(!d.refineExp){
+      // 舊存檔搬家 1：精煉等級從單一卡片改依所屬部位
+      [...(d.bag||[]), ...Object.values(d.equipped||{})].forEach(c=>{
+        if(c && c.id && Number.isFinite(c.refine)){
+          const base = EQUIP_POOL.find(e=>e.id===c.id);
+          if(base) state.refineBySlot[base.slot] = Math.max(fin(state.refineBySlot[base.slot], 0), c.refine);
+        }
       });
+      // 舊存檔搬家 2
+      if(d.refineByBase){
+        Object.entries(d.refineByBase).forEach(([id, lv])=>{
+          const base = EQUIP_POOL.find(e=>e.id===id);
+          if(base && Number.isFinite(lv)) state.refineBySlot[base.slot] = Math.max(fin(state.refineBySlot[base.slot], 0), lv);
+        });
+      }
+      delete state.refineByBase;
+      // 搬家 3：舊線性等級 → 新指數等級（無條件捨去 log4），只執行一次
+      ALL_SLOTS.forEach(s=>{ state.refineBySlot[s] = refineLegacyToExp(state.refineBySlot[s]); });
+      state.refineExp = true;
     }
     // 修復「裝備跑掉」的 bug：JSON 存檔/讀檔會讓對應的物品變成兩個不同的物件，兩邊資料重新同步成一份。
     ALL_SLOTS.forEach(s=>{
@@ -1980,13 +2085,13 @@ function answerIndigenous(choice, btn){
         { correct:false, isFirstAttempt:true, isFinal:true });
       answered = true;
       state.qs.wrong++;
-      state.qs.streak = 0;
+      state.qs.streak = streakAfterBreak();
     } else {
       IndigenousQuiz.recordTieredAnswer(state.indigTier, indigenousWords, curQ.correctId,
         { correct:false, isFirstAttempt:false, isFinal:true });
       answered = true;
       state.qs.wrong++;
-      state.qs.streak = 0;
+      state.qs.streak = streakAfterBreak();
     }
     const correctOpt = curQ.options.find(o=>o.id===curQ.correctId);
     document.querySelectorAll('.opt').forEach(b=>{
@@ -2056,7 +2161,7 @@ function answer(choice, btn){
         QuizEngine.recordAnswer(state.quiz, curSubj, curQ,
           { correct:false, isFirstAttempt:true, isFinal:true }, bank());
         state.qs.wrong++;
-        state.qs.streak = 0;
+        state.qs.streak = streakAfterBreak();
         document.querySelectorAll('.opt').forEach(b=>{
           b.disabled = true;
           if(b.textContent === String(curQ.ans)) b.classList.add('right');
@@ -2072,7 +2177,7 @@ function answer(choice, btn){
       QuizEngine.recordAnswer(state.quiz, curSubj, curQ,
         { correct:false, isFirstAttempt:false, isFinal:true }, bank());
       state.qs.wrong++;
-      state.qs.streak = 0;
+      state.qs.streak = streakAfterBreak();
       document.querySelectorAll('.opt').forEach(b=>{
         b.disabled = true;
         if(b.textContent === String(curQ.ans)) b.classList.add('right');
@@ -2113,7 +2218,7 @@ function equipStat(card, key){
   const base = EQUIP_POOL.find(e=>e.id===card.id);
   if(!base || !base[key]) return 0;
   const rar = RARITY[card.rarity].mult;
-  const ref = 1 + getRefine(base.slot) * 0.1;//強化石1
+  const ref = refineMul(getRefine(base.slot));//強化石1
   const raw = base[key] * rar * ref;
   // 彈道是整數，不隨稀有度放大到奇怪的小數
   if(key === 'multi') return Math.floor(base[key] * (card.rarity==='SSR'?2:1));
@@ -2129,7 +2234,7 @@ const CRIT_CAP = 80;
 // 計算暴擊率溢出量，抽成共用函式。
 function critOverflowAmount(){
   const rawCrit = UPGRADES.find(x=>x.key==='crit').full(state.up.crit);
-  return Math.max(0, rawCrit - CRIT_CAP);
+  return Math.max(0, rawCrit - critCap());
 }
 function stats(){
   const u = state.up;
@@ -2138,10 +2243,10 @@ function stats(){
   const rawCrit = get('crit');
   const critOverflow = critOverflowAmount();
   return {
-    atk:     Math.round(fin(get('atk'), 25) * exOutputMul()), // 攻擊速度 EX 的「總輸出」加成乘在最終攻擊上
-    maxHp:   Math.round(fin(get('hp'), 100)),
+    atk:     Math.round(fin(get('atk'), 25) * exOutputMul() * relicAtkMul()), // 攻擊速度 EX 的「總輸出」加成與神器（靈魂迴響／烈陽之心）乘在最終攻擊上
+    maxHp:   Math.round(fin(get('hp'), 100) * relicHpMul()), // 神器：極光法陣守護
     spd:     fin(get('spd'), 0.4),
-    crit:    fin(Math.min(CRIT_CAP, rawCrit), 5),
+    crit:    fin(Math.min(critCap(), rawCrit), 5),
     critDmg: fin(get('critdmg') + critOverflow, 200),
   };
 }
@@ -2518,7 +2623,7 @@ function endRun(win){
   const levelMul  = fin(Math.pow(1.21, run.level-1), 1);   // 金幣／強化石增加係數
   const goldBoostMul = 1 + goldBoostPct() / 100; // 鍛造台「金幣強化」：每級 +5%（EX 解鎖後 +6%）金幣
   const goldGain  = Math.round(fin(run.gold, 0) * levelMul * goldBoostMul);
-  const stoneGain = Math.round((Math.floor(run.wave/3) + (win?3:0)) * levelMul);
+  const stoneGain = Math.round((Math.floor(run.wave/3) + (win?3:0)) * levelMul * relicStoneMul());
   const gemBoostAdd = gemBoostAmount();                        // 鍛造台「鑽石強化」（含 EX）：每級固定加鑽石
   const gemGain   = 10 + run.level*2 + gemBoostAdd; // 鑽石固定為 10 + 關卡數 ×2，再加鑽石強化加成
   state.gold  = Math.max(0, fin(state.gold, 0) + fin(goldGain, 0));
@@ -3728,7 +3833,7 @@ function step(dt){
   // 怪物
   const heroLine = H - 74;
   // 鍛造台「減傷」：角色跟土牆受到的傷害每級 ×DEFENSE_MULT_PER_LV（累乘）
-  const dmgTakenMul = Math.pow(DEFENSE_MULT_PER_LV, fin(state.up.defense, 0));
+  const dmgTakenMul = Math.pow(DEFENSE_MULT_PER_LV, fin(state.up.defense, 0) + relicLv('holy'));
   for(let i=run.enemies.length-1;i>=0;i--){
     const e = run.enemies[i];
     if(e.exSlow > 0) e.exSlow -= dt; // 冰椎術 EX 緩速倒數
@@ -4725,6 +4830,11 @@ function gearCollectionComplete(){
 }
 function pullOnce(){
   // 裝備已收集齊全 → 只抽技能；否則 30% 機率抽到技能（平均分攤給所有技能），其餘 70% 抽裝備
+  // 神器：裝備齊全且已解鎖時，單抽有 20% 直接抽到神器（不適用一般機率）
+  if(relicPullActive() && Math.random() < RELIC_SINGLE_PULL_CHANCE){
+    const ro = relicPullOnce();
+    if(ro) return ro;
+  }
   if(gearCollectionComplete() || Math.random() < SKILL_PULL_CHANCE) return skillPullOnce();
 
   const pool = availablePool();
@@ -4733,7 +4843,7 @@ function pullOnce(){
   // 背包已有「同裝備同稀有度」→ 熔成強化石
   const dup = state.bag.find(c=>c.id===base.id && c.rarity===rarity);
   if(dup){
-    const dust = RARITY[rarity].dust; // 重複裝備熔成的強化石（依稀有度固定）
+    const dust = Math.round(RARITY[rarity].dust * relicStoneMul()); // 重複裝備熔成的強化石（依稀有度固定，神器：精煉大師日記加成）
     state.stone += dust;
     return { kind:'equip', base, rarity, dup:true, dust };
   }
@@ -4754,8 +4864,14 @@ function doPull(n, free){
   }
   const wasComplete = gearCollectionComplete();
   const out = [];
-  for(let i=0;i<n;i++) out.push(pullOnce());
-  save(); syncUI(); renderEquip(); renderSkills();
+  if(n === 10 && relicPullActive()){
+    // 神器模式十連抽：固定 8 個隨機技能 ＋ 2 個隨機神器（神器已全滿級時改抽技能）
+    for(let i=0;i<2;i++){ const ro = relicPullOnce(); out.push(ro || skillPullOnce()); }
+    for(let i=0;i<8;i++) out.push(skillPullOnce());
+  } else {
+    for(let i=0;i<n;i++) out.push(pullOnce());
+  }
+  save(); syncUI(); renderEquip(); renderSkills(); renderRelics();
   if(!wasComplete && gearCollectionComplete()) toast('🎉 裝備收集齊全！之後召喚只會抽到技能');
 
   const box = document.getElementById('pullResult');
@@ -4766,6 +4882,16 @@ function doPull(n, free){
        </div>`
     : '';
   box.innerHTML = freeHint + out.map(o=>{
+    if(o.kind === 'relic'){
+      return `<div class="drop new">
+        <div class="ico">${o.def.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div class="nm">${o.def.name}</div>
+          <div class="st">神器等級 Lv.${o.lv}／${o.def.max}</div>
+        </div>
+        <div class="rar r-SSR">神器</div>
+      </div>`;
+    }
     if(o.kind === 'skill'){
       const stackLabel = o.def.stackLabel;
       const line = o.gotPct
@@ -4798,7 +4924,7 @@ function signed(v, digits){
   return (v >= 0 ? '+' : '') + n;
 }
 function statLine(base, rarity, refine){
-  const m = RARITY[rarity].mult * (1 + (refine||0)*0.1);//強化石2
+  const m = RARITY[rarity].mult * refineMul(refine||0);//強化石2
   const parts = [];
   // 副武器數值很小（例如 +0.5），需顯示到小數點後一位
   const sv = v => base.slot==='offhand'
@@ -4951,7 +5077,12 @@ function renderUpgrades(){
 
 // 精煉費用：4 + 目前精煉等級，再扣掉鍛造台「精煉成本」的減免，最低為 1
 function refineCost(slot){
-  return Math.max(1, 4 + getRefine(slot)*1 - refineReduceTotal());
+  const base = Math.pow(REFINE_COST_BASE, getRefine(slot) + 1);
+  const lv = fin(state.up.breakboost, 0);
+  const cost = exOn('breakboost')
+    ? base * (1 - lv * EX_REFINE_REDUCE_PCT_PER_LV / 100)
+    : base - lv * REFINE_COST_REDUCE_PER_LV;
+  return Math.max(1, Math.ceil(cost - 1e-9));
 }//強化石費用
 
 // 一鍵強化：反覆找目前已裝備、且精煉費用最低的一件裝備升級，重複到強化石不夠支付為止。
@@ -5040,6 +5171,24 @@ function renderSkills(){
   });
 }
 
+
+function renderRelics(){
+  const box = document.getElementById('relicList');
+  if(!box) return;
+  const sum = document.getElementById('relicSummary');
+  if(sum) sum.innerHTML = `神器總等級 <b style="color:var(--bone)">${relicTotalLevel()}</b>／${RELICS.reduce((t,r)=>t+r.max,0)}　技能總等級 <b style="color:var(--bone)">${skillTotalLevel()}</b>`;
+  box.innerHTML = RELICS.map(r=>{
+    const lv = relicLv(r.key);
+    return `<div class="up">
+      <div class="ico">${r.icon}</div>
+      <div class="info">
+        <div class="nm">${r.name}　<span style="color:var(--bone-dim);font-size:12px">${lv>0?`Lv.${lv}／${r.max}${lv>=r.max?' 已滿':''}`:'尚未獲得'}</span></div>
+        <div class="val">${lv>0 ? r.eff(lv) : '尚未獲得，從「召喚」抽取'}</div>
+        <div class="val" style="color:var(--bone-dim);font-size:11px;margin-top:2px">${r.desc}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 function renderRefine(){
   const box = document.getElementById('refineList');
@@ -5174,6 +5323,15 @@ function syncUI(){
   checkExUnlock();          // 過關進度超過 70 關時開放鍛造台 EX 並提示一次
   checkHeroUnlock();        // 過關進度一旦超過門檻就自動解鎖對應造型並提示一次
   checkUpgradeUnlocks();    // 過關進度一旦超過門檻就提示新解鎖的鍛造項目（金幣/鑽石/減傷/精煉成本）
+  checkRelicUnlock();       // 通關第 50 關＋裝備齊全 → 解鎖神器頁面（永久）
+  {
+    const tr = document.getElementById('tabRelic');
+    if(tr) tr.style.display = state.relicUnlocked ? '' : 'none';
+    const dr = document.getElementById('dotRelic');
+    if(dr) dr.classList.toggle('on', !!state.relicUnlocked && !state.relicSeen);
+    const ri = document.getElementById('relicInfo');
+    if(ri) ri.style.display = state.relicUnlocked ? '' : 'none';
+  }
   document.getElementById('uiGem').textContent   = state.gem;
   document.getElementById('uiGold').textContent  = fmtNum(state.gold);
   document.getElementById('uiStone').textContent = fmtNum(state.stone);
@@ -5201,7 +5359,9 @@ function syncUI(){
   }
   if(skillOddsEl){
     if(gearDone){
-      skillOddsEl.textContent = `裝備已收集齊全，召喚只會抽到技能（目前 ${skillCount} 種技能，每種各 ${(100/skillCount).toFixed(1)}%）`;
+      skillOddsEl.textContent = relicPullActive()
+        ? `裝備已收集齊全：十連抽固定 8 技能＋2 神器，單抽 80% 技能／20% 神器（目前 ${skillCount} 種技能平均分攤）`
+        : `裝備已收集齊全，召喚只會抽到技能（目前 ${skillCount} 種技能，每種各 ${(100/skillCount).toFixed(1)}%）`;
     } else {
       const each = (SKILL_PULL_CHANCE*100/skillCount);
       skillOddsEl.textContent = `技能機率　合計 ${Math.round(SKILL_PULL_CHANCE*100)}%（目前 ${skillCount} 種技能，每種各 ${each.toFixed(1)}%）`;
@@ -5235,6 +5395,10 @@ function show(name){
   if(name==='upgrade'){ renderUpgrades(); renderRefine(); }
   if(name==='equip')  renderEquip();
   if(name==='skills') renderSkills();
+  if(name==='relic'){
+    renderRelics();
+    if(!state.relicSeen){ state.relicSeen = true; save(); document.getElementById('dotRelic').classList.remove('on'); }
+  }
   if(name==='battle') resizeCanvas();
   if(name==='quiz' && speakPending){ speakPending = false; speakQuestion(); } // 補唸進遊戲時還沒唸的題目
 }
@@ -5544,6 +5708,7 @@ load();
 syncUI();
 renderEquip();
 renderSkills();
+renderRelics();
 
 // 遊戲一律等 questions.json 讀取完成（成功或失敗都算完成）才會產生第一題並讓玩家進入遊戲。四科（國/英/自/社）完全依賴這個檔案；
 // 數學不受影響，永遠可以出題。
