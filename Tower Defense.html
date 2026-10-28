@@ -730,7 +730,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 155;        // 所有怪物出完的時間點（2:35），清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 250;           // 共 250 關
+const LEVEL_COUNT = 270;           // 共 270 關
 const LEVEL_HP_GROWTH = 1.286;                                  // 血量成長係數
 const LEVEL_ATK_GROWTH = 1.21;                                  // 攻擊成長係數
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內血量差距3倍
@@ -1162,13 +1162,15 @@ const DEFENSE_MULT_PER_LV = 0.99; // 減傷：每級受到的傷害 ×0.99（累
       解鎖後該能力的每級效果與費用成長改成下面的 EX 版本，原本已投入的等級照舊沿用。── */
 const EX_UNLOCK_LEVEL = 70;                 // 過關進度（unlockedLevel）需超過此關卡數才能解鎖 EX
 const EX_UNLOCK_GEM = 2000;                 // 每項能力解鎖 EX 的鑽石費用
-const EX_ATK_PCT_PER_LV = 0.0055;           // 攻擊力 EX：每級 +0.55% 全攻擊（原版 0.5%）；固定值改為第 N 級 +N（累計 N(N+1)/2，原版每級 +3）
-const EX_HP_PCT_PER_LV  = 0.0055;           // 生命值 EX：每級 +0.55% 全生命（原版 0.5%）
+const EX_ATK_PCT_PER_LV = 0.006;            // 攻擊力 EX：每級 +0.6% 全攻擊（原版 0.5%）；固定值改為第 N 級 +N（累計 N(N+1)/2，原版每級 +3）
+const EX_HP_PCT_PER_LV  = 0.007;            // 生命值 EX：每級 +0.7% 全生命（原版 0.5%）
 const EX_HP_FLAT_MULT   = 5;                // 生命值 EX：固定值改為第 N 級 +5×N（原版每級 +15）
 const EX_SPD_PER_LV = 0.08;                 // 攻擊速度 EX：每級 +0.08 發/秒（原版 0.09）
 const EX_OUTPUT_PCT_PER_LV = 0.003;         // 攻擊速度 EX：每級另外 +0.3% 總輸出（攻擊力乘算）
-const EX_CRIT_PER_LV = 1.3;                 // 暴擊率 EX：每級 +1.3%（原版 1.2%）
-const EX_CRITDMG_PER_LV = 1.3;              // 暴擊傷害 EX：每級 +1.3%（原版 1.2%）
+const EX_CRIT_PER_LV = 1;                   // 暴擊率 EX：每級 +1%，原始量（5＋等級×1＋裝備）再乘 (1＋等級×1%)；超過上限的部分才轉成暴擊傷害（原版每級 1.2%）
+const EX_CRIT_TOTAL_PCT_PER_LV = 0.01;      // 暴擊率 EX：總量每級額外 +1%
+const EX_CRITDMG_PER_LV = 1;                // 暴擊傷害 EX：每級 +1%，原始量（200＋等級×1＋裝備）再乘 (1＋等級×1%)，最後才加上暴擊率溢出的轉換值（轉換值不重複乘）
+const EX_CRITDMG_TOTAL_PCT_PER_LV = 0.01;   // 暴擊傷害 EX：總量每級額外 +1%
 const EX_GOLD_PCT_PER_LV = 6;               // 金幣強化 EX：每級 +6%（原版 5%）
 const EX_GEM_PER_LV = 1.2;                  // 鑽石強化 EX：每級 +1.2 顆，總量無條件捨去（原版 1）
 const EX_REFINE_REDUCE_PER_LV = 4;          // 精煉成本 EX：每級 -4 強化石，總量無條件捨去（原版 1）
@@ -1187,9 +1189,17 @@ function refineReduceTotal(){ const lv = fin(state.up.breakboost, 0); return exO
 function monsterWeakenMul(){ return Math.pow(exOn('monweaken') ? EX_MONSTER_WEAKEN_MULT_PER_LV : MONSTER_WEAKEN_MULT_PER_LV, fin(state.up.monweaken, 0)); }
 function exOutputMul(){ return exOn('spd') ? 1 + fin(state.up.spd, 0)*EX_OUTPUT_PCT_PER_LV : 1; }
 /* ── 魔法護盾：通關第 100 關後解鎖。護盾值 ＝ 主角最大生命 ×（1.012^等級 − 1）；EX：成長 −0.03、公式改 1.024^等級 − 1 ── */
-const SHIELD_BASE = 1.012, SHIELD_BASE_EX = 1.024;
+const SHIELD_BASE = 1.013, SHIELD_BASE_EX = 1.026;
 function shieldRatio(lv){ return Math.pow(exOn('shield') ? SHIELD_BASE_EX : SHIELD_BASE, lv) - 1; }
-function shieldValue(maxHp, lv){ if(lv == null) lv = fin(state.up.shield, 0); return Math.round(maxHp * shieldRatio(lv)); }
+/* ── 護盾回復：通關第 105 關後解鎖（金幣）。
+   ① 護盾最大值 ×（1＋等級×4%），無上限；EX：每級 5%
+   ② 每秒回復「護盾最大值 × 等級 × 0.01%」，上限 100 級（1%／秒）；EX：上限 500 級（5%／秒） ── */
+const SHIELDREGEN_CAP_PCT_PER_LV = 4, SHIELDREGEN_CAP_PCT_PER_LV_EX = 5;
+const SHIELDREGEN_PCT_PER_LV = 0.01;
+const SHIELDREGEN_MAX_LV = 100, SHIELDREGEN_MAX_LV_EX = 500;
+function shieldCapBonusPct(lv){ if(lv == null) lv = fin(state.up.shieldregen, 0); return lv * (exOn('shieldregen') ? SHIELDREGEN_CAP_PCT_PER_LV_EX : SHIELDREGEN_CAP_PCT_PER_LV); }
+function shieldRegenPct(lv){ if(lv == null) lv = fin(state.up.shieldregen, 0); return Math.min(lv, exOn('shieldregen') ? SHIELDREGEN_MAX_LV_EX : SHIELDREGEN_MAX_LV) * SHIELDREGEN_PCT_PER_LV; } // 每秒回復護盾最大值的百分比
+function shieldValue(maxHp, lv){ if(lv == null) lv = fin(state.up.shield, 0); return Math.round(maxHp * shieldRatio(lv) * (1 + shieldCapBonusPct()/100)); }
 const UPGRADES = [
   { key:'atk',  icon:'🗡️', name:'攻擊力',  base:40,  grow:1.11, per:3,    fmt:v=>'+'+fmtNum(v),
     // 每級：固定 +3，另外「全攻擊（本體＋鍛造＋裝備）」再 +0.5%（各級線性相加，例如 Lv.20 ＝ ×1.10）
@@ -1209,13 +1219,13 @@ const UPGRADES = [
     bodyFmt:v=>v.toFixed(2)+' 發/秒' },
   { key:'crit', icon:'✨', name:'暴擊率',  base:100, grow:1.2, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
     // 暴擊率（等級+裝備疊加後）超過 80% 上限的部分，會在 stats() 裡 1:1 轉成額外暴擊傷害疊加。
-    body:lv=>Math.min(80, 5 + lv*1.2),     full:lv=>5 + lv*(exOn('crit') ? EX_CRIT_PER_LV : 1.2) + sumEquip('crit'),
-    perFmt:lv=>'+'+(lv*(exOn('crit') ? EX_CRIT_PER_LV : 1.2)).toFixed(1)+'%',
+    body:lv=>Math.min(80, 5 + lv*1.2),     full:lv=>exOn('crit') ? (5 + lv*EX_CRIT_PER_LV + sumEquip('crit')) * (1 + lv*EX_CRIT_TOTAL_PCT_PER_LV) : 5 + lv*1.2 + sumEquip('crit'),
+    perFmt:lv=>exOn('crit') ? '+'+(lv*EX_CRIT_PER_LV).toFixed(1)+'% 且總量×'+(1+lv*EX_CRIT_TOTAL_PCT_PER_LV).toFixed(2) : '+'+(lv*1.2).toFixed(1)+'%',
     bodyFmt:v=>Math.min(80, v).toFixed(1)+'%' },
   // 暴擊傷害：基礎倍率 200%，每級 +1%。
   { key:'critdmg', icon:'💥', name:'暴擊傷害', base:100, grow:1.2, per:1.2, fmt:v=>'+'+fmtPct(v,0)+'%',
-    body:lv=>200 + lv*1.2,                   full:lv=>200 + lv*(exOn('critdmg') ? EX_CRITDMG_PER_LV : 1.2) + sumEquip('critdmg'),
-    perFmt:lv=>'+'+fmtPct(lv*(exOn('critdmg') ? EX_CRITDMG_PER_LV : 1.2), exOn('critdmg') ? 1 : 0)+'%',
+    body:lv=>200 + lv*1.2,                   full:lv=>exOn('critdmg') ? (200 + lv*EX_CRITDMG_PER_LV + sumEquip('critdmg')) * (1 + lv*EX_CRITDMG_TOTAL_PCT_PER_LV) : 200 + lv*1.2 + sumEquip('critdmg'),
+    perFmt:lv=>exOn('critdmg') ? '+'+fmtPct(lv*EX_CRITDMG_PER_LV,1)+'% 且總量×'+(1+lv*EX_CRITDMG_TOTAL_PCT_PER_LV).toFixed(2) : '+'+fmtPct(lv*1.2, 0)+'%',
     bodyFmt:v=>fmtPct(v,0)+'%' },
   // 金幣強化：第 30 關才會解鎖，解鎖前在暴擊傷害下方以「？」顯示，解鎖後獲得的金幣每級 +5%。
   { key:'goldboost', icon:'💰', name:'金幣強化', base:1000, grow:1.25, per:5, fmt:v=>'+'+v.toFixed(0)+'%',
@@ -1320,6 +1330,13 @@ const UPGRADES = [
     body:lv=>shieldValue(stats().maxHp, lv), full:lv=>shieldValue(stats().maxHp, lv),
     perFmt:lv=>'',
     bodyFmt:v=>fmtNum(Math.round(v)) },
+  // 護盾回復：第 105 關後解鎖。基礎 5000 金幣、成長 1.23；EX 成長 1.19。
+  { key:'shieldregen', icon:'💠', name:'護盾回復', base:5000, grow:1.23, exGrow:1.19, per:1, fmt:v=>String(v),
+    requiresLevel:105,
+    lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 105 關時解鎖。`,
+    body:lv=>lv, full:lv=>lv,
+    perFmt:lv=>'回復 '+shieldRegenPct(lv).toFixed(2)+'%/秒'+(lv > (exOn('shieldregen') ? SHIELDREGEN_MAX_LV_EX : SHIELDREGEN_MAX_LV) ? '（回復已達上限）' : ''),
+    bodyFmt:v=>'護盾上限 +'+fmtPct(shieldCapBonusPct(v),0)+'%' },
 ];
 // 鍛造項目的等級上限：固定值 max，或依過關進度動態計算的 maxFn
 function upMax(u){ return u.maxFn ? u.maxFn() : (u.max != null ? u.max : null); }
@@ -1368,8 +1385,8 @@ function freshState(){
   const kit = makeStarterKit();
   return {
     gem:0, gold:0, stone:0,
-    up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0, guardradius:0, guardpower:0, steelkiller:0, summon:0, rangedreduce:0, slow:0, shield:0 },
-    exOn:{ atk:false, hp:false, spd:false, crit:false, critdmg:false, goldboost:false, gemboost:false, defense:false, breakboost:false, monweaken:false, guardradius:false, guardpower:false, steelkiller:false, summon:false, rangedreduce:false, slow:false, shield:false }, // 鍛造台 EX 是否已解鎖（每項 2000 💎）
+    up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0, guardradius:0, guardpower:0, steelkiller:0, summon:0, rangedreduce:0, slow:0, shield:0, shieldregen:0 },
+    exOn:{ atk:false, hp:false, spd:false, crit:false, critdmg:false, goldboost:false, gemboost:false, defense:false, breakboost:false, monweaken:false, guardradius:false, guardpower:false, steelkiller:false, summon:false, rangedreduce:false, slow:false, shield:false, shieldregen:false }, // 鍛造台 EX 是否已解鎖（每項 2000 💎）
     exSeen:false,                             // 鍛造台 EX 解鎖提示是否已顯示過
     bag:kit.bag,                              // [{uid,id,rarity}]（新存檔內建新手三件裝備）（精煉等級改綁在裝備「部位」上，見 refineBySlot）
     equipped:kit.equipped,
@@ -2137,6 +2154,11 @@ const ctx = cv.getContext('2d');
 // 邏輯座標系：寬固定 400，高依實際容器比例算，避免畫面被拉伸
 let W = 400;
 let H = 700, hScale = 1;
+// 一般關卡（非環形遠景）的邏輯場地固定為 400 × FIELD_H，不再隨螢幕比例改變。
+// 這樣平板轉橫向、手機瀏覽器網址列伸縮、電腦視窗高矮不同時，土牆位置與敵人射程距離都一致。
+// 螢幕放不下時整體等比縮小並置中（左右留邊），放得下時貼底、上方多出的空間只是背景。
+const FIELD_H = 750;
+let viewS = 1, viewOX = 0, viewOY = 0;   // 邏輯座標 → CSS 像素：縮放與位移
 let dpr = 1;
 
 /* ══════════════════════════════════════════
@@ -2186,12 +2208,20 @@ function resizeCanvas(){
   dpr = Math.min(window.devicePixelRatio||1, 2);
   cv.width  = Math.round(r.width  * dpr);
   cv.height = Math.round(r.height * dpr);
-  const hn = 400 * (r.height / r.width);
-  if(farMode) fz = Math.max(FAR_VIEW_H / FAR_BASE_H, 2 * farViewRadius() / Math.min(400, hn)); // 視野放大到「短邊」也能容納整個攻擊圈
-  W = 400 * fz;
-  H = Math.round(hn * fz);
+  if(farMode){
+    const hn = 400 * (r.height / r.width);
+    fz = Math.max(FAR_VIEW_H / FAR_BASE_H, 2 * farViewRadius() / Math.min(400, hn)); // 視野放大到「短邊」也能容納整個攻擊圈
+    W = 400 * fz;
+    H = Math.round(hn * fz);
+    viewS = r.width / W; viewOX = 0; viewOY = 0;
+    if(typeof run !== 'undefined'){ run.heroX = run.targetX = W/2; }
+  } else {
+    fz = 1; W = 400; H = FIELD_H;
+    viewS = Math.min(r.width / W, r.height / H);
+    viewOX = (r.width - W * viewS) / 2;      // 左右置中
+    viewOY = r.height - H * viewS;           // 貼底（角色與血條位置固定）
+  }
   hScale = H / 700;           // 場地變高時，怪物速度等比放大，維持相同的壓迫節奏
-  if(farMode && typeof run !== 'undefined'){ run.heroX = run.targetX = W/2; }
 }
 window.addEventListener('resize', resizeCanvas);
 
@@ -2558,14 +2588,14 @@ function endRun(win){
 function pointerX(e){
   const r = cv.getBoundingClientRect();
   const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
-  return Math.max(24, Math.min(W-24, cx / r.width * W));
+  return Math.max(24, Math.min(W-24, (cx - viewOX) / viewS));
 }
 let dragging = false;
 // far 模式：拖曳／點擊 ＝ 指定面向（角色位置不動）
 function aimFromPointer(e){
   const r = cv.getBoundingClientRect();
-  const cx = ((e.touches ? e.touches[0].clientX : e.clientX) - r.left) / r.width  * W;
-  const cy = ((e.touches ? e.touches[0].clientY : e.clientY) - r.top ) / r.height * H;
+  const cx = ((e.touches ? e.touches[0].clientX : e.clientX) - r.left - viewOX) / viewS;
+  const cy = ((e.touches ? e.touches[0].clientY : e.clientY) - r.top  - viewOY) / viewS;
   const dx = cx - W/2, dy = cy - H/2;
   if(dx*dx + dy*dy < 16*16) return;   // 太靠近中心時方向不穩，忽略
   run.targetAng = Math.atan2(dy, dx);
@@ -3226,11 +3256,15 @@ function updateBeamEx(dt){
 }
 function pulseBeamEx(s){
   const base = beamAtk(s) * BEAM_EX_DMG_MULT;
+  const sw = run.beam.sweep;
+  if(sw && !sw.hitCount) sw.hitCount = new Map(); // 本次掃射中，每隻敵人已被打到幾下（用來把傷害數字並列）
   beamHits().forEach(e=>{
     const crit = Math.random()*100 < s.crit;
     const dmg = enemyDmg(e, crit ? base * (s.critDmg/100) : base);
     e.hp -= dmg; e.hit = 0.12;
-    popText(e.x, e.y-e.r-4, fmtNum(dmg), crit);
+    const n = sw ? (sw.hitCount.get(e) || 0) : 0;
+    if(sw) sw.hitCount.set(e, n + 1);
+    popText(e.x, e.y - e.r - 6 - n*17*fz, fmtNum(dmg), crit); // 第 n 下往上疊一格，同旋風術 EX
     burst(e.x, e.y, '#ff6b6b', 4);
   });
 }
@@ -3536,6 +3570,11 @@ function step(dt){
     run.heroAng += da * Math.min(1, dt*FAR_HERO_TURN_RATE);
   } else {
     run.heroX += (run.targetX - run.heroX) * Math.min(1, dt*13);
+  }
+  // 護盾回復（鍛造台）：每秒回復護盾最大值 × 等級 × 0.01%
+  if(run.maxShield > 0 && run.shield < run.maxShield){
+    const rg = shieldRegenPct();
+    if(rg > 0) run.shield = Math.min(run.maxShield, run.shield + run.maxShield * rg / 100 * dt);
   }
 
   // 開火：三個技能各自獨立計時，頻率＝角色攻速 × SKILL_SPD_MULT。
@@ -4327,8 +4366,10 @@ function draw(){
   ctx.setTransform(1,0,0,1,0,0);
   ctx.clearRect(0,0,rw,rh);
 
-  const sx = rw / W, sy = rh / H;
-  ctx.setTransform(sx,0,0,sy,0,0);
+  ctx.setTransform(viewS*dpr,0,0,viewS*dpr,viewOX*dpr,viewOY*dpr);
+  // 整個畫布在邏輯座標中的範圍（場地以外的左右／上方留白也要塗背景）
+  const vx0 = -viewOX/viewS - 40, vy0 = -viewOY/viewS - 40;
+  const vw = rw/dpr/viewS + 80, vh = rh/dpr/viewS + 80;
 
   // 震動
   if(run.shake > 0){
@@ -4338,13 +4379,13 @@ function draw(){
   // 背景：地牢深處（隨關卡變色）
   const g = ctx.createLinearGradient(0,0,0,H);
   g.addColorStop(0,currentTheme.top); g.addColorStop(0.45,currentTheme.mid); g.addColorStop(1,'#0a060c');
-  ctx.fillStyle = g; ctx.fillRect(-30,-30,W+60,H+60);
+  ctx.fillStyle = g; ctx.fillRect(vx0, vy0, vw, vh);
 
   // 遠處火光（隨關卡變色）
   const glowY = farMode ? H/2 : H-70;
   const glow = ctx.createRadialGradient(W/2, glowY, 8, W/2, glowY, 240 * fz);
   glow.addColorStop(0,currentTheme.glow); glow.addColorStop(1,'rgba(255,120,40,0)');
-  ctx.fillStyle = glow; ctx.fillRect(-30,-30,W+60,H+60);
+  ctx.fillStyle = glow; ctx.fillRect(vx0, vy0, vw, vh);
 
   if(farMode){
     // 遠景模式：以主角為中心的圓形場地，淡淡的虛線圈標示技能攻擊距離
@@ -4357,12 +4398,12 @@ function draw(){
   } else {
   // 地面石階
   ctx.fillStyle = '#1b1020';
-  ctx.fillRect(-30, H-58, W+60, 88);
+  ctx.fillRect(vx0, H-58, vw, 88);
   ctx.strokeStyle = 'rgba(255,160,90,.15)'; ctx.lineWidth = 1;
-  for(let x=-10;x<W+20;x+=44){
+  for(let x=Math.floor(vx0/44)*44;x<vx0+vw;x+=44){
     ctx.beginPath(); ctx.moveTo(x, H-58); ctx.lineTo(x, H); ctx.stroke();
   }
-  ctx.beginPath(); ctx.moveTo(-30,H-58); ctx.lineTo(W+30,H-58); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(vx0,H-58); ctx.lineTo(vx0+vw,H-58); ctx.stroke();
   }
 
   ctx.textAlign='center'; ctx.textBaseline='middle';
