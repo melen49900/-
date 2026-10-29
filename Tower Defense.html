@@ -201,6 +201,13 @@ body{
 .lvCard.current{border-color:var(--ember);box-shadow:0 0 0 1px var(--ember),0 0 14px rgba(255,106,31,.35)}
 
 /* ── 角色造型（裝備頁上方） ─────────────────── */
+/* 神器頁的小喇叭 */
+.relic-spk{
+  display:inline-block;margin:0 6px;padding:1px 7px;vertical-align:middle;
+  background:rgba(255,255,255,.08);border:1px solid var(--stoneline);border-radius:10px;
+  color:var(--bone);font-size:11px;line-height:1.4;cursor:pointer;font-family:inherit;
+}
+.relic-spk:active{background:rgba(255,255,255,.18)}
 #heroSkinGrid{display:flex;gap:9px;margin-top:6px}
 .heroCard{
   flex:1;position:relative;border-radius:13px;border:1px solid var(--stoneline);
@@ -635,7 +642,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
         <button class="btn ghost sm" id="upAllBtn" style="margin-bottom:11px">💰 一鍵強化（自動選最便宜的項目）</button>
         <div class="card" id="upList"></div>
         <h2 class="sec" style="margin-top:18px">裝備精煉</h2>
-        <p class="sub">用強化石精煉已裝備的物品，強化倍率為 1＋0.1×(2.5^精煉等級−1)，精煉成本為 4^(精煉等級+1)。</p>
+        <p class="sub">用強化石精煉已裝備的物品，強化倍率為 1＋0.1×(2.3^精煉等級−1)，精煉成本為 4^(精煉等級+1)。</p>
         <button class="btn ghost sm" id="refineAllBtn" style="margin-bottom:11px">🔮 一鍵強化（自動選最便宜的裝備）</button>
         <div class="card" id="refineList"></div>
       </div>
@@ -760,45 +767,58 @@ function relicTotalLevel(){ return RELICS.reduce((t,r)=>t+relicLv(r.key), 0); }
 function skillTotalLevel(){ return Object.keys(SKILL_DEFS).reduce((t,k)=>t+Math.max(0, fin(state.skills[k] && state.skills[k].draws, 0)), 0); }
 const RELICS = [
   { key:'blood',   icon:'🩸', name:'嗜血匕首',       max:10,
-    desc:'暴擊率上限增加：神器等級 × 1%（上限 10 等）',
+    desc:'暴擊率上限增加：神器等級 × 1%',
     eff:lv=>`暴擊率上限 ${CRIT_CAP + lv}%（+${lv}%）` },
   { key:'aurora',  icon:'🌌', name:'極光法陣守護',   max:200,
-    desc:'生命值額外增加：〈生命值等級〉× 神器等級 × 0.1%（上限 200 等）',
-    eff:lv=>`最大生命 +${fmtPct(fin(state.up.hp,0)*lv*0.1,1)}%（生命值 Lv.${fin(state.up.hp,0)}）` },
+    desc:'生命值額外增加：〈生命值等級〉× 神器等級 × 0.1%',
+    eff:lv=>`最大生命 ×${fmtX(1+fin(state.up.hp,0)*lv*0.001)}（生命值 Lv.${fin(state.up.hp,0)}）` },
   { key:'soul',    icon:'👻', name:'靈魂迴響',       max:200,
-    desc:'攻擊力額外增加：〈技能總等級〉× 神器等級 × 0.1%（上限 200 等）',
-    eff:lv=>`攻擊力 +${fmtPct(skillTotalLevel()*lv*0.1,1)}%（技能總等級 ${skillTotalLevel()}）` },
+    desc:'攻擊力額外增加：〈技能總等級〉× 神器等級 × 0.1%',
+    eff:lv=>`攻擊力 ×${fmtX(1+skillTotalLevel()*lv*0.001)}（技能總等級 ${skillTotalLevel()}）` },
   { key:'holy',    icon:'🕊️', name:'聖光庇護',       max:50,
-    desc:'額外增加減傷等級（不影響鍛造成本）：神器等級 × 1（上限 50 等）',
+    desc:'額外增加減傷等級：神器等級 × 1',
     eff:lv=>`減傷等級 +${lv}（有效 Lv.${fin(state.up.defense,0)+lv}）` },
   { key:'wrath',   icon:'🌩️', name:'神怒天罰',       max:50,
-    desc:'額外增加怪物弱化等級（不影響鍛造成本）：神器等級 × 1（上限 50 等）',
+    desc:'額外增加怪物弱化等級：神器等級 × 1',
     eff:lv=>`怪物弱化等級 +${lv}（有效 Lv.${fin(state.up.monweaken,0)+lv}）` },
   { key:'sun',     icon:'☀️', name:'烈陽之心',       max:100,
-    desc:'攻擊力額外增加：〈神器總等級〉× 神器等級 × 0.1%（上限 100 等）',
-    eff:lv=>`攻擊力 +${fmtPct(relicTotalLevel()*lv*0.1,1)}%（神器總等級 ${relicTotalLevel()}）` },
+    desc:'攻擊力額外增加：〈神器總等級〉× 神器等級 × 0.1%',
+    eff:lv=>`攻擊力 ×${fmtX(1+relicTotalLevel()*lv*0.001)}（神器總等級 ${relicTotalLevel()}）` },
   { key:'gold',    icon:'👑', name:'金碧輝煌',       max:100,
-    desc:'獲得金幣額外增加：〈金幣強化等級〉× 神器等級 × 0.1%（上限 100 等）',
+    desc:'獲得金幣額外增加：〈金幣強化等級〉× 神器等級 × 0.1%',
     eff:lv=>`金幣 +${fmtPct(fin(state.up.goldboost,0)*lv*0.1,1)}%（金幣強化 Lv.${fin(state.up.goldboost,0)}）` },
   { key:'horn',    icon:'📯', name:'勝利號角',       max:80,
-    desc:'答題連勝中斷時不會歸零，剩餘連勝為：神器等級 × 1%（無條件進位，上限 80 等）',
+    desc:lv=>`答題連勝中斷時不會歸零，剩餘連勝為：${fmtNum(streakAfterBreak())}`,
     eff:lv=>`連勝中斷時保留 ${lv}%（無條件進位）` },
   { key:'dragon',  icon:'🐲', name:'龍骨重鎧',       max:100,
-    desc:'生命值額外增加（連乘）：〈裝備總等級〉× 神器等級 × 1%（上限 100 等）',
-    eff:lv=>`最大生命 ×${(1+equipTotalLevel()*lv*0.01).toFixed(2)}（裝備總等級 ${equipTotalLevel()}）` },
+    desc:'生命值額外增加（連乘）：〈裝備總等級〉× 神器等級 × 0.4%',
+    eff:lv=>`最大生命 ×${fmtX(1+equipTotalLevel()*lv*0.004)}（裝備總等級 ${equipTotalLevel()}）` },
   { key:'refine',  icon:'📔', name:'精煉大師日記',   max:100,
-    desc:'強化石獲得額外增加：〈精煉成本等級〉× 神器等級 × 0.1%（上限 100 等）',
+    desc:'強化石獲得額外增加：〈精煉成本等級〉× 神器等級 × 0.1%',
     eff:lv=>`強化石 +${fmtPct(fin(state.up.breakboost,0)*lv*0.1,1)}%（精煉成本 Lv.${fin(state.up.breakboost,0)}）` },
   { key:'fire',    icon:'🌋', name:'火神咆哮',       max:100,
-    desc:'火球術額外增加傷害：神器等級 × 1%；並增加火球 EX 的擴散範圍（直徑）：120 關前 神器等級 × 0.5，121 關起 神器等級 × 2（上限 100 等）',
+    desc:'火球術額外增加傷害：神器等級 × 1%；並增加火球 EX 的擴散範圍',
     eff:lv=>`火球傷害 +${lv}%　擴散直徑 +${fmtPct(lv*0.5,1)}（121 關起 +${lv*2}）` },
   { key:'frost',   icon:'❄️', name:'冰霜新星',       max:100,
-    desc:'冰椎術額外增加傷害：神器等級 × 1%；120 關前冰刃寬度 + 神器等級 × 1；121 關起寬度維持原值，改為增加發射軌道（1 等 +1、21 等 +2、41 等 +3，最多 +3，平均分散在圓周上）（上限 100 等）',
+    desc:'冰椎術額外增加傷害：神器等級 × 1%；120 關前增加冰刃寬度；121 關起增加發射軌道',
     eff:lv=>`冰椎傷害 +${lv}%　冰刃寬度 +${lv}（121 關起 +${frostExtraTracksFor(lv)} 道軌道）` },
   { key:'spear',   icon:'🔱', name:'閃雷之槍',       max:100,
-    desc:'閃電術額外增加傷害：神器等級 × 1%；閃電術 EX 額外落下 1 道小落雷，傷害為大落雷傷害 × 神器等級 × 1%（上限 100 等）',
+    desc:'閃電術額外增加傷害：神器等級 × 1%；閃電術 EX 額外落下 1 道小落雷',
     eff:lv=>`閃電傷害 +${lv}%　小落雷傷害 ＝ 大落雷 ×${lv}%` },
+  { key:'cyclone', icon:'🌀', name:'颶風之核',       max:100,
+    desc:'旋風術額外增加傷害：神器等級 × 1%；增加旋風半徑：神器等級 × 5',
+    eff:lv=>`旋風傷害 +${lv}%　旋風半徑 +${lv*5}（旋風術 ${whirlwindRadius()}／EX ${whirlwindExRadius()}）` },
+  { key:'earth',   icon:'⛰️', name:'大地之脈',       max:100,
+    desc:'土牆術額外增加生命及生命回復：神器等級 × 1%；土牆 EX 擊殺敵人時（其他技能不算）立即回復最大生命 × 神器等級 × 0.1%',
+    eff:lv=>`土牆生命與回復 +${lv}%　EX 擊殺回復最大生命 ${fmtPct(lv*0.1,1)}%` },
+  { key:'dawn',    icon:'🌅', name:'晨曦聖光',       max:100,
+    desc:'光束砲額外增加傷害：神器等級 × 1%；增加光束砲 EX 持續時間：神器等級 × 0.01 秒，掃動角度同步增加（神器等級 × 1 度）',
+    eff:lv=>`光束傷害 +${lv}%　EX 持續時間 +${(lv*0.01).toFixed(2)} 秒　掃動角度 +${lv}°` },
 ];
+function relicCycloneMul(){ return 1 + relicLv('cyclone') * 0.01; }   // 颶風之核：旋風術傷害
+function relicEarthMul(){ return 1 + relicLv('earth') * 0.01; }        // 大地之脈：土牆生命與回復
+function relicDawnMul(){ return 1 + relicLv('dawn') * 0.01; }          // 晨曦聖光：光束砲傷害
+function fmtX(n){ n = fin(n, 1); return Math.abs(n) < 1000 ? n.toFixed(2) : fmtNum(n); } // 乘數顯示：×1.30
 function frostExtraTracksFor(lv){ return lv >= 41 ? 3 : lv >= 21 ? 2 : lv >= 1 ? 1 : 0; }
 function frostExtraTracks(){ return farMode ? frostExtraTracksFor(relicLv('frost')) : 0; }
 function iceExWidth(){ return ICE_EX_WIDTH + (farMode ? 0 : relicLv('frost')); }
@@ -816,7 +836,7 @@ function iceAngles(base){
 // 神器效果（供各處呼叫）
 function critCap(){ return CRIT_CAP + relicLv('blood'); }
 function equipTotalLevel(){ return activeSlots().reduce((t,s)=>t+getRefine(s), 0); } // 裝備總等級＝各部位精煉等級總和
-function relicHpMul(){ return (1 + fin(state.up.hp,0) * relicLv('aurora') * 0.001) * (1 + equipTotalLevel() * relicLv('dragon') * 0.01); } // 極光法陣守護 × 龍骨重鎧：連乘
+function relicHpMul(){ return (1 + fin(state.up.hp,0) * relicLv('aurora') * 0.001) * (1 + equipTotalLevel() * relicLv('dragon') * 0.004); } // 極光法陣守護 × 龍骨重鎧：連乘
 function relicAtkMul(){ return (1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001); } // 靈魂迴響 × 烈陽之心：連乘
 function relicGoldExtraPct(){ return fin(state.up.goldboost,0) * relicLv('gold') * 0.1; }
 function relicStoneMul(){ return 1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001; }
@@ -1027,7 +1047,11 @@ function whirlwindPct(){ return 50 * (1 + skillStacks('whirlwind')) + skillOverC
 function fireballAtk(s){ return s.atk * fireballPct() / 100 * relicFireMul(); }
 function icespikeAtk(s){ return s.atk * icespikePct() / 100 * relicFrostMul(); }
 function lightningAtk(s){ return s.atk * lightningPct() / 100 * relicSpearMul(); }
-function whirlwindAtk(s){ return s.atk * whirlwindPct() / 100; }
+function whirlwindAtk(s){ return s.atk * whirlwindPct() / 100 * relicCycloneMul(); }
+function whirlwindRadius(){ return WHIRLWIND_RADIUS + relicLv('cyclone') * 5; }        // 颶風之核：旋風半徑 +神器等級×5
+function whirlwindExRadius(){ return WHIRLWIND_EX_RADIUS + relicLv('cyclone') * 5; }
+function whirlwindTopRadius(){ return WHIRLWIND_VISUAL_TOP_RADIUS + relicLv('cyclone') * 5; } // 純視覺：頂端同步放大
+function whirlwindExTopRadius(){ return WHIRLWIND_EX_VISUAL_TOP_RADIUS + relicLv('cyclone') * 5; }
 const WHIRLWIND_UNLOCK_LEVEL = 20;// 旋風術解鎖條件：過關進度超過第 20 關時自動習得 1 等
 const WHIRLWIND_RADIUS = 45;//旋風術半徑（實際傷害範圍，只有這個圓）
 const WHIRLWIND_VISUAL_HEIGHT = 150;     // 純視覺：龍捲風從圓心向上延伸的高度
@@ -1042,7 +1066,8 @@ const WHIRLWIND_EX_UNLOCK_LEVEL = 90;     // 過關進度需超過此關卡數�
 const WHIRLWIND_EX_SPD_MULT = 0.3;        // 施放頻率 ＝ 角色攻速 × 0.3（原本 ×0.1）；每次施放造成 WHIRLWIND_EX_HITS 下傷害
 const WHIRLWIND_EX_HITS = 5;              // 每次施放的傷害次數（每下分開計算暴擊）
 const WHIRLWIND_EX_DMG_MULT = 1.2;        // 每一下傷害 ＝ 原本單下 × 1.2
-const WHIRLWIND_EX_MOVE_MULT = 0.25;      // 移動速度（原本 0.2）
+const WHIRLWIND_EX_MOVE_MULT = 0.2125;    // 移動速度（原本 0.2，之後 0.25，再減少約 15% ＝ 0.2125）
+const WHIRLWIND_WANDER_MULT = 0.4;        // 沒有敵人時的隨機漫步速度（追敵速度的 40%，緩慢移動）
 const WHIRLWIND_EX_RADIUS = 60;           // 傷害半徑（原本 45）
 const WHIRLWIND_EX_VISUAL_HEIGHT = 200;   // 純視覺：從底圈往上延伸的高度（原本 150）
 const WHIRLWIND_EX_VISUAL_TOP_RADIUS = 90;// 純視覺：頂端圓半徑；底部是完整的傷害圈（半徑 60）→ 圓錐台
@@ -1087,8 +1112,8 @@ const BEAM_EX_ANGLE_PER_LV = 2;
 const BEAM_EX_WIDTH_LV = 1;          // 寬度固定為 1 等的寬度
 function beamSpdMult(){ return skillExOn('beam') ? BEAM_EX_SPD_MULT : SKILL_SPD_MULT.beam; }
 function beamExLevel(){ return Math.max(1, skillStacks('beam')); }
-function beamExSweepDeg(){ return BEAM_EX_ANGLE_BASE + beamExLevel() * BEAM_EX_ANGLE_PER_LV; }
-function beamExSweepTime(){ return beamExSweepDeg() / BEAM_EX_SWEEP_DEG_PER_SEC; } // 6 等 0.4 秒；之後可再加「延長持續時間」的機制
+function beamExSweepDeg(){ return BEAM_EX_ANGLE_BASE + beamExLevel() * BEAM_EX_ANGLE_PER_LV + relicLv('dawn') * 0.01 * BEAM_EX_SWEEP_DEG_PER_SEC; } // 晨曦聖光：掃動角度同步增加（每級 +0.01 秒 × 掃動速度 ＝ +1 度）
+function beamExSweepTime(){ return beamExSweepDeg() / BEAM_EX_SWEEP_DEG_PER_SEC; } // 持續時間 ＝ 角度 ÷ 掃動速度（晨曦聖光透過增加角度來延長，掃動速度不變）
 function checkBeamExUnlock(){
   if(state.unlockedLevel > SKILL_DEFS.beam.exLevel && !state.beamExSeen){
     state.beamExSeen = true;
@@ -1098,7 +1123,7 @@ function checkBeamExUnlock(){
 }
 function beamWidth(){ return 7 + (skillExOn('beam') ? BEAM_EX_WIDTH_LV : skillStacks('beam')) * 3; }// 寬度＝7+等級×3（EX：固定 1 等寬度）
 function beamPct(){ return 50 + skillOverCap('beam') * 5; }// 傷害＝攻擊力 ×(50%+額外等級×5%)
-function beamAtk(s){ return s.atk * beamPct() / 100; }
+function beamAtk(s){ return s.atk * beamPct() / 100 * relicDawnMul(); }
 function checkOffhandUnlock(){
   if(offhandUnlocked() && !state.offhandSeen){
     state.offhandSeen = true;
@@ -1191,6 +1216,10 @@ function earthwallCounter(e, wall, s){
   const d = enemyDmg(e, base);
   e.hp -= d; e.hit = 0.12;
   popText(e.x, e.y - e.r - 12, '-' + fmtNum(d), crit);
+  if(e.hp <= 0 && relicLv('earth') > 0 && run.hp > 0){ // 大地之脈：土牆 EX 擊殺時立即回復最大生命 × 神器等級 × 0.1%
+    run.hp = Math.min(run.maxHp, run.hp + run.maxHp * relicLv('earth') * 0.001);
+    burst(run.heroX, heroCY(), '#7dff9c', 6);
+  }
   run.wallSpikes.push({ x:e.x, a:Math.atan2(e.y - wall.y, e.x - wall.x), t:0 });
   wall.jolt = 1; wall.shakeT = 0;
   if(wall.ring) burst(e.x, e.y, '#ff6a4a', 9);
@@ -1198,7 +1227,7 @@ function earthwallCounter(e, wall, s){
 }
 function earthwallPct(){ return 50 + skillOverCap('earthwall') * 2; }// 土牆係數
 function earthwallHp(s){
-  return s.atk * (1 + s.crit/100) * (s.critDmg/100) * (earthwallPct()/100);// 回復量＝攻擊×(1+暴擊率)×暴擊傷害×土牆係數。
+  return s.atk * (1 + s.crit/100) * (s.critDmg/100) * (earthwallPct()/100) * relicEarthMul();// 回復量＝攻擊×(1+暴擊率)×暴擊傷害×土牆係數。
 }
 function earthwallMaxHp(s){ return earthwallHp(s) * earthwallMaxHpMult(); }
 function earthwallInterval(s){ return 1 / (s.spd * SKILL_SPD_MULT.earthwall); } // 回復間隔＝重生冷卻＝攻速 0.1 倍
@@ -3224,7 +3253,7 @@ function lightningExLine(p){ ctx.beginPath(); p.forEach((q,i)=> i ? ctx.lineTo(q
 
 /* ── 旋風術 EX 視覺：下方完整圓（傷害圈，半徑 60）→ 上方大圓（半徑 90）的圓錐台，漂浮物是淺綠半透明葉片 ── */
 const WEX_Q = 0.3; // 與舊版相同的透視壓扁比例
-function wexR(h){ return WHIRLWIND_EX_RADIUS + (WHIRLWIND_EX_VISUAL_TOP_RADIUS - WHIRLWIND_EX_RADIUS) * h; }
+function wexR(h){ return whirlwindExRadius() + (whirlwindExTopRadius() - whirlwindExRadius()) * h; }
 // 葉形＝兩個圓交會（vesica）：長 len、寬 wid，沿 x 軸方向，尖端在 (±len/2, 0)
 function wexLeafPath(len, wid){
   const a = len/2, b = wid/2, R = (a*a + b*b) / (2*b), k = R - b;
@@ -3244,7 +3273,7 @@ function wexLeaf(x, y, len, wid, rot, flip, alpha, tone, vein){
 }
 // 圓錐台輪廓（底：完整圓、頂：大圓）
 function wexShell(fillA, lineA){
-  const Hh = WHIRLWIND_EX_VISUAL_HEIGHT, r0 = WHIRLWIND_EX_RADIUS, r1 = WHIRLWIND_EX_VISUAL_TOP_RADIUS;
+  const Hh = WHIRLWIND_EX_VISUAL_HEIGHT, r0 = whirlwindExRadius(), r1 = whirlwindExTopRadius();
   ctx.beginPath();
   ctx.moveTo(-r0, 0); ctx.lineTo(-r1, -Hh);
   ctx.ellipse(0, -Hh, r1, r1*WEX_Q, 0, Math.PI, Math.PI*2);
@@ -3268,16 +3297,13 @@ function wexPlace(h, ang, radK){
            tan: Math.atan2(Math.cos(ang)*WEX_Q, -Math.sin(ang)), back: Math.sin(ang) < 0 };
 }
 function drawWhirlwindEx(t){
-  const fade = Math.min(1, t.age/0.5), T = t.age, S = t.spin || 0, r0 = WHIRLWIND_EX_RADIUS;
+  const fade = Math.min(1, t.age/0.5), T = t.age, S = t.spin || 0, r0 = whirlwindExRadius();
   ctx.save(); ctx.translate(t.x, t.y); ctx.globalAlpha = fade;
-  // 傷害圈（地面）：淡綠色＋虛線邊；打出傷害時微微閃亮
+  // 傷害圈（地面）：只保留淡綠色半透明光（無虛線邊）；打出傷害時微微閃亮
   ctx.fillStyle = `rgba(140,230,160,${(0.12 + t.pulse*0.14).toFixed(3)})`;
   ctx.beginPath(); ctx.arc(0, 0, r0, 0, Math.PI*2); ctx.fill();
-  ctx.setLineDash([6,5]); ctx.strokeStyle = `rgba(190,255,200,${(0.45 + t.pulse*0.35).toFixed(3)})`; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.arc(0, 0, r0, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
 
   // 螺旋上升：葉片各自沿螺旋由底圈往上飄，越高越大越淡；每片葉子角速度固定、同向持續旋轉
-  wexShell(0, 0.10);
   const leaves = [];
   for(let i=0;i<WHIRLWIND_EX_LEAF_COUNT;i++){
     const s1 = twRnd(i+7), s2 = twRnd(i+91), s3 = twRnd(i+170);
@@ -3824,6 +3850,23 @@ function step(dt){
       const spd = SHOT_SPEED_BASE * (t.ex ? WHIRLWIND_EX_MOVE_MULT : WHIRLWIND_SPEED_MULT) * hScale;
       t.x += (dx/dist) * spd * dt;
       t.y += (dy/dist) * spd * dt;
+      t.wx = null; // 有敵人了：放棄漫步目標
+    } else {
+      // 暫時沒有敵人：在場地範圍內緩慢隨機漫步（遠景模式為主角周圍的技能攻擊範圍）
+      const wspd = SHOT_SPEED_BASE * (t.ex ? WHIRLWIND_EX_MOVE_MULT : WHIRLWIND_SPEED_MULT) * WHIRLWIND_WANDER_MULT * hScale;
+      t.wanderT = (t.wanderT || 0) - dt;
+      if(t.wx == null || t.wanderT <= 0 || Math.hypot(t.wx - t.x, t.wy - t.y) < 6){
+        if(farMode){
+          const a = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * FAR_SKILL_RANGE;
+          t.wx = W/2 + Math.cos(a) * rr; t.wy = H/2 + Math.sin(a) * rr;
+        } else {
+          t.wx = 30 + Math.random() * (W - 60); t.wy = 40 + Math.random() * (heroCY() - 100);
+        }
+        t.wanderT = 2 + Math.random() * 2.5;
+      }
+      const wdx = t.wx - t.x, wdy = t.wy - t.y, wd = Math.hypot(wdx, wdy) || 1;
+      t.x += (wdx/wd) * wspd * dt;
+      t.y += (wdy/wd) * wspd * dt;
     }
 
     if(t.ex){
@@ -3837,7 +3880,7 @@ function step(dt){
         let hitAny = false;
         for(const e of run.enemies){
           const dx = e.x-t.x, dy = e.y-t.y;
-          if(dx*dx+dy*dy > WHIRLWIND_EX_RADIUS*WHIRLWIND_EX_RADIUS) continue;
+          if(dx*dx+dy*dy > whirlwindExRadius()*whirlwindExRadius()) continue;
           for(let i=0;i<n;i++){
             const crit = Math.random()*100 < s.crit;
             const dmg = enemyDmg(e, crit ? base * (s.critDmg/100) : base);
@@ -3856,7 +3899,7 @@ function step(dt){
       let hitAny = false;
       for(const e of run.enemies){
         const dx = e.x-t.x, dy = e.y-t.y;
-        if(dx*dx+dy*dy <= WHIRLWIND_RADIUS*WHIRLWIND_RADIUS){
+        if(dx*dx+dy*dy <= whirlwindRadius()*whirlwindRadius()){
           const crit = Math.random()*100 < s.crit;
           const dmg = enemyDmg(e, crit ? t.dmg * (s.critDmg/100) : t.dmg);
           e.hp -= dmg; e.hit = 0.12;
@@ -4778,14 +4821,14 @@ function draw(){
 
     // 傷害圈：淡沙色地面 ＋ 虛線邊，讓玩家看得出實際判定範圍
     ctx.fillStyle = 'rgba(200,170,110,.14)';
-    ctx.beginPath(); ctx.arc(0, 0, WHIRLWIND_RADIUS, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, whirlwindRadius(), 0, Math.PI*2); ctx.fill();
     ctx.setLineDash([6,5]);
     ctx.strokeStyle = 'rgba(216,196,154,.45)'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(0, 0, WHIRLWIND_RADIUS, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, whirlwindRadius(), 0, Math.PI*2); ctx.stroke();
     ctx.setLineDash([]);
 
     // 漏斗輪廓：幾圈很淡的橢圓，讓沙塵有依附的形狀
-    const funnelR = h => 6 + Math.pow(h, 1.2) * WHIRLWIND_VISUAL_TOP_RADIUS;
+    const funnelR = h => 6 + Math.pow(h, 1.2) * whirlwindTopRadius();
     ctx.strokeStyle = 'rgba(216,196,154,.14)'; ctx.lineWidth = 1.5;
     for(let k=1;k<=5;k++){
       const h = k/5, rx = funnelR(h);
@@ -5214,6 +5257,16 @@ function renderSkills(){
 }
 
 
+// 神器第二行解說：可以是固定文字，也可以是依目前等級計算的函式
+function relicDescText(r, lv){ return typeof r.desc === 'function' ? r.desc(lv) : r.desc; }
+// 以目前選用的語音朗讀神器文字（符號先轉成口語）
+function speakRelicText(text){
+  const t = String(text)
+    .replace(/[〈〉]/g, '')
+    .replace(/(\d+(?:\.\d+)?)%/g, '百分之$1')
+    .replace(/×/g, '乘以').replace(/＝/g, '等於').replace(/\+/g, '加');
+  _doSpeak(t, speechCfg.lang);
+}
 function renderRelics(){
   const box = document.getElementById('relicList');
   if(!box) return;
@@ -5224,15 +5277,24 @@ function renderRelics(){
   if(!owned.length){ box.innerHTML = '<div class="val" style="color:var(--bone-dim)">尚未獲得任何神器，裝備齊全後從「召喚」抽取。</div>'; return; }
   box.innerHTML = owned.map(r=>{
     const lv = relicLv(r.key);
+    const descTxt = relicDescText(r, lv);
     return `<div class="up">
       <div class="ico">${r.icon}</div>
       <div class="info">
-        <div class="nm">${r.name}　<span style="color:var(--bone-dim);font-size:12px">${lv>0?`Lv.${lv}／${r.max}${lv>=r.max?' 已滿':''}`:'尚未獲得'}</span></div>
+        <div class="nm">${r.name}<button type="button" class="relic-spk" data-rspk="name" data-key="${r.key}" title="朗讀名稱">🔊</button><span style="color:var(--bone-dim);font-size:12px">${lv>0?`Lv.${lv}／${r.max}${lv>=r.max?' 已滿':''}`:'尚未獲得'}</span></div>
         <div class="val">${r.eff(lv)}</div>
-        <div class="val" style="color:var(--bone-dim);font-size:11px;margin-top:2px">${r.desc}</div>
+        <div class="val" style="color:var(--bone-dim);font-size:11px;margin-top:2px">${descTxt}<button type="button" class="relic-spk" data-rspk="desc" data-key="${r.key}" title="朗讀解說">🔊</button></div>
       </div>
     </div>`;
   }).join('');
+  box.querySelectorAll('.relic-spk').forEach(b=>{
+    b.onclick = ()=>{
+      const r = RELICS.find(x=>x.key===b.dataset.key);
+      if(!r) return;
+      if(b.dataset.rspk === 'name') speakRelicText(r.name);
+      else speakRelicText(relicDescText(r, relicLv(r.key)));
+    };
+  });
 }
 
 function renderRefine(){
