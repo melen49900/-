@@ -752,6 +752,7 @@ const WAVE_SPD_GROWTH = 0.1;                                    // 關內移速�
    解鎖（需同時滿足，開啟後永久不再隱藏）：通關第 50 關（進度超過 50）＋裝備齊全（全 SSR）。
    獲得：只能從「召喚」抽到，裝備齊全時十連抽固定 8 技能＋2 神器（單抽 80%／20%）。
    單一神器滿級後不再抽到；全部滿級後回到全技能。 */
+const SPD_CAP = 10; // 攻擊速度上限（發/秒）
 const RELIC_UNLOCK_LEVEL = 50;
 const RELIC_SINGLE_PULL_CHANCE = 0.2;
 function relicLv(k){ return Math.max(0, Math.round(fin(state.relics && state.relics[k], 0))); }
@@ -788,7 +789,30 @@ const RELICS = [
   { key:'refine',  icon:'📔', name:'精煉大師日記',   max:100,
     desc:'強化石獲得額外增加：〈精煉成本等級〉× 神器等級 × 0.1%（上限 100 等）',
     eff:lv=>`強化石 +${fmtPct(fin(state.up.breakboost,0)*lv*0.1,1)}%（精煉成本 Lv.${fin(state.up.breakboost,0)}）` },
+  { key:'fire',    icon:'🌋', name:'火神咆哮',       max:100,
+    desc:'火球術額外增加傷害：神器等級 × 1%；並增加火球 EX 的擴散範圍（直徑）：120 關前 神器等級 × 0.5，121 關起 神器等級 × 2（上限 100 等）',
+    eff:lv=>`火球傷害 +${lv}%　擴散直徑 +${fmtPct(lv*0.5,1)}（121 關起 +${lv*2}）` },
+  { key:'frost',   icon:'❄️', name:'冰霜新星',       max:100,
+    desc:'冰椎術額外增加傷害：神器等級 × 1%；120 關前冰刃寬度 + 神器等級 × 1；121 關起寬度維持原值，改為增加發射軌道（1 等 +1、21 等 +2、41 等 +3，最多 +3，平均分散在圓周上）（上限 100 等）',
+    eff:lv=>`冰椎傷害 +${lv}%　冰刃寬度 +${lv}（121 關起 +${frostExtraTracksFor(lv)} 道軌道）` },
+  { key:'spear',   icon:'🔱', name:'閃雷之槍',       max:100,
+    desc:'閃電術額外增加傷害：神器等級 × 1%；閃電術 EX 額外落下 1 道小落雷，傷害為大落雷傷害 × 神器等級 × 1%（上限 100 等）',
+    eff:lv=>`閃電傷害 +${lv}%　小落雷傷害 ＝ 大落雷 ×${lv}%` },
 ];
+function frostExtraTracksFor(lv){ return lv >= 41 ? 3 : lv >= 21 ? 2 : lv >= 1 ? 1 : 0; }
+function frostExtraTracks(){ return farMode ? frostExtraTracksFor(relicLv('frost')) : 0; }
+function iceExWidth(){ return ICE_EX_WIDTH + (farMode ? 0 : relicLv('frost')); }
+function fireballSplashDiameter(){ return FIREBALL_EX_SPLASH_DIAMETER + relicLv('fire') * (farMode ? 2 : 0.5); }
+function relicFireMul(){ return 1 + relicLv('fire') * 0.01; }
+function relicFrostMul(){ return 1 + relicLv('frost') * 0.01; }
+function relicSpearMul(){ return 1 + relicLv('spear') * 0.01; }
+// 冰椎發射角度：原本 1 道 ＋ 冰霜新星增加的軌道，平均分散在圓周上
+function iceAngles(base){
+  const n = 1 + frostExtraTracks();
+  const a = [];
+  for(let i=0;i<n;i++) a.push(base + i * Math.PI * 2 / n);
+  return a;
+}
 // 神器效果（供各處呼叫）
 function critCap(){ return CRIT_CAP + relicLv('blood'); }
 function equipTotalLevel(){ return activeSlots().reduce((t,s)=>t+getRefine(s), 0); } // 裝備總等級＝各部位精煉等級總和
@@ -1000,9 +1024,9 @@ function icespikePct(){ return 110 + skillOverCap('icespike') * 1.2; }
 function lightningPct(){ return 90 + skillOverCap('lightning') * 1.5; }
 // 旋風術：基礎傷害 50%，前六等傷害乘上 2~7 倍，7等之後每等疊加傷害3%。
 function whirlwindPct(){ return 50 * (1 + skillStacks('whirlwind')) + skillOverCap('whirlwind') * 3; }
-function fireballAtk(s){ return s.atk * fireballPct() / 100; }
-function icespikeAtk(s){ return s.atk * icespikePct() / 100; }
-function lightningAtk(s){ return s.atk * lightningPct() / 100; }
+function fireballAtk(s){ return s.atk * fireballPct() / 100 * relicFireMul(); }
+function icespikeAtk(s){ return s.atk * icespikePct() / 100 * relicFrostMul(); }
+function lightningAtk(s){ return s.atk * lightningPct() / 100 * relicSpearMul(); }
 function whirlwindAtk(s){ return s.atk * whirlwindPct() / 100; }
 const WHIRLWIND_UNLOCK_LEVEL = 20;// 旋風術解鎖條件：過關進度超過第 20 關時自動習得 1 等
 const WHIRLWIND_RADIUS = 45;//旋風術半徑（實際傷害範圍，只有這個圓）
@@ -1244,7 +1268,7 @@ const REFINE_COST_REDUCE_PER_LV = 3; // 精煉成本：每級減少每次精煉�
    精煉成本 ＝ 4^(部位精煉等級+1)，再扣掉鍛造台「精煉成本」的減免（最低為 1）。
    精煉強化倍率 ＝ 1 + 0.1 × (4^(部位精煉等級) − 1)，0 等為 ×1，乘在該裝備的全部能力上（含暴擊率，溢出照舊轉暴擊傷害）。 */
 const REFINE_COST_BASE = 4;                 // 成本底數：4^(等級+1)
-const REFINE_POWER_BASE = 2.5;               // 強化底數：1 + 0.1×4^等級
+const REFINE_POWER_BASE = 2.3;              // 強化底數：1 + 0.1×4^等級
 const REFINE_POWER_COEF = 0.1;
 const REFINE_LV_CAP = 400;                  // 防呆：避免指數溢位成 Infinity／NaN
 function refineMul(lv){ lv = Math.min(REFINE_LV_CAP, Math.max(0, Math.round(fin(lv, 0)))); return 1 + REFINE_POWER_COEF * (Math.pow(REFINE_POWER_BASE, lv) - 1); }
@@ -1307,7 +1331,7 @@ const UPGRADES = [
     perFmt:lv=>'+'+fmtNum(exOn('hp') ? EX_HP_FLAT_MULT*exTri(lv) : lv*15)+' 且 +'+(exOn('hp') ? fmtPct(lv*EX_HP_PCT_PER_LV*100,2) : fmtPct(lv*HP_PCT_PER_LV*100,1))+'%',
     bodyFmt:v=>fmtNum(Math.round(v)) },
   { key:'spd',  icon:'💨', name:'攻擊速度', base:90,  grow:1.31, per:0.09, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
-    body:lv=>Math.max(0.4, 0.3 + lv*0.09), full:lv=>Math.max(0.4, 0.3 + lv*(exOn('spd') ? EX_SPD_PER_LV : 0.09)),
+    body:lv=>Math.max(0.4, 0.3 + lv*0.09), full:lv=>Math.min(SPD_CAP, Math.max(0.4, 0.3 + lv*(exOn('spd') ? EX_SPD_PER_LV : 0.09))),
     perFmt:lv=>(exOn('spd') ? '且輸出+'+(lv*EX_OUTPUT_PCT_PER_LV*100).toFixed(1)+'%' : ''),
     bodyFmt:v=>v.toFixed(2)+' 發/秒' },
   { key:'crit', icon:'✨', name:'暴擊率',  base:100, grow:1.2, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
@@ -1410,7 +1434,7 @@ const UPGRADES = [
     bodyFmt:v=>'遠距距離 -'+v.toFixed(0) },
   // 緩速：通關第 95 關後解鎖（放在「遠距範圍減少」下方，未解鎖以「？」顯示）。
   // 每級讓移動速度加成-1，最多扣到加成歸零。
-  { key:'slow', icon:'🐌', name:'緩速', base:2000, grow:1.49, exGrow:1.47, per:1, fmt:v=>'-'+v.toFixed(0),
+  { key:'slow', icon:'🐌', name:'緩速', base:2000, grow:1.51, exGrow:1.49, per:1, fmt:v=>'-'+v.toFixed(0),
     requiresLevel:95,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 95 關時解鎖。`,
     maxFn: ()=> slowMaxLevel(),
@@ -2249,7 +2273,7 @@ function stats(){
   return {
     atk:     Math.round(fin(get('atk'), 25) * exOutputMul() * relicAtkMul()), // 攻擊速度 EX 的「總輸出」加成與神器（靈魂迴響／烈陽之心）乘在最終攻擊上
     maxHp:   Math.round(fin(get('hp'), 100) * relicHpMul()), // 神器：極光法陣守護
-    spd:     fin(get('spd'), 0.4),
+    spd:     Math.min(SPD_CAP, fin(get('spd'), 0.4)),
     crit:    fin(Math.min(critCap(), rawCrit), 5),
     critDmg: fin(get('critdmg') + critOverflow, 200),
   };
@@ -2852,14 +2876,14 @@ function lobPos(l){
 /* ══════════════════════════════════════════
    冰椎術 EX：冰刃 ＋ 冰痕
    ══════════════════════════════════════════ */
-function spawnIceBlade(){
+function spawnIceBlade(angIn){
   const s = stats();
   const y0 = heroCY();
   // 冰刃沿「面向」直線前進（舊版固定往上 ＝ 角度 -90°）；沿軸距離 a、橫向偏移 perp
-  const ang = farMode ? run.heroAng : -Math.PI/2;
+  const ang = angIn != null ? angIn : (farMode ? run.heroAng : -Math.PI/2);
   const len = farMode ? Math.hypot(W, H) + 80 : y0 + 40;
   const shards = [];
-  for(let i=0;i<46;i++) shards.push({ x:(Math.random()-.5)*(ICE_EX_WIDTH-12), a:Math.random()*len, h:20+Math.random()*30, w:6+Math.random()*7, tilt:(Math.random()-.5)*.6, p:Math.random() });
+  for(let i=0;i<46;i++) shards.push({ x:(Math.random()-.5)*(iceExWidth()-12), a:Math.random()*len, h:20+Math.random()*30, w:6+Math.random()*7, tilt:(Math.random()-.5)*.6, p:Math.random() });
   run.iceBlades.push({
     x: run.heroX, y: y0, ox: run.heroX, oy: y0,
     ang, dx: farMode ? Math.cos(ang) : 0, dy: farMode ? Math.sin(ang) : -1, len,
@@ -2876,7 +2900,7 @@ function updateIceEx(dt, s){
     const b = run.iceBlades[i];
     b.t += dt;
     b.x = b.ox + b.dx * b.spd * b.t; b.y = b.oy + b.dy * b.spd * b.t;
-    const half = ICE_EX_WIDTH/2;
+    const half = iceExWidth()/2;
     for(const e of run.enemies){
       if(e.hp <= 0) continue;
       const rx = e.x - b.ox, ry = e.y - b.oy;
@@ -2917,14 +2941,14 @@ function iceRow(b, a){ // 沿軸距離 a 處的冰痕狀態；冰刃還沒經過
   return { age, fade, pop:Math.min(1, age/.12), tk:((age%ICE_EX_TICK) < .07 && age > .02) ? 1 : 0 };
 }
 function drawIceTrailEx(){
-  const hw = ICE_EX_WIDTH/2;
+  const hw = iceExWidth()/2;
   run.iceBlades.forEach(b=>{
     ctx.save();
     ctx.translate(b.ox, b.oy); ctx.rotate(b.ang);   // 區域座標：+x ＝ 冰刃前進方向，+y ＝ 橫向（舊版往上時 +y ＝ 世界 +x）
     for(let a=0; a<b.len+6; a+=6){
       const r = iceRow(b, a); if(!r) continue;
       ctx.fillStyle = `rgba(150,215,255,${(.16+.14*r.tk)*r.fade})`;
-      ctx.fillRect(a, -hw, 6, ICE_EX_WIDTH);
+      ctx.fillRect(a, -hw, 6, iceExWidth());
     }
     // 兩側霜線
     for(let a=0; a<b.len+6; a+=14){
@@ -2950,7 +2974,7 @@ function drawIceTrailEx(){
   });
 }
 function drawIceBladeEx(){
-  const hw = ICE_EX_WIDTH/2;
+  const hw = iceExWidth()/2;
   run.iceBlades.forEach(b=>{
     if(b.t*b.spd > b.len + 10) return;
     ctx.save();
@@ -3000,7 +3024,7 @@ function updateFireballEx(dt, s){
     const b = run.blasts[i];
     b.t += dt;
     if(b.t <= FIREBALL_EX_SPLASH_TIME + dt){
-      const R = (FIREBALL_EX_SPLASH_DIAMETER/2) * Math.min(1, b.t / FIREBALL_EX_SPLASH_TIME);
+      const R = (fireballSplashDiameter()/2) * Math.min(1, b.t / FIREBALL_EX_SPLASH_TIME);
       for(const e of run.enemies){
         if(e.hp <= 0 || b.hit.has(e)) continue;
         if(Math.hypot(e.x-b.x, e.y-b.y) <= R + e.r){ // 爆風擴散到碰到敵人身體的瞬間，各判定一次
@@ -3015,7 +3039,7 @@ function updateFireballEx(dt, s){
   }
 }
 function drawFireballEx(){
-  const SR = FIREBALL_EX_SPLASH_DIAMETER/2;
+  const SR = fireballSplashDiameter()/2;
   // 爆風
   run.blasts.forEach(b=>{
     const grow = Math.min(1, b.t / FIREBALL_EX_SPLASH_TIME);
@@ -3035,11 +3059,8 @@ function drawFireballEx(){
   run.lobs.forEach(l=>{
     const p = lobPos(l);
     const lift = l.h > 0 ? p.z / l.h : 0;           // 0（地面）～1（最高點）
-    // 落點圈（地面）：顯示爆炸範圍
+    // （已移除落點虛線圈，避免與遠距敵人的橘框混淆）
     ctx.save();
-    ctx.setLineDash([6,5]); ctx.strokeStyle = 'rgba(255,170,80,.4)'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(l.ex, l.ey, SR, 0, Math.PI*2); ctx.stroke();
-    ctx.setLineDash([]);
     // 影子：在地面座標上，越高越小越淡
     ctx.globalAlpha = 0.35 - lift*0.18;
     ctx.fillStyle = '#000';
@@ -3108,23 +3129,28 @@ function queueIceSpikes(){
   if(farMode && !anyFarTarget()) return; // 遠景模式：沒有怪物進入攻擊距離就不發射
   const n = icespikeBullets();
   if(skillExOn('icespike')){ // EX：有目標才發射 1 道冰刃，彈道數加成無效
-    if(n > 0 && run.enemies.some(e=>e.y > -10)) spawnIceBlade();
+    if(n > 0 && run.enemies.some(e=>e.y > -10)){
+      if(farMode) iceAngles(run.heroAng).forEach(a=>spawnIceBlade(a)); // 冰霜新星：多道軌道平均分散在圓周
+      else spawnIceBlade();
+    }
     return;
   }
   for(let i=0;i<n;i++) run.iceQueue.push(i * 0.05);// 一次觸發會排出 n 枚的佇列，每枚間隔 0.05 秒才真正生成
 }
 function spawnIceSpike(){
   const s = stats();
-  const ia = farMode ? run.heroAng : -Math.PI/2; // 遠景模式：朝主角目前面向發射
-  run.shots.push({
-    kind:'ice',
-    x: run.heroX, y: heroCY(),// 發射點改成跟主角實際站位同高，確保打到貼臉敵人
-    vx: farMode ? Math.cos(ia) * SHOT_SPEED_BASE * hScale : 0, vy: farMode ? Math.sin(ia) * SHOT_SPEED_BASE * hScale : -SHOT_SPEED_BASE * hScale,
-    dmg: icespikeAtk(s),
-    crit: Math.random()*100 < s.crit,
-    r: 7,
-    target: null,
-    age: 0,
+  const angles = farMode ? iceAngles(run.heroAng) : [-Math.PI/2]; // 遠景模式：朝主角目前面向發射（冰霜新星：多道軌道）
+  angles.forEach(ia=>{
+    run.shots.push({
+      kind:'ice',
+      x: run.heroX, y: heroCY(),// 發射點改成跟主角實際站位同高，確保打到貼臉敵人
+      vx: farMode ? Math.cos(ia) * SHOT_SPEED_BASE * hScale : 0, vy: farMode ? Math.sin(ia) * SHOT_SPEED_BASE * hScale : -SHOT_SPEED_BASE * hScale,
+      dmg: icespikeAtk(s),
+      crit: Math.random()*100 < s.crit,
+      r: 7,
+      target: null,
+      age: 0,
+    });
   });
 }
 
@@ -3150,14 +3176,22 @@ function castLightningEx(){
     if(pr < bp || (pr === bp && sc > deepest)){ target = e; bp = pr; deepest = sc; }
   }
   if(!target) return;
-  run.exBolts.push({ e:target, x:target.x, y:target.y, r:target.r, hits:Math.min(LIGHTNING_EX_MAX_HITS, n+1), t:0, struck:false, flick:0 });
+  const hitsN = Math.min(LIGHTNING_EX_MAX_HITS, n+1);
+  run.exBolts.push({ e:target, x:target.x, y:target.y, r:target.r, hits:hitsN, t:0, struck:false, flick:0 });
+  // 閃雷之槍：額外 1 道小落雷，隨機打任一位可攻擊的敵人，傷害 ＝ 大落雷 × 神器等級 × 1%
+  const sp = relicLv('spear');
+  if(sp > 0){
+    const pool = run.enemies.filter(e=>(farMode ? farTargetable(e) : (e.hp > 0 && e.y > 8)));
+    const t2 = pool.length ? pool[Math.floor(Math.random()*pool.length)] : target; // 小落雷：從所有可攻擊敵人中隨機（大落雷仍依優先順序）
+    run.exBolts.push({ e:t2, x:t2.x, y:t2.y, r:t2.r, hits:hitsN, t:0, struck:false, flick:0, small:true, mult:sp*0.01 });
+  }
 }
 function lightningExStrike(b){
   b.struck = true;
   const e = b.e, s = stats();
   const alive = e.hp > 0 && run.enemies.includes(e);
   if(alive){ b.x = e.x; b.y = e.y; b.r = e.r; }
-  const base = lightningAtk(s) * LIGHTNING_EX_DMG_MULT;
+  const base = lightningAtk(s) * LIGHTNING_EX_DMG_MULT * (b.small ? b.mult : 1);
   let anyCrit = false;
   for(let i=0;i<b.hits;i++){
     const crit = Math.random()*100 < s.crit;
@@ -4606,16 +4640,16 @@ function draw(){
       ctx.restore();
     }
     if(e.ranged){
-      // 遠距敵人：橘色虛線光環
+      // 遠距敵人：橘色實線框
       ctx.save();
-      ctx.strokeStyle = 'rgba(255,150,70,.85)'; ctx.lineWidth = 2; ctx.setLineDash([4,3]);
+      ctx.strokeStyle = '#ff9a3c'; ctx.lineWidth = 2.5;
       ctx.beginPath(); ctx.arc(e.x, e.y, e.vr+3, 0, Math.PI*2); ctx.stroke();
       ctx.restore();
     }
     if(e.steel){
-      // 鋼鐵敵人：外圈一道金屬色光環
+      // 鋼鐵敵人：灰色實線框
       ctx.save();
-      ctx.strokeStyle = 'rgba(190,200,215,.9)'; ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#9aa3b0'; ctx.lineWidth = 2.5;
       ctx.beginPath(); ctx.arc(e.x, e.y, e.vr+2, 0, Math.PI*2); ctx.stroke();
       ctx.restore();
     }
@@ -5142,13 +5176,13 @@ function renderSkills(){
         ? `掃動角度 ${beamExSweepDeg()}°（${beamExSweepTime().toFixed(2)} 秒）　${BEAM_EX_HITS} 下，每下 ${fmtNum(Math.round(pct*BEAM_EX_DMG_MULT))}% 攻擊　光束寬度 ${beamWidth()}px　攻速 ×${BEAM_EX_SPD_MULT}`
         : `光束寬度 ${beamWidth()}px　傷害 ${pct.toFixed(0)}% 攻擊`;
     } else if(key === 'icespike' && skillExOn('icespike')){
-      statusText = `冰刃傷害 ${fmtNum(Math.round(pct*ICE_EX_DMG_MULT))}% 攻擊　冰痕每下 ${pct.toFixed(1)}%×4　寬度 ${ICE_EX_WIDTH}　攻速 ×${ICE_EX_SPD_MULT}`;
+      statusText = `冰刃傷害 ${fmtNum(Math.round(pct*ICE_EX_DMG_MULT))}% 攻擊　冰痕每下 ${pct.toFixed(1)}%×4　寬度 ${iceExWidth()}　攻速 ×${ICE_EX_SPD_MULT}`;
     } else if(key === 'lightning' && skillExOn('lightning')){
       statusText = `攻擊次數 ${Math.min(LIGHTNING_EX_MAX_HITS, stacks+1)}（連鎖數+1）　每下 ${fmtNum(Math.round(pct*LIGHTNING_EX_DMG_MULT))}% 攻擊　攻速 ×${LIGHTNING_EX_SPD_MULT}`;
     } else if(key === 'whirlwind' && skillExOn('whirlwind')){
       statusText = `大旋風 1 道　每次 ${WHIRLWIND_EX_HITS} 下　每下 ${fmtNum(Math.round(pct*WHIRLWIND_EX_DMG_MULT))}% 攻擊　攻速 ×${WHIRLWIND_EX_SPD_MULT}`;
     } else if(key === 'fireball' && skillExOn('fireball')){
-      statusText = `大火球傷害 ${fmtNum(Math.round(pct*FIREBALL_EX_DMG_MULT))}% 攻擊　擴散 ${FIREBALL_EX_SPLASH_PCT*100}%（直徑 ${FIREBALL_EX_SPLASH_DIAMETER}）　攻速 ×${FIREBALL_EX_SPD_MULT}`;
+      statusText = `大火球傷害 ${fmtNum(Math.round(pct*FIREBALL_EX_DMG_MULT))}% 攻擊　擴散 ${FIREBALL_EX_SPLASH_PCT*100}%（直徑 ${fireballSplashDiameter()}）　攻速 ×${FIREBALL_EX_SPD_MULT}`;
     } else {
       statusText = `${def.stackLabel} ${stacks}　傷害 ${pct.toFixed(1)}% 攻擊`;
     }
@@ -5185,13 +5219,16 @@ function renderRelics(){
   if(!box) return;
   const sum = document.getElementById('relicSummary');
   if(sum) sum.innerHTML = `神器總等級 <b style="color:var(--bone)">${relicTotalLevel()}</b>／${RELICS.reduce((t,r)=>t+r.max,0)}　技能總等級 <b style="color:var(--bone)">${skillTotalLevel()}</b>`;
-  box.innerHTML = RELICS.map(r=>{
+  // 未抽到的神器隱藏；已抽到的依預設順序（RELICS 順序）排列，而非抽到順序
+  const owned = RELICS.filter(r=>relicLv(r.key) > 0);
+  if(!owned.length){ box.innerHTML = '<div class="val" style="color:var(--bone-dim)">尚未獲得任何神器，裝備齊全後從「召喚」抽取。</div>'; return; }
+  box.innerHTML = owned.map(r=>{
     const lv = relicLv(r.key);
     return `<div class="up">
       <div class="ico">${r.icon}</div>
       <div class="info">
         <div class="nm">${r.name}　<span style="color:var(--bone-dim);font-size:12px">${lv>0?`Lv.${lv}／${r.max}${lv>=r.max?' 已滿':''}`:'尚未獲得'}</span></div>
-        <div class="val">${lv>0 ? r.eff(lv) : '尚未獲得，從「召喚」抽取'}</div>
+        <div class="val">${r.eff(lv)}</div>
         <div class="val" style="color:var(--bone-dim);font-size:11px;margin-top:2px">${r.desc}</div>
       </div>
     </div>`;
