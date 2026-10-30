@@ -202,12 +202,13 @@ body{
 
 /* ── 角色造型（裝備頁上方） ─────────────────── */
 /* 神器頁的小喇叭 */
-.relic-spk{
-  display:inline-block;margin:0 6px;padding:1px 7px;vertical-align:middle;
-  background:rgba(255,255,255,.08);border:1px solid var(--stoneline);border-radius:10px;
-  color:var(--bone);font-size:11px;line-height:1.4;cursor:pointer;font-family:inherit;
+.up button.relic-spk{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:0;width:18px;height:12px;margin:0 4px;padding:0;vertical-align:middle;
+  background:rgba(255,255,255,.07);border:0;border-radius:4px;box-shadow:none;
+  color:var(--bone-dim);font-size:8px;line-height:1;opacity:.75;cursor:pointer;font-family:inherit;
 }
-.relic-spk:active{background:rgba(255,255,255,.18)}
+.up button.relic-spk:active{transform:none;box-shadow:none;background:rgba(255,255,255,.16);opacity:1}
 #heroSkinGrid{display:flex;gap:9px;margin-top:6px}
 .heroCard{
   flex:1;position:relative;border-radius:13px;border:1px solid var(--stoneline);
@@ -749,7 +750,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 155;        // 所有怪物出完的時間點（2:35），清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 270;           // 共 270 關
+const LEVEL_COUNT = 300;           // 共 300 關
 const LEVEL_HP_GROWTH = 1.286;                                  // 血量成長係數
 const LEVEL_ATK_GROWTH = 1.21;                                  // 攻擊成長係數
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內血量差距3倍
@@ -1052,26 +1053,26 @@ function whirlwindRadius(){ return WHIRLWIND_RADIUS + relicLv('cyclone') * 5; } 
 function whirlwindExRadius(){ return WHIRLWIND_EX_RADIUS + relicLv('cyclone') * 5; }
 function whirlwindTopRadius(){ return WHIRLWIND_VISUAL_TOP_RADIUS + relicLv('cyclone') * 5; } // 純視覺：頂端同步放大
 function whirlwindExTopRadius(){ return WHIRLWIND_EX_VISUAL_TOP_RADIUS + relicLv('cyclone') * 5; }
-const WHIRLWIND_UNLOCK_LEVEL = 20;// 旋風術解鎖條件：過關進度超過第 20 關時自動習得 1 等
-const WHIRLWIND_RADIUS = 45;//旋風術半徑（實際傷害範圍，只有這個圓）
+const WHIRLWIND_UNLOCK_LEVEL = 20;       // 旋風術解鎖條件：過關進度超過第 20 關時自動習得 1 等
+const WHIRLWIND_RADIUS = 45;             //旋風術半徑（實際傷害範圍，只有這個圓）
 const WHIRLWIND_VISUAL_HEIGHT = 150;     // 純視覺：龍捲風從圓心向上延伸的高度
 const WHIRLWIND_VISUAL_TOP_RADIUS = 70;  // 純視覺：龍捲風頂端的旋轉半徑
 const WHIRLWIND_DUST_COUNT = 90;         // 純視覺：沙塵粒子數量
 function twRnd(i){ const x = Math.sin(i*127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
-const WHIRLWIND_TICK = 0.5;//旋風術傷害CD
-const WHIRLWIND_LIFE = 3.5;//旋風術持續時間
-const WHIRLWIND_SPEED_MULT = 0.2;//旋風術移動速度
+const WHIRLWIND_TICK = 0.5;              //旋風術傷害CD
+const WHIRLWIND_LIFE = 3.5;              //旋風術持續時間
+const WHIRLWIND_SPEED_MULT = 0.15;       //旋風術移動速度
 /* ── 旋風術 EX：通關第 90 關後開放，花 2000 💎 解鎖 ── */
 const WHIRLWIND_EX_UNLOCK_LEVEL = 90;     // 過關進度需超過此關卡數才開放（跟閃電術 EX 一樣）
 const WHIRLWIND_EX_SPD_MULT = 0.3;        // 施放頻率 ＝ 角色攻速 × 0.3（原本 ×0.1）；每次施放造成 WHIRLWIND_EX_HITS 下傷害
 const WHIRLWIND_EX_HITS = 5;              // 每次施放的傷害次數（每下分開計算暴擊）
 const WHIRLWIND_EX_DMG_MULT = 1.2;        // 每一下傷害 ＝ 原本單下 × 1.2
-const WHIRLWIND_EX_MOVE_MULT = 0.2125;    // 移動速度（原本 0.2，之後 0.25，再減少約 15% ＝ 0.2125）
-const WHIRLWIND_WANDER_MULT = 0.4;        // 沒有敵人時的隨機漫步速度（追敵速度的 40%，緩慢移動）
+const WHIRLWIND_EX_MOVE_MULT = 0.18;      // 移動速度（原本 0.15）
+const WHIRLWIND_WANDER_MULT = 0.7;        // 沒有敵人時的隨機漫步速度（追敵速度的 70%）
 const WHIRLWIND_EX_RADIUS = 60;           // 傷害半徑（原本 45）
 const WHIRLWIND_EX_VISUAL_HEIGHT = 200;   // 純視覺：從底圈往上延伸的高度（原本 150）
 const WHIRLWIND_EX_VISUAL_TOP_RADIUS = 90;// 純視覺：頂端圓半徑；底部是完整的傷害圈（半徑 60）→ 圓錐台
-const WHIRLWIND_EX_LEAF_COUNT = 53;   // 純視覺：葉片數量（原 46 ×1.15）
+const WHIRLWIND_EX_LEAF_COUNT = 70;       // 純視覺：葉片數量
 function whirlwindSpdMult(){ return skillExOn('whirlwind') ? WHIRLWIND_EX_SPD_MULT : SKILL_SPD_MULT.whirlwind; }
 // 若 unlockedLevel 已超過門檻但尚未自動給過 1 等，補發（新關卡解鎖、讀檔等情境都會呼叫到這裡）
 function checkWhirlwindUnlock(){
@@ -1321,7 +1322,7 @@ const EX_CRITDMG_TOTAL_PCT_PER_LV = 0.01;   // 暴擊傷害 EX：總量每級額
 const EX_GOLD_PCT_PER_LV = 6;               // 金幣強化 EX：每級 +6%（原版 5%）
 const EX_GEM_PER_LV = 1.2;                  // 鑽石強化 EX：每級 +1.2 顆，總量無條件捨去（原版 1）
 const EX_REFINE_REDUCE_PCT_PER_LV = 0.01;   // 精煉成本 EX：每級 -0.01% 精煉成本（原版每級 -3 強化石）
-const EX_MONSTER_WEAKEN_MULT_PER_LV = 0.985;// 怪物弱化 EX：每級怪物生命 ×0.987（原版 0.99）
+const EX_MONSTER_WEAKEN_MULT_PER_LV = 0.985;// 怪物弱化 EX：每級怪物生命 ×0.985（原版 0.99）
 const GUARDIAN_RADIUS_MIN_EX = 40;          // 守護半徑 EX：半徑下限由 80 降到 40
 const GUARDIAN_REDUCE_MIN_EX = 15;          // 守護能力 EX：守護減傷下限由 30% 降到 15%
 function exUnlocked(){ return state.unlockedLevel > EX_UNLOCK_LEVEL; }
@@ -1334,7 +1335,7 @@ function goldBoostPct(){ return fin(state.up.goldboost, 0) * (exOn('goldboost') 
 function gemBoostAmount(){ const lv = fin(state.up.gemboost, 0); return exOn('gemboost') ? exFloor(lv*EX_GEM_PER_LV) : lv; }
 function monsterWeakenMul(){ return Math.pow(exOn('monweaken') ? EX_MONSTER_WEAKEN_MULT_PER_LV : MONSTER_WEAKEN_MULT_PER_LV, fin(state.up.monweaken, 0) + relicLv('wrath')); }
 function exOutputMul(){ return exOn('spd') ? 1 + fin(state.up.spd, 0)*EX_OUTPUT_PCT_PER_LV : 1; }
-/* ── 魔法護盾：通關第 100 關後解鎖。護盾值 ＝ 主角最大生命 ×（1.012^等級 − 1）；EX：成長 −0.03、公式改 1.024^等級 − 1 ── */
+/* ── 魔法護盾：通關第 100 關後解鎖。護盾值 ＝ 主角最大生命 ×（1.013^等級 − 1）；EX：成長 −0.03、公式改 1.026^等級 − 1 ── */
 const SHIELD_BASE = 1.013, SHIELD_BASE_EX = 1.026;
 function shieldRatio(lv){ return Math.pow(exOn('shield') ? SHIELD_BASE_EX : SHIELD_BASE, lv) - 1; }
 /* ── 護盾回復：通關第 105 關後解鎖（金幣）。
