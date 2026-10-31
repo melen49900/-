@@ -471,6 +471,17 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 .tab .dot.on{display:block}
 #tabGacha.pulse i{animation:tabBounce 1s ease-in-out infinite}
 @keyframes tabBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.ach-h{margin:14px 0 6px;font-size:13px;font-weight:900;color:var(--gold)}
+.ach-row{display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:7px;border:1px solid var(--stoneline);border-radius:12px;background:rgba(255,255,255,.03)}
+.ach-row.ready{border-color:var(--ember-hot);box-shadow:0 0 10px rgba(255,140,60,.25)}
+.ach-row.got{opacity:.5}
+.ach-row .ico{font-size:24px;width:34px;text-align:center}
+.ach-row .mid{flex:1;min-width:0}
+.ach-row .nm{font-size:13px;font-weight:900}
+.ach-row .ds{font-size:11px;color:var(--bone-dim);margin-top:2px}
+.ach-row .bar{height:5px;border-radius:9px;background:rgba(255,255,255,.1);margin-top:6px;overflow:hidden}
+.ach-row .bar b{display:block;height:100%;background:linear-gradient(90deg,var(--ember),var(--gold))}
+.ach-row .btn{width:auto;padding:8px 12px;font-size:12px;white-space:nowrap}
 .free-card{
   border-color:var(--ember-hot);text-align:center;
   background:linear-gradient(180deg,rgba(255,208,70,.14),rgba(255,106,31,.08));
@@ -675,6 +686,17 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
       </div>
     </section>
 
+    <!-- 成就 -->
+    <section class="screen" id="screen-ach">
+      <div class="pad">
+        <h2 class="sec">成就</h2>
+        <p class="sub">完成成就後點「領取」即可獲得鑽石，每領取 1 項成就獲得 1 點成就點數。</p>
+        <div class="card" id="achSummary"></div>
+        <button class="btn ghost sm" id="achClaimAll" style="margin-bottom:11px">🎁 一鍵領取全部</button>
+        <div id="achList"></div>
+      </div>
+    </section>
+
     <!-- 技能 -->
     <section class="screen" id="screen-skills">
       <div class="pad">
@@ -693,6 +715,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
     <button class="tab" data-s="upgrade"><i>🔨</i>鍛造</button>
     <button class="tab" data-s="equip"><i>🎒</i>裝備</button>
     <button class="tab" data-s="relic" id="tabRelic" style="display:none"><i>🏺</i>神器<span class="dot" id="dotRelic"></span></button>
+    <button class="tab" data-s="ach"><i>🏆</i>成就<span class="dot" id="dotAch"></span></button>
     <button class="tab" data-s="skills"><i>🎇</i>技能</button>
   </nav>
 
@@ -753,6 +776,13 @@ const WAVES_PER_LEVEL = 20;       // 每關 20 波
 const LEVEL_COUNT = 300;           // 共 300 關
 const LEVEL_HP_GROWTH = 1.286;                                  // 血量成長係數
 const LEVEL_ATK_GROWTH = 1.21;                                  // 攻擊成長係數
+// 第 120 關之後（第 121 關起）：每關的血量／攻擊成長係數各 +0.05（前 120 關不變）
+const GROWTH_BOOST_AFTER_LEVEL = 120, GROWTH_BOOST = 0.05;
+function levelGrowthMul(base, level){
+  const lv = Math.max(1, level);
+  const steps = lv - 1, early = Math.min(steps, GROWTH_BOOST_AFTER_LEVEL - 1), late = Math.max(0, lv - GROWTH_BOOST_AFTER_LEVEL);
+  return Math.pow(base, early) * Math.pow(base + GROWTH_BOOST, late);
+}
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內血量差距3倍
 const WAVE_SPD_GROWTH = 0.1;                                    // 關內移速差距10%
 
@@ -763,8 +793,11 @@ const WAVE_SPD_GROWTH = 0.1;                                    // 關內移速�
 const SPD_CAP = 10; // 攻擊速度上限（發/秒）
 const RELIC_UNLOCK_LEVEL = 50;
 const RELIC_SINGLE_PULL_CHANCE = 0.2;
-function relicLv(k){ return Math.max(0, Math.round(fin(state.relics && state.relics[k], 0))); }
-function relicTotalLevel(){ return RELICS.reduce((t,r)=>t+relicLv(r.key), 0); }
+// 混沌魔盒：等級＝成就點數（無上限），只有神器頁面解鎖後才會顯示與生效；它不是抽得到的神器，也不計入「其他神器」的總等級
+function chaosLv(){ return state.relicUnlocked ? Math.max(0, Math.round(fin(state.ach && state.ach.points, 0))) : 0; }
+function relicLv(k){ if(k === 'chaos') return chaosLv(); return Math.max(0, Math.round(fin(state.relics && state.relics[k], 0))); }
+function relicTotalLevel(){ return RELICS.reduce((t,r)=>t+relicLv(r.key), 0); } // 神器總等級（含混沌魔盒；烈陽之心、成就「神器等級」都用這個）
+function chaosMul(){ return 1 + chaosLv() * 0.05; }
 function skillTotalLevel(){ return Object.keys(SKILL_DEFS).reduce((t,k)=>t+Math.max(0, fin(state.skills[k] && state.skills[k].draws, 0)), 0); }
 const RELICS = [
   { key:'blood',   icon:'🩸', name:'嗜血匕首',       max:10,
@@ -815,6 +848,9 @@ const RELICS = [
   { key:'dawn',    icon:'🌅', name:'晨曦聖光',       max:100,
     desc:'光束砲額外增加傷害：神器等級 × 1%；增加光束砲 EX 持續時間：神器等級 × 0.01 秒，掃動角度同步增加（神器等級 × 1 度）',
     eff:lv=>`光束傷害 +${lv}%　EX 持續時間 +${(lv*0.01).toFixed(2)} 秒　掃動角度 +${lv}°` },
+  { key:'chaos',   icon:'🎁', name:'混沌魔盒',       max:Infinity, chaos:true,
+    desc:'生命值及攻擊力皆額外增加：神器等級 × 5%',
+    eff:lv=>`最大生命 ×${fmtX(1+lv*0.05)} 及攻擊力 ×${fmtX(1+lv*0.05)}` },
 ];
 function relicCycloneMul(){ return 1 + relicLv('cyclone') * 0.01; }   // 颶風之核：旋風術傷害
 function relicEarthMul(){ return 1 + relicLv('earth') * 0.01; }        // 大地之脈：土牆生命與回復
@@ -837,8 +873,8 @@ function iceAngles(base){
 // 神器效果（供各處呼叫）
 function critCap(){ return CRIT_CAP + relicLv('blood'); }
 function equipTotalLevel(){ return activeSlots().reduce((t,s)=>t+getRefine(s), 0); } // 裝備總等級＝各部位精煉等級總和
-function relicHpMul(){ return (1 + fin(state.up.hp,0) * relicLv('aurora') * 0.001) * (1 + equipTotalLevel() * relicLv('dragon') * 0.004); } // 極光法陣守護 × 龍骨重鎧：連乘
-function relicAtkMul(){ return (1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001); } // 靈魂迴響 × 烈陽之心：連乘
+function relicHpMul(){ return chaosMul() * (1 + fin(state.up.hp,0) * relicLv('aurora') * 0.001) * (1 + equipTotalLevel() * relicLv('dragon') * 0.004); } // 極光法陣守護 × 龍骨重鎧：連乘
+function relicAtkMul(){ return chaosMul() * (1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001); } // 靈魂迴響 × 烈陽之心：連乘
 function relicGoldExtraPct(){ return fin(state.up.goldboost,0) * relicLv('gold') * 0.1; }
 function relicStoneMul(){ return 1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001; }
 function streakAfterBreak(){
@@ -846,7 +882,7 @@ function streakAfterBreak(){
   if(lv <= 0) return 0;
   return Math.min(state.qs.streak, Math.ceil(state.qs.streak * lv * 0.01 - 1e-9));
 }
-function relicAvailableList(){ return RELICS.filter(r=>relicLv(r.key) < r.max); }
+function relicAvailableList(){ return RELICS.filter(r=>!r.chaos && relicLv(r.key) < r.max); }
 function relicPullActive(){ return !!state.relicUnlocked && gearCollectionComplete() && relicAvailableList().length > 0; }
 function relicPullOnce(){
   const pool = relicAvailableList();
@@ -1564,6 +1600,10 @@ function freshState(){
     relics:{},                                // 神器等級 { [key]: 等級 }
     relicUnlocked:false,                      // 神器頁面是否已解鎖（解鎖後永久顯示）
     relicSeen:false,                          // 玩家是否已點開過神器頁面（用來控制紅點）
+    totalKills:0,                             // 成就用：累計擊殺數（分裂出來的小怪也算）
+    pull10Count:0,                            // 成就用：累計十連抽次數
+    loginDays:0, lastLoginDate:'',            // 成就用：累計登入天數（非連續）與上次登入日期（本地日期 YYYY-MM-DD）
+    ach:{ claimed:{}, done:{}, rep:{}, points:0 }, // 成就：已領取的一次性成就、金錢成就的達成記錄、可重複成就已領取次數、成就點數
   };
 }
 
@@ -1628,7 +1668,7 @@ function sanitizeState(){
   }
   if(!Array.isArray(state.upgradeUnlockedSeen)) state.upgradeUnlockedSeen = [];
   if(!state.relics || typeof state.relics !== 'object') state.relics = {};
-  RELICS.forEach(r=>{ state.relics[r.key] = Math.min(r.max, relicLv(r.key)); });
+  RELICS.forEach(r=>{ if(r.chaos){ delete state.relics[r.key]; return; } state.relics[r.key] = Math.min(r.max, relicLv(r.key)); });
 }
 function save(){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
@@ -1661,6 +1701,12 @@ function load(){
     };
     state.levelRecords = Object.assign({}, d.levelRecords||{});
     state.relics = Object.assign({}, d.relics||{});
+    { const a = d.ach || {};
+      state.ach = { claimed:Object.assign({}, a.claimed||{}), done:Object.assign({}, a.done||{}), rep:Object.assign({}, a.rep||{}), points:Math.max(0, Math.round(fin(a.points, 0))) }; }
+    state.totalKills  = Math.max(0, Math.round(fin(d.totalKills, 0)));
+    state.pull10Count = Math.max(0, Math.round(fin(d.pull10Count, 0)));
+    state.loginDays   = Math.max(0, Math.round(fin(d.loginDays, 0)));
+    state.lastLoginDate = typeof d.lastLoginDate === 'string' ? d.lastLoginDate : '';
     state.unlockedLevel = Math.max(1, Math.min(LEVEL_COUNT, d.unlockedLevel || 1));
     // 關卡數擴充後的搬家：舊存檔若已通關當時的最後一關（進度卡在最後一關且已過關），自動開放下一關
     {
@@ -2419,6 +2465,42 @@ const STEEL_UNLOCK_LEVEL = 75;//通關第 75 關後才會出現
 const EX_STEEL_PER_LV = 1.5;   // 鋼鐵殺手 EX：每級 -1.5 生命，總量四捨五入（原版 1）
 function steelReduceTotal(){ const lv = fin(state.up.steelkiller, 0); return exOn('steelkiller') ? Math.round(lv*EX_STEEL_PER_LV) : lv; }
 const STEEL_DEF = { emoji:'🤖', hp:0, spd:1.0, r:21, gold:1.8, steel:true, rate:3 };      // 鋼鐵敵人出場率 3%
+// 分裂敵人：通關第 130 關後（第 131 關起）出現。被擊殺後立刻原地分裂成 2 隻小型怪，小型怪被擊殺後可再分裂一次（1+2+4 共 7 隻）。
+// 分裂出來的怪不占用該波出場數（不動 run.spawned），但過關仍須全部清空。圖片與本體相同，外圍一圈黃色虛線。
+const SPLIT_UNLOCK_LEVEL = 130;
+const SPLIT_STAGES = [
+  { hp:1.0, spd:1.5, r:18, gold:0.8 },   // 原始
+  { hp:0.8, spd:1.6, r:12, gold:0.4 },   // 第一次分裂
+  { hp:0.6, spd:1.7, r:7,  gold:0.2 },   // 第二次分裂（不再分裂）
+];
+const SPLIT_DEF = { emoji:'🦠', hp:SPLIT_STAGES[0].hp, spd:SPLIT_STAGES[0].spd, r:SPLIT_STAGES[0].r, gold:SPLIT_STAGES[0].gold, split:true, rate:2 }; // 出場率 2%
+// 被擊殺的分裂敵人原地生出 2 隻下一階段的小怪（圖片沿用同一張）
+function spawnSplitChildren(p){
+  const st = SPLIT_STAGES[p.splitStage + 1];
+  if(!st) return;
+  const sizeMul = farMode ? FAR_MONSTER_SIZE_MUL : 1;
+  const w = p.wv;
+  const hp = enemyHpFor(run.level, w) * st.hp * monsterWeakenMul();
+  const spd = ((17 * st.spd) + slowedSpeedBonus(run.level)) * waveSpeedMulFor(w) * enemySpeedScale();
+  for(let k=0;k<2;k++){
+    const dir = k === 0 ? -1 : 1;
+    const r = st.r * sizeMul;
+    let nx = p.x + dir * (st.r + 4) * sizeMul * 0.6;
+    if(!farMode) nx = Math.max(r, Math.min(W - r, nx));
+    run.enemies.push({
+      x: nx, y: p.y,
+      vx: farMode ? 0 : dir * (6 + Math.random()*6),
+      hp, maxHp:hp, spd,
+      r, vr: r * (farMode ? FAR_MONSTER_VISUAL_MUL : 1),
+      emoji: p.emoji, img: p.img,
+      guardian:false, steel:false, ranged:false,
+      split:true, splitStage:p.splitStage + 1, wv:w,
+      atkCount:0, atkTimer:0, range:0, shootTimer:0.6,
+      gold: st.gold * (1 + w*0.35),
+      boss:false, dps:p.dps, hit:0, slowStacks:[],
+    });
+  }
+}
 // ── 第 66 關起：敵人基礎移動速度強化（每關比上一關 +1）──
 const SPEED_BOOST_AFTER_LEVEL = 65;
 function levelSpeedBonus(level){ return Math.max(0, level - SPEED_BOOST_AFTER_LEVEL); }
@@ -2517,7 +2599,7 @@ function waveQuotaFor(w){
 }
 // 怪物血量 = 關卡基礎值（每關 × 係數）× 關內波數成長（20 波內只差 3 倍）
 function enemyHpFor(level, w){
-  return 17 * Math.pow(LEVEL_HP_GROWTH, level-1) * Math.pow(WAVE_HP_GROWTH, w-1);
+  return 17 * levelGrowthMul(LEVEL_HP_GROWTH, level) * Math.pow(WAVE_HP_GROWTH, w-1);
 }
 // 移速倍率：關內 20 波線性提升到約 1.1 倍
 function waveSpeedMulFor(w){
@@ -2612,7 +2694,7 @@ function openLevelConfirm(level){
   openStage();
   resizeCanvas();
 
-  const hpMul = Math.pow(LEVEL_HP_GROWTH, level-1);
+  const hpMul = levelGrowthMul(LEVEL_HP_GROWTH, level);
   document.getElementById('ovTitle').textContent = `第 ${level} 關`;
   document.getElementById('ovSub').innerHTML =
     `本關共 ${WAVES_PER_LEVEL} 波，怪物基礎血量約為第 1 關的 ${fmtMul(hpMul)} 倍。<br>` +
@@ -2835,13 +2917,14 @@ function spawnEnemy(){
     if(run.level > GUARDIAN_UNLOCK_LEVEL) monsterPool = monsterPool.concat([GUARDIAN_DEF]);
     if(run.level > STEEL_UNLOCK_LEVEL)    monsterPool = monsterPool.concat([STEEL_DEF]);
     if(run.level > RANGED_UNLOCK_LEVEL)   monsterPool = monsterPool.concat([RANGED_DEF]);
+    if(run.level > SPLIT_UNLOCK_LEVEL)    monsterPool = monsterPool.concat([SPLIT_DEF]);
   }
   const base = pickMonsterBase(monsterPool);
   const bossRanged = isBoss && run.level > RANGED_BOSS_UNLOCK_LEVEL && Math.random() < RANGED_BOSS_CHANCE;
   // 鍛造台「怪物弱化」：怪物生命每級 ×MONSTER_WEAKEN_MULT_PER_LV（累乘）
   const weakenMul = monsterWeakenMul();
   const hp = base.steel ? steelHpFor(run.level) : enemyHpFor(run.level, w) * base.hp * (isBoss ? 14 : 1) * weakenMul;
-  const dps = (isBoss ? 13 : 4) * Math.pow(LEVEL_ATK_GROWTH, run.level-1);
+  const dps = (isBoss ? 13 : 4) * levelGrowthMul(LEVEL_ATK_GROWTH, run.level);
   const sizeMul = farMode ? FAR_MONSTER_SIZE_MUL : 1;
   let spx = 32 + Math.random()*(W-64), spy = -30, spvx = (Math.random()-0.5) * 12;
   if(farMode){
@@ -2867,6 +2950,7 @@ function spawnEnemy(){
     img: isBoss ? pickRandomImg(bossRanged && rangedBossImgs.length ? rangedBossImgs : bossImgs) : (base.guardian ? (guardianImgReady ? guardianImg : null) : pickRandomImg(monsterImgs)),
     guardian: !!base.guardian,
     steel: !!base.steel,
+    split: !!base.split, splitStage: 0, wv: w,
     ranged: !!base.ranged || bossRanged,
     atkCount: 0, atkTimer: 0,
     range: bossRanged ? RANGED_BOSS_RANGE : 0,
@@ -3933,11 +4017,13 @@ function step(dt){
     const slowMul = Math.min(1 - Math.min(ICESPIKE_SLOW_MAX_STACKS, e.slowStacks ? e.slowStacks.length : 0) * ICESPIKE_SLOW_PCT, e.exSlow > 0 ? 1 - ICE_EX_SLOW_PCT : 1);
 
     if(e.hp <= 0){
-      run.kills++;
+      if(!e.split || e.splitStage === 0) run.kills++; // 分裂出來的小怪不計入本關擊倒數（避免過關鑽石比例灌水）
+      state.totalKills = (state.totalKills || 0) + 1;   // 成就的累計擊殺：所有怪都算（含分裂小怪）
       run.gold += fin(e.gold, 0);
-      burst(e.x, e.y, e.boss ? '#ff3b6b' : '#ffb347', e.boss ? 38 : 13);
+      burst(e.x, e.y, e.boss ? '#ff3b6b' : (e.split ? '#ffe14a' : '#ffb347'), e.boss ? 38 : 13);
       if(e.boss) run.shake = 0.35;
       run.enemies.splice(i,1);
+      if(e.split) spawnSplitChildren(e);
       continue;
     }
 
@@ -4690,6 +4776,14 @@ function draw(){
       ctx.beginPath(); ctx.arc(e.x, e.y, e.vr+3, 0, Math.PI*2); ctx.stroke();
       ctx.restore();
     }
+    if(e.split){
+      // 分裂敵人：外圍黃色虛線圈
+      ctx.save();
+      ctx.strokeStyle = '#ffd23a'; ctx.lineWidth = 2.5;
+      ctx.setLineDash([5,4]);
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.vr+3, 0, Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
     if(e.steel){
       // 鋼鐵敵人：灰色實線框
       ctx.save();
@@ -4948,6 +5042,7 @@ function doPull(n, free){
     if(state.gem < cost){ toast('鑽石不足，去答題凝聚更多'); return; }
     state.gem -= cost;
   }
+  if(n === 10) state.pull10Count = (state.pull10Count || 0) + 1; // 成就：十連抽次數（免費十連也算）
   const wasComplete = gearCollectionComplete();
   const out = [];
   if(n === 10 && relicPullActive()){
@@ -5272,7 +5367,7 @@ function renderRelics(){
   const box = document.getElementById('relicList');
   if(!box) return;
   const sum = document.getElementById('relicSummary');
-  if(sum) sum.innerHTML = `神器總等級 <b style="color:var(--bone)">${relicTotalLevel()}</b>／${RELICS.reduce((t,r)=>t+r.max,0)}　技能總等級 <b style="color:var(--bone)">${skillTotalLevel()}</b>`;
+  if(sum) sum.innerHTML = `神器總等級 <b style="color:var(--bone)">${relicTotalLevel()}</b>／${RELICS.reduce((t,r)=>t+(r.chaos ? 0 : r.max),0)+chaosLv()}　技能總等級 <b style="color:var(--bone)">${skillTotalLevel()}</b>`;
   // 未抽到的神器隱藏；已抽到的依預設順序（RELICS 順序）排列，而非抽到順序
   const owned = RELICS.filter(r=>relicLv(r.key) > 0);
   if(!owned.length){ box.innerHTML = '<div class="val" style="color:var(--bone-dim)">尚未獲得任何神器，裝備齊全後從「召喚」抽取。</div>'; return; }
@@ -5282,7 +5377,7 @@ function renderRelics(){
     return `<div class="up">
       <div class="ico">${r.icon}</div>
       <div class="info">
-        <div class="nm">${r.name}<button type="button" class="relic-spk" data-rspk="name" data-key="${r.key}" title="朗讀名稱">🔊</button><span style="color:var(--bone-dim);font-size:12px">${lv>0?`Lv.${lv}／${r.max}${lv>=r.max?' 已滿':''}`:'尚未獲得'}</span></div>
+        <div class="nm">${r.name}<button type="button" class="relic-spk" data-rspk="name" data-key="${r.key}" title="朗讀名稱">🔊</button><span style="color:var(--bone-dim);font-size:12px">${lv>0?`Lv.${lv}${r.chaos ? '（＝成就點數）' : `／${r.max}${lv>=r.max?' 已滿':''}`}`:'尚未獲得'}</span></div>
         <div class="val">${r.eff(lv)}</div>
         <div class="val" style="color:var(--bone-dim);font-size:11px;margin-top:2px">${descTxt}<button type="button" class="relic-spk" data-rspk="desc" data-key="${r.key}" title="朗讀解說">🔊</button></div>
       </div>
@@ -5414,6 +5509,141 @@ function renderEquip(){
 }
 
 /* ══════════════════════════════════════════
+   成就
+   ══════════════════════════════════════════ */
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+// 累計登入天數：只要「日期與上次不同」就 +1（不需連續）
+function checkDailyLogin(){
+  const t = todayStr();
+  if(state.lastLoginDate !== t){ state.lastLoginDate = t; state.loginDays = (state.loginDays || 0) + 1; save(); }
+}
+function maxClearedLevel(){
+  let best = 0;
+  for(const k in state.levelRecords){ if(state.levelRecords[k] && state.levelRecords[k].cleared) best = Math.max(best, Number(k)); }
+  return best;
+}
+function relicLevelSum(){ return relicTotalLevel(); } // 含混沌魔盒（與烈陽之心一致，互相計算）
+// 可重複成就：每達到 step 的倍數就多一項可領
+const ACH_REPEAT = [
+  { key:'login',  icon:'📅', name:'登入',     step:3,  gem:100, unit:'天',  desc:'每累計登入 3 天（不需連續）', prog:()=>state.loginDays || 0 },
+  { key:'clear',  icon:'🚩', name:'通關',     step:10, gem:100, unit:'關',  desc:'每通關 10 關',               prog:()=>maxClearedLevel() },
+  { key:'pull10', icon:'🎰', name:'十連抽',   step:10, gem:100, unit:'次',  desc:'每十連抽 10 次',             prog:()=>state.pull10Count || 0 },
+  { key:'relic',  icon:'🏺', name:'神器等級', step:10, gem:100, unit:'等',  desc:'神器等級合計每 10 等',       prog:()=>relicLevelSum() },
+];
+// 一次性成就（依序解鎖，前一項完成前隱藏下一項）
+const ACH_KILL_TIERS = [[100,10],[500,50],[1000,100],[5000,150],[10000,200],[50000,250],[100000,300]];
+const ACH_KILLS = ACH_KILL_TIERS.map(([n,gem],i)=>({ id:'kill_'+n, icon:'☠️', name:`累計擊殺 ${n.toLocaleString()} 隻敵人`, gem, test:()=>(state.totalKills||0) >= n, prog:()=>state.totalKills||0, goal:n }));
+const ACH_GOLDS = [];
+for(let d=3; d<=40; d++) ACH_GOLDS.push({ id:'gold_'+d, icon:'💰', name:`持有金錢達到 ${d} 位數`, gem:100 + 20*(d-3), goal:d, latch:true, test:()=>state.gold >= Math.pow(10, d-1), prog:()=>state.gold });
+const ACH_CHAINS = [ { title:'擊殺', list:ACH_KILLS }, { title:'金錢（持有，非累計）', list:ACH_GOLDS } ];
+
+function repAvail(r){ return Math.max(0, Math.floor(r.prog() / r.step) - (state.ach.rep[r.key] || 0)); }
+function achIsDone(a){ return !!(state.ach.done[a.id] || a.test()); }
+function achVisible(list, i){ return i === 0 || achIsDone(list[i-1]); }
+// 金錢是「持有」不是累計，達成當下就記錄起來（之後花掉也算完成）
+function latchAchievements(){
+  let changed = false;
+  ACH_GOLDS.forEach(a=>{ if(!state.ach.done[a.id] && a.test()){ state.ach.done[a.id] = true; changed = true; } });
+  return changed;
+}
+function achReadyCount(){
+  let n = 0;
+  ACH_REPEAT.forEach(r=>{ n += repAvail(r); });
+  ACH_CHAINS.forEach(c=>c.list.forEach((a,i)=>{ if(achVisible(c.list,i) && achIsDone(a) && !state.ach.claimed[a.id]) n++; }));
+  return n;
+}
+let achPrevReady = null;
+function syncAchDot(){
+  if(!state.ach) return;
+  if(latchAchievements()) save();
+  const n = achReadyCount();
+  const dot = document.getElementById('dotAch');
+  if(dot) dot.classList.toggle('on', n > 0);
+  if(achPrevReady !== null && n > achPrevReady) toast('🏆 成就達成！到「成就」頁領取獎勵');
+  achPrevReady = n;
+}
+function claimAchievement(kind, key, silent){
+  let gem = 0;
+  if(kind === 'rep'){
+    const r = ACH_REPEAT.find(x=>x.key === key);
+    if(!r || repAvail(r) <= 0) return 0;
+    state.ach.rep[key] = (state.ach.rep[key] || 0) + 1;
+    gem = r.gem;
+  } else {
+    const c = ACH_CHAINS.find(c=>c.list.some(a=>a.id===key));
+    const idx = c ? c.list.findIndex(a=>a.id===key) : -1;
+    if(idx < 0 || state.ach.claimed[key] || !achVisible(c.list, idx) || !achIsDone(c.list[idx])) return 0;
+    state.ach.claimed[key] = true;
+    gem = c.list[idx].gem;
+  }
+  state.gem += gem;
+  state.ach.points += 1;
+  if(!silent){ save(); syncUI(); renderAch(); toast(`🏆 +${gem} 💎　成就點數 +1`); }
+  return gem;
+}
+function claimAllAchievements(){
+  let gems = 0, cnt = 0;
+  ACH_REPEAT.forEach(r=>{ while(repAvail(r) > 0){ gems += claimAchievement('rep', r.key, true); cnt++; } });
+  // 一次性成就：每領一項可能解鎖下一項，反覆掃描直到沒有可領
+  let again = true;
+  while(again){
+    again = false;
+    ACH_CHAINS.forEach(c=>c.list.forEach(a=>{ const g = claimAchievement('one', a.id, true); if(g){ gems += g; cnt++; again = true; } }));
+  }
+  if(!cnt){ toast('目前沒有可領取的成就'); return; }
+  save(); syncUI(); renderAch();
+  toast(`🏆 領取 ${cnt} 項成就　+${fmtNum(gems)} 💎　成就點數 +${cnt}`);
+}
+function renderAch(){
+  latchAchievements();
+  const sum = document.getElementById('achSummary');
+  sum.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:900">
+      <span>🏆 成就點數</span><span style="color:var(--gold);font-size:18px">${fmtNum(state.ach.points)}</span></div>
+    <div style="font-size:11px;color:var(--bone-dim);margin-top:6px;line-height:1.7">累計擊殺 ${fmtNum(state.totalKills||0)}　累計登入 ${state.loginDays||0} 天　十連抽 ${state.pull10Count||0} 次</div>`;
+  const ready = achReadyCount();
+  const allBtn = document.getElementById('achClaimAll');
+  allBtn.disabled = ready <= 0;
+  allBtn.textContent = ready > 0 ? `🎁 一鍵領取全部（${ready} 項）` : '🎁 一鍵領取全部';
+  let html = '<div class="ach-h">循環成就</div>';
+  ACH_REPEAT.forEach(r=>{
+    const p = r.prog(), avail = repAvail(r), claimed = state.ach.rep[r.key] || 0;
+    const into = p - Math.floor(p / r.step) * r.step;
+    html += `<div class="ach-row${avail?' ready':''}">
+      <div class="ico">${r.icon}</div>
+      <div class="mid"><div class="nm">${r.name}　<span style="color:var(--mana)">${r.gem} 💎</span></div>
+        <div class="ds">${r.desc}　目前 ${fmtNum(p)}${r.unit}・已領 ${claimed} 次${avail>1?`・可領 ${avail} 次`:''}</div>
+        <div class="bar"><b style="width:${avail ? 100 : Math.round(into / r.step * 100)}%"></b></div>
+        <div class="ds">下一次：${avail ? '已達成' : `${into}/${r.step}${r.unit}`}</div></div>
+      ${avail ? `<button class="btn mana" data-rep="${r.key}">領取</button>` : ''}
+    </div>`;
+  });
+  ACH_CHAINS.forEach(c=>{
+    html += `<div class="ach-h">${c.title}</div>`;
+    c.list.forEach((a,i)=>{
+      if(!achVisible(c.list, i)) return;
+      const done = achIsDone(a), got = !!state.ach.claimed[a.id];
+      let ds;
+      if(a.latch) ds = done ? '已達成' : `目前持有 ${fmtNum(state.gold)}`;
+      else ds = done ? '已達成' : `${fmtNum(a.prog())} / ${fmtNum(a.goal)}`;
+      html += `<div class="ach-row${done&&!got?' ready':''}${got?' got':''}">
+        <div class="ico">${a.icon}</div>
+        <div class="mid"><div class="nm">${a.name}　<span style="color:var(--mana)">${a.gem} 💎</span></div><div class="ds">${ds}</div>
+          ${(!a.latch && !done) ? `<div class="bar"><b style="width:${Math.min(100, Math.round(a.prog()/a.goal*100))}%"></b></div>` : ''}</div>
+        ${got ? '<div style="font-size:12px;font-weight:900;color:var(--bone-dim)">✓ 已領取</div>' : (done ? `<button class="btn mana" data-one="${a.id}">領取</button>` : '')}
+      </div>`;
+    });
+  });
+  const box = document.getElementById('achList');
+  box.innerHTML = html;
+  box.querySelectorAll('[data-rep]').forEach(b=>{ b.onclick = ()=>claimAchievement('rep', b.dataset.rep); });
+  box.querySelectorAll('[data-one]').forEach(b=>{ b.onclick = ()=>claimAchievement('one', b.dataset.one); });
+}
+document.getElementById('achClaimAll').onclick = claimAllAchievements;
+
+/* ══════════════════════════════════════════
    介面共用
    ══════════════════════════════════════════ */
 function syncUI(){
@@ -5476,6 +5706,7 @@ function syncUI(){
     }
   }
   syncQuizMeta();
+  syncAchDot();
 }
 
 let toastTimer = null;
@@ -5503,6 +5734,7 @@ function show(name){
   if(name==='upgrade'){ renderUpgrades(); renderRefine(); }
   if(name==='equip')  renderEquip();
   if(name==='skills') renderSkills();
+  if(name==='ach')    renderAch();
   if(name==='relic'){
     renderRelics();
     if(!state.relicSeen){ state.relicSeen = true; save(); document.getElementById('dotRelic').classList.remove('on'); }
@@ -5813,6 +6045,7 @@ document.getElementById('guideLater').onclick = ()=>{
 };
 
 load();
+checkDailyLogin();
 syncUI();
 renderEquip();
 renderSkills();
