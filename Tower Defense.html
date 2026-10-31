@@ -654,7 +654,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
         <button class="btn ghost sm" id="upAllBtn" style="margin-bottom:11px">💰 一鍵強化（自動選最便宜的項目）</button>
         <div class="card" id="upList"></div>
         <h2 class="sec" style="margin-top:18px">裝備精煉</h2>
-        <p class="sub">用強化石精煉已裝備的物品，強化倍率為 1＋0.1×(2.3^精煉等級−1)，精煉成本為 4^(精煉等級+1)。</p>
+        <p class="sub">用強化石精煉已裝備的物品，強化倍率為 1＋0.1×(2.25^精煉等級−1)，精煉成本為 4^(精煉等級+1)。</p>
         <button class="btn ghost sm" id="refineAllBtn" style="margin-bottom:11px">🔮 一鍵強化（自動選最便宜的裝備）</button>
         <div class="card" id="refineList"></div>
       </div>
@@ -773,15 +773,15 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 155;        // 所有怪物出完的時間點（2:35），清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 300;           // 共 300 關
+const LEVEL_COUNT = 350;           // 共 350 關
 const LEVEL_HP_GROWTH = 1.286;                                  // 血量成長係數
 const LEVEL_ATK_GROWTH = 1.21;                                  // 攻擊成長係數
-// 第 120 關之後（第 121 關起）：每關的血量／攻擊成長係數各 +0.05（前 120 關不變）
-const GROWTH_BOOST_AFTER_LEVEL = 120, GROWTH_BOOST = 0.05;
+// 第 120 關之後（第 121 關起）：每關的血量／攻擊成長係數皆固定為 1.4（前 120 關不變）
+const GROWTH_BOOST_AFTER_LEVEL = 120, GROWTH_LATE = 1.4; // 第 121 關起：血量與攻擊成長係數皆為 1.4
 function levelGrowthMul(base, level){
   const lv = Math.max(1, level);
   const steps = lv - 1, early = Math.min(steps, GROWTH_BOOST_AFTER_LEVEL - 1), late = Math.max(0, lv - GROWTH_BOOST_AFTER_LEVEL);
-  return Math.pow(base, early) * Math.pow(base + GROWTH_BOOST, late);
+  return Math.pow(base, early) * Math.pow(GROWTH_LATE, late);
 }
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內血量差距3倍
 const WAVE_SPD_GROWTH = 0.1;                                    // 關內移速差距10%
@@ -848,6 +848,9 @@ const RELICS = [
   { key:'dawn',    icon:'🌅', name:'晨曦聖光',       max:100,
     desc:'光束砲額外增加傷害：神器等級 × 1%；增加光束砲 EX 持續時間：神器等級 × 0.01 秒，掃動角度同步增加（神器等級 × 1 度）',
     eff:lv=>`光束傷害 +${lv}%　EX 持續時間 +${(lv*0.01).toFixed(2)} 秒　掃動角度 +${lv}°` },
+  { key:'wisdom',  icon:'🦉', name:'智慧之神的祝福', max:100,
+    desc:'攻擊力額外增加（連乘）：〈累計答對〉× 神器等級 × 0.7%',
+    eff:lv=>`攻擊力 ×${fmtX(1+fin(state.qs.correct,0)*lv*0.007)}（累計答對 ${fmtNum(fin(state.qs.correct,0))}）` },
   { key:'chaos',   icon:'🎁', name:'混沌魔盒',       max:Infinity, chaos:true,
     desc:'生命值及攻擊力皆額外增加：神器等級 × 5%',
     eff:lv=>`最大生命 ×${fmtX(1+lv*0.05)} 及攻擊力 ×${fmtX(1+lv*0.05)}` },
@@ -874,7 +877,8 @@ function iceAngles(base){
 function critCap(){ return CRIT_CAP + relicLv('blood'); }
 function equipTotalLevel(){ return activeSlots().reduce((t,s)=>t+getRefine(s), 0); } // 裝備總等級＝各部位精煉等級總和
 function relicHpMul(){ return chaosMul() * (1 + fin(state.up.hp,0) * relicLv('aurora') * 0.001) * (1 + equipTotalLevel() * relicLv('dragon') * 0.004); } // 極光法陣守護 × 龍骨重鎧：連乘
-function relicAtkMul(){ return chaosMul() * (1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001); } // 靈魂迴響 × 烈陽之心：連乘
+function relicWisdomMul(){ return 1 + Math.max(0, fin(state.qs && state.qs.correct, 0)) * relicLv('wisdom') * 0.007; } // 智慧之神的祝福：累計答對 × 神器等級 × 0.7%
+function relicAtkMul(){ return chaosMul() * (1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001) * relicWisdomMul(); } // 靈魂迴響 × 烈陽之心：連乘
 function relicGoldExtraPct(){ return fin(state.up.goldboost,0) * relicLv('gold') * 0.1; }
 function relicStoneMul(){ return 1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001; }
 function streakAfterBreak(){
@@ -1334,7 +1338,7 @@ const REFINE_COST_REDUCE_PER_LV = 3; // 精煉成本：每級減少每次精煉�
    精煉成本 ＝ 4^(部位精煉等級+1)，再扣掉鍛造台「精煉成本」的減免（最低為 1）。
    精煉強化倍率 ＝ 1 + 0.1 × (4^(部位精煉等級) − 1)，0 等為 ×1，乘在該裝備的全部能力上（含暴擊率，溢出照舊轉暴擊傷害）。 */
 const REFINE_COST_BASE = 4;                 // 成本底數：4^(等級+1)
-const REFINE_POWER_BASE = 2.3;              // 強化底數：1 + 0.1×4^等級
+const REFINE_POWER_BASE = 2.25;             // 強化底數：1 + 0.1×4^等級
 const REFINE_POWER_COEF = 0.1;
 const REFINE_LV_CAP = 400;                  // 防呆：避免指數溢位成 Infinity／NaN
 function refineMul(lv){ lv = Math.min(REFINE_LV_CAP, Math.max(0, Math.round(fin(lv, 0)))); return 1 + REFINE_POWER_COEF * (Math.pow(REFINE_POWER_BASE, lv) - 1); }
@@ -1912,7 +1916,7 @@ function getSelectedVoice(){
 const TW_PRONOUNCE_FIX = [
   // ── 詞組規則（優先處理）──
   [/長高/g, '掌高'],  [/長大/g, '掌大'],  [/長得/g, '掌得'],  [/生長/g, '生掌'],  [/成長/g, '成掌'],  [/長輩/g, '掌輩'],  [/班長/g, '班掌'],  [/校長/g, '校掌'],  [/隊長/g, '隊掌'],  [/組長/g, '組掌'],
-  [/好奇/g, '號奇'],  [/好吃/g, '郝吃'],
+  [/好奇/g, '號奇'],  [/好吃/g, '郝吃'],  [/兩種/g, '兩腫'],
   // ── 單字規則（放最後，只處理沒有歧義的字）──
   [/划/g, '滑'],      // 划船 應唸 huá；預設語音容易唸成 huà
   [/岔/g, '插'],
@@ -5532,6 +5536,8 @@ const ACH_REPEAT = [
   { key:'clear',  icon:'🚩', name:'通關',     step:10, gem:100, unit:'關',  desc:'每通關 10 關',               prog:()=>maxClearedLevel() },
   { key:'pull10', icon:'🎰', name:'十連抽',   step:10, gem:100, unit:'次',  desc:'每十連抽 10 次',             prog:()=>state.pull10Count || 0 },
   { key:'relic',  icon:'🏺', name:'神器等級', step:10, gem:100, unit:'等',  desc:'神器等級合計每 10 等',       prog:()=>relicLevelSum() },
+  { key:'quiz',   icon:'📝', name:'答對',     step:20, gem:100, unit:'題',  desc:'每累計答對 20 題',           prog:()=>Math.max(0, Math.round(fin(state.qs.correct, 0))) },
+  { key:'refine', icon:'⚒️', name:'精煉',     step:10, gem:100, unit:'等',  desc:'裝備精煉等級合計每 10 等',   prog:()=>ALL_SLOTS.reduce((t,sl)=>t+getRefine(sl), 0) },
 ];
 // 一次性成就（依序解鎖，前一項完成前隱藏下一項）
 const ACH_KILL_TIERS = [[100,10],[500,50],[1000,100],[5000,150],[10000,200],[50000,250],[100000,300]];
