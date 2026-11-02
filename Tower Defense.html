@@ -827,6 +827,11 @@ const RELICS = [
   { key:'dragon',  icon:'🐲', name:'龍骨重鎧',       max:100,
     desc:'生命值額外增加（連乘）：〈裝備總等級〉× 神器等級 × 0.4%',
     eff:lv=>`最大生命 ×${fmtX(1+equipTotalLevel()*lv*0.004)}（裝備總等級 ${equipTotalLevel()}）` },
+  { key:'void',    icon:'🪓', name:'虛空穿刺',
+    // 解鎖：通關第 110 關；上限：通關 110 關為 10 等，之後每多通關 10 關 +10 等（120 關 20 等…）；未解鎖時上限為 0（不會被抽到）
+    get max(){ const c = maxClearedLevel(); return c >= VOID_UNLOCK_CLEAR ? 10 + Math.floor((c - VOID_UNLOCK_CLEAR) / 10) * 10 : 0; },
+    desc:'敵人減傷等級減少神器等級 × 1 等',
+    eff:lv=>`無視敵人減傷 ${lv} 等（目前 ${voidCurrentDefLv(state.unlockedLevel)} 等）` },
   { key:'refine',  icon:'📔', name:'精煉大師日記',   max:100,
     desc:'強化石獲得額外增加：〈精煉成本等級〉× 神器等級 × 0.1%',
     eff:lv=>`強化石 +${fmtPct(fin(state.up.breakboost,0)*lv*0.1,1)}%（精煉成本 Lv.${fin(state.up.breakboost,0)}）` },
@@ -858,6 +863,9 @@ const RELICS = [
     desc:'生命值及攻擊力皆額外增加：神器等級 × 5%',
     eff:lv=>`最大生命 ×${fmtX(1+lv*0.05)} 及攻擊力 ×${fmtX(1+lv*0.05)}` },
 ];
+const VOID_UNLOCK_CLEAR = 110;
+// 虛空穿刺：敵人減傷等級 ＝ (關卡數 - 100) - 神器等級，最低 0
+function voidCurrentDefLv(level){ return Math.max(0, level - ENEMY_DEF_BASE_LEVEL - relicLv('void')); }
 function relicRuinPct(){ return relicLv('ruin') * 0.005; }              // 荒蕪毀滅：所有技能效果 +神器等級×0.5%（與各技能神器加成「相加」）
 function relicCycloneMul(){ return 1 + relicLv('cyclone') * 0.01 + relicRuinPct(); }   // 颶風之核：旋風術傷害
 function relicEarthMul(){ return 1 + relicLv('earth') * 0.01 + relicRuinPct(); }        // 大地之脈：土牆生命與回復
@@ -2556,7 +2564,7 @@ function steelHpFor(level){ return Math.max(1, level*3 - steelReduceTotal()); } 
 const ENEMY_DEF_START_LEVEL = 101, ENEMY_DEF_BASE_LEVEL = 100, ENEMY_DEF_MULT_PER_LV = 0.93;
 function enemyLevelDefMul(){
   const lv = (typeof run !== 'undefined' && run.level) ? run.level : 1;
-  return lv >= ENEMY_DEF_START_LEVEL ? Math.pow(ENEMY_DEF_MULT_PER_LV, lv - ENEMY_DEF_BASE_LEVEL) : 1;
+  return lv >= ENEMY_DEF_START_LEVEL ? Math.pow(ENEMY_DEF_MULT_PER_LV, voidCurrentDefLv(lv)) : 1;
 }
 // skipLevelDef=true：略過第 101 關起的關卡減傷（土牆 EX 對小怪的生命百分比反擊使用）
 function enemyDmg(e, dmg, skipLevelDef){ if(e.spawnT > 0) return 0; return e.steel ? 1 : dmg * guardMul(e) * (skipLevelDef ? 1 : enemyLevelDefMul()); }
