@@ -777,7 +777,7 @@ const LEVEL_COUNT = 350;           // 共 350 關
 const LEVEL_HP_GROWTH = 1.286;                                  // 血量成長係數
 const LEVEL_ATK_GROWTH = 1.21;                                  // 攻擊成長係數
 // 第 120 關之後（第 121 關起）：每關的血量／攻擊成長係數皆固定為 1.4（前 120 關不變）
-const GROWTH_BOOST_AFTER_LEVEL = 120, GROWTH_LATE = 1.4; // 第 121 關起：血量與攻擊成長係數皆為 1.4
+const GROWTH_BOOST_AFTER_LEVEL = 110, GROWTH_LATE = 1.6; // 第 111 關起：血量與攻擊成長係數皆為 1.6
 function levelGrowthMul(base, level){
   const lv = Math.max(1, level);
   const steps = lv - 1, early = Math.min(steps, GROWTH_BOOST_AFTER_LEVEL - 1), late = Math.max(0, lv - GROWTH_BOOST_AFTER_LEVEL);
@@ -830,6 +830,9 @@ const RELICS = [
   { key:'refine',  icon:'📔', name:'精煉大師日記',   max:100,
     desc:'強化石獲得額外增加：〈精煉成本等級〉× 神器等級 × 0.1%',
     eff:lv=>`強化石 +${fmtPct(fin(state.up.breakboost,0)*lv*0.1,1)}%（精煉成本 Lv.${fin(state.up.breakboost,0)}）` },
+  { key:'ruin',    icon:'💀', name:'荒蕪毀滅',       max:200,
+    desc:'所有技能效果皆加成神器等級 × 0.5%',
+    eff:lv=>`所有技能效果 +${fmtPct(lv*0.5,1)}%` },
   { key:'fire',    icon:'🌋', name:'火神咆哮',       max:100,
     desc:'火球術額外增加傷害：神器等級 × 1%；並增加火球 EX 的擴散範圍',
     eff:lv=>`火球傷害 +${lv}%　擴散直徑 +${fmtPct(lv*0.5,1)}（121 關起 +${lv*2}）` },
@@ -855,17 +858,18 @@ const RELICS = [
     desc:'生命值及攻擊力皆額外增加：神器等級 × 5%',
     eff:lv=>`最大生命 ×${fmtX(1+lv*0.05)} 及攻擊力 ×${fmtX(1+lv*0.05)}` },
 ];
-function relicCycloneMul(){ return 1 + relicLv('cyclone') * 0.01; }   // 颶風之核：旋風術傷害
-function relicEarthMul(){ return 1 + relicLv('earth') * 0.01; }        // 大地之脈：土牆生命與回復
-function relicDawnMul(){ return 1 + relicLv('dawn') * 0.01; }          // 晨曦聖光：光束砲傷害
+function relicRuinPct(){ return relicLv('ruin') * 0.005; }              // 荒蕪毀滅：所有技能效果 +神器等級×0.5%（與各技能神器加成「相加」）
+function relicCycloneMul(){ return 1 + relicLv('cyclone') * 0.01 + relicRuinPct(); }   // 颶風之核：旋風術傷害
+function relicEarthMul(){ return 1 + relicLv('earth') * 0.01 + relicRuinPct(); }        // 大地之脈：土牆生命與回復
+function relicDawnMul(){ return 1 + relicLv('dawn') * 0.01 + relicRuinPct(); }          // 晨曦聖光：光束砲傷害
 function fmtX(n){ n = fin(n, 1); return Math.abs(n) < 1000 ? n.toFixed(2) : fmtNum(n); } // 乘數顯示：×1.30
 function frostExtraTracksFor(lv){ return lv >= 41 ? 3 : lv >= 21 ? 2 : lv >= 1 ? 1 : 0; }
 function frostExtraTracks(){ return farMode ? frostExtraTracksFor(relicLv('frost')) : 0; }
 function iceExWidth(){ return ICE_EX_WIDTH + (farMode ? 0 : relicLv('frost')); }
 function fireballSplashDiameter(){ return FIREBALL_EX_SPLASH_DIAMETER + relicLv('fire') * (farMode ? 2 : 0.5); }
-function relicFireMul(){ return 1 + relicLv('fire') * 0.01; }
-function relicFrostMul(){ return 1 + relicLv('frost') * 0.01; }
-function relicSpearMul(){ return 1 + relicLv('spear') * 0.01; }
+function relicFireMul(){ return 1 + relicLv('fire') * 0.01 + relicRuinPct(); }
+function relicFrostMul(){ return 1 + relicLv('frost') * 0.01 + relicRuinPct(); }
+function relicSpearMul(){ return 1 + relicLv('spear') * 0.01 + relicRuinPct(); }
 // 冰椎發射角度：原本 1 道 ＋ 冰霜新星增加的軌道，平均分散在圓周上
 function iceAngles(base){
   const n = 1 + frostExtraTracks();
@@ -1254,7 +1258,7 @@ function earthwallCounter(e, wall, s){
   } else {
     base = e.maxHp * Math.min(EARTHWALL_EX_MINION_CAP, lv * EARTHWALL_EX_MINION_PCT);
   }
-  const d = enemyDmg(e, base);
+  const d = enemyDmg(e, base, !e.boss); // 小怪的生命百分比傷害不吃關卡減傷；王照常減傷
   e.hp -= d; e.hit = 0.12;
   popText(e.x, e.y - e.r - 12, '-' + fmtNum(d), crit);
   if(e.hp <= 0 && relicLv('earth') > 0 && run.hp > 0){ // 大地之脈：土牆 EX 擊殺時立即回復最大生命 × 神器等級 × 0.1%
@@ -2469,16 +2473,17 @@ const STEEL_UNLOCK_LEVEL = 75;//通關第 75 關後才會出現
 const EX_STEEL_PER_LV = 1.5;   // 鋼鐵殺手 EX：每級 -1.5 生命，總量四捨五入（原版 1）
 function steelReduceTotal(){ const lv = fin(state.up.steelkiller, 0); return exOn('steelkiller') ? Math.round(lv*EX_STEEL_PER_LV) : lv; }
 const STEEL_DEF = { emoji:'🤖', hp:0, spd:1.0, r:21, gold:1.8, steel:true, rate:3 };      // 鋼鐵敵人出場率 3%
-// 分裂敵人：通關第 130 關後（第 131 關起）出現。被擊殺後立刻原地分裂成 2 隻小型怪，小型怪被擊殺後可再分裂一次（1+2+4 共 7 隻）。
+// 分裂敵人：通關第 130 關後（第 131 關起）出現。被擊殺後立刻原地分裂成 3 隻小型怪，小型怪被擊殺後可再分裂一次（1+3+9 共 13 隻）。
 // 分裂出來的怪不占用該波出場數（不動 run.spawned），但過關仍須全部清空。圖片與本體相同，外圍一圈黃色虛線。
 const SPLIT_UNLOCK_LEVEL = 130;
 const SPLIT_STAGES = [
-  { hp:1.0, spd:1.5, r:18, gold:0.8 },   // 原始
-  { hp:0.8, spd:1.6, r:12, gold:0.4 },   // 第一次分裂
-  { hp:0.6, spd:1.7, r:7,  gold:0.2 },   // 第二次分裂（不再分裂）
+  { hp:1.0, spd:1.5, r:18, gold:0.9 },   // 原始
+  { hp:0.7, spd:1.7, r:13, gold:0.3 },   // 第一次分裂
+  { hp:0.5, spd:1.9, r:9,  gold:0.1 },   // 第二次分裂（不再分裂）
 ];
 const SPLIT_DEF = { emoji:'🦠', hp:SPLIT_STAGES[0].hp, spd:SPLIT_STAGES[0].spd, r:SPLIT_STAGES[0].r, gold:SPLIT_STAGES[0].gold, split:true, rate:2 }; // 出場率 2%
-// 被擊殺的分裂敵人原地生出 2 隻下一階段的小怪（圖片沿用同一張）
+// 被擊殺的分裂敵人原地生出 3 隻下一階段的小怪（圖片沿用同一張）；剛分裂出來的 0.1 秒內無敵且無法移動
+const SPLIT_SPAWN_FREEZE = 0.1;
 function spawnSplitChildren(p){
   const st = SPLIT_STAGES[p.splitStage + 1];
   if(!st) return;
@@ -2486,14 +2491,14 @@ function spawnSplitChildren(p){
   const w = p.wv;
   const hp = enemyHpFor(run.level, w) * st.hp * monsterWeakenMul();
   const spd = ((17 * st.spd) + slowedSpeedBonus(run.level)) * waveSpeedMulFor(w) * enemySpeedScale();
-  for(let k=0;k<2;k++){
-    const dir = k === 0 ? -1 : 1;
+  for(let k=0;k<3;k++){
+    const dir = k - 1; // -1、0、1
     const r = st.r * sizeMul;
-    let nx = p.x + dir * (st.r + 4) * sizeMul * 0.6;
+    let nx = p.x + dir * (st.r + 4) * sizeMul * 0.9;
     if(!farMode) nx = Math.max(r, Math.min(W - r, nx));
     run.enemies.push({
       x: nx, y: p.y,
-      vx: farMode ? 0 : dir * (6 + Math.random()*6),
+      vx: farMode ? 0 : (dir || (Math.random() < 0.5 ? -1 : 1)) * (6 + Math.random()*6),
       hp, maxHp:hp, spd,
       r, vr: r * (farMode ? FAR_MONSTER_VISUAL_MUL : 1),
       emoji: p.emoji, img: p.img,
@@ -2502,6 +2507,7 @@ function spawnSplitChildren(p){
       atkCount:0, atkTimer:0, range:0, shootTimer:0.6,
       gold: st.gold * (1 + w*0.35),
       boss:false, dps:p.dps, hit:0, slowStacks:[],
+      spawnT: SPLIT_SPAWN_FREEZE,
     });
   }
 }
@@ -2546,7 +2552,14 @@ let rangedBossImgs = [];
 function rangedRangeFor(level){ return Math.max(RANGED_MIN_RANGE, RANGED_BASE_RANGE + level - fin(state.up.rangedreduce, 0)); }
 function steelHpFor(level){ return Math.max(1, level*3 - steelReduceTotal()); } // 生命固定為關卡數 × 3
 // 鋼鐵敵人每次被打固定只損失 1 點生命；其他敵人照原本規則（守護圈減傷）
-function enemyDmg(e, dmg){ return e.steel ? 1 : dmg * guardMul(e); }
+// 第 101 關起：敵人受到的傷害 ×0.93^(關卡數-100)（鋼鐵敵人固定 1 點，不受影響）
+const ENEMY_DEF_START_LEVEL = 101, ENEMY_DEF_BASE_LEVEL = 100, ENEMY_DEF_MULT_PER_LV = 0.93;
+function enemyLevelDefMul(){
+  const lv = (typeof run !== 'undefined' && run.level) ? run.level : 1;
+  return lv >= ENEMY_DEF_START_LEVEL ? Math.pow(ENEMY_DEF_MULT_PER_LV, lv - ENEMY_DEF_BASE_LEVEL) : 1;
+}
+// skipLevelDef=true：略過第 101 關起的關卡減傷（土牆 EX 對小怪的生命百分比反擊使用）
+function enemyDmg(e, dmg, skipLevelDef){ if(e.spawnT > 0) return 0; return e.steel ? 1 : dmg * guardMul(e) * (skipLevelDef ? 1 : enemyLevelDefMul()); }
 function pickMonsterBase(pool){
   let roll = Math.random()*100, acc = 0;
   for(const m of pool){
@@ -2761,12 +2774,20 @@ function startRun(level){
   syncBattleHud();
 }
 
+// 金幣成長：第 100 關以前每關 ×1.25；第 101 關起每關改為 ×1.1
+const GOLD_GROWTH_EARLY = 1.25, GOLD_GROWTH_LATE = 1.1, GOLD_GROWTH_SWITCH_LEVEL = 100;
+function goldLevelMul(level){
+  const lv = Math.max(1, level);
+  const early = Math.min(lv - 1, GOLD_GROWTH_SWITCH_LEVEL - 1);
+  const late = Math.max(0, lv - GOLD_GROWTH_SWITCH_LEVEL);
+  return fin(Math.pow(GOLD_GROWTH_EARLY, early) * Math.pow(GOLD_GROWTH_LATE, late), 1);
+}
 const GEM_CLEAR_CAP = 450; // 通關鑽石上限
 function levelTotalEnemies(){ let t = 0; for(let w=1; w<=WAVES_PER_LEVEL; w++) t += waveQuotaFor(w); return Math.max(1, t); }
 function endRun(win){
   run.active=false; run.over=true;
 
-  const levelMul  = fin(Math.pow(1.21, run.level-1), 1);   // 金幣／強化石增加係數
+  const levelMul  = goldLevelMul(run.level);   // 金幣／強化石增加係數（兩階段：100 關以前 ×1.25、101 關起 ×1.1）
   const goldBoostMul = 1 + goldBoostPct() / 100; // 鍛造台「金幣強化」：每級 +5%（EX 解鎖後 +6%）金幣
   const goldGain  = Math.round(fin(run.gold, 0) * levelMul * goldBoostMul);
   const stoneGain = Math.round((Math.floor(run.wave/3) + (win?3:0)) * levelMul * relicStoneMul());
@@ -4031,6 +4052,12 @@ function step(dt){
       continue;
     }
 
+    // 分裂剛生成的 0.1 秒：無敵（enemyDmg 回傳 0）且無法移動
+    if(e.spawnT > 0){
+      e.spawnT -= dt;
+      if(e.hit > 0) e.hit -= dt;
+      continue;
+    }
     // 閃電術 EX：鋼鐵敵人被擊中後暫時無法動彈
     if(e.lflash > 0) e.lflash -= dt;
     if(e.stun > 0){
@@ -4221,7 +4248,7 @@ function syncBattleHud(){
 
   document.getElementById('runKill').textContent = `☠ ${run.kills}`;
   // 右上角金幣：套用與結算（endRun）相同的關卡係數與金幣強化，顯示的就是實際會拿到的金幣
-  const gMul = fin(Math.pow(1.21, run.level-1), 1) * (1 + goldBoostPct() / 100);
+  const gMul = goldLevelMul(run.level) * (1 + goldBoostPct() / 100);
   document.getElementById('runGold').textContent = `💰 ${fmtNum(Math.round(fin(run.gold, 0) * gMul))}`;
   const pct = run.maxHp ? Math.max(0, run.hp/run.maxHp*100) : 0;
   // 121 關起：土牆血量顯示在角色血條上方
