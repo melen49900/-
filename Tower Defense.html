@@ -797,7 +797,7 @@ const RELIC_SINGLE_PULL_CHANCE = 0.2;
 function chaosLv(){ return state.relicUnlocked ? Math.max(0, Math.round(fin(state.ach && state.ach.points, 0))) : 0; }
 function relicLv(k){ if(k === 'chaos') return chaosLv(); return Math.max(0, Math.round(fin(state.relics && state.relics[k], 0))); }
 function relicTotalLevel(){ return RELICS.reduce((t,r)=>t+relicLv(r.key), 0); } // 神器總等級（含混沌魔盒；烈陽之心、成就「神器等級」都用這個）
-function chaosMul(){ return 1 + chaosLv() * 0.05; }
+function chaosMul(){ return Math.pow(1.02, chaosLv()); }
 function skillTotalLevel(){ return Object.keys(SKILL_DEFS).reduce((t,k)=>t+Math.max(0, fin(state.skills[k] && state.skills[k].draws, 0)), 0); }
 const RELICS = [
   { key:'blood',   icon:'🩸', name:'嗜血匕首',       max:10,
@@ -821,6 +821,11 @@ const RELICS = [
   { key:'gold',    icon:'👑', name:'金碧輝煌',       max:100,
     desc:'獲得金幣額外增加：〈金幣強化等級〉× 神器等級 × 0.1%',
     eff:lv=>`金幣 +${fmtPct(fin(state.up.goldboost,0)*lv*0.1,1)}%（金幣強化 Lv.${fin(state.up.goldboost,0)}）` },
+  { key:'midas',   icon:'🪙', name:'點石成金',
+    // 解鎖：金碧輝煌達到 10 級；未解鎖時上限為 0（不會被抽到）
+    get max(){ return relicLv('gold') >= 10 ? 100 : 0; },
+    desc:'獲得金幣每神器等級皆額外增加1%',
+    eff:lv=>`獲得金幣 ×${fmtX(Math.pow(1.01,lv))}（與其他神器連乘）` },
   { key:'horn',    icon:'📯', name:'勝利號角',       max:80,
     desc:lv=>`答題連勝中斷時不會歸零，剩餘連勝為：${fmtNum(streakAfterBreak())}`,
     eff:lv=>`連勝中斷時保留 ${lv}%（無條件進位）` },
@@ -860,8 +865,8 @@ const RELICS = [
     desc:'攻擊力額外增加（連乘）：〈累計答對〉× 神器等級 × 0.7%',
     eff:lv=>`攻擊力 ×${fmtX(1+fin(state.qs.correct,0)*lv*0.007)}（累計答對 ${fmtNum(fin(state.qs.correct,0))}）` },
   { key:'chaos',   icon:'🎁', name:'混沌魔盒',       max:Infinity, chaos:true,
-    desc:'生命值及攻擊力皆額外增加：神器等級 × 5%',
-    eff:lv=>`最大生命 ×${fmtX(1+lv*0.05)} 及攻擊力 ×${fmtX(1+lv*0.05)}` },
+    desc:'最大生命及攻擊力每神器等級皆額外增加2%',
+    eff:lv=>`最大生命及攻擊力 ×${fmtX(Math.pow(1.02,lv))}` },
 ];
 const VOID_UNLOCK_CLEAR = 110;
 // 虛空穿刺：敵人減傷等級 ＝ (關卡數 - 100) - 神器等級，最低 0
@@ -891,6 +896,7 @@ function equipTotalLevel(){ return activeSlots().reduce((t,s)=>t+getRefine(s), 0
 function relicHpMul(){ return chaosMul() * (1 + fin(state.up.hp,0) * relicLv('aurora') * 0.001) * (1 + equipTotalLevel() * relicLv('dragon') * 0.004); } // 極光法陣守護 × 龍骨重鎧：連乘
 function relicWisdomMul(){ return 1 + Math.max(0, fin(state.qs && state.qs.correct, 0)) * relicLv('wisdom') * 0.007; } // 智慧之神的祝福：累計答對 × 神器等級 × 0.7%
 function relicAtkMul(){ return chaosMul() * (1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001) * relicWisdomMul(); } // 靈魂迴響 × 烈陽之心：連乘
+function relicMidasMul(){ return Math.pow(1.01, relicLv('midas')); } // 點石成金：獲得金幣 ×1.01^神器等級（與其他金幣加成連乘）
 function relicGoldExtraPct(){ return fin(state.up.goldboost,0) * relicLv('gold') * 0.1; }
 function relicStoneMul(){ return 1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001; }
 function streakAfterBreak(){
@@ -2797,7 +2803,7 @@ function endRun(win){
 
   const levelMul  = goldLevelMul(run.level);   // 金幣／強化石增加係數（兩階段：100 關以前 ×1.25、101 關起 ×1.1）
   const goldBoostMul = 1 + goldBoostPct() / 100; // 鍛造台「金幣強化」：每級 +5%（EX 解鎖後 +6%）金幣
-  const goldGain  = Math.round(fin(run.gold, 0) * levelMul * goldBoostMul);
+  const goldGain  = Math.round(fin(run.gold, 0) * levelMul * goldBoostMul * relicMidasMul());
   const stoneGain = Math.round((Math.floor(run.wave/3) + (win?3:0)) * levelMul * relicStoneMul());
   const gemBoostAdd = gemBoostAmount();                        // 鍛造台「鑽石強化」（含 EX）：每級固定加鑽石
   // 通關鑽石 ＝ 10 + 關卡數 ×2 + 鑽石強化加成，上限 GEM_CLEAR_CAP；未通關 ＝ 該關通關獎勵 × 擊殺數比例（四捨五入）
@@ -4256,7 +4262,7 @@ function syncBattleHud(){
 
   document.getElementById('runKill').textContent = `☠ ${run.kills}`;
   // 右上角金幣：套用與結算（endRun）相同的關卡係數與金幣強化，顯示的就是實際會拿到的金幣
-  const gMul = goldLevelMul(run.level) * (1 + goldBoostPct() / 100);
+  const gMul = goldLevelMul(run.level) * (1 + goldBoostPct() / 100) * relicMidasMul();
   document.getElementById('runGold').textContent = `💰 ${fmtNum(Math.round(fin(run.gold, 0) * gMul))}`;
   const pct = run.maxHp ? Math.max(0, run.hp/run.maxHp*100) : 0;
   // 121 關起：土牆血量顯示在角色血條上方
@@ -5572,6 +5578,7 @@ const ACH_REPEAT = [
   { key:'pull10', icon:'🎰', name:'十連抽',   step:10, gem:100, unit:'次',  desc:'每十連抽 10 次',             prog:()=>state.pull10Count || 0 },
   { key:'relic',  icon:'🏺', name:'神器等級', step:10, gem:100, unit:'等',  desc:'神器等級合計每 10 等',       prog:()=>relicLevelSum() },
   { key:'quiz',   icon:'📝', name:'答對',     step:20, gem:100, unit:'題',  desc:'每累計答對 20 題',           prog:()=>Math.max(0, Math.round(fin(state.qs.correct, 0))) },
+  { key:'upgrade', icon:'🔨', name:'鍛造台等級', step:100, gem:100, unit:'等', desc:'鍛造台等級合計每 100 等', prog:()=>UPGRADES.reduce((t,u)=>t+Math.max(0, Math.round(fin(state.up[u.key], 0))), 0) },
   { key:'refine', icon:'⚒️', name:'精煉',     step:10, gem:100, unit:'等',  desc:'裝備精煉等級合計每 10 等',   prog:()=>ALL_SLOTS.reduce((t,sl)=>t+getRefine(sl), 0) },
 ];
 // 一次性成就（依序解鎖，前一項完成前隱藏下一項）
