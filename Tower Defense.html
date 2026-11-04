@@ -639,7 +639,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
         <div class="card" style="margin-top:14px">
           <div style="font-size:12px;color:var(--bone-dim);line-height:1.9">
             <div id="skillOddsInfo">技能機率　合計 30%</div>
-            <div id="relicInfo" style="display:none">🏺 神器：裝備齊全後，十連抽固定 8 技能＋2 神器（單抽 80% 技能／20% 神器）</div>
+            <div id="relicInfo" style="display:none">🏺 神器：裝備齊全後，十連抽固定 6 技能＋4 神器（單抽 80% 技能／20% 神器）</div>
             <div id="equipOddsInfo">裝備機率　合計 70%　普通 35%　精良 21%　稀有 10.5%　傳說 3.5%</div>
             <div style="margin-top:6px">副武器（魔法書／盾牌／水晶）通關第 65 關後解鎖<br>帽子（草帽／頭盔／戰盔／羽帽）通關第 75 關後解鎖<br>鞋子（皮靴／長靴／潛行靴／戰靴）通關第 100 關後解鎖<br>重複裝備熔解：普通 +1　精良 +3　稀有 +8　傳說 +20 🔮</div>
           </div>
@@ -681,7 +681,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
     <section class="screen" id="screen-relic">
       <div class="pad">
         <h2 class="sec">神器</h2>
-        <p class="sub">裝備收集齊全後，從「召喚」獲得。每次十連抽固定獲得 8 個隨機技能＋2 個隨機神器（單抽 80% 技能／20% 神器）；已滿級的神器不會再抽到，全部滿級後回到全技能。</p>
+        <p class="sub">裝備收集齊全後，從「召喚」獲得。每次十連抽固定獲得 6 個隨機技能＋4 個隨機神器（單抽 80% 技能／20% 神器）；已滿級的神器不會再抽到，全部滿級後回到全技能。</p>
         <div class="card" id="relicSummary" style="font-size:12px;color:var(--bone-dim);line-height:1.8"></div>
         <div class="card" id="relicList"></div>
       </div>
@@ -789,11 +789,12 @@ const WAVE_SPD_GROWTH = 0.1;                                    // 關內移速�
 
 /* ── 神器 ─────────────────────────────────
    解鎖（需同時滿足，開啟後永久不再隱藏）：通關第 50 關（進度超過 50）＋裝備齊全（全 SSR）。
-   獲得：只能從「召喚」抽到，裝備齊全時十連抽固定 8 技能＋2 神器（單抽 80%／20%）。
+   獲得：只能從「召喚」抽到，裝備齊全時十連抽固定 6 技能＋4 神器（單抽 80%／20%）。
    單一神器滿級後不再抽到；全部滿級後回到全技能。 */
 const SPD_CAP = 10; // 攻擊速度上限（發/秒）
 const RELIC_UNLOCK_LEVEL = 50;
 const RELIC_SINGLE_PULL_CHANCE = 0.2;
+const RELIC_PULL10_COUNT = 4;   // 神器模式十連抽：固定 4 神器＋6 技能
 // 混沌魔盒：等級＝成就點數（無上限），只有神器頁面解鎖後才會顯示與生效；它不是抽得到的神器，也不計入「其他神器」的總等級
 function chaosLv(){ return state.relicUnlocked ? Math.max(0, Math.round(fin(state.ach && state.ach.points, 0))) : 0; }
 function relicLv(k){ if(k === 'chaos') return chaosLv(); return Math.max(0, Math.round(fin(state.relics && state.relics[k], 0))); }
@@ -825,8 +826,8 @@ const RELICS = [
   { key:'midas',   icon:'🪙', name:'點石成金',
     // 解鎖：金碧輝煌達到 10 級；未解鎖時上限為 0（不會被抽到）
     get max(){ return relicLv('gold') >= 10 ? 200 : 0; },
-    desc:'獲得金幣每神器等級皆額外增加1%',
-    eff:lv=>`獲得金幣 ×${fmtX(Math.pow(1.01,relicLv('gold')+lv))}（金碧輝煌 Lv.${relicLv('gold')}＋神器等級 ${lv}，與其他神器連乘）` },
+    desc:'獲得金幣每神器等級皆額外增加2%',
+    eff:lv=>`獲得金幣 ×${fmtX(Math.pow(1.02,relicLv('gold')+lv))}（金碧輝煌 Lv.${relicLv('gold')}＋神器等級 ${lv}，與其他神器連乘）` },
   { key:'horn',    icon:'📯', name:'勝利號角',       max:80,
     desc:lv=>`答題連勝中斷時不會歸零，剩餘連勝為：${fmtNum(streakAfterBreak())}`,
     eff:lv=>`連勝中斷時保留 ${lv}%（無條件進位）` },
@@ -844,8 +845,8 @@ const RELICS = [
   { key:'bowl',    icon:'🏺', name:'聚寶盆',
     // 解鎖：精煉大師日記達到 10 級；未解鎖時上限為 0（不會被抽到）
     get max(){ return relicLv('refine') >= 10 ? 200 : 0; },
-    desc:'獲得強化石每神器等級皆額外增加1%',
-    eff:lv=>`強化石 ×${fmtX(Math.pow(1.01,relicLv('refine')+lv))}（精煉大師日記 Lv.${relicLv('refine')}＋神器等級 ${lv}，與其他神器連乘）` },
+    desc:'獲得強化石每神器等級皆額外增加2%',
+    eff:lv=>`強化石 ×${fmtX(Math.pow(1.02,relicLv('refine')+lv))}（精煉大師日記 Lv.${relicLv('refine')}＋神器等級 ${lv}，與其他神器連乘）` },
   { key:'ruin',    icon:'💀', name:'荒蕪毀滅',       max:200,
     desc:'所有技能效果皆加成神器等級 × 0.5%',
     eff:lv=>`所有技能效果 +${fmtPct(lv*0.5,1)}%` },
@@ -868,8 +869,18 @@ const RELICS = [
     desc:'光束砲額外增加傷害：神器等級 × 1%；增加光束砲 EX 持續時間：神器等級 × 0.01 秒，掃動角度同步增加（神器等級 × 1 度）',
     eff:lv=>`光束傷害 +${lv}%　EX 持續時間 +${(lv*0.01).toFixed(2)} 秒　掃動角度 +${lv}°` },
   { key:'wisdom',  icon:'🦉', name:'智慧之神的祝福', max:100,
-    desc:'攻擊力額外增加（連乘）：〈累計答對〉× 神器等級 × 0.7%',
-    eff:lv=>`攻擊力 ×${fmtX(1+fin(state.qs.correct,0)*lv*0.007)}（累計答對 ${fmtNum(fin(state.qs.correct,0))}）` },
+    desc:'最大生命及攻擊力皆額外增加<累計答對>×神器等級×0.7%',
+    eff:lv=>`最大生命及攻擊力 ×${fmtX(1+fin(state.qs.correct,0)*lv*0.007)}（累計答對 ${fmtNum(fin(state.qs.correct,0))}）` },
+  { key:'sword',   icon:'🗡️', name:'智慧之神的長劍',
+    // 解鎖：智慧之神的祝福達到 10 級；未解鎖時上限為 0（不會被抽到）
+    get max(){ return relicLv('wisdom') >= 10 ? 30 : 0; },
+    desc:lv=>`獲得攻擊力每<累計答對>皆額外增加${fmtPct(lv*0.02,2)}%`,
+    eff:lv=>`攻擊力 ×${fmtX(relicSwordMul())}（累計答對 ${fmtNum(fin(state.qs.correct,0))}）` },
+  { key:'shield',  icon:'🛡️', name:'智慧之神的護盾',
+    // 解鎖：智慧之神的祝福達到 10 級；未解鎖時上限為 0（不會被抽到）
+    get max(){ return relicLv('wisdom') >= 10 ? 30 : 0; },
+    desc:lv=>`獲得最大生命每<累計答對>皆額外增加${fmtPct(lv*0.02,2)}%`,
+    eff:lv=>`最大生命 ×${fmtX(relicShieldMul())}（累計答對 ${fmtNum(fin(state.qs.correct,0))}）` },
   { key:'chaos',   icon:'🎁', name:'混沌魔盒',       max:Infinity, chaos:true,
     desc:'最大生命及攻擊力每神器等級皆額外增加2%',
     eff:lv=>`最大生命及攻擊力 ×${fmtX(Math.pow(1.02,lv))}` },
@@ -899,12 +910,14 @@ function iceAngles(base){
 // 神器效果（供各處呼叫）
 function critCap(){ return CRIT_CAP + relicLv('blood'); }
 function equipTotalLevel(){ return activeSlots().reduce((t,s)=>t+getRefine(s), 0); } // 裝備總等級＝各部位精煉等級總和
-function relicHpMul(){ return chaosMul() * (1 + fin(state.up.hp,0) * relicLv('aurora') * 0.001) * (1 + equipTotalLevel() * relicLv('dragon') * 0.004); } // 極光法陣守護 × 龍骨重鎧：連乘
-function relicWisdomMul(){ return 1 + Math.max(0, fin(state.qs && state.qs.correct, 0)) * relicLv('wisdom') * 0.007; } // 智慧之神的祝福：累計答對 × 神器等級 × 0.7%
-function relicAtkMul(){ return chaosMul() * (1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001) * relicWisdomMul(); } // 靈魂迴響 × 烈陽之心：連乘
-function relicMidasMul(){ return relicLv('midas') > 0 ? Math.pow(1.01, relicLv('gold') + relicLv('midas')) : 1; } // 點石成金：獲得金幣 ×1.01^神器等級（與其他金幣加成連乘）
+function relicHpMul(){ return chaosMul() * (1 + fin(state.up.hp,0) * relicLv('aurora') * 0.001) * (1 + equipTotalLevel() * relicLv('dragon') * 0.004) * relicWisdomMul() * relicShieldMul(); } // 極光法陣守護 × 龍骨重鎧 × 智慧之神的祝福／護盾：連乘
+function relicWisdomMul(){ return 1 + Math.max(0, fin(state.qs && state.qs.correct, 0)) * relicLv('wisdom') * 0.007; } // 智慧之神的祝福：累計答對 × 神器等級 × 0.7%（同時強化生命及攻擊）
+function relicSwordMul(){ return Math.pow(1 + 0.0002 * relicLv('sword'), Math.max(0, fin(state.qs && state.qs.correct, 0))); }   // 智慧之神的長劍：攻擊力 (1+0.0002×等級)^累計答對
+function relicShieldMul(){ return Math.pow(1 + 0.0002 * relicLv('shield'), Math.max(0, fin(state.qs && state.qs.correct, 0))); } // 智慧之神的護盾：最大生命 (1+0.0002×等級)^累計答對
+function relicAtkMul(){ return chaosMul() * (1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001) * relicWisdomMul() * relicSwordMul(); } // 靈魂迴響 × 烈陽之心：連乘
+function relicMidasMul(){ return relicLv('midas') > 0 ? Math.pow(1.02, relicLv('gold') + relicLv('midas')) : 1; } // 點石成金：獲得金幣 ×1.02^神器等級（與其他金幣加成連乘）
 function relicGoldExtraPct(){ return fin(state.up.goldboost,0) * relicLv('gold') * 0.1; }
-function relicBowlMul(){ return relicLv('bowl') > 0 ? Math.pow(1.01, relicLv('refine') + relicLv('bowl')) : 1; } // 聚寶盆：強化石 ×1.01^(精煉大師日記等級+神器等級)
+function relicBowlMul(){ return relicLv('bowl') > 0 ? Math.pow(1.02, relicLv('refine') + relicLv('bowl')) : 1; } // 聚寶盆：強化石 ×1.02^(精煉大師日記等級+神器等級)
 function relicStoneMul(){ return (1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001) * relicBowlMul(); }
 function streakAfterBreak(){
   const lv = relicLv('horn');
@@ -1116,8 +1129,12 @@ function lightningAtk(s){ return s.atk * lightningPct() / 100 * relicSpearMul();
 function whirlwindAtk(s){ return s.atk * whirlwindPct() / 100 * relicCycloneMul(); }
 function whirlwindRadius(){ return WHIRLWIND_RADIUS + relicLv('cyclone') * 5; }        // 颶風之核：旋風半徑 +神器等級×5
 function whirlwindExRadius(){ return WHIRLWIND_EX_RADIUS + relicLv('cyclone') * 5; }
-function whirlwindTopRadius(){ return WHIRLWIND_VISUAL_TOP_RADIUS + relicLv('cyclone') * 5; } // 純視覺：頂端同步放大
-function whirlwindExTopRadius(){ return WHIRLWIND_EX_VISUAL_TOP_RADIUS + relicLv('cyclone') * 5; }
+function whirlwindVisualScale(){ return whirlwindRadius() / WHIRLWIND_RADIUS; }   // 神器擴大範圍時，外觀依半徑比例同步放大
+function whirlwindTopRadius(){ return WHIRLWIND_VISUAL_TOP_RADIUS * whirlwindVisualScale(); } // 純視覺：頂層寬度同步放大
+function whirlwindHeight(){ return WHIRLWIND_VISUAL_HEIGHT * whirlwindVisualScale(); }       // 純視覺：高度同步放大
+function whirlwindExScale(){ return whirlwindExRadius() / WHIRLWIND_EX_RADIUS; }
+function whirlwindExTopRadius(){ return WHIRLWIND_EX_VISUAL_TOP_RADIUS * whirlwindExScale(); }
+function whirlwindExHeight(){ return WHIRLWIND_EX_VISUAL_HEIGHT * whirlwindExScale(); }
 const WHIRLWIND_UNLOCK_LEVEL = 20;       // 旋風術解鎖條件：過關進度超過第 20 關時自動習得 1 等
 const WHIRLWIND_RADIUS = 45;             //旋風術半徑（實際傷害範圍，只有這個圓）
 const WHIRLWIND_VISUAL_HEIGHT = 150;     // 純視覺：龍捲風從圓心向上延伸的高度
@@ -2690,7 +2707,7 @@ function renderLevelSelect(){
   grid.innerHTML = html;
   grid.querySelectorAll('.lvCard').forEach(el=>{
     if(el.disabled) return;
-    el.onclick = ()=> selectLevel(Number(el.dataset.lv));
+    el.onclick = ()=>{ selectLevel(Number(el.dataset.lv)); openLevelConfirm(Number(el.dataset.lv)); }; // 展開全部關卡後，點關卡直接進入
   });
   // 左右選關列
   const rec = state.levelRecords[selectedLevel];
@@ -3404,7 +3421,7 @@ function wexLeaf(x, y, len, wid, rot, flip, alpha, tone, vein){
 }
 // 圓錐台輪廓（底：完整圓、頂：大圓）
 function wexShell(fillA, lineA){
-  const Hh = WHIRLWIND_EX_VISUAL_HEIGHT, r0 = whirlwindExRadius(), r1 = whirlwindExTopRadius();
+  const Hh = whirlwindExHeight(), r0 = whirlwindExRadius(), r1 = whirlwindExTopRadius();
   ctx.beginPath();
   ctx.moveTo(-r0, 0); ctx.lineTo(-r1, -Hh);
   ctx.ellipse(0, -Hh, r1, r1*WEX_Q, 0, Math.PI, Math.PI*2);
@@ -3424,7 +3441,7 @@ function wexShell(fillA, lineA){
 // 單片葉在 (h 高度比例, ang 環繞角) 的位置，並回傳是否在後側
 function wexPlace(h, ang, radK){
   const rad = wexR(h) * radK;
-  return { x: Math.cos(ang)*rad, y: -h*WHIRLWIND_EX_VISUAL_HEIGHT + Math.sin(ang)*rad*WEX_Q,
+  return { x: Math.cos(ang)*rad, y: -h*whirlwindExHeight() + Math.sin(ang)*rad*WEX_Q,
            tan: Math.atan2(Math.cos(ang)*WEX_Q, -Math.sin(ang)), back: Math.sin(ang) < 0 };
 }
 function drawWhirlwindEx(t){
@@ -4992,7 +5009,7 @@ function draw(){
     ctx.strokeStyle = 'rgba(216,196,154,.14)'; ctx.lineWidth = 1.5;
     for(let k=1;k<=5;k++){
       const h = k/5, rx = funnelR(h);
-      ctx.beginPath(); ctx.ellipse(0, -h*WHIRLWIND_VISUAL_HEIGHT, rx, rx*.3, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, -h*whirlwindHeight(), rx, rx*.3, 0, 0, Math.PI*2); ctx.stroke();
     }
 
     // 沙塵粒子：由下往上飄升，越靠近底部轉得越快、越靠近頂端範圍越大
@@ -5002,7 +5019,7 @@ function draw(){
       const rad = funnelR(h) * (.6 + s2*.5);
       const ang = t.rot*(1.2 + (1-h)*1.8) + s2*6.283;
       const x = Math.cos(ang) * rad;
-      const y = -h*WHIRLWIND_VISUAL_HEIGHT + Math.sin(ang) * rad * .3;
+      const y = -h*whirlwindHeight() + Math.sin(ang) * rad * .3;
       const sz = (1.3 + s2*2.2) * (.8 + h*.6);
       ctx.fillStyle = `rgba(${(214+s2*24)|0},${(184+s2*24)|0},${(128+s2*20)|0},${(.9 - h*.45).toFixed(2)})`;
       ctx.beginPath(); ctx.arc(x, y, sz, 0, Math.PI*2); ctx.fill();
@@ -5111,9 +5128,9 @@ function doPull(n, free){
   const wasComplete = gearCollectionComplete();
   const out = [];
   if(n === 10 && relicPullActive()){
-    // 神器模式十連抽：固定 8 個隨機技能 ＋ 2 個隨機神器（神器已全滿級時改抽技能）
-    for(let i=0;i<2;i++){ const ro = relicPullOnce(); out.push(ro || skillPullOnce()); }
-    for(let i=0;i<8;i++) out.push(skillPullOnce());
+    // 神器模式十連抽：固定 6 個隨機技能 ＋ 4 個隨機神器（神器已全滿級時改抽技能）
+    for(let i=0;i<RELIC_PULL10_COUNT;i++){ const ro = relicPullOnce(); out.push(ro || skillPullOnce()); }
+    for(let i=0;i<10-RELIC_PULL10_COUNT;i++) out.push(skillPullOnce());
   } else {
     for(let i=0;i<n;i++) out.push(pullOnce());
   }
@@ -5257,6 +5274,8 @@ function renderUpgrades(){
     // 暴擊傷害額外加上暴擊率溢出轉換的量
     const overflow  = u.key === 'critdmg' ? critOverflowAmount() : 0;
     const curBody  = u.bodyFmt(u.full(lv) + overflow);
+    const relicExtra = u.key==='defense' ? relicLv('holy') : u.key==='monweaken' ? relicLv('wrath') : 0;
+    const relicExtraTxt = relicExtra > 0 ? `<span style="color:var(--ember-hot)">(+${relicExtra})</span>` : '';
     const nextBody = u.bodyFmt(u.full(lv+1) + overflow);
     if(u.nextOnly){
       return `<div class="up">
@@ -5278,7 +5297,7 @@ function renderUpgrades(){
     return `<div class="up">
       <div class="ico">${u.icon}</div>
       <div class="info">
-        <div class="nm">${u.name}${exOn(u.key)?'<span class="exbadge">EX</span>':''}　<span style="color:var(--bone-dim);font-size:12px">Lv.${lv}${maxed?' 已滿':''}</span></div>
+        <div class="nm">${u.name}${exOn(u.key)?'<span class="exbadge">EX</span>':''}　<span style="color:var(--bone-dim);font-size:12px">Lv.${lv}${relicExtraTxt}${maxed?' 已滿':''}</span></div>
         <div class="val upstat">
           <span class="lb">目前</span><span class="bd">${curBody}</span><span class="pr">${curPer ? '('+curPer+')' : ''}</span><span class="ar">→</span>
           <span class="lb">下一級</span><span class="bd">${nextBody}</span><span class="pr">${nextPer ? '('+nextPer+')' : ''}</span><span class="ar"></span>
@@ -5767,7 +5786,7 @@ function syncUI(){
   if(skillOddsEl){
     if(gearDone){
       skillOddsEl.textContent = relicPullActive()
-        ? `裝備已收集齊全：十連抽固定 8 技能＋2 神器，單抽 80% 技能／20% 神器（目前 ${skillCount} 種技能平均分攤）`
+        ? `裝備已收集齊全：十連抽固定 6 技能＋4 神器，單抽 80% 技能／20% 神器（目前 ${skillCount} 種技能平均分攤）`
         : `裝備已收集齊全，召喚只會抽到技能（目前 ${skillCount} 種技能，每種各 ${(100/skillCount).toFixed(1)}%）`;
     } else {
       const each = (SKILL_PULL_CHANCE*100/skillCount);
