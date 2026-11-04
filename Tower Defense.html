@@ -209,6 +209,7 @@ body{
   color:var(--bone-dim);font-size:8px;line-height:1;opacity:.75;cursor:pointer;font-family:inherit;
 }
 .up button.relic-spk:active{transform:none;box-shadow:none;background:rgba(255,255,255,.16);opacity:1}
+.ico img.relicImg{width:30px;height:30px;object-fit:contain;display:block;margin:0 auto;border-radius:6px}
 #heroSkinGrid{display:flex;gap:9px;margin-top:6px}
 .heroCard{
   flex:1;position:relative;border-radius:13px;border:1px solid var(--stoneline);
@@ -4381,6 +4382,19 @@ hero6Img.onload  = ()=>{ hero6ImgReady = true; };
 hero6Img.onerror = ()=>{ hero6ImgReady = false; };
 hero6Img.src = encodeURI(`./${HERO_IMG_FOLDER}/hero6.png`);//指定名稱
 
+// 神器圖片：放 Tower Defense images/relic_<key>.png（例如 relic_bowl.png）；沒放或載入失敗時，退回 emoji。
+const RELIC_IMG_PREFIX = 'relic_';
+const relicImgs = {};   // key → 已成功載入的 Image
+RELICS.forEach(r=>{
+  const img = new Image();
+  img.onload = ()=>{ relicImgs[r.key] = img; try{ renderRelics(); }catch(e){} };
+  img.src = encodeURI(`./${HERO_IMG_FOLDER}/${RELIC_IMG_PREFIX}${r.key}.png`);
+});
+function relicIconHtml(r){
+  const img = relicImgs[r.key];
+  return img ? `<img class="relicImg" src="${img.src}" alt="">` : r.icon;
+}
+
 // 守護者圖片：放 Tower Defense images/guardian.png；沒放或載入失敗時，退回 🗿 emoji。
 const GUARDIAN_IMG_FILE = 'guardian.png';        // 指定守護者圖片檔名
 const guardianImg = new Image();
@@ -5116,7 +5130,7 @@ function doPull(n, free){
   box.innerHTML = freeHint + out.map(o=>{
     if(o.kind === 'relic'){
       return `<div class="drop new">
-        <div class="ico">${o.def.icon}</div>
+        <div class="ico">${relicIconHtml(o.def)}</div>
         <div style="flex:1;min-width:0">
           <div class="nm">${o.def.name}</div>
           <div class="st">神器等級 Lv.${o.lv}／${o.def.max}</div>
@@ -5426,7 +5440,7 @@ function renderRelics(){
     const lv = relicLv(r.key);
     const descTxt = relicDescText(r, lv);
     return `<div class="up">
-      <div class="ico">${r.icon}</div>
+      <div class="ico">${relicIconHtml(r)}</div>
       <div class="info">
         <div class="nm">${r.name}<button type="button" class="relic-spk" data-rspk="name" data-key="${r.key}" title="朗讀名稱">🔊</button><span style="color:var(--bone-dim);font-size:12px">${lv>0?`Lv.${lv}${r.chaos ? '（＝成就點數）' : `／${r.max}${lv>=r.max?' 已滿':''}`}`:'尚未獲得'}</span></div>
         <div class="val">${r.eff(lv)}</div>
