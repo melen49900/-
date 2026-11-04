@@ -820,12 +820,12 @@ const RELICS = [
     eff:lv=>`攻擊力 ×${fmtX(1+relicTotalLevel()*lv*0.001)}（神器總等級 ${relicTotalLevel()}）` },
   { key:'gold',    icon:'👑', name:'金碧輝煌',       max:100,
     desc:'獲得金幣額外增加：〈金幣強化等級〉× 神器等級 × 0.1%',
-    eff:lv=>`金幣 +${fmtPct(fin(state.up.goldboost,0)*lv*0.1,1)}%（金幣強化 Lv.${fin(state.up.goldboost,0)}）` },
+    eff:lv=>`金幣 ×${fmtX(1+fin(state.up.goldboost,0)*lv*0.001)}（金幣強化 Lv.${fin(state.up.goldboost,0)}）` },
   { key:'midas',   icon:'🪙', name:'點石成金',
     // 解鎖：金碧輝煌達到 10 級；未解鎖時上限為 0（不會被抽到）
-    get max(){ return relicLv('gold') >= 10 ? 100 : 0; },
+    get max(){ return relicLv('gold') >= 10 ? 200 : 0; },
     desc:'獲得金幣每神器等級皆額外增加1%',
-    eff:lv=>`獲得金幣 ×${fmtX(Math.pow(1.01,lv))}（與其他神器連乘）` },
+    eff:lv=>`獲得金幣 ×${fmtX(Math.pow(1.01,relicLv('gold')+lv))}（金碧輝煌 Lv.${relicLv('gold')}＋神器等級 ${lv}，與其他神器連乘）` },
   { key:'horn',    icon:'📯', name:'勝利號角',       max:80,
     desc:lv=>`答題連勝中斷時不會歸零，剩餘連勝為：${fmtNum(streakAfterBreak())}`,
     eff:lv=>`連勝中斷時保留 ${lv}%（無條件進位）` },
@@ -839,7 +839,12 @@ const RELICS = [
     eff:lv=>`無視敵人減傷 ${lv} 等（目前 ${voidCurrentDefLv(state.unlockedLevel)} 等）` },
   { key:'refine',  icon:'📔', name:'精煉大師日記',   max:100,
     desc:'強化石獲得額外增加：〈精煉成本等級〉× 神器等級 × 0.1%',
-    eff:lv=>`強化石 +${fmtPct(fin(state.up.breakboost,0)*lv*0.1,1)}%（精煉成本 Lv.${fin(state.up.breakboost,0)}）` },
+    eff:lv=>`強化石 ×${fmtX(1+fin(state.up.breakboost,0)*lv*0.001)}（精煉成本 Lv.${fin(state.up.breakboost,0)}）` },
+  { key:'bowl',    icon:'🏺', name:'聚寶盆',
+    // 解鎖：精煉大師日記達到 10 級；未解鎖時上限為 0（不會被抽到）
+    get max(){ return relicLv('refine') >= 10 ? 200 : 0; },
+    desc:'獲得強化石每神器等級皆額外增加1%',
+    eff:lv=>`強化石 ×${fmtX(Math.pow(1.01,relicLv('refine')+lv))}（精煉大師日記 Lv.${relicLv('refine')}＋神器等級 ${lv}，與其他神器連乘）` },
   { key:'ruin',    icon:'💀', name:'荒蕪毀滅',       max:200,
     desc:'所有技能效果皆加成神器等級 × 0.5%',
     eff:lv=>`所有技能效果 +${fmtPct(lv*0.5,1)}%` },
@@ -896,9 +901,10 @@ function equipTotalLevel(){ return activeSlots().reduce((t,s)=>t+getRefine(s), 0
 function relicHpMul(){ return chaosMul() * (1 + fin(state.up.hp,0) * relicLv('aurora') * 0.001) * (1 + equipTotalLevel() * relicLv('dragon') * 0.004); } // 極光法陣守護 × 龍骨重鎧：連乘
 function relicWisdomMul(){ return 1 + Math.max(0, fin(state.qs && state.qs.correct, 0)) * relicLv('wisdom') * 0.007; } // 智慧之神的祝福：累計答對 × 神器等級 × 0.7%
 function relicAtkMul(){ return chaosMul() * (1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001) * relicWisdomMul(); } // 靈魂迴響 × 烈陽之心：連乘
-function relicMidasMul(){ return Math.pow(1.01, relicLv('midas')); } // 點石成金：獲得金幣 ×1.01^神器等級（與其他金幣加成連乘）
+function relicMidasMul(){ return relicLv('midas') > 0 ? Math.pow(1.01, relicLv('gold') + relicLv('midas')) : 1; } // 點石成金：獲得金幣 ×1.01^神器等級（與其他金幣加成連乘）
 function relicGoldExtraPct(){ return fin(state.up.goldboost,0) * relicLv('gold') * 0.1; }
-function relicStoneMul(){ return 1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001; }
+function relicBowlMul(){ return relicLv('bowl') > 0 ? Math.pow(1.01, relicLv('refine') + relicLv('bowl')) : 1; } // 聚寶盆：強化石 ×1.01^(精煉大師日記等級+神器等級)
+function relicStoneMul(){ return (1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001) * relicBowlMul(); }
 function streakAfterBreak(){
   const lv = relicLv('horn');
   if(lv <= 0) return 0;
@@ -5575,11 +5581,12 @@ function relicLevelSum(){ return relicTotalLevel(); } // 含混沌魔盒（與�
 const ACH_REPEAT = [
   { key:'login',  icon:'📅', name:'登入',     step:3,  gem:100, unit:'天',  desc:'每累計登入 3 天（不需連續）', prog:()=>state.loginDays || 0 },
   { key:'clear',  icon:'🚩', name:'通關',     step:10, gem:100, unit:'關',  desc:'每通關 10 關',               prog:()=>maxClearedLevel() },
-  { key:'pull10', icon:'🎰', name:'十連抽',   step:10, gem:100, unit:'次',  desc:'每十連抽 10 次',             prog:()=>state.pull10Count || 0 },
-  { key:'relic',  icon:'🏺', name:'神器等級', step:10, gem:100, unit:'等',  desc:'神器等級合計每 10 等',       prog:()=>relicLevelSum() },
   { key:'quiz',   icon:'📝', name:'答對',     step:20, gem:100, unit:'題',  desc:'每累計答對 20 題',           prog:()=>Math.max(0, Math.round(fin(state.qs.correct, 0))) },
-  { key:'upgrade', icon:'🔨', name:'鍛造台等級', step:100, gem:100, unit:'等', desc:'鍛造台等級合計每 100 等', prog:()=>UPGRADES.reduce((t,u)=>t+Math.max(0, Math.round(fin(state.up[u.key], 0))), 0) },
+  { key:'pull10', icon:'🎰', name:'十連抽',   step:10, gem:100, unit:'次',  desc:'每十連抽 10 次',             prog:()=>state.pull10Count || 0 },
+  { key:'relic',  icon:'🏺', name:'神器', step:10, gem:100, unit:'等',  desc:'神器等級合計每 10 等',       prog:()=>relicLevelSum() },
+  { key:'upgrade', icon:'🔨', name:'鍛造台', step:100, gem:100, unit:'等', desc:'鍛造台等級合計每 100 等', prog:()=>UPGRADES.reduce((t,u)=>t+Math.max(0, Math.round(fin(state.up[u.key], 0))), 0) },
   { key:'refine', icon:'⚒️', name:'精煉',     step:10, gem:100, unit:'等',  desc:'裝備精煉等級合計每 10 等',   prog:()=>ALL_SLOTS.reduce((t,sl)=>t+getRefine(sl), 0) },
+  { key:'skill', icon:'🎇', name:'技能',     step:30, gem:100, unit:'等',  desc:'技能總等級每 30 等',         prog:()=>skillTotalLevel() },
 ];
 // 一次性成就（依序解鎖，前一項完成前隱藏下一項）
 const ACH_KILL_TIERS = [[100,10],[500,50],[1000,100],[5000,150],[10000,200],[50000,250],[100000,300]];
