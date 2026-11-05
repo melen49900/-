@@ -774,7 +774,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 155;        // 所有怪物出完的時間點（2:35），清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 350;           // 共 350 關
+const LEVEL_COUNT = 375;           // 共 375 關
 const LEVEL_HP_GROWTH = 1.286;                                  // 血量成長係數
 const LEVEL_ATK_GROWTH = 1.21;                                  // 攻擊成長係數
 // 第 120 關之後（第 121 關起）：每關的血量／攻擊成長係數皆固定為 1.4（前 120 關不變）
@@ -805,18 +805,20 @@ const RELICS = [
   { key:'blood',   icon:'🩸', name:'嗜血匕首',       max:10,
     desc:'暴擊率上限增加：神器等級 × 1%',
     eff:lv=>`暴擊率上限 ${CRIT_CAP + lv}%（+${lv}%）` },
-  { key:'aurora',  icon:'🌌', name:'極光法陣守護',   max:200,
-    desc:'生命值額外增加：〈生命值等級〉× 神器等級 × 0.1%',
-    eff:lv=>`最大生命 ×${fmtX(1+fin(state.up.hp,0)*lv*0.001)}（生命值 Lv.${fin(state.up.hp,0)}）` },
-  { key:'soul',    icon:'👻', name:'靈魂迴響',       max:200,
-    desc:'攻擊力額外增加：〈技能總等級〉× 神器等級 × 0.1%',
-    eff:lv=>`攻擊力 ×${fmtX(1+skillTotalLevel()*lv*0.001)}（技能總等級 ${skillTotalLevel()}）` },
   { key:'holy',    icon:'🕊️', name:'聖光庇護',       max:50,
     desc:'額外增加減傷等級：神器等級 × 1',
     eff:lv=>`減傷等級 +${lv}（有效 Lv.${fin(state.up.defense,0)+lv}）` },
   { key:'wrath',   icon:'🌩️', name:'神怒天罰',       max:50,
     desc:'額外增加怪物弱化等級：神器等級 × 1',
     eff:lv=>`怪物弱化等級 +${lv}（有效 Lv.${fin(state.up.monweaken,0)+lv}）` },
+  { key:'mirror', icon:'🪞', name:'鏡界防壁',
+    // 解鎖：魔法護盾解鎖（通關第 100 關後）；未解鎖時上限為 0（不會被抽到）
+    get max(){ return state.unlockedLevel > 100 ? 50 : 0; },
+    desc:'額外增加魔法護盾等級：神器等級 × 1',
+    eff:lv=>`魔法護盾等級 +${lv}（有效 Lv.${fin(state.up.shield,0)+lv}）` },
+  { key:'soul',    icon:'👻', name:'靈魂迴響',       max:200,
+    desc:'攻擊力額外增加：〈技能總等級〉× 神器等級 × 0.1%',
+    eff:lv=>`攻擊力 ×${fmtX(1+skillTotalLevel()*lv*0.001)}（技能總等級 ${skillTotalLevel()}）` },
   { key:'sun',     icon:'☀️', name:'烈陽之心',       max:100,
     desc:'攻擊力額外增加：〈神器總等級〉× 神器等級 × 0.1%',
     eff:lv=>`攻擊力 ×${fmtX(1+relicTotalLevel()*lv*0.001)}（神器總等級 ${relicTotalLevel()}）` },
@@ -831,9 +833,12 @@ const RELICS = [
   { key:'horn',    icon:'📯', name:'勝利號角',       max:80,
     desc:lv=>`答題連勝中斷時不會歸零，剩餘連勝為：${fmtNum(streakAfterBreak())}`,
     eff:lv=>`連勝中斷時保留 ${lv}%（無條件進位）` },
+  { key:'aurora',  icon:'🌌', name:'極光法陣守護',   max:200,
+    desc:'生命值額外增加：〈生命值等級〉× 神器等級 × 0.5%',
+    eff:lv=>`最大生命 ×${fmtX(1+fin(state.up.hp,0)*lv*0.005)}（生命值 Lv.${fin(state.up.hp,0)}）` },
   { key:'dragon',  icon:'🐲', name:'龍骨重鎧',       max:100,
-    desc:'生命值額外增加（連乘）：〈裝備總等級〉× 神器等級 × 0.4%',
-    eff:lv=>`最大生命 ×${fmtX(1+equipTotalLevel()*lv*0.004)}（裝備總等級 ${equipTotalLevel()}）` },
+    desc:'生命值額外增加（連乘）：〈裝備總等級〉× 神器等級 × 1%',
+    eff:lv=>`最大生命 ×${fmtX(1+equipTotalLevel()*lv*0.01)}（裝備總等級 ${equipTotalLevel()}）` },
   { key:'void',    icon:'🪓', name:'虛空穿刺',
     // 解鎖：通關第 110 關；上限：通關 110 關為 10 等，之後每多通關 10 關 +10 等（120 關 20 等…）；未解鎖時上限為 0（不會被抽到）
     get max(){ const c = maxClearedLevel(); return c >= VOID_UNLOCK_CLEAR ? 10 + Math.floor((c - VOID_UNLOCK_CLEAR) / 10) * 10 : 0; },
@@ -860,8 +865,8 @@ const RELICS = [
     desc:'閃電術額外增加傷害：神器等級 × 1%；閃電術 EX 額外落下 1 道小落雷',
     eff:lv=>`閃電傷害 +${lv}%　小落雷傷害 ＝ 大落雷 ×${lv}%` },
   { key:'cyclone', icon:'🌀', name:'颶風之核',       max:100,
-    desc:'旋風術額外增加傷害：神器等級 × 1%；增加旋風半徑：神器等級 × 5',
-    eff:lv=>`旋風傷害 +${lv}%　旋風半徑 +${lv*5}（旋風術 ${whirlwindRadius()}／EX ${whirlwindExRadius()}）` },
+    desc:'旋風術額外增加傷害：神器等級 × 1%；增加旋風半徑：神器等級 × 3',
+    eff:lv=>`旋風傷害 +${lv}%　旋風半徑 +${lv*3}（旋風術 ${whirlwindRadius()}／EX ${whirlwindExRadius()}）` },
   { key:'earth',   icon:'⛰️', name:'大地之脈',       max:100,
     desc:'土牆術額外增加生命及生命回復：神器等級 × 1%；土牆 EX 擊殺敵人時（其他技能不算）立即回復最大生命 × 神器等級 × 0.1%',
     eff:lv=>`土牆生命與回復 +${lv}%　EX 擊殺回復最大生命 ${fmtPct(lv*0.1,1)}%` },
@@ -910,7 +915,7 @@ function iceAngles(base){
 // 神器效果（供各處呼叫）
 function critCap(){ return CRIT_CAP + relicLv('blood'); }
 function equipTotalLevel(){ return activeSlots().reduce((t,s)=>t+getRefine(s), 0); } // 裝備總等級＝各部位精煉等級總和
-function relicHpMul(){ return chaosMul() * (1 + fin(state.up.hp,0) * relicLv('aurora') * 0.001) * (1 + equipTotalLevel() * relicLv('dragon') * 0.004) * relicWisdomMul() * relicShieldMul(); } // 極光法陣守護 × 龍骨重鎧 × 智慧之神的祝福／護盾：連乘
+function relicHpMul(){ return chaosMul() * (1 + fin(state.up.hp,0) * relicLv('aurora') * 0.005) * (1 + equipTotalLevel() * relicLv('dragon') * 0.01) * relicWisdomMul() * relicShieldMul(); } // 極光法陣守護 × 龍骨重鎧 × 智慧之神的祝福／護盾：連乘
 function relicWisdomMul(){ return 1 + Math.max(0, fin(state.qs && state.qs.correct, 0)) * relicLv('wisdom') * 0.007; } // 智慧之神的祝福：累計答對 × 神器等級 × 0.7%（同時強化生命及攻擊）
 function relicSwordMul(){ return Math.pow(1 + 0.0002 * relicLv('sword'), Math.max(0, fin(state.qs && state.qs.correct, 0))); }   // 智慧之神的長劍：攻擊力 (1+0.0002×等級)^累計答對
 function relicShieldMul(){ return Math.pow(1 + 0.0002 * relicLv('shield'), Math.max(0, fin(state.qs && state.qs.correct, 0))); } // 智慧之神的護盾：最大生命 (1+0.0002×等級)^累計答對
@@ -1127,8 +1132,8 @@ function fireballAtk(s){ return s.atk * fireballPct() / 100 * relicFireMul(); }
 function icespikeAtk(s){ return s.atk * icespikePct() / 100 * relicFrostMul(); }
 function lightningAtk(s){ return s.atk * lightningPct() / 100 * relicSpearMul(); }
 function whirlwindAtk(s){ return s.atk * whirlwindPct() / 100 * relicCycloneMul(); }
-function whirlwindRadius(){ return WHIRLWIND_RADIUS + relicLv('cyclone') * 5; }        // 颶風之核：旋風半徑 +神器等級×5
-function whirlwindExRadius(){ return WHIRLWIND_EX_RADIUS + relicLv('cyclone') * 5; }
+function whirlwindRadius(){ return WHIRLWIND_RADIUS + relicLv('cyclone') * 3; }        // 颶風之核：旋風半徑 +神器等級×3
+function whirlwindExRadius(){ return WHIRLWIND_EX_RADIUS + relicLv('cyclone') * 3; }
 function whirlwindVisualScale(){ return whirlwindRadius() / WHIRLWIND_RADIUS; }   // 神器擴大範圍時，外觀依半徑比例同步放大
 function whirlwindTopRadius(){ return WHIRLWIND_VISUAL_TOP_RADIUS * whirlwindVisualScale(); } // 純視覺：頂層寬度同步放大
 function whirlwindHeight(){ return WHIRLWIND_VISUAL_HEIGHT * whirlwindVisualScale(); }       // 純視覺：高度同步放大
@@ -1428,7 +1433,7 @@ const SHIELDREGEN_PCT_PER_LV = 0.01;
 const SHIELDREGEN_MAX_LV = 100, SHIELDREGEN_MAX_LV_EX = 500;
 function shieldCapBonusPct(lv){ if(lv == null) lv = fin(state.up.shieldregen, 0); return lv * (exOn('shieldregen') ? SHIELDREGEN_CAP_PCT_PER_LV_EX : SHIELDREGEN_CAP_PCT_PER_LV); }
 function shieldRegenPct(lv){ if(lv == null) lv = fin(state.up.shieldregen, 0); return Math.min(lv, exOn('shieldregen') ? SHIELDREGEN_MAX_LV_EX : SHIELDREGEN_MAX_LV) * SHIELDREGEN_PCT_PER_LV; } // 每秒回復護盾最大值的百分比
-function shieldValue(maxHp, lv){ if(lv == null) lv = fin(state.up.shield, 0); return Math.round(maxHp * shieldRatio(lv) * (1 + shieldCapBonusPct()/100)); }
+function shieldValue(maxHp, lv){ if(lv == null) lv = fin(state.up.shield, 0); lv += relicLv('mirror'); return Math.round(maxHp * shieldRatio(lv) * (1 + shieldCapBonusPct()/100)); }
 const UPGRADES = [
   { key:'atk',  icon:'🗡️', name:'攻擊力',  base:40,  grow:1.11, per:3,    fmt:v=>'+'+fmtNum(v),
     // 每級：固定 +3，另外「全攻擊（本體＋鍛造＋裝備）」再 +0.5%（各級線性相加，例如 Lv.20 ＝ ×1.10）
@@ -3447,13 +3452,14 @@ function wexPlace(h, ang, radK){
 function drawWhirlwindEx(t){
   const fade = Math.min(1, t.age/0.5), T = t.age, S = t.spin || 0, r0 = whirlwindExRadius();
   ctx.save(); ctx.translate(t.x, t.y); ctx.globalAlpha = fade;
-  // 傷害圈（地面）：只保留淡綠色半透明光（無虛線邊）；打出傷害時微微閃亮
-  ctx.fillStyle = `rgba(140,230,160,${(0.12 + t.pulse*0.14).toFixed(3)})`;
+  // 傷害圈（地面）：只保留淡綠色半透明光（無虛線邊）
+  ctx.fillStyle = `rgba(140,230,160,${(0.12).toFixed(3)})`;
   ctx.beginPath(); ctx.arc(0, 0, r0, 0, Math.PI*2); ctx.fill();
 
   // 螺旋上升：葉片各自沿螺旋由底圈往上飄，越高越大越淡；每片葉子角速度固定、同向持續旋轉
   const leaves = [];
-  for(let i=0;i<WHIRLWIND_EX_LEAF_COUNT;i++){
+  const leafN = Math.round(WHIRLWIND_EX_LEAF_COUNT * whirlwindExScale()); // 範圍擴大時，葉片數等比增加
+  for(let i=0;i<leafN;i++){
     const s1 = twRnd(i+7), s2 = twRnd(i+91), s3 = twRnd(i+170);
     const h = (s1 + T*(0.10 + s2*0.10)) % 1;
     const ang = S*(1.6 + s2*0.9) + s1*6.283;
@@ -4037,8 +4043,7 @@ function step(dt){
           }
           hitAny = true;
         }
-        if(hitAny) burst(t.x, t.y, '#9cffc4', 6);
-      }
+              }
       continue;
     }
     t.tickTimer -= dt;
@@ -4055,8 +4060,7 @@ function step(dt){
           hitAny = true;
         }
       }
-      if(hitAny) burst(t.x, t.y, '#9cffc4', 8);
-    }
+          }
   }
 
   // 土牆術：牆本身不會消失，只有被打壞（hp<=0）才移除；受擊的紅光回饋計時器倒數
@@ -5013,7 +5017,8 @@ function draw(){
     }
 
     // 沙塵粒子：由下往上飄升，越靠近底部轉得越快、越靠近頂端範圍越大
-    for(let i=0;i<WHIRLWIND_DUST_COUNT;i++){
+    const dustN = Math.round(WHIRLWIND_DUST_COUNT * whirlwindVisualScale()); // 範圍擴大時，沙塵數等比增加
+    for(let i=0;i<dustN;i++){
       const s1 = twRnd(i), s2 = twRnd(i+40);
       const h = (s1 + t.rot*0.04*(1+s2)) % 1;                  // 0=底 1=頂
       const rad = funnelR(h) * (.6 + s2*.5);
@@ -5274,7 +5279,7 @@ function renderUpgrades(){
     // 暴擊傷害額外加上暴擊率溢出轉換的量
     const overflow  = u.key === 'critdmg' ? critOverflowAmount() : 0;
     const curBody  = u.bodyFmt(u.full(lv) + overflow);
-    const relicExtra = u.key==='defense' ? relicLv('holy') : u.key==='monweaken' ? relicLv('wrath') : 0;
+    const relicExtra = u.key==='defense' ? relicLv('holy') : u.key==='monweaken' ? relicLv('wrath') : u.key==='shield' ? relicLv('mirror') : 0;
     const relicExtraTxt = relicExtra > 0 ? `<span style="color:var(--ember-hot)">(+${relicExtra})</span>` : '';
     const nextBody = u.bodyFmt(u.full(lv+1) + overflow);
     if(u.nextOnly){
@@ -5297,10 +5302,10 @@ function renderUpgrades(){
     return `<div class="up">
       <div class="ico">${u.icon}</div>
       <div class="info">
-        <div class="nm">${u.name}${exOn(u.key)?'<span class="exbadge">EX</span>':''}　<span style="color:var(--bone-dim);font-size:12px">Lv.${lv}${relicExtraTxt}${maxed?' 已滿':''}</span></div>
+        <div class="nm">${u.name}${exOn(u.key)?'<span class="exbadge">EX</span>':''}　<span style="color:var(--bone-dim);font-size:12px">Lv.${lv+relicExtra}${relicExtraTxt}${maxed?' 已滿':''}</span></div>
         <div class="val upstat">
-          <span class="lb">目前</span><span class="bd">${curBody}</span><span class="pr">${curPer ? '('+curPer+')' : ''}</span><span class="ar">→</span>
-          <span class="lb">下一級</span><span class="bd">${nextBody}</span><span class="pr">${nextPer ? '('+nextPer+')' : ''}</span><span class="ar"></span>
+          <span class="lb">目前</span><span class="bd">${curBody}</span><span class="pr">${curPer ? '('+curPer+')' : ''}</span><span class="ar">${maxed ? '' : '→'}</span>
+          ${maxed ? '' : `<span class="lb">下一級</span><span class="bd">${nextBody}</span><span class="pr">${nextPer ? '('+nextPer+')' : ''}</span><span class="ar"></span>`}
         </div>
       </div>
       <div class="upbtns">
