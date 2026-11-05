@@ -1317,8 +1317,10 @@ function earthwallCounter(e, wall, s){
   }
   run.wallSpikes.push({ x:e.x, a:Math.atan2(e.y - wall.y, e.x - wall.x), t:0 });
   wall.jolt = 1; wall.shakeT = 0;
-  if(wall.ring) burst(e.x, e.y, '#ff6a4a', 9);
-  else burst(e.x, wall.y + EARTHWALL_EX_DRAW_OFFSET - 18, '#ff6a4a', 9);
+  if(crit){ // 碎屑只在暴擊（或擊殺）時噴
+    if(wall.ring) burst(e.x, e.y, '#ff6a4a', 9);
+    else burst(e.x, wall.y + EARTHWALL_EX_DRAW_OFFSET - 18, '#ff6a4a', 9);
+  }
 }
 function earthwallPct(){ return 50 + skillOverCap('earthwall') * 2; }// 土牆係數
 function earthwallHp(s){
@@ -3104,7 +3106,7 @@ function updateIceEx(dt, s){
         e.hp -= d; e.hit = 0.12;
         popText(e.x, e.y-e.r-4, fmtNum(d), b.crit);
         e.exSlow = ICE_EX_SLOW_TIME;
-        burst(e.x, e.y, b.crit ? '#d6faff' : '#7fe3ff', b.crit?9:5);
+        if(b.crit) burst(e.x, e.y, '#d6faff', 9);
       }
       // 冰痕：敵人所在位置的冰痕還在（存在 1 秒）時，每 0.25 秒跳一下，最多 4 下，不更新緩速
       const age = b.t - along/b.spd;
@@ -3205,7 +3207,7 @@ function updateFireballEx(dt, s){
       popText(direct.x, direct.y-direct.r-4, fmtNum(d), l.crit);
       hit.add(direct);
     }
-    burst(l.ex, l.ey, l.crit ? '#fff9c4' : '#ffb347', 26);
+    if(l.crit) burst(l.ex, l.ey, '#fff9c4', 26);
     run.shake = Math.max(run.shake, 0.12);
     run.blasts.push({ x:l.ex, y:l.ey, t:0, dmg: dmg * FIREBALL_EX_SPLASH_PCT, hit, crit:l.crit });
   }
@@ -3391,7 +3393,7 @@ function lightningExStrike(b){
     if(alive) popText(b.x, b.y - b.r - 6 - i*17*fz, fmtNum(d), crit); // 沒擊中（目標已死）不顯示 0，特效保留
   }
   if(alive && e.steel){ e.stun = LIGHTNING_EX_STUN; e.lflash = LIGHTNING_EX_FLASH; }
-  burst(b.x, b.y, anyCrit ? '#fff3ff' : '#e0ccff', anyCrit ? 18 : 12);
+  if(anyCrit) burst(b.x, b.y, '#fff3ff', 18);
 }
 function updateLightningEx(dt){
   for(let i=run.exBolts.length-1;i>=0;i--){
@@ -3465,12 +3467,13 @@ function drawWhirlwindEx(t){
 
   // 螺旋上升：葉片各自沿螺旋由底圈往上飄，越高越大越淡；每片葉子角速度固定、同向持續旋轉
   const leaves = [];
-  const leafN = Math.round(WHIRLWIND_EX_LEAF_COUNT * whirlwindExScale()); // 範圍擴大時，葉片數等比增加
+  const leafN = WHIRLWIND_EX_LEAF_COUNT; // 片數固定；範圍擴大時改放大葉片
+  const leafK = 1 + (whirlwindExScale() - 1) * 0.5;
   for(let i=0;i<leafN;i++){
     const s1 = twRnd(i+7), s2 = twRnd(i+91), s3 = twRnd(i+170);
     const h = (s1 + T*(0.10 + s2*0.10)) % 1;
     const ang = S*(1.6 + s2*0.9) + s1*6.283;
-    leaves.push({ h, ang, radK:0.8 + s2*0.2, len:11 + s3*7 + h*6, wid:5 + s3*2.5 + h*2, flip:Math.cos(T*(2.5+s3*3) + i),
+    leaves.push({ h, ang, radK:0.8 + s2*0.2, len:(11 + s3*7 + h*6) * leafK, wid:(5 + s3*2.5 + h*2) * leafK, flip:Math.cos(T*(2.5+s3*3) + i),
       alpha:0.40 - h*0.16, tone:s2 });
   }
   // 後側的先畫、前側的後畫，形成前後遮蔽感
@@ -3546,7 +3549,7 @@ function castLightning(){
     e.hp -= d; e.hit = 0.12;
     popText(e.x, e.y-e.r-4, fmtNum(d), crit);
   });
-  burst(targets[0].x, targets[0].y, crit ? '#fff9c4' : '#ffe066', crit?9:5);
+  if(crit) burst(targets[0].x, targets[0].y, '#fff9c4', 9);
 
   // 連線點：角色 → 第一位敵人 → 第二位敵人 → …
   const points = [{x:run.heroX, y:heroOY()}, ...targets.map(e=>({x:e.x, y:e.y}))];
@@ -3597,13 +3600,15 @@ function updateBeamEx(dt){
     if(d + aw < prevU || d - aw > uCur) continue;
     sw.hitSet.add(e);
     // 被掃過的敵人一次受到 BEAM_EX_HITS 下傷害，各自判定暴擊，傷害數字由下往上並排
+    let anyCrit = false;
     for(let i = 0; i < BEAM_EX_HITS; i++){
       const crit = Math.random()*100 < s.crit;
+      if(crit) anyCrit = true;
       const dmg = enemyDmg(e, crit ? base * (s.critDmg/100) : base);
       e.hp -= dmg; e.hit = 0.12;
       popText(e.x, e.y - e.r - 6 - i*17*fz, fmtNum(dmg), crit);
     }
-    burst(e.x, e.y, '#ff6b6b', 6);
+    if(anyCrit) burst(e.x, e.y, '#ff6b6b', 6);
   }
   if(sw.t >= sw.dur){ b.sweep = null; b.active = false; }
 }
@@ -3643,7 +3648,7 @@ function pulseBeam(s){
     const dmg = enemyDmg(e, crit ? base * (s.critDmg/100) : base);
     e.hp -= dmg; e.hit = 0.12;
     popText(e.x, e.y-e.r-4, fmtNum(dmg), crit);
-    burst(e.x, e.y, '#b5d4f4', 4);
+    if(crit) burst(e.x, e.y, '#b5d4f4', 4);
   });
   run.beam.pulse = BEAM_PULSE_VISUAL;
 }
@@ -3733,7 +3738,11 @@ function updateEarthwall(dt, s){
 
 
 /* 爆點與傷害數字 */
+const BURST_SCALE = 0.7; // 所有碎屑數量倍率（稍微減量）
+// 交換刪除：把最後一個元素搬到被刪除的位置再縮短陣列，比 splice 快（不保證順序，只用在順序不影響結果的陣列）
+function swapRemove(arr, i){ const last = arr.pop(); if(i < arr.length) arr[i] = last; }
 function burst(x,y,color,count){
+  count = Math.max(1, Math.round(count * BURST_SCALE));
   for(let i=0;i<count;i++){
     const a = Math.random()*Math.PI*2, sp = (40 + Math.random()*150) * fz;
     run.bits.push({ x,y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:.45+Math.random()*.3, age:0, c:color, r:(1.5+Math.random()*2.5) * fz });
@@ -3967,7 +3976,7 @@ function step(dt){
     }
 
     b.x += b.vx*dt; b.y += b.vy*dt;
-    if(b.y < -20 || b.y > H+20 || b.x < -20 || b.x > W+20){ run.shots.splice(i,1); continue; }
+    if(b.y < -20 || b.y > H+20 || b.x < -20 || b.x > W+20){ swapRemove(run.shots, i); continue; }
     for(let j=0;j<run.enemies.length;j++){
       const e = run.enemies[j];
       const dx=b.x-e.x, dy=b.y-e.y;
@@ -3981,11 +3990,11 @@ function step(dt){
           if(!e.slowStacks) e.slowStacks = [];
           if(e.slowStacks.length < ICESPIKE_SLOW_MAX_STACKS) e.slowStacks.push(ICESPIKE_SLOW_DURATION);
           else e.slowStacks[0] = ICESPIKE_SLOW_DURATION; // 已滿層時刷新最舊的一層
-          burst(b.x, b.y, b.crit ? '#d6faff' : '#7fe3ff', b.crit?9:5);
+          if(b.crit) burst(b.x, b.y, '#d6faff', 9);
         } else {
-          burst(b.x, b.y, b.crit ? '#ffd046' : '#ff8a3d', b.crit?9:5);
+          if(b.crit) burst(b.x, b.y, '#ffd046', 9);
         }
-        run.shots.splice(i,1);
+        swapRemove(run.shots, i);
         break;
       }
     }
@@ -4259,13 +4268,13 @@ function step(dt){
   for(let i=run.bits.length-1;i>=0;i--){
     const p = run.bits[i];
     p.age += dt;
-    if(p.age >= p.life){ run.bits.splice(i,1); continue; }
+    if(p.age >= p.life){ swapRemove(run.bits, i); continue; }
     p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 260*hScale*dt; p.vx *= 0.97;
   }
   for(let i=run.pops.length-1;i>=0;i--){
     const p = run.pops[i];
     p.age += dt;
-    if(p.age >= p.life){ run.pops.splice(i,1); continue; }
+    if(p.age >= p.life){ swapRemove(run.pops, i); continue; }
     p.y += p.vy*dt; p.vy *= 0.94;
   }
   updateLightningEx(dt);
@@ -5036,7 +5045,8 @@ function draw(){
     }
 
     // 沙塵粒子：由下往上飄升，越靠近底部轉得越快、越靠近頂端範圍越大
-    const dustN = Math.round(WHIRLWIND_DUST_COUNT * whirlwindVisualScale()); // 範圍擴大時，沙塵數等比增加
+    const dustN = WHIRLWIND_DUST_COUNT; // 顆數固定；範圍擴大時改放大顆粒
+    const dustK = 1 + (whirlwindVisualScale() - 1) * 0.5;
     for(let i=0;i<dustN;i++){
       const s1 = twRnd(i), s2 = twRnd(i+40);
       const h = (s1 + t.rot*0.04*(1+s2)) % 1;                  // 0=底 1=頂
@@ -5044,7 +5054,7 @@ function draw(){
       const ang = t.rot*(1.2 + (1-h)*1.8) + s2*6.283;
       const x = Math.cos(ang) * rad;
       const y = -h*whirlwindHeight() + Math.sin(ang) * rad * .3;
-      const sz = (1.3 + s2*2.2) * (.8 + h*.6);
+      const sz = (1.3 + s2*2.2) * (.8 + h*.6) * dustK;
       ctx.fillStyle = `rgba(${(214+s2*24)|0},${(184+s2*24)|0},${(128+s2*20)|0},${(.9 - h*.45).toFixed(2)})`;
       ctx.beginPath(); ctx.arc(x, y, sz, 0, Math.PI*2); ctx.fill();
     }
@@ -5082,13 +5092,15 @@ function draw(){
   ctx.globalAlpha = 1;
 
   // 傷害數字
-  run.pops.forEach(p=>{
-    const a = 1 - p.age/p.life;
-    ctx.globalAlpha = a;
-    ctx.fillStyle = p.crit ? '#ffd046' : '#ffe9d6';
-    ctx.font = `800 ${(p.crit?19:14)*fz}px system-ui, sans-serif`;
-    ctx.fillText(p.txt, p.x, p.y);
-  });
+  for(const isCrit of [false, true]){ // 先畫一般、再畫暴擊，字型與顏色各只設一次
+    ctx.fillStyle = isCrit ? '#ffd046' : '#ffe9d6';
+    ctx.font = `800 ${(isCrit?19:14)*fz}px system-ui, sans-serif`;
+    for(const p of run.pops){
+      if(!!p.crit !== isCrit) continue;
+      ctx.globalAlpha = 1 - p.age/p.life;
+      ctx.fillText(p.txt, p.x, p.y);
+    }
+  }
   ctx.globalAlpha = 1;
 }
 
