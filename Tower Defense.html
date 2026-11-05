@@ -209,7 +209,8 @@ body{
   color:var(--bone-dim);font-size:8px;line-height:1;opacity:.75;cursor:pointer;font-family:inherit;
 }
 .up button.relic-spk:active{transform:none;box-shadow:none;background:rgba(255,255,255,.16);opacity:1}
-.ico img.relicImg{width:30px;height:30px;object-fit:contain;display:block;margin:0 auto;border-radius:6px}
+.up .ico:has(img.relicImg),.drop .ico:has(img.relicImg){width:36px}
+.ico img.relicImg{width:36px;height:36px;object-fit:contain;display:block;margin:0 auto;border-radius:6px}
 #heroSkinGrid{display:flex;gap:9px;margin-top:6px}
 .heroCard{
   flex:1;position:relative;border-radius:13px;border:1px solid var(--stoneline);
@@ -834,7 +835,7 @@ const RELICS = [
   { key:'void',    icon:'🪓', name:'虛空穿刺',
     // 解鎖：通關第 110 關；上限：通關 110 關為 10 等，之後每多通關 10 關 +10 等（120 關 20 等…）；未解鎖時上限為 0（不會被抽到）
     get max(){ const c = maxClearedLevel(); return c >= VOID_UNLOCK_CLEAR ? 10 + Math.floor((c - VOID_UNLOCK_CLEAR) / 10) * 10 : 0; },
-    desc:'敵人減傷等級減少神器等級 × 1 等',
+    desc:'敵人減傷等級減少：神器等級 × 1 ',
     eff:lv=>`無視敵人減傷 ${lv} 等（目前 ${voidCurrentDefLv(state.unlockedLevel)} 等）` },
   { key:'gold',    icon:'👑', name:'金碧輝煌',       max:100,
     desc:'獲得金幣額外增加：〈金幣強化等級〉× 神器等級 × 0.1%',
@@ -842,41 +843,41 @@ const RELICS = [
   { key:'midas',   icon:'🪙', name:'點石成金',
     // 解鎖：金碧輝煌達到 10 級；未解鎖時上限為 0（不會被抽到）
     get max(){ return relicLv('gold') >= 10 ? 200 : 0; },
-    desc:'獲得金幣每神器等級皆額外增加2%',
-    eff:lv=>`獲得金幣 ×${fmtX(Math.pow(1.02,relicLv('gold')+lv))}（金碧輝煌 Lv.${relicLv('gold')}＋神器等級 ${lv}，與其他神器連乘）` },
+    desc:'獲得金幣每層皆額外增加2%',
+    eff:lv=>`獲得金幣 ×${fmtX(Math.pow(1.02,relicLv('gold')+lv))}（金碧輝煌 Lv.${relicLv('gold')}＋神器等級 ${lv}` },
   { key:'refine',  icon:'📔', name:'精煉大師日記',   max:100,
     desc:'強化石獲得額外增加：〈精煉成本等級〉× 神器等級 × 0.1%',
     eff:lv=>`強化石 ×${fmtX(1+fin(state.up.breakboost,0)*lv*0.001)}（精煉成本 Lv.${fin(state.up.breakboost,0)}）` },
   { key:'bowl',    icon:'🏺', name:'聚寶盆',
     // 解鎖：精煉大師日記達到 10 級；未解鎖時上限為 0（不會被抽到）
     get max(){ return relicLv('refine') >= 10 ? 200 : 0; },
-    desc:'獲得強化石每神器等級皆額外增加2%',
-    eff:lv=>`強化石 ×${fmtX(Math.pow(1.02,relicLv('refine')+lv))}（精煉大師日記 Lv.${relicLv('refine')}＋神器等級 ${lv}，與其他神器連乘）` },
+    desc:'獲得強化石每層皆額外增加2%',
+    eff:lv=>`強化石 ×${fmtX(Math.pow(1.02,relicLv('refine')+lv))}（精煉大師日記 Lv.${relicLv('refine')}＋神器等級 ${lv}` },
   { key:'greed', icon:'💍', name:'貪婪者之戒',
     // 解鎖：點石成金與聚寶盆皆達到 10 級；未解鎖時上限為 0（不會被抽到）
     get max(){ return (relicLv('midas') >= 10 && relicLv('bowl') >= 10) ? 50 : 0; },
     desc:lv=>`金幣及強化石每層皆額外增加${fmtPct(lv*0.1,1)}%`,
     eff:lv=>`金幣及強化石皆 ×${fmtX(Math.pow(1+lv*0.001, relicLv('midas')+relicLv('bowl')))}（點石成金 Lv.${relicLv('midas')}＋聚寶盆 Lv.${relicLv('bowl')}）` },
-  { key:'ruin',    icon:'💀', name:'荒蕪毀滅',       max:200,
-    desc:'所有技能效果皆加成神器等級 × 0.5%',
-    eff:lv=>`所有技能效果 +${fmtPct(lv*0.5,1)}%` },
+  { key:'ruin',    icon:'💀', name:'荒蕪毀滅',       max:100,
+    desc:'技能效果每層皆額外增加1.5%',
+    eff:lv=>`技能效果皆 ×${fmtX(Math.pow(1.015, lv))}` },
   { key:'fire',    icon:'🌋', name:'火神咆哮',       max:100,
-    desc:'火球術額外增加傷害：神器等級 × 1%；並增加火球 EX 的擴散範圍',
+    desc:'火球術額外增加傷害：神器等級 × 1%；並增加EX的範圍',
     eff:lv=>`火球傷害 +${lv}%　擴散直徑 +${fmtPct(lv*0.5,1)}（121 關起 +${lv*2}）` },
   { key:'frost',   icon:'❄️', name:'冰霜新星',       max:100,
-    desc:'冰椎術額外增加傷害：神器等級 × 1%；120 關前增加冰刃寬度；121 關起增加發射軌道',
+    desc:'冰椎術額外增加傷害：神器等級 × 1%；並增加範圍',
     eff:lv=>`冰椎傷害 +${lv}%　冰刃寬度 +${lv}（121 關起 +${frostExtraTracksFor(lv)} 道軌道）` },
   { key:'spear',   icon:'🔱', name:'閃雷之槍',       max:100,
-    desc:'閃電術額外增加傷害：神器等級 × 1%；閃電術 EX 額外落下 1 道小落雷',
+    desc:'閃電術額外增加傷害：神器等級 × 1%；EX額外落雷',
     eff:lv=>`閃電傷害 +${lv}%　小落雷傷害 ＝ 大落雷 ×${lv}%` },
   { key:'cyclone', icon:'🌀', name:'颶風之核',       max:100,
-    desc:'旋風術額外增加傷害：神器等級 × 1%；增加旋風半徑：神器等級 × 3',
+    desc:'旋風術額外增加傷害：神器等級 × 1%；並增加範圍',
     eff:lv=>`旋風傷害 +${lv}%　旋風半徑 +${lv*3}（旋風術 ${whirlwindRadius()}／EX ${whirlwindExRadius()}）` },
   { key:'earth',   icon:'⛰️', name:'大地之脈',       max:100,
-    desc:'土牆術額外增加生命及生命回復：神器等級 × 1%；土牆 EX 擊殺敵人時（其他技能不算）立即回復最大生命 × 神器等級 × 0.1%',
+    desc:'土牆術額外增加生命及生命回復：神器等級 × 1%；EX擊殺敵人時回復生命',
     eff:lv=>`土牆生命與回復 +${lv}%　EX 擊殺回復最大生命 ${fmtPct(lv*0.1,1)}%` },
   { key:'dawn',    icon:'🌅', name:'晨曦聖光',       max:100,
-    desc:'光束砲額外增加傷害：神器等級 × 1%；並增加 EX 持續時間',
+    desc:'光束砲額外增加傷害：神器等級 × 1%；並增加EX持續時間',
     eff:lv=>`光束傷害 +${lv}%　EX 持續時間 +${(lv*0.01).toFixed(2)} 秒　掃動角度 +${lv}°` },
   { key:'wisdom',  icon:'🦉', name:'智慧之神的祝福', max:100,
     desc:'最大生命及攻擊力皆額外增加<累計答對>×神器等級×0.7%',
@@ -898,18 +899,18 @@ const RELICS = [
 const VOID_UNLOCK_CLEAR = 110;
 // 虛空穿刺：敵人減傷等級 ＝ (關卡數 - 100) - 神器等級，最低 0
 function voidCurrentDefLv(level){ return Math.max(0, level - ENEMY_DEF_BASE_LEVEL - relicLv('void')); }
-function relicRuinPct(){ return relicLv('ruin') * 0.005; }              // 荒蕪毀滅：所有技能效果 +神器等級×0.5%（與各技能神器加成「相加」）
-function relicCycloneMul(){ return 1 + relicLv('cyclone') * 0.01 + relicRuinPct(); }   // 颶風之核：旋風術傷害
-function relicEarthMul(){ return 1 + relicLv('earth') * 0.01 + relicRuinPct(); }        // 大地之脈：土牆生命與回復
-function relicDawnMul(){ return 1 + relicLv('dawn') * 0.01 + relicRuinPct(); }          // 晨曦聖光：光束砲傷害
+function relicRuinMul(){ return Math.pow(1.015, relicLv('ruin')); }      // 荒蕪毀滅：所有技能效果 ×1.015^神器等級（與各技能神器加成「連乘」）
+function relicCycloneMul(){ return (1 + relicLv('cyclone') * 0.01) * relicRuinMul(); }   // 颶風之核：旋風術傷害
+function relicEarthMul(){ return (1 + relicLv('earth') * 0.01) * relicRuinMul(); }        // 大地之脈：土牆生命與回復
+function relicDawnMul(){ return (1 + relicLv('dawn') * 0.01) * relicRuinMul(); }          // 晨曦聖光：光束砲傷害
 function fmtX(n){ n = fin(n, 1); return Math.abs(n) < 1000 ? n.toFixed(2) : fmtNum(n); } // 乘數顯示：×1.30
 function frostExtraTracksFor(lv){ return lv >= 41 ? 3 : lv >= 21 ? 2 : lv >= 1 ? 1 : 0; }
 function frostExtraTracks(){ return farMode ? frostExtraTracksFor(relicLv('frost')) : 0; }
 function iceExWidth(){ return ICE_EX_WIDTH + (farMode ? 0 : relicLv('frost')); }
 function fireballSplashDiameter(){ return FIREBALL_EX_SPLASH_DIAMETER + relicLv('fire') * (farMode ? 2 : 0.5); }
-function relicFireMul(){ return 1 + relicLv('fire') * 0.01 + relicRuinPct(); }
-function relicFrostMul(){ return 1 + relicLv('frost') * 0.01 + relicRuinPct(); }
-function relicSpearMul(){ return 1 + relicLv('spear') * 0.01 + relicRuinPct(); }
+function relicFireMul(){ return (1 + relicLv('fire') * 0.01) * relicRuinMul(); }
+function relicFrostMul(){ return (1 + relicLv('frost') * 0.01) * relicRuinMul(); }
+function relicSpearMul(){ return (1 + relicLv('spear') * 0.01) * relicRuinMul(); }
 // 冰椎發射角度：原本 1 道 ＋ 冰霜新星增加的軌道，平均分散在圓周上
 function iceAngles(base){
   const n = 1 + frostExtraTracks();
@@ -2581,7 +2582,7 @@ const RANGED_DEF = { emoji:'🧙', hp:0.8, spd:0.8, r:15, gold:1.5, ranged:true,
 // 近戰小怪打土牆改為每 MINION_ATTACK_INTERVAL 秒出手一次（單下傷害 ＝ dps × 間隔，基礎總 DPS 不變）；遠程小怪每顆火球落在土牆上算一次攻擊。
 const MINION_WALL_STACK_PER_HIT = 0.05;
 const MINION_ATTACK_INTERVAL = 1.0;
-const BOSS_ATK_STACK = 1.10;            // 每次攻擊比上一次多 10%
+const BOSS_ATK_STACK = 1.15;            // 每次攻擊比上一次多 15%
 const BOSS_ATTACK_INTERVAL = 1.0;       // 近戰魔王出手間隔（秒）
 function bossStrikeDmg(e, interval){    // 取出本次攻擊傷害，並讓疊加層數 +1
   const n = e.atkCount || 0;
@@ -4417,6 +4418,18 @@ RELICS.forEach(r=>{
   img.onload = ()=>{ relicImgs[r.key] = img; try{ renderRelics(); }catch(e){} };
   img.src = encodeURI(`./${HERO_IMG_FOLDER}/${RELIC_IMG_PREFIX}${r.key}.png`);
 });
+// 技能圖片：放 Tower Defense images/skill_<key>.png（key：fireball、icespike、lightning、whirlwind、earthwall、beam）；沒放或載入失敗時，退回 emoji。
+const SKILL_IMG_PREFIX = 'skill_';
+const skillImgs = {};
+Object.keys(SKILL_DEFS).forEach(k=>{
+  const img = new Image();
+  img.onload = ()=>{ skillImgs[k] = img; try{ renderSkills(); }catch(e){} };
+  img.src = encodeURI(`./${HERO_IMG_FOLDER}/${SKILL_IMG_PREFIX}${k}.png`);
+});
+function skillIconHtml(key){
+  const img = skillImgs[key];
+  return img ? `<img class="relicImg" src="${img.src}" alt="">` : SKILL_DEFS[key].icon;
+}
 function relicIconHtml(r){
   const img = relicImgs[r.key];
   return img ? `<img class="relicImg" src="${img.src}" alt="">` : r.icon;
@@ -5172,7 +5185,7 @@ function doPull(n, free){
         ? `傷害提升（累計抽到 ${o.draws} 次）`
         : `${stackLabel} +1（累計抽到 ${o.draws} 次）`;
       return `<div class="drop new">
-        <div class="ico">${o.def.icon}</div>
+        <div class="ico">${skillIconHtml(o.key)}</div>
         <div style="flex:1;min-width:0">
           <div class="nm">${o.def.name}</div>
           <div class="st">${line}</div>
@@ -5424,15 +5437,23 @@ function renderSkills(){
     const exBtn = (owned && skillExAvailable(key) && !exOnNow)
       ? `<div class="upbtns"><button class="exbtn" data-skillex="${key}" ${state.gem<SKILL_EX_GEM?'disabled':''}>💎 ${fmtNum(SKILL_EX_GEM)}<small>解鎖 EX</small></button></div>` : '';
     return `<div class="up">
-      <div class="ico">${def.icon}</div>
+      <div class="ico">${skillIconHtml(key)}</div>
       <div class="info">
-        <div class="nm">${def.name}${exOnNow?'<span class="exbadge">EX</span>':''}　<span style="color:var(--bone-dim);font-size:12px">${owned?`累計抽到 ${draws} 次`:'未習得'}</span></div>
+        <div class="nm">${def.name}<button type="button" class="relic-spk" data-sspk="name" data-key="${key}" title="朗讀名稱">🔊</button>${exOnNow?'<span class="exbadge">EX</span>':''}　<span style="color:var(--bone-dim);font-size:12px">${owned?`累計抽到 ${draws} 次`:'未習得'}</span></div>
         <div class="val">${statusText}</div>
-        <div class="val" style="color:var(--bone-dim);font-size:11px;margin-top:2px">${exOnNow && def.exDesc ? def.exDesc : def.desc}</div>
+        <div class="val" style="color:var(--bone-dim);font-size:11px;margin-top:2px">${exOnNow && def.exDesc ? def.exDesc : def.desc}<button type="button" class="relic-spk" data-sspk="desc" data-key="${key}" title="朗讀解說">🔊</button></div>
       </div>
       ${exBtn}
     </div>`;
   }).join('');
+  box.querySelectorAll('.relic-spk').forEach(b=>{
+    b.onclick = ()=>{
+      const def = SKILL_DEFS[b.dataset.key];
+      if(!def) return;
+      if(b.dataset.sspk === 'name') speakRelicText(def.name);
+      else speakRelicText(skillExOn(b.dataset.key) && def.exDesc ? def.exDesc : def.desc);
+    };
+  });
   // 解鎖技能 EX：一次性花 2000 鑽石
   box.querySelectorAll('[data-skillex]').forEach(b=>{
     b.onclick = ()=>{
@@ -5887,6 +5908,31 @@ function admAddGem(amount){
   toast(`鑽石 ${amount>0?'+':''}${amount}`);
 }
 
+// ── 答題數控制 ──
+// A. 只增減「累計答對」，不動連勝、鑽石與答題階層
+function admAddCorrect(delta){
+  delta = Math.round(Number(delta));
+  if(!Number.isFinite(delta) || delta === 0) return;
+  state.qs.correct = Math.max(0, Math.round(fin(state.qs.correct, 0)) + delta);
+  save(); syncUI(); syncQuizMeta(); admRender();
+  toast(`累計答對 ${delta>0?'+':''}${delta}`);
+}
+// B. 模擬答對 10 題（視為第一次就答對）：累計答對與連勝各 +10，並依答題公式發放鑽石；不呼叫出題引擎，所以不影響答題階層
+function admAnswer10(){
+  const q = state.qs;
+  const boost = gemBoostAmount();
+  let total = 0;
+  for(let i=0;i<10;i++){
+    q.correct++;
+    q.streak++;
+    q.best = Math.max(q.best, q.streak);
+    total += 15 + Math.min(90, q.streak) + 20 + boost;
+  }
+  state.gem += total;
+  save(); syncUI(); syncQuizMeta(); admRender();
+  toast(`回答 10 題　累計答對 +10、連勝 +10、鑽石 +${fmtNum(total)}`);
+}
+
 // ── 數學：難度階層（1～MATH_STAGE_MAX）──
 function admSetMathStage(stage){
   stage = Math.max(1, Math.min(QuizEngine.MATH_STAGE_MAX, Math.round(Number(stage)||1)));
@@ -6026,6 +6072,19 @@ function admRender(){
     <div class="adm-actionrow">
       <button class="btn mana sm" onclick="admAddGem(5000)">⚡ 快捷 +5000</button>
     </div>
+  </div>`;
+
+  html += `<div class="adm-sec">
+    <h4>📝 答題數控制</h4>
+    <div class="adm-stat">累計答對 <b>${fmtNum(q.correct)}</b>　連勝 <b>${q.streak}</b></div>
+    <div class="adm-actionrow">
+      <button class="btn ghost sm" onclick="admAddCorrect(-10)">累計答對 -10</button>
+      <button class="btn ghost sm" onclick="admAddCorrect(10)">累計答對 +10</button>
+    </div>
+    <div class="adm-actionrow">
+      <button class="btn mana sm" onclick="admAnswer10()">✅ 回答 10 題（累計與連勝 +10，並獲得鑽石）</button>
+    </div>
+    <div class="adm-stat" style="margin-top:6px;opacity:.75">※ 回答 10 題不會影響數學或各科的答題階層。</div>
   </div>`;
 
   html += `<div class="adm-sec">
