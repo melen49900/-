@@ -822,14 +822,6 @@ const RELICS = [
   { key:'sun',     icon:'☀️', name:'烈陽之心',       max:100,
     desc:'攻擊力額外增加：〈神器總等級〉× 神器等級 × 0.1%',
     eff:lv=>`攻擊力 ×${fmtX(1+relicTotalLevel()*lv*0.001)}（神器總等級 ${relicTotalLevel()}）` },
-  { key:'gold',    icon:'👑', name:'金碧輝煌',       max:100,
-    desc:'獲得金幣額外增加：〈金幣強化等級〉× 神器等級 × 0.1%',
-    eff:lv=>`金幣 ×${fmtX(1+fin(state.up.goldboost,0)*lv*0.001)}（金幣強化 Lv.${fin(state.up.goldboost,0)}）` },
-  { key:'midas',   icon:'🪙', name:'點石成金',
-    // 解鎖：金碧輝煌達到 10 級；未解鎖時上限為 0（不會被抽到）
-    get max(){ return relicLv('gold') >= 10 ? 200 : 0; },
-    desc:'獲得金幣每神器等級皆額外增加2%',
-    eff:lv=>`獲得金幣 ×${fmtX(Math.pow(1.02,relicLv('gold')+lv))}（金碧輝煌 Lv.${relicLv('gold')}＋神器等級 ${lv}，與其他神器連乘）` },
   { key:'horn',    icon:'📯', name:'勝利號角',       max:80,
     desc:lv=>`答題連勝中斷時不會歸零，剩餘連勝為：${fmtNum(streakAfterBreak())}`,
     eff:lv=>`連勝中斷時保留 ${lv}%（無條件進位）` },
@@ -844,6 +836,14 @@ const RELICS = [
     get max(){ const c = maxClearedLevel(); return c >= VOID_UNLOCK_CLEAR ? 10 + Math.floor((c - VOID_UNLOCK_CLEAR) / 10) * 10 : 0; },
     desc:'敵人減傷等級減少神器等級 × 1 等',
     eff:lv=>`無視敵人減傷 ${lv} 等（目前 ${voidCurrentDefLv(state.unlockedLevel)} 等）` },
+  { key:'gold',    icon:'👑', name:'金碧輝煌',       max:100,
+    desc:'獲得金幣額外增加：〈金幣強化等級〉× 神器等級 × 0.1%',
+    eff:lv=>`金幣 ×${fmtX(1+fin(state.up.goldboost,0)*lv*0.001)}（金幣強化 Lv.${fin(state.up.goldboost,0)}）` },
+  { key:'midas',   icon:'🪙', name:'點石成金',
+    // 解鎖：金碧輝煌達到 10 級；未解鎖時上限為 0（不會被抽到）
+    get max(){ return relicLv('gold') >= 10 ? 200 : 0; },
+    desc:'獲得金幣每神器等級皆額外增加2%',
+    eff:lv=>`獲得金幣 ×${fmtX(Math.pow(1.02,relicLv('gold')+lv))}（金碧輝煌 Lv.${relicLv('gold')}＋神器等級 ${lv}，與其他神器連乘）` },
   { key:'refine',  icon:'📔', name:'精煉大師日記',   max:100,
     desc:'強化石獲得額外增加：〈精煉成本等級〉× 神器等級 × 0.1%',
     eff:lv=>`強化石 ×${fmtX(1+fin(state.up.breakboost,0)*lv*0.001)}（精煉成本 Lv.${fin(state.up.breakboost,0)}）` },
@@ -852,6 +852,11 @@ const RELICS = [
     get max(){ return relicLv('refine') >= 10 ? 200 : 0; },
     desc:'獲得強化石每神器等級皆額外增加2%',
     eff:lv=>`強化石 ×${fmtX(Math.pow(1.02,relicLv('refine')+lv))}（精煉大師日記 Lv.${relicLv('refine')}＋神器等級 ${lv}，與其他神器連乘）` },
+  { key:'greed', icon:'💍', name:'貪婪者之戒',
+    // 解鎖：點石成金與聚寶盆皆達到 10 級；未解鎖時上限為 0（不會被抽到）
+    get max(){ return (relicLv('midas') >= 10 && relicLv('bowl') >= 10) ? 50 : 0; },
+    desc:lv=>`金幣及強化石每層皆額外增加${fmtPct(lv*0.1,1)}%`,
+    eff:lv=>`金幣及強化石皆 ×${fmtX(Math.pow(1+lv*0.001, relicLv('midas')+relicLv('bowl')))}（點石成金 Lv.${relicLv('midas')}＋聚寶盆 Lv.${relicLv('bowl')}）` },
   { key:'ruin',    icon:'💀', name:'荒蕪毀滅',       max:200,
     desc:'所有技能效果皆加成神器等級 × 0.5%',
     eff:lv=>`所有技能效果 +${fmtPct(lv*0.5,1)}%` },
@@ -871,7 +876,7 @@ const RELICS = [
     desc:'土牆術額外增加生命及生命回復：神器等級 × 1%；土牆 EX 擊殺敵人時（其他技能不算）立即回復最大生命 × 神器等級 × 0.1%',
     eff:lv=>`土牆生命與回復 +${lv}%　EX 擊殺回復最大生命 ${fmtPct(lv*0.1,1)}%` },
   { key:'dawn',    icon:'🌅', name:'晨曦聖光',       max:100,
-    desc:'光束砲額外增加傷害：神器等級 × 1%；增加光束砲 EX 持續時間：神器等級 × 0.01 秒，掃動角度同步增加（神器等級 × 1 度）',
+    desc:'光束砲額外增加傷害：神器等級 × 1%；並增加 EX 持續時間',
     eff:lv=>`光束傷害 +${lv}%　EX 持續時間 +${(lv*0.01).toFixed(2)} 秒　掃動角度 +${lv}°` },
   { key:'wisdom',  icon:'🦉', name:'智慧之神的祝福', max:100,
     desc:'最大生命及攻擊力皆額外增加<累計答對>×神器等級×0.7%',
@@ -920,10 +925,11 @@ function relicWisdomMul(){ return 1 + Math.max(0, fin(state.qs && state.qs.corre
 function relicSwordMul(){ return Math.pow(1 + 0.0002 * relicLv('sword'), Math.max(0, fin(state.qs && state.qs.correct, 0))); }   // 智慧之神的長劍：攻擊力 (1+0.0002×等級)^累計答對
 function relicShieldMul(){ return Math.pow(1 + 0.0002 * relicLv('shield'), Math.max(0, fin(state.qs && state.qs.correct, 0))); } // 智慧之神的護盾：最大生命 (1+0.0002×等級)^累計答對
 function relicAtkMul(){ return chaosMul() * (1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001) * relicWisdomMul() * relicSwordMul(); } // 靈魂迴響 × 烈陽之心：連乘
-function relicMidasMul(){ return relicLv('midas') > 0 ? Math.pow(1.02, relicLv('gold') + relicLv('midas')) : 1; } // 點石成金：獲得金幣 ×1.02^神器等級（與其他金幣加成連乘）
+function relicGreedMul(){ return Math.pow(1 + relicLv('greed') * 0.001, relicLv('midas') + relicLv('bowl')); } // 貪婪者之戒：金幣與強化石皆連乘
+function relicMidasMul(){ return (relicLv('midas') > 0 ? Math.pow(1.02, relicLv('gold') + relicLv('midas')) : 1) * relicGreedMul(); } // 點石成金：獲得金幣 ×1.02^神器等級（與其他金幣加成連乘）
 function relicGoldExtraPct(){ return fin(state.up.goldboost,0) * relicLv('gold') * 0.1; }
 function relicBowlMul(){ return relicLv('bowl') > 0 ? Math.pow(1.02, relicLv('refine') + relicLv('bowl')) : 1; } // 聚寶盆：強化石 ×1.02^(精煉大師日記等級+神器等級)
-function relicStoneMul(){ return (1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001) * relicBowlMul(); }
+function relicStoneMul(){ return (1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001) * relicBowlMul() * relicGreedMul(); }
 function streakAfterBreak(){
   const lv = relicLv('horn');
   if(lv <= 0) return 0;
