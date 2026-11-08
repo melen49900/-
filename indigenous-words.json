@@ -194,5 +194,40 @@
     "spelling": "maun",
     "audio": "./audio/28.mp3",
     "category": "動作"
+  },
+  {
+    "id": 29,
+    "meaning": "爸爸",
+    "spelling": "tama",
+    "audio": "./audio/29.mp3",
+    "category": "家庭"
+  },
+  {
+    "id": 30,
+    "meaning": "媽媽",
+    "spelling": "cina",
+    "audio": "./audio/30.mp3",
+    "category": "家庭"
+  },
+  {
+    "id": 31,
+    "meaning": "香蕉",
+    "spelling": "bunbun",
+    "audio": "./audio/31.mp3",
+    "category": "食物"
+  },
+  {
+    "id": 32,
+    "meaning": "書",
+    "spelling": "ahil",
+    "audio": "./audio/32.mp3",
+    "category": "物品"
+  },
+  {
+    "id": 33,
+    "meaning": "家",
+    "spelling": "lumah",
+    "audio": "./audio/33.mp3",
+    "category": "場所"
   }
 ]
