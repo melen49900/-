@@ -230,7 +230,7 @@ body{
 .heroCard.locked{opacity:.45;cursor:not-allowed}
 .heroCard.on{border-color:var(--ember);box-shadow:0 0 0 1px var(--ember),0 0 14px rgba(255,106,31,.35)}
 
-#perfTag{position:absolute;top:36px;left:11px;z-index:3;font-size:10px;font-weight:700;color:#9ff5d0;background:rgba(0,0,0,.5);border:1px solid var(--stoneline);border-radius:6px;padding:2px 6px;pointer-events:none;font-variant-numeric:tabular-nums}
+#perfTag{position:absolute;top:36px;left:11px;z-index:3;font-size:10px;font-weight:700;color:#9ff5d0;background:rgba(0,0,0,.5);border:1px solid var(--stoneline);border-radius:6px;padding:2px 6px;pointer-events:none;display:none;font-variant-numeric:tabular-nums}
 #hud{
   position:absolute;top:0;left:0;right:0;padding:9px 11px;
   display:flex;align-items:center;gap:9px;
@@ -776,6 +776,11 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 /* Decimal 測試版：怪物血量與所有「玩家 → 怪物」的傷害運算使用 Decimal（break_infinity.js） */
 const D = x => (x instanceof Decimal ? x : new Decimal(x));
 const DZERO = new Decimal(0), DONE = new Decimal(1);
+// NaN／無法解析 → 0；負數 → 0（金幣、強化石不會是負的）
+const dfin = v => { try{ const x = D(v); return (x.mantissa === x.mantissa && Number.isFinite(x.exponent)) ? x : DZERO; }catch(e){ return DZERO; } };
+const dpos = v => { const x = dfin(v); return x.lt(0) ? DZERO : x; };
+const dround = x => (x instanceof Decimal ? x.round() : Math.round(x));
+const dratio = (a, b) => D(a).div(b).toNumber();   // 血量比例（供血條使用）
 
 /* ══════════════════════════════════════════════════════════
    烈焰試煉場
@@ -793,7 +798,7 @@ const GROWTH_BOOST_AFTER_LEVEL = 110, GROWTH_LATE = 1.6; // 第 111 關起：血
 function levelGrowthMul(base, level){
   const lv = Math.max(1, level);
   const steps = lv - 1, early = Math.min(steps, GROWTH_BOOST_AFTER_LEVEL - 1), late = Math.max(0, lv - GROWTH_BOOST_AFTER_LEVEL);
-  return Math.pow(base, early) * Math.pow(GROWTH_LATE, late);
+  return Decimal.pow(base, early).mul(Decimal.pow(GROWTH_LATE, late));
 }
 const WAVE_HP_GROWTH  = Math.pow(3, 1 / (WAVES_PER_LEVEL - 1)); // 關內血量差距3倍
 const WAVE_SPD_GROWTH = 0.1;                                    // 關內移速差距10%
@@ -810,7 +815,7 @@ const RELIC_PULL10_COUNT = 4;   // 神器模式十連抽：固定 4 神器＋6 �
 function chaosLv(){ return state.relicUnlocked ? Math.max(0, Math.round(fin(state.ach && state.ach.points, 0))) : 0; }
 function relicLv(k){ if(k === 'chaos') return chaosLv(); return Math.max(0, Math.round(fin(state.relics && state.relics[k], 0))); }
 function relicTotalLevel(){ return RELICS.reduce((t,r)=>t+relicLv(r.key), 0); } // 神器總等級（含混沌魔盒；烈陽之心、成就「神器等級」都用這個）
-function chaosMul(){ return Math.pow(1.02, chaosLv()); }
+function chaosMul(){ return Decimal.pow(1.02, chaosLv()); }
 function skillTotalLevel(){ return Object.keys(SKILL_DEFS).reduce((t,k)=>t+Math.max(0, fin(state.skills[k] && state.skills[k].draws, 0)), 0); }
 const RELICS = [
   { key:'blood',   icon:'🩸', name:'嗜血匕首',       max:10,
@@ -904,7 +909,7 @@ const RELICS = [
     eff:lv=>`最大生命 ×${fmtX(relicShieldMul())}（累計答對 ${fmtNum(fin(state.qs.correct,0))}）` },
   { key:'chaos',   icon:'🎁', name:'混沌魔盒',       max:Infinity, chaos:true,
     desc:'最大生命及攻擊力每神器等級皆額外增加2%',
-    eff:lv=>`最大生命及攻擊力 ×${fmtX(Math.pow(1.02,lv))}` },
+    eff:lv=>`最大生命及攻擊力 ×${fmtX(Decimal.pow(1.02,lv))}` },
 ];
 const VOID_UNLOCK_CLEAR = 110;
 // 虛空穿刺：敵人減傷等級 ＝ (關卡數 - 100) - 神器等級，最低 0
@@ -913,7 +918,7 @@ function relicRuinMul(){ return Math.pow(1.015, relicLv('ruin')); }      // 荒�
 function relicCycloneMul(){ return (1 + relicLv('cyclone') * 0.01) * relicRuinMul(); }   // 颶風之核：旋風術傷害
 function relicEarthMul(){ return (1 + relicLv('earth') * 0.01) * relicRuinMul(); }        // 大地之脈：土牆生命與回復
 function relicDawnMul(){ return (1 + relicLv('dawn') * 0.01) * relicRuinMul(); }          // 晨曦聖光：光束砲傷害
-function fmtX(n){ n = fin(n, 1); return Math.abs(n) < 1000 ? n.toFixed(2) : fmtNum(n); } // 乘數顯示：×1.30
+function fmtX(n){ if(n instanceof Decimal) return n.abs().lt(1000) ? n.toNumber().toFixed(2) : fmtNum(n); n = fin(n, 1); return Math.abs(n) < 1000 ? n.toFixed(2) : fmtNum(n); } // 乘數顯示：×1.30
 function frostExtraTracksFor(lv){ return lv >= 41 ? 3 : lv >= 21 ? 2 : lv >= 1 ? 1 : 0; }
 function frostExtraTracks(){ return farMode ? frostExtraTracksFor(relicLv('frost')) : 0; }
 function iceExWidth(){ return ICE_EX_WIDTH + (farMode ? 0 : relicLv('frost')); }
@@ -931,16 +936,16 @@ function iceAngles(base){
 // 神器效果（供各處呼叫）
 function critCap(){ return CRIT_CAP + relicLv('blood'); }
 function equipTotalLevel(){ return activeSlots().reduce((t,s)=>t+getRefine(s), 0); } // 裝備總等級＝各部位精煉等級總和
-function relicHpMul(){ return chaosMul() * (1 + fin(state.up.hp,0) * relicLv('aurora') * 0.005) * (1 + equipTotalLevel() * relicLv('dragon') * 0.01) * relicWisdomMul() * relicShieldMul(); } // 極光法陣守護 × 龍骨重鎧 × 智慧之神的祝福／護盾：連乘
+function relicHpMul(){ return chaosMul().mul((1 + fin(state.up.hp,0) * relicLv('aurora') * 0.005) * (1 + equipTotalLevel() * relicLv('dragon') * 0.01) * relicWisdomMul()).mul(relicShieldMul()); } // 極光法陣守護 × 龍骨重鎧 × 智慧之神的祝福／護盾：連乘
 function relicWisdomMul(){ return 1 + Math.max(0, fin(state.qs && state.qs.correct, 0)) * relicLv('wisdom') * 0.007; } // 智慧之神的祝福：累計答對 × 神器等級 × 0.7%（同時強化生命及攻擊）
-function relicSwordMul(){ return Math.pow(1 + 0.0002 * relicLv('sword'), Math.max(0, fin(state.qs && state.qs.correct, 0))); }   // 智慧之神的長劍：攻擊力 (1+0.0002×等級)^累計答對
-function relicShieldMul(){ return Math.pow(1 + 0.0002 * relicLv('shield'), Math.max(0, fin(state.qs && state.qs.correct, 0))); } // 智慧之神的護盾：最大生命 (1+0.0002×等級)^累計答對
-function relicAtkMul(){ return chaosMul() * (1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001) * relicWisdomMul() * relicSwordMul(); } // 靈魂迴響 × 烈陽之心：連乘
-function relicGreedMul(){ return Math.pow(1 + relicLv('greed') * 0.001, relicLv('midas') + relicLv('bowl')); } // 貪婪者之戒：金幣與強化石皆連乘
-function relicMidasMul(){ return (relicLv('midas') > 0 ? Math.pow(1.02, relicLv('gold') + relicLv('midas')) : 1) * relicGreedMul(); } // 點石成金：獲得金幣 ×1.02^神器等級（與其他金幣加成連乘）
+function relicSwordMul(){ return Decimal.pow(1 + 0.0002 * relicLv('sword'), Math.max(0, fin(state.qs && state.qs.correct, 0))); }   // 智慧之神的長劍：攻擊力 (1+0.0002×等級)^累計答對
+function relicShieldMul(){ return Decimal.pow(1 + 0.0002 * relicLv('shield'), Math.max(0, fin(state.qs && state.qs.correct, 0))); } // 智慧之神的護盾：最大生命 (1+0.0002×等級)^累計答對
+function relicAtkMul(){ return chaosMul().mul((1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001) * relicWisdomMul()).mul(relicSwordMul()); } // 靈魂迴響 × 烈陽之心：連乘
+function relicGreedMul(){ return Decimal.pow(1 + relicLv('greed') * 0.001, relicLv('midas') + relicLv('bowl')); } // 貪婪者之戒：金幣與強化石皆連乘
+function relicMidasMul(){ return (relicLv('midas') > 0 ? Decimal.pow(1.02, relicLv('gold') + relicLv('midas')) : DONE).mul(relicGreedMul()); } // 點石成金：獲得金幣 ×1.02^神器等級（與其他金幣加成連乘）
 function relicGoldExtraPct(){ return fin(state.up.goldboost,0) * relicLv('gold') * 0.1; }
-function relicBowlMul(){ return relicLv('bowl') > 0 ? Math.pow(1.02, relicLv('refine') + relicLv('bowl')) : 1; } // 聚寶盆：強化石 ×1.02^(精煉大師日記等級+神器等級)
-function relicStoneMul(){ return (1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001) * relicBowlMul() * relicGreedMul(); }
+function relicBowlMul(){ return relicLv('bowl') > 0 ? Decimal.pow(1.02, relicLv('refine') + relicLv('bowl')) : DONE; } // 聚寶盆：強化石 ×1.02^(精煉大師日記等級+神器等級)
+function relicStoneMul(){ return relicBowlMul().mul(relicGreedMul()).mul(1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001); }
 function streakAfterBreak(){
   const lv = relicLv('horn');
   if(lv <= 0) return 0;
@@ -1131,7 +1136,7 @@ function skillOverCap(key){
 }
 function fireballBullets(){
   // 1 發基礎彈道 + 技能疊加 + 裝備的彈道加成，總數上限 7 道（已移除舊版存檔的額外彈道加成）
-  return Math.min(7, 1 + skillStacks('fireball') + Math.round(sumEquip('multi')));
+  return Math.min(7, 1 + skillStacks('fireball') + Math.round(sumEquip('multi').toNumber()));
 }
 function icespikeBullets(){
   return skillStacks('icespike'); // 還沒抽到過就是 0，不會發射
@@ -1314,15 +1319,15 @@ function earthwallCounter(e, wall, s){
   if(e.boss){
     base = D(s.atk).mul(lv * EARTHWALL_EX_BOSS_PCT);
     crit = Math.random()*100 < s.crit;
-    if(crit) base = base.mul(s.critDmg/100);
+    if(crit) base = base.mul(s.critMul);
   } else {
     base = e.maxHp.mul(Math.min(EARTHWALL_EX_MINION_CAP, lv * EARTHWALL_EX_MINION_PCT));
   }
   const d = enemyDmg(e, base, !e.boss); // 小怪的生命百分比傷害不吃關卡減傷；王照常減傷
   e.hp = e.hp.sub(d); e.hit = 0.12;
   popText(e.x, e.y - e.r - 12, '-' + fmtNum(d), crit);
-  if(e.hp.lte(0) && relicLv('earth') > 0 && run.hp > 0){ // 大地之脈：土牆 EX 擊殺時立即回復最大生命 × 神器等級 × 0.1%
-    run.hp = Math.min(run.maxHp, run.hp + run.maxHp * relicLv('earth') * 0.001);
+  if(e.hp.lte(0) && relicLv('earth') > 0 && run.hp.gt(0)){ // 大地之脈：土牆 EX 擊殺時立即回復最大生命 × 神器等級 × 0.1%
+    run.hp = Decimal.min(run.maxHp, run.hp.add(run.maxHp.mul(relicLv('earth') * 0.001)));
     burst(run.heroX, heroCY(), '#7dff9c', 6);
   }
   run.wallSpikes.push({ x:e.x, a:Math.atan2(e.y - wall.y, e.x - wall.x), t:0 });
@@ -1334,9 +1339,9 @@ function earthwallCounter(e, wall, s){
 }
 function earthwallPct(){ return 50 + skillOverCap('earthwall') * 2; }// 土牆係數
 function earthwallHp(s){
-  return s.atk * (1 + s.crit/100) * (s.critDmg/100) * (earthwallPct()/100) * relicEarthMul();// 回復量＝攻擊×(1+暴擊率)×暴擊傷害×土牆係數。
+  return D(s.atk).mul((1 + s.crit/100) * (earthwallPct()/100) * relicEarthMul()).mul(s.critMul);// 回復量＝攻擊×(1+暴擊率)×暴擊傷害×土牆係數。
 }
-function earthwallMaxHp(s){ return earthwallHp(s) * earthwallMaxHpMult(); }
+function earthwallMaxHp(s){ return earthwallHp(s).mul(earthwallMaxHpMult()); }
 function earthwallInterval(s){ return 1 / (s.spd * SKILL_SPD_MULT.earthwall); } // 回復間隔＝重生冷卻＝攻速 0.1 倍
 const ICESPIKE_SLOW_PCT = 0.20;// 冰椎減速比例
 const ICESPIKE_SLOW_MAX_STACKS = 3;//最多 3 層
@@ -1406,8 +1411,14 @@ const REFINE_COST_REDUCE_PER_LV = 3; // 精煉成本：每級減少每次精煉�
 const REFINE_COST_BASE = 4;                 // 成本底數：4^(等級+1)
 const REFINE_POWER_BASE = 2.25;             // 強化底數：1 + 0.1×4^等級
 const REFINE_POWER_COEF = 0.1;
-const REFINE_LV_CAP = 400;                  // 防呆：避免指數溢位成 Infinity／NaN
-function refineMul(lv){ lv = Math.min(REFINE_LV_CAP, Math.max(0, Math.round(fin(lv, 0)))); return 1 + REFINE_POWER_COEF * (Math.pow(REFINE_POWER_BASE, lv) - 1); }
+const REFINE_LV_CAP = 100000;               // Decimal 版：不再有溢位問題，上限放寬（原 400）
+const _refineMulCache = new Map();
+function refineMul(lv){
+  lv = Math.min(REFINE_LV_CAP, Math.max(0, Math.round(fin(lv, 0))));
+  let r = _refineMulCache.get(lv);
+  if(!r){ r = Decimal.pow(REFINE_POWER_BASE, lv).sub(1).mul(REFINE_POWER_COEF).add(1); _refineMulCache.set(lv, r); }
+  return r;
+}
 // 舊存檔換算（舊版線性等級 → 新版指數等級）：新等級 ＝ 滿足 4^n ≤ 舊等級 的最大 n，舊等級 0～3 ＝ 0 等
 function refineLegacyToExp(old){ old = Math.max(0, Math.floor(fin(old, 0))); let n = 0; while(Math.pow(REFINE_COST_BASE, n+1) <= old) n++; return n; }
 const MONSTER_WEAKEN_MULT_PER_LV = 0.99; // 怪物弱化：每級怪物生命 ×0.99（累乘），例如 Lv.10 ＝ ×0.904
@@ -1443,7 +1454,7 @@ function monsterWeakenMul(){ return Math.pow(exOn('monweaken') ? EX_MONSTER_WEAK
 function exOutputMul(){ return exOn('spd') ? 1 + fin(state.up.spd, 0)*EX_OUTPUT_PCT_PER_LV : 1; }
 /* ── 魔法護盾：通關第 100 關後解鎖。護盾值 ＝ 主角最大生命 ×（1.013^等級 − 1）；EX：成長 −0.03、公式改 1.026^等級 − 1 ── */
 const SHIELD_BASE = 1.013, SHIELD_BASE_EX = 1.026;
-function shieldRatio(lv){ return Math.pow(exOn('shield') ? SHIELD_BASE_EX : SHIELD_BASE, lv) - 1; }
+function shieldRatio(lv){ return Decimal.pow(exOn('shield') ? SHIELD_BASE_EX : SHIELD_BASE, lv).sub(1); }
 /* ── 護盾回復：通關第 105 關後解鎖（金幣）。
    ① 護盾最大值 ×（1＋等級×4%），無上限；EX：每級 5%
    ② 每秒回復「護盾最大值 × 等級 × 0.01%」，上限 100 級（1%／秒）；EX：上限 500 級（5%／秒） ── */
@@ -1452,32 +1463,32 @@ const SHIELDREGEN_PCT_PER_LV = 0.01;
 const SHIELDREGEN_MAX_LV = 100, SHIELDREGEN_MAX_LV_EX = 500;
 function shieldCapBonusPct(lv){ if(lv == null) lv = fin(state.up.shieldregen, 0); return lv * (exOn('shieldregen') ? SHIELDREGEN_CAP_PCT_PER_LV_EX : SHIELDREGEN_CAP_PCT_PER_LV); }
 function shieldRegenPct(lv){ if(lv == null) lv = fin(state.up.shieldregen, 0); return Math.min(lv, exOn('shieldregen') ? SHIELDREGEN_MAX_LV_EX : SHIELDREGEN_MAX_LV) * SHIELDREGEN_PCT_PER_LV; } // 每秒回復護盾最大值的百分比
-function shieldValue(maxHp, lv){ if(lv == null) lv = fin(state.up.shield, 0); lv += relicLv('mirror'); return Math.round(maxHp * shieldRatio(lv) * (1 + shieldCapBonusPct()/100)); }
+function shieldValue(maxHp, lv){ if(lv == null) lv = fin(state.up.shield, 0); lv += relicLv('mirror'); return D(maxHp).mul(shieldRatio(lv)).mul(1 + shieldCapBonusPct()/100).round(); }
 const UPGRADES = [
   { key:'atk',  icon:'🗡️', name:'攻擊力',  base:40,  grow:1.11, per:3,    fmt:v=>'+'+fmtNum(v),
     // 每級：固定 +3，另外「全攻擊（本體＋鍛造＋裝備）」再 +0.5%（各級線性相加，例如 Lv.20 ＝ ×1.10）
     body:lv=>(25 + lv*3) * (1 + lv*ATK_PCT_PER_LV),
-    full:lv=>(25 + (exOn('atk') ? exTri(lv) : lv*3) + sumEquip('atk')) * (1 + lv*(exOn('atk') ? EX_ATK_PCT_PER_LV : ATK_PCT_PER_LV)),
+    full:lv=>sumEquip('atk').add(25 + (exOn('atk') ? exTri(lv) : lv*3)).mul(1 + lv*(exOn('atk') ? EX_ATK_PCT_PER_LV : ATK_PCT_PER_LV)),
     perFmt:lv=>'+'+fmtNum(exOn('atk') ? exTri(lv) : lv*3)+' 且 +'+(exOn('atk') ? fmtPct(lv*EX_ATK_PCT_PER_LV*100,2) : fmtPct(lv*ATK_PCT_PER_LV*100,1))+'%',
-    bodyFmt:v=>fmtNum(Math.round(v)) },
+    bodyFmt:v=>fmtNum(dround(v)) },
   { key:'hp',   icon:'❤️', name:'生命值',  base:40,  grow:1.11, per:15,   fmt:v=>'+'+fmtNum(v),
     // 每級：固定 +15，另外「全生命（本體＋鍛造＋裝備）」再 +HP_PCT_PER_LV（預設 0.5%，線性相加）
     body:lv=>(100 + lv*15) * (1 + lv*HP_PCT_PER_LV),
-    full:lv=>(100 + (exOn('hp') ? EX_HP_FLAT_MULT*exTri(lv) : lv*15) + sumEquip('hp')) * (1 + lv*(exOn('hp') ? EX_HP_PCT_PER_LV : HP_PCT_PER_LV)),
+    full:lv=>sumEquip('hp').add(100 + (exOn('hp') ? EX_HP_FLAT_MULT*exTri(lv) : lv*15)).mul(1 + lv*(exOn('hp') ? EX_HP_PCT_PER_LV : HP_PCT_PER_LV)),
     perFmt:lv=>'+'+fmtNum(exOn('hp') ? EX_HP_FLAT_MULT*exTri(lv) : lv*15)+' 且 +'+(exOn('hp') ? fmtPct(lv*EX_HP_PCT_PER_LV*100,2) : fmtPct(lv*HP_PCT_PER_LV*100,1))+'%',
-    bodyFmt:v=>fmtNum(Math.round(v)) },
+    bodyFmt:v=>fmtNum(dround(v)) },
   { key:'spd',  icon:'💨', name:'攻擊速度', base:90,  grow:1.31, per:0.09, fmt:v=>'+'+v.toFixed(2)+' 發/秒',
     body:lv=>Math.max(0.4, 0.3 + lv*0.09), full:lv=>Math.min(SPD_CAP, Math.max(0.4, 0.3 + lv*(exOn('spd') ? EX_SPD_PER_LV : 0.09))),
     perFmt:lv=>(exOn('spd') ? '且輸出+'+(lv*EX_OUTPUT_PCT_PER_LV*100).toFixed(1)+'%' : ''),
     bodyFmt:v=>v.toFixed(2)+' 發/秒' },
   { key:'crit', icon:'✨', name:'暴擊率',  base:100, grow:1.2, per:1.2,  fmt:v=>'+'+v.toFixed(1)+'%',
     // 暴擊率（等級+裝備疊加後）超過 80% 上限的部分，會在 stats() 裡 1:1 轉成額外暴擊傷害疊加。
-    body:lv=>Math.min(80, 5 + lv*1.2),     full:lv=>exOn('crit') ? (5 + lv*EX_CRIT_PER_LV + sumEquip('crit')) * (1 + lv*EX_CRIT_TOTAL_PCT_PER_LV) : 5 + lv*1.2 + sumEquip('crit'),
+    body:lv=>Math.min(80, 5 + lv*1.2),     full:lv=>exOn('crit') ? sumEquip('crit').add(5 + lv*EX_CRIT_PER_LV).mul(1 + lv*EX_CRIT_TOTAL_PCT_PER_LV) : sumEquip('crit').add(5 + lv*1.2),
     perFmt:lv=>exOn('crit') ? '+'+(lv*EX_CRIT_PER_LV).toFixed(1)+'% 且總量×'+(1+lv*EX_CRIT_TOTAL_PCT_PER_LV).toFixed(2) : '+'+(lv*1.2).toFixed(1)+'%',
-    bodyFmt:v=>Math.min(critCap(), v).toFixed(1)+'%' },
+    bodyFmt:v=>Decimal.min(critCap(), D(v)).toNumber().toFixed(1)+'%' },
   // 暴擊傷害：基礎倍率 200%，每級 +1%。
   { key:'critdmg', icon:'💥', name:'暴擊傷害', base:100, grow:1.2, per:1.2, fmt:v=>'+'+fmtPct(v,0)+'%',
-    body:lv=>200 + lv*1.2,                   full:lv=>exOn('critdmg') ? (200 + lv*EX_CRITDMG_PER_LV + sumEquip('critdmg')) * (1 + lv*EX_CRITDMG_TOTAL_PCT_PER_LV) : 200 + lv*1.2 + sumEquip('critdmg'),
+    body:lv=>200 + lv*1.2,                   full:lv=>exOn('critdmg') ? sumEquip('critdmg').add(200 + lv*EX_CRITDMG_PER_LV).mul(1 + lv*EX_CRITDMG_TOTAL_PCT_PER_LV) : sumEquip('critdmg').add(200 + lv*1.2),
     perFmt:lv=>exOn('critdmg') ? '+'+fmtPct(lv*EX_CRITDMG_PER_LV,1)+'% 且總量×'+(1+lv*EX_CRITDMG_TOTAL_PCT_PER_LV).toFixed(2) : '+'+fmtPct(lv*1.2, 0)+'%',
     bodyFmt:v=>fmtPct(v,0)+'%' },
   // 金幣強化：第 30 關才會解鎖，解鎖前在暴擊傷害下方以「？」顯示，解鎖後獲得的金幣每級 +5%。
@@ -1583,7 +1594,7 @@ const UPGRADES = [
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 100 關時解鎖。`,
     body:lv=>shieldValue(stats().maxHp, lv), full:lv=>shieldValue(stats().maxHp, lv),
     perFmt:lv=>'',
-    bodyFmt:v=>fmtNum(Math.round(v)) },
+    bodyFmt:v=>fmtNum(dround(v)) },
   // 護盾回復：第 105 關後解鎖。基礎 5000 金幣、成長 1.23；EX 成長 1.19。
   { key:'shieldregen', icon:'💠', name:'護盾回復', base:5000, grow:1.23, exGrow:1.19, per:1, fmt:v=>String(v),
     requiresLevel:105,
@@ -1638,7 +1649,7 @@ let state = freshState();
 function freshState(){
   const kit = makeStarterKit();
   return {
-    gem:0, gold:0, stone:0,
+    gem:0, gold:new Decimal(0), stone:new Decimal(0),
     up:{ atk:0, hp:0, spd:0, crit:0, critdmg:0, goldboost:0, gemboost:0, defense:0, breakboost:0, monweaken:0, guardradius:0, guardpower:0, steelkiller:0, summon:0, rangedreduce:0, slow:0, shield:0, shieldregen:0 },
     exOn:{ atk:false, hp:false, spd:false, crit:false, critdmg:false, goldboost:false, gemboost:false, defense:false, breakboost:false, monweaken:false, guardradius:false, guardpower:false, steelkiller:false, summon:false, rangedreduce:false, slow:false, shield:false, shieldregen:false }, // 鍛造台 EX 是否已解鎖（每項 2000 💎）
     exSeen:false,                             // 鍛造台 EX 解鎖提示是否已顯示過
@@ -1707,18 +1718,20 @@ function fmtNum(n){
 }
 // 倍率顯示：小於 1000 保留一位小數（例如 2.5），達 1000 以上改用 K／M／B／T
 function fmtMul(n){
+  if(n instanceof Decimal) return n.lt(1000) ? n.toNumber().toFixed(1) : fmtNum(n);
   n = fin(n, 0);
   return n < 1000 ? n.toFixed(1) : fmtNum(n);
 }
 // 百分比／小數數值顯示：小於 1000 依指定小數位顯示，達 1000 以上改用 K／M／B／T（超過 T 改 10 的次方）縮寫
 function fmtPct(n, digits){
+  if(n instanceof Decimal) return n.abs().lt(1000) ? n.toNumber().toFixed(digits||0) : fmtNum(n);
   n = fin(n, 0);
   return Math.abs(n) < 1000 ? n.toFixed(digits||0) : fmtNum(n);
 }
 function sanitizeState(){
   state.gem   = Math.max(0, fin(state.gem, 0));
-  state.gold  = Math.max(0, fin(state.gold, 0));
-  state.stone = Math.max(0, fin(state.stone, 0));
+  state.gold  = dpos(state.gold);
+  state.stone = dpos(state.stone);
   UPGRADES.forEach(u=>{ state.up[u.key] = Math.max(0, Math.round(fin(state.up[u.key], 0))); });
   if(!state.skillEx) state.skillEx = {};
   Object.keys(SKILL_DEFS).forEach(k=>{ state.skillEx[k] = !!state.skillEx[k]; });
@@ -1751,6 +1764,7 @@ function load(){
     const d = JSON.parse(raw);
     const f = freshState();
     state = Object.assign(f, d);
+    state.gold = dpos(d.gold); state.stone = dpos(d.stone); // 以字串存檔（Decimal.toJSON），舊存檔的數字也能讀
     state.up       = Object.assign(f.up, d.up||{});
     state.exOn     = Object.assign(f.exOn, d.exOn||{});
     state.skillEx  = Object.assign(f.skillEx, d.skillEx||{});
@@ -2389,19 +2403,19 @@ function syncQuizMeta(){
 function getRefine(slot){ return Math.max(0, Math.round(fin(state.refineBySlot[slot], 0))); }
 function addRefine(slot, amt){ state.refineBySlot[slot] = getRefine(slot) + amt; }
 function equipStat(card, key){
-  if(!card) return 0;
+  if(!card) return DZERO;
   const base = EQUIP_POOL.find(e=>e.id===card.id);
-  if(!base || !base[key]) return 0;
+  if(!base || !base[key]) return DZERO;
   const rar = RARITY[card.rarity].mult;
   const ref = refineMul(getRefine(base.slot));//強化石1
-  const raw = base[key] * rar * ref;
+  const raw = ref.mul(base[key] * rar);
   // 彈道是整數，不隨稀有度放大到奇怪的小數
-  if(key === 'multi') return Math.floor(base[key] * (card.rarity==='SSR'?2:1));
-  return fin(raw, 0);
+  if(key === 'multi') return D(Math.floor(base[key] * (card.rarity==='SSR'?2:1)));
+  return dfin(raw);
 }
 function sumEquip(key){
-  let t = 0;
-  activeSlots().forEach(s=>{ t += equipStat(state.equipped[s], key); });
+  let t = DZERO;
+  activeSlots().forEach(s=>{ t = t.add(equipStat(state.equipped[s], key)); });
   return t;
 }
 // 暴擊率上限，stats() 跟鍛造台面板顯示都要用同一個值，避免兩邊算出不同結果
@@ -2409,7 +2423,7 @@ const CRIT_CAP = 80;
 // 計算暴擊率溢出量，抽成共用函式。
 function critOverflowAmount(){
   const rawCrit = UPGRADES.find(x=>x.key==='crit').full(state.up.crit);
-  return Math.max(0, rawCrit - critCap());
+  return Decimal.max(0, rawCrit.sub(critCap()));
 }
 function stats(){
   const u = state.up;
@@ -2418,11 +2432,12 @@ function stats(){
   const rawCrit = get('crit');
   const critOverflow = critOverflowAmount();
   return {
-    atk:     Math.round(fin(get('atk'), 25) * exOutputMul() * relicAtkMul()), // 攻擊速度 EX 的「總輸出」加成與神器（靈魂迴響／烈陽之心）乘在最終攻擊上
-    maxHp:   Math.round(fin(get('hp'), 100) * relicHpMul()), // 神器：極光法陣守護
+    atk:     dfin(get('atk')).mul(exOutputMul()).mul(relicAtkMul()).round(), // 攻擊速度 EX 的「總輸出」加成與神器（靈魂迴響／烈陽之心）乘在最終攻擊上
+    maxHp:   dfin(get('hp')).mul(relicHpMul()).round(), // 神器：極光法陣守護
     spd:     Math.min(SPD_CAP, fin(get('spd'), 0.4)),
-    crit:    fin(Math.min(critCap(), rawCrit), 5),
-    critDmg: fin(get('critdmg') + critOverflow, 200),
+    crit:    fin(Decimal.min(critCap(), rawCrit).toNumber(), 5),
+    critDmg: dfin(get('critdmg')).add(critOverflow),
+    critMul: dfin(get('critdmg')).add(critOverflow).div(100),
   };
 }
 
@@ -2552,7 +2567,7 @@ function spawnSplitChildren(p){
   if(!st) return;
   const sizeMul = farMode ? FAR_MONSTER_SIZE_MUL : 1;
   const w = p.wv;
-  const hp = D(enemyHpFor(run.level, w) * st.hp * monsterWeakenMul());
+  const hp = enemyHpFor(run.level, w).mul(st.hp * monsterWeakenMul());
   const spd = ((17 * st.spd) + slowedSpeedBonus(run.level)) * waveSpeedMulFor(w) * enemySpeedScale();
   for(let k=0;k<3;k++){
     const dir = k - 1; // -1、0、1
@@ -2600,7 +2615,7 @@ const BOSS_ATTACK_INTERVAL = 1.0;       // 近戰魔王出手間隔（秒）
 function bossStrikeDmg(e, interval){    // 取出本次攻擊傷害，並讓疊加層數 +1
   const n = e.atkCount || 0;
   e.atkCount = n + 1;
-  return e.dps * interval * Math.pow(BOSS_ATK_STACK, n);
+  return e.dps.mul(interval).mul(Decimal.pow(BOSS_ATK_STACK, n));
 }
 // ── 遠程魔王 ──
 // 魔王有 RANGED_BOSS_CHANCE 的機率是遠程型（停在射程外拋火球），機率 0 = 不出現、1 = 全部都是遠程。
@@ -2660,7 +2675,7 @@ const run = {
   active:false, over:false,
   level:1,
   t:0, wave:1, spawned:0, waveQuota:0, spawnTimer:0,
-  hp:100, maxHp:100, shield:0, maxShield:0, wallStack:0,
+  hp:new Decimal(100), maxHp:new Decimal(100), shield:new Decimal(0), maxShield:new Decimal(0), wallStack:0,
   heroX:W/2, targetX:W/2, heroAng:-Math.PI/2, targetAng:-Math.PI/2,
   fireTimer:0, iceTimer:0, lightningTimer:0, whirlwindTimer:0, earthwallTimer:0, earthwallCd:0, beamTimer:0,
   beam:{ target:null, ang:-Math.PI/2, pulse:0, active:false, sweep:null },
@@ -2679,7 +2694,7 @@ function waveQuotaFor(w){
 }
 // 怪物血量 = 關卡基礎值（每關 × 係數）× 關內波數成長（20 波內只差 3 倍）
 function enemyHpFor(level, w){
-  return 17 * levelGrowthMul(LEVEL_HP_GROWTH, level) * Math.pow(WAVE_HP_GROWTH, w-1);
+  return levelGrowthMul(LEVEL_HP_GROWTH, level).mul(17 * Math.pow(WAVE_HP_GROWTH, w-1));
 }
 // 移速倍率：關內 20 波線性提升到約 1.1 倍
 function waveSpeedMulFor(w){
@@ -2843,7 +2858,7 @@ function goldLevelMul(level){
   const lv = Math.max(1, level);
   const early = Math.min(lv - 1, GOLD_GROWTH_SWITCH_LEVEL - 1);
   const late = Math.max(0, lv - GOLD_GROWTH_SWITCH_LEVEL);
-  return fin(Math.pow(GOLD_GROWTH_EARLY, early) * Math.pow(GOLD_GROWTH_LATE, late), 1);
+  return Decimal.pow(GOLD_GROWTH_EARLY, early).mul(Decimal.pow(GOLD_GROWTH_LATE, late));
 }
 const GEM_CLEAR_CAP = 450; // 通關鑽石上限
 function levelTotalEnemies(){ let t = 0; for(let w=1; w<=WAVES_PER_LEVEL; w++) t += waveQuotaFor(w); return Math.max(1, t); }
@@ -2852,14 +2867,14 @@ function endRun(win){
 
   const levelMul  = goldLevelMul(run.level);   // 金幣／強化石增加係數（兩階段：100 關以前 ×1.25、101 關起 ×1.1）
   const goldBoostMul = 1 + goldBoostPct() / 100; // 鍛造台「金幣強化」：每級 +5%（EX 解鎖後 +6%）金幣
-  const goldGain  = Math.round(fin(run.gold, 0) * levelMul * goldBoostMul * relicMidasMul());
-  const stoneGain = Math.round((Math.floor(run.wave/3) + (win?3:0)) * levelMul * relicStoneMul());
+  const goldGain  = D(fin(run.gold, 0)).mul(levelMul).mul(goldBoostMul).mul(relicMidasMul()).round();
+  const stoneGain = D(Math.floor(run.wave/3) + (win?3:0)).mul(levelMul).mul(relicStoneMul()).round();
   const gemBoostAdd = gemBoostAmount();                        // 鍛造台「鑽石強化」（含 EX）：每級固定加鑽石
   // 通關鑽石 ＝ 10 + 關卡數 ×2 + 鑽石強化加成，上限 GEM_CLEAR_CAP；未通關 ＝ 該關通關獎勵 × 擊殺數比例（四捨五入）
   const gemFull   = Math.min(GEM_CLEAR_CAP, 10 + run.level*2 + gemBoostAdd);
   const gemGain   = win ? gemFull : Math.round(gemFull * Math.min(1, run.kills / levelTotalEnemies()));
-  state.gold  = Math.max(0, fin(state.gold, 0) + fin(goldGain, 0));
-  state.stone = Math.max(0, fin(state.stone, 0) + fin(stoneGain, 0));
+  state.gold  = dpos(state.gold.add(dfin(goldGain)));
+  state.stone = dpos(state.stone.add(dfin(stoneGain)));
   state.gem   = Math.max(0, fin(state.gem, 0) + fin(gemGain, 0));
   state.best.wave  = Math.max(state.best.wave, run.wave);
   state.best.kills = Math.max(state.best.kills, run.kills);
@@ -2955,7 +2970,7 @@ function fireEnemyLob(e, wall){
     age:0,
     T: Math.max(0.7, Math.min(1.3, dist / (320*hScale))),
     h: Math.max(90, Math.min(210, dist*0.42)),
-    dmg: e.boss ? bossStrikeDmg(e, RANGED_SHOOT_INTERVAL) : e.dps * RANGED_SHOOT_INTERVAL,
+    dmg: e.boss ? bossStrikeDmg(e, RANGED_SHOOT_INTERVAL) : e.dps.mul(RANGED_SHOOT_INTERVAL),
     boss: !!e.boss,
     trail: [],
   });
@@ -3011,8 +3026,8 @@ function spawnEnemy(){
   const bossRanged = isBoss && run.level > RANGED_BOSS_UNLOCK_LEVEL && Math.random() < RANGED_BOSS_CHANCE;
   // 鍛造台「怪物弱化」：怪物生命每級 ×MONSTER_WEAKEN_MULT_PER_LV（累乘）
   const weakenMul = monsterWeakenMul();
-  const hp = D(base.steel ? steelHpFor(run.level) : enemyHpFor(run.level, w) * base.hp * (isBoss ? 14 : 1) * weakenMul);
-  const dps = (isBoss ? 13 : 4) * levelGrowthMul(LEVEL_ATK_GROWTH, run.level);
+  const hp = base.steel ? D(steelHpFor(run.level)) : enemyHpFor(run.level, w).mul(base.hp * (isBoss ? 14 : 1) * weakenMul);
+  const dps = levelGrowthMul(LEVEL_ATK_GROWTH, run.level).mul(isBoss ? 13 : 4);
   const sizeMul = farMode ? FAR_MONSTER_SIZE_MUL : 1;
   let spx = 32 + Math.random()*(W-64), spy = -30, spvx = (Math.random()-0.5) * 12;
   if(farMode){
@@ -3113,7 +3128,7 @@ function updateIceEx(dt, s){
       // 冰刃本體：刃尖到達敵人位置時命中一次（不消失）
       if(!b.hit.has(e) && b.spd * b.t >= along - e.r*0.5){
         b.hit.add(e);
-        const d = enemyDmg(e, b.crit ? b.dmg.mul(s.critDmg/100) : b.dmg);
+        const d = enemyDmg(e, b.crit ? b.dmg.mul(s.critMul) : b.dmg);
         e.hp = e.hp.sub(d); e.hit = 0.12;
         popText(e.x, e.y-e.r-4, fmtNum(d), b.crit);
         e.exSlow = ICE_EX_SLOW_TIME;
@@ -3127,7 +3142,7 @@ function updateIceEx(dt, s){
         if(k.acc >= ICE_EX_TICK && k.n < 4){
           k.acc -= ICE_EX_TICK; k.n++;
           const crit = Math.random()*100 < s.crit;
-          const d = enemyDmg(e, crit ? icespikeAtk(s).mul(s.critDmg/100) : icespikeAtk(s));
+          const d = enemyDmg(e, crit ? icespikeAtk(s).mul(s.critMul) : icespikeAtk(s));
           e.hp = e.hp.sub(d); e.hit = 0.12;
           popText(e.x, e.y-e.r-4, fmtNum(d), crit);
         }
@@ -3201,7 +3216,7 @@ function updateFireballEx(dt, s){
     if(p.u < 1) continue;
     // 落地：直擊 ＋ 開始爆風
     run.lobs.splice(i,1);
-    const dmg = l.crit ? l.dmg.mul(s.critDmg/100) : l.dmg;
+    const dmg = l.crit ? l.dmg.mul(s.critMul) : l.dmg;
     const hit = new Set();
     let direct = (l.target && l.target.hp.gt(0) && run.enemies.includes(l.target)) ? l.target : null;
     if(!direct){ // 目標已死：落點附近最近的敵人當直擊對象
@@ -3398,7 +3413,7 @@ function lightningExStrike(b){
   for(let i=0;i<b.hits;i++){
     const crit = Math.random()*100 < s.crit;
     if(crit) anyCrit = true;
-    const d = alive ? enemyDmg(e, crit ? base.mul(s.critDmg/100) : base) : DZERO;
+    const d = alive ? enemyDmg(e, crit ? base.mul(s.critMul) : base) : DZERO;
     if(alive){ e.hp = e.hp.sub(d); e.hit = 0.12; }
     // 傷害數字同時出現，由下至上並排
     if(alive) popText(b.x, b.y - b.r - 6 - i*17*fz, fmtNum(d), crit); // 沒擊中（目標已死）不顯示 0，特效保留
@@ -3544,7 +3559,7 @@ function castLightning(){
   const s = stats();
   const baseDmg = lightningAtk(s);
   const crit = Math.random()*100 < s.crit;
-  const dmg = crit ? baseDmg.mul(s.critDmg/100) : baseDmg;
+  const dmg = crit ? baseDmg.mul(s.critMul) : baseDmg;
 
   // 從場上敵人隨機抽出最多 n 位、不重複
   const pool = farMode ? run.enemies.filter(farTargetable) : run.enemies.slice();
@@ -3615,7 +3630,7 @@ function updateBeamEx(dt){
     for(let i = 0; i < BEAM_EX_HITS; i++){
       const crit = Math.random()*100 < s.crit;
       if(crit) anyCrit = true;
-      const dmg = enemyDmg(e, crit ? base.mul(s.critDmg/100) : base);
+      const dmg = enemyDmg(e, crit ? base.mul(s.critMul) : base);
       e.hp = e.hp.sub(dmg); e.hit = 0.12;
       popText(e.x, e.y - e.r - 6 - i*17*fz, fmtNum(dmg), crit);
     }
@@ -3656,7 +3671,7 @@ function pulseBeam(s){
   const base = beamAtk(s);
   beamHits().forEach(e=>{
     const crit = Math.random()*100 < s.crit;
-    const dmg = enemyDmg(e, crit ? base.mul(s.critDmg/100) : base);
+    const dmg = enemyDmg(e, crit ? base.mul(s.critMul) : base);
     e.hp = e.hp.sub(dmg); e.hit = 0.12;
     popText(e.x, e.y-e.r-4, fmtNum(dmg), crit);
     if(crit) burst(e.x, e.y, '#b5d4f4', 4);
@@ -3699,7 +3714,7 @@ function spawnWhirlwindEx(s){
 function spawnEarthwall(s, full){
   if(state.skills.earthwall.draws < 1) return; // 尚未解鎖
   const regen = earthwallHp(s);
-  const maxHp = regen * earthwallMaxHpMult();
+  const maxHp = regen.mul(earthwallMaxHpMult());
   if(farMode){ // 圓形土牆：以主角為圓心、半徑 FAR_WALL_RADIUS，岩塊沿圓周排列
     const R = FAR_WALL_RADIUS, nr = Math.round(2*Math.PI*R / ((W + 20) / EARTHWALL_ROCK_COUNT)), swr = 2*Math.PI*R / nr;
     const rocksR = [];
@@ -3738,7 +3753,7 @@ function updateEarthwall(dt, s){
     if(wall.ring){ wall.x = W/2; wall.y = H/2; } else wall.y = earthwallY(); // 視窗大小改變時跟著調整
     run.earthwallTimer -= dt;
     if(run.earthwallTimer <= 0){
-      wall.hp = Math.min(wall.maxHp, wall.hp + earthwallHp(s));
+      wall.hp = Decimal.min(wall.maxHp, wall.hp.add(earthwallHp(s)));
       run.earthwallTimer = earthwallInterval(s);
     }
   } else if(run.earthwallCd > 0){
@@ -3815,8 +3830,9 @@ function loop(now){
 
 // 主角受傷：先扣魔法護盾，護盾耗盡才扣生命
 function hurtHero(d){
-  if(run.shield > 0){ const a = Math.min(run.shield, d); run.shield -= a; d -= a; }
-  if(d > 0) run.hp -= d;
+  d = D(d);
+  if(run.shield.gt(0)){ const a = Decimal.min(run.shield, d); run.shield = run.shield.sub(a); d = d.sub(a); }
+  if(d.gt(0)) run.hp = run.hp.sub(d);
 }
 
 /* 遠景模式的敵人行為：朝正中央的主角直線前進；圓形土牆擋在半徑 R 處；遠程敵人進射程就停下拋火球。
@@ -3833,7 +3849,7 @@ function stepEnemyFar(e, dt, slowMul, s, dmgTakenMul){
     let tgtWall = null;
     if(baseRange <= EARTHWALL_Y_FROM_BOTTOM){
       for(const w of run.walls){
-        if(w.hp > 0 && d >= w.radius && d - w.radius <= range) tgtWall = w;
+        if(w.hp.gt(0) && d >= w.radius && d - w.radius <= range) tgtWall = w;
       }
     }
     if(tgtWall || d <= range){
@@ -3867,7 +3883,7 @@ function stepEnemyFar(e, dt, slowMul, s, dmgTakenMul){
       e.atkTimer = (e.atkTimer||0) + dt;
       if(e.atkTimer >= BOSS_ATTACK_INTERVAL){
         e.atkTimer -= BOSS_ATTACK_INTERVAL;
-        blockWall.hp -= bossStrikeDmg(e, BOSS_ATTACK_INTERVAL) * dmgTakenMul;
+        blockWall.hp = blockWall.hp.sub(bossStrikeDmg(e, BOSS_ATTACK_INTERVAL).mul(dmgTakenMul));
         blockWall.hit = 0.12;
         burst(e.x, e.y, '#ff3b6b', 10);
         earthwallCounter(e, blockWall, s);
@@ -3876,13 +3892,13 @@ function stepEnemyFar(e, dt, slowMul, s, dmgTakenMul){
       e.atkTimer = (e.atkTimer||0) + dt;
       if(e.atkTimer >= MINION_ATTACK_INTERVAL){
         e.atkTimer -= MINION_ATTACK_INTERVAL;
-        blockWall.hp -= e.dps * MINION_ATTACK_INTERVAL * dmgTakenMul * (1 + run.wallStack);
+        blockWall.hp = blockWall.hp.sub(e.dps.mul(MINION_ATTACK_INTERVAL * dmgTakenMul * (1 + run.wallStack)));
         run.wallStack += MINION_WALL_STACK_PER_HIT;
         earthwallCounter(e, blockWall, s);
       }
       blockWall.hit = 0.12;
     }
-    if(blockWall.hp <= 0) e.wallStagger = EARTHWALL_BREAK_STAGGER;
+    if(blockWall.hp.lte(0)) e.wallStagger = EARTHWALL_BREAK_STAGGER;
     e.hitTimer = (e.hitTimer||0) + dt;
     if(e.hitTimer >= 0.4){ e.hitTimer = 0; burst(e.x, e.y, '#c99a5b', e.boss ? 12 : 6); }
     return false;
@@ -3896,11 +3912,11 @@ function stepEnemyFar(e, dt, slowMul, s, dmgTakenMul){
       e.atkTimer = (e.atkTimer||0) + dt;
       if(e.atkTimer >= BOSS_ATTACK_INTERVAL){
         e.atkTimer -= BOSS_ATTACK_INTERVAL;
-        hurtHero(bossStrikeDmg(e, BOSS_ATTACK_INTERVAL) * dmgTakenMul);
+        hurtHero(bossStrikeDmg(e, BOSS_ATTACK_INTERVAL).mul(dmgTakenMul));
         run.shake = Math.max(run.shake, 0.3);
       }
     } else {
-      hurtHero(e.dps * dmgTakenMul * dt);
+      hurtHero(e.dps.mul(dmgTakenMul * dt));
     }
     e.hitTimer = (e.hitTimer||0) + dt;
     if(e.hitTimer >= 0.4){
@@ -3908,7 +3924,7 @@ function stepEnemyFar(e, dt, slowMul, s, dmgTakenMul){
       burst(e.x, e.y, '#ff3b6b', e.boss ? 12 : 6);
       run.shake = Math.max(run.shake, e.boss ? 0.3 : 0.12);
     }
-    if(run.hp <= 0){ run.hp = 0; syncBattleHud(); endRun(false); return true; }
+    if(run.hp.lte(0)){ run.hp = DZERO; syncBattleHud(); endRun(false); return true; }
   }
   return false;
 }
@@ -3943,9 +3959,9 @@ function step(dt){
     run.heroX += (run.targetX - run.heroX) * Math.min(1, dt*13);
   }
   // 護盾回復（鍛造台）：每秒回復護盾最大值 × 等級 × 0.01%
-  if(run.maxShield > 0 && run.shield < run.maxShield){
+  if(run.maxShield.gt(0) && run.shield.lt(run.maxShield)){
     const rg = shieldRegenPct();
-    if(rg > 0) run.shield = Math.min(run.maxShield, run.shield + run.maxShield * rg / 100 * dt);
+    if(rg > 0) run.shield = Decimal.min(run.maxShield, run.shield.add(run.maxShield.mul(rg / 100 * dt)));
   }
 
   // 開火：三個技能各自獨立計時，頻率＝角色攻速 × SKILL_SPD_MULT。
@@ -4005,7 +4021,7 @@ function step(dt){
       const dx=b.x-e.x, dy=b.y-e.y;
       if(dx*dx+dy*dy < (e.r+b.r)*(e.r+b.r)){
         // 暴擊傷害改用鍛造台的「暴擊傷害」數值（含暴擊率溢出轉換），不再寫死 x2
-        const dmg = enemyDmg(e, b.crit ? b.dmg.mul(s.critDmg/100) : b.dmg);
+        const dmg = enemyDmg(e, b.crit ? b.dmg.mul(s.critMul) : b.dmg);
         e.hp = e.hp.sub(dmg); e.hit = 0.12;
         popText(e.x, e.y-e.r-4, fmtNum(dmg), b.crit);
         if(b.kind === 'ice'){
@@ -4076,7 +4092,7 @@ function step(dt){
           if(dx*dx+dy*dy > whirlwindExRadius()*whirlwindExRadius()) continue;
           for(let i=0;i<n;i++){
             const crit = Math.random()*100 < s.crit;
-            const dmg = enemyDmg(e, crit ? base.mul(s.critDmg/100) : base);
+            const dmg = enemyDmg(e, crit ? base.mul(s.critMul) : base);
             e.hp = e.hp.sub(dmg); e.hit = 0.12;
             popText(e.x, e.y - e.r - 6 - i*17*fz, fmtNum(dmg), crit);
           }
@@ -4093,7 +4109,7 @@ function step(dt){
         const dx = e.x-t.x, dy = e.y-t.y;
         if(dx*dx+dy*dy <= whirlwindRadius()*whirlwindRadius()){
           const crit = Math.random()*100 < s.crit;
-          const dmg = enemyDmg(e, crit ? t.dmg.mul(s.critDmg/100) : t.dmg);
+          const dmg = enemyDmg(e, crit ? t.dmg.mul(s.critMul) : t.dmg);
           e.hp = e.hp.sub(dmg); e.hit = 0.12;
           popText(e.x, e.y-e.r-4, fmtNum(dmg), crit);
           hitAny = true;
@@ -4162,7 +4178,7 @@ function step(dt){
       let tgtWall = null;
       if(range <= EARTHWALL_Y_FROM_BOTTOM){
         for(const w of run.walls){
-          if(w.hp > 0 && w.y >= e.y && w.y - e.y <= range && (!tgtWall || w.y < tgtWall.y)) tgtWall = w;
+          if(w.hp.gt(0) && w.y >= e.y && w.y - e.y <= range && (!tgtWall || w.y < tgtWall.y)) tgtWall = w;
         }
       }
       const inHeroRange = Math.hypot(e.x - run.heroX, heroLine - e.y) <= range;
@@ -4196,7 +4212,7 @@ function step(dt){
         e.atkTimer = (e.atkTimer||0) + dt;
         if(e.atkTimer >= BOSS_ATTACK_INTERVAL){
           e.atkTimer -= BOSS_ATTACK_INTERVAL;
-          blockWall.hp -= bossStrikeDmg(e, BOSS_ATTACK_INTERVAL) * dmgTakenMul;
+          blockWall.hp = blockWall.hp.sub(bossStrikeDmg(e, BOSS_ATTACK_INTERVAL).mul(dmgTakenMul));
           blockWall.hit = 0.12;
           burst(e.x, blockWall.y, '#ff3b6b', 10);
           earthwallCounter(e, blockWall, s); // 土牆術 EX：尖刺反擊
@@ -4205,13 +4221,13 @@ function step(dt){
         e.atkTimer = (e.atkTimer||0) + dt;
         if(e.atkTimer >= MINION_ATTACK_INTERVAL){
           e.atkTimer -= MINION_ATTACK_INTERVAL;
-          blockWall.hp -= e.dps * MINION_ATTACK_INTERVAL * dmgTakenMul * (1 + run.wallStack); // 小怪疊加：全體共用的線性加成，只對土牆
+          blockWall.hp = blockWall.hp.sub(e.dps.mul(MINION_ATTACK_INTERVAL * dmgTakenMul * (1 + run.wallStack))); // 小怪疊加：全體共用的線性加成，只對土牆
           run.wallStack += MINION_WALL_STACK_PER_HIT;
           earthwallCounter(e, blockWall, s); // 土牆術 EX：尖刺反擊
         }
         blockWall.hit = 0.12;
       }
-      if(blockWall.hp <= 0) e.wallStagger = EARTHWALL_BREAK_STAGGER;
+      if(blockWall.hp.lte(0)) e.wallStagger = EARTHWALL_BREAK_STAGGER;
       e.hitTimer = (e.hitTimer||0) + dt;
       if(e.hitTimer >= 0.4){
         e.hitTimer = 0;
@@ -4228,11 +4244,11 @@ function step(dt){
         e.atkTimer = (e.atkTimer||0) + dt;
         if(e.atkTimer >= BOSS_ATTACK_INTERVAL){
           e.atkTimer -= BOSS_ATTACK_INTERVAL;
-          hurtHero(bossStrikeDmg(e, BOSS_ATTACK_INTERVAL) * dmgTakenMul);
+          hurtHero(bossStrikeDmg(e, BOSS_ATTACK_INTERVAL).mul(dmgTakenMul));
           run.shake = Math.max(run.shake, 0.3);
         }
       } else {
-        hurtHero(e.dps * dmgTakenMul * dt);
+        hurtHero(e.dps.mul(dmgTakenMul * dt));
       }
       e.hitTimer = (e.hitTimer||0) + dt;
       if(e.hitTimer >= 0.4){ // 每 0.4 秒一次視覺回饋，避免每幀爆量特效
@@ -4240,7 +4256,7 @@ function step(dt){
         burst(e.x, heroLine, '#ff3b6b', e.boss ? 12 : 6);
         run.shake = Math.max(run.shake, e.boss ? 0.3 : 0.12);
       }
-      if(run.hp <= 0){ run.hp = 0; syncBattleHud(); endRun(false); return; }
+      if(run.hp.lte(0)){ run.hp = DZERO; syncBattleHud(); endRun(false); return; }
     }
   }
 
@@ -4254,22 +4270,22 @@ function step(dt){
     if(b.age < b.T) continue;
     run.eshots.splice(i,1);
     if(b.wall){
-      if(run.walls.includes(b.wall) && b.wall.hp > 0){
-        b.wall.hp -= b.dmg * dmgTakenMul * (b.boss ? 1 : 1 + run.wallStack); b.wall.hit = 0.12;
+      if(run.walls.includes(b.wall) && b.wall.hp.gt(0)){
+        b.wall.hp = b.wall.hp.sub(b.dmg.mul(dmgTakenMul * (b.boss ? 1 : 1 + run.wallStack))); b.wall.hit = 0.12;
         if(!b.boss) run.wallStack += MINION_WALL_STACK_PER_HIT; // 遠程小怪火球打中土牆算一次攻擊
       }
       burst(b.ex, b.ey, '#ff8a3d', 10);
     } else {
-      hurtHero(b.dmg * dmgTakenMul);
+      hurtHero(b.dmg.mul(dmgTakenMul));
       burst(b.ex, b.ey, '#ff3b6b', 10);
       run.shake = Math.max(run.shake, 0.12);
-      if(run.hp <= 0){ run.hp = 0; syncBattleHud(); endRun(false); return; }
+      if(run.hp.lte(0)){ run.hp = DZERO; syncBattleHud(); endRun(false); return; }
     }
   }
 
   // 清掉已經被打壞的土牆
   for(let i=run.walls.length-1;i>=0;i--){
-    if(run.walls[i].hp <= 0){
+    if(run.walls[i].hp.lte(0)){
       const w = run.walls[i];
       if(w.ring){ for(let k=0;k<12;k++){ const a = k/12*Math.PI*2; burst(w.x + Math.cos(a)*w.radius, w.y + Math.sin(a)*w.radius, '#c99a5b', 6); } } // 圓形牆崩塌的碎屑
       else for(let k=0;k<6;k++) burst(W*(k+.5)/6, w.y, '#c99a5b', 8); // 整條牆崩塌的碎屑
@@ -4329,26 +4345,26 @@ function syncBattleHud(){
 
   document.getElementById('runKill').textContent = `☠ ${run.kills}`;
   // 右上角金幣：套用與結算（endRun）相同的關卡係數與金幣強化，顯示的就是實際會拿到的金幣
-  const gMul = goldLevelMul(run.level) * (1 + goldBoostPct() / 100) * relicMidasMul();
-  document.getElementById('runGold').textContent = `💰 ${fmtNum(Math.round(fin(run.gold, 0) * gMul))}`;
-  const pct = run.maxHp ? Math.max(0, run.hp/run.maxHp*100) : 0;
+  const gMul = goldLevelMul(run.level).mul(1 + goldBoostPct() / 100).mul(relicMidasMul());
+  document.getElementById('runGold').textContent = `💰 ${fmtNum(D(fin(run.gold, 0)).mul(gMul).round())}`;
+  const pct = run.maxHp.gt(0) ? Math.max(0, dratio(run.hp, run.maxHp)*100) : 0;
   // 121 關起：土牆血量顯示在角色血條上方
   const ww = document.getElementById('wallWrap');
   const showWall = farMode && state.skills.earthwall.draws >= 1;
   ww.classList.toggle('on', showWall);
   if(showWall){
     const wl = run.walls[0];
-    document.getElementById('wallFill').style.width = (wl && wl.maxHp ? Math.max(0, wl.hp / wl.maxHp * 100) : 0) + '%';
+    document.getElementById('wallFill').style.width = (wl && wl.maxHp.gt(0) ? Math.max(0, dratio(wl.hp, wl.maxHp) * 100) : 0) + '%';
     document.getElementById('wallText').textContent = wl
-      ? `🧱 ${fmtNum(Math.max(0, Math.round(wl.hp)))} / ${fmtNum(Math.round(wl.maxHp))}`
+      ? `🧱 ${fmtNum(Decimal.max(0, wl.hp).round())} / ${fmtNum(wl.maxHp.round())}`
       : `🧱 土牆重生中 ${Math.max(0, run.earthwallCd).toFixed(1)}s`;
   }
   document.getElementById('hpFill').style.width = pct + '%';
-  const spct = run.maxShield > 0 ? Math.max(0, run.shield/run.maxShield*100) : 0;
+  const spct = run.maxShield.gt(0) ? Math.max(0, dratio(run.shield, run.maxShield)*100) : 0;
   document.getElementById('shieldFill').style.width = spct + '%';
   document.getElementById('hpText').textContent =
-    (run.shield > 0 ? `🔵${fmtNum(Math.ceil(run.shield))}　` : '') +
-    `${fmtNum(Math.max(0,Math.ceil(run.hp)))} / ${fmtNum(Math.round(run.maxHp))}`;
+    (run.shield.gt(0) ? `🔵${fmtNum(run.shield.ceil())}　` : '') +
+    `${fmtNum(Decimal.max(0, run.hp).ceil())} / ${fmtNum(run.maxHp.round())}`;
 }
 
 /* 繪製 */
@@ -4645,7 +4661,7 @@ function drawEarthwallRing(ex){
   run.walls.forEach(w=>{
     if(!w.ring) return;
     const R = w.radius, n = w.rocks.length, SW = 2*Math.PI*R / n;
-    const f = Math.max(0, w.hp / w.maxHp);
+    const f = Math.max(0, dratio(w.hp, w.maxHp));
     const baseOff = (ex ? EARTHWALL_EX_DRAW_OFFSET : 12) * S;
     const rise = 1 - Math.pow(1 - (w.rise == null ? 1 : w.rise), 3);
     const jolt = ex ? (w.jolt || 0) : 0;
@@ -4712,7 +4728,7 @@ function drawEarthwallEx(){
   const SW = (W + 20) / EARTHWALL_ROCK_COUNT;
   ctx.textAlign='center'; ctx.textBaseline='middle';
   run.walls.forEach(w=>{
-    const f = Math.max(0, w.hp / w.maxHp);
+    const f = Math.max(0, dratio(w.hp, w.maxHp));
     const base = w.y + EARTHWALL_EX_DRAW_OFFSET;
     const rise = 1 - Math.pow(1 - (w.rise == null ? 1 : w.rise), 3);
     const jolt = w.jolt || 0;
@@ -4768,13 +4784,13 @@ function drawEarthwallEx(){
     }));
     ctx.restore();
     // 血條與數值
-    if(w.hp < w.maxHp){
+    if(w.hp.lt(w.maxHp)){
       const by = w.y - 42;
       ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(10, by, W-20, 4);
       ctx.fillStyle = '#c99a5b';
       ctx.fillRect(10, by, (W-20)*f, 4);
       ctx.font = '11px sans-serif'; ctx.fillStyle = '#e8d5b8'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(`${fmtNum(Math.max(0, Math.round(w.hp)))} / ${fmtNum(Math.round(w.maxHp))}`, W/2, by - 8);
+      ctx.fillText(`${fmtNum(Decimal.max(0, w.hp).round())} / ${fmtNum(w.maxHp.round())}`, W/2, by - 8);
     }
   });
 }
@@ -4831,7 +4847,7 @@ function draw(){
   const wallEx = skillExOn('earthwall');
   if(farMode && !wallEx) drawEarthwallRing(false);
   if(!wallEx && !farMode) run.walls.forEach(w=>{
-    const f = Math.max(0, w.hp / w.maxHp);
+    const f = Math.max(0, dratio(w.hp, w.maxHp));
     const base = w.y + 12;                                   // 岩塊底部；敵人停在 w.y，剛好踩在石堆上
     const rise = 1 - Math.pow(1 - (w.rise == null ? 1 : w.rise), 3);
     const k = w.hit > 0 ? 0.4 : 0;
@@ -4851,13 +4867,13 @@ function draw(){
     });
     ctx.restore();
     // 血條與數值
-    if(w.hp < w.maxHp){
+    if(w.hp.lt(w.maxHp)){
       const by = w.y - 42;
       ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(10, by, W-20, 4);
       ctx.fillStyle = '#c99a5b';
       ctx.fillRect(10, by, (W-20)*f, 4);
       ctx.font = '11px sans-serif'; ctx.fillStyle = '#e8d5b8'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(`${fmtNum(Math.max(0, Math.round(w.hp)))} / ${fmtNum(Math.round(w.maxHp))}`, W/2, by - 8);
+      ctx.fillText(`${fmtNum(Decimal.max(0, w.hp).round())} / ${fmtNum(w.maxHp.round())}`, W/2, by - 8);
     }
   });
   // 牆被擊破後的重生倒數
@@ -5164,8 +5180,8 @@ function pullOnce(){
   // 背包已有「同裝備同稀有度」→ 熔成強化石
   const dup = state.bag.find(c=>c.id===base.id && c.rarity===rarity);
   if(dup){
-    const dust = Math.round(RARITY[rarity].dust * relicStoneMul()); // 重複裝備熔成的強化石（依稀有度固定，神器：精煉大師日記加成）
-    state.stone += dust;
+    const dust = D(RARITY[rarity].dust).mul(relicStoneMul()).round(); // 重複裝備熔成的強化石（依稀有度固定，神器：精煉大師日記加成）
+    state.stone = state.stone.add(dust);
     return { kind:'equip', base, rarity, dup:true, dust };
   }
   const card = { uid:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), id:base.id, rarity };
@@ -5233,7 +5249,7 @@ function doPull(n, free){
       <div class="ico">${o.base.icon}</div>
       <div style="flex:1;min-width:0">
         <div class="nm">${o.base.name}</div>
-        <div class="st">${o.dup ? `重複 · 熔成 +${o.dust} 🔮` : st}</div>
+        <div class="st">${o.dup ? `重複 · 熔成 +${fmtNum(o.dust)} 🔮` : st}</div>
       </div>
       <div class="rar r-${o.rarity}">${RARITY[o.rarity].label}</div>
     </div>`;
@@ -5242,20 +5258,24 @@ function doPull(n, free){
 
 // 數值有可能是負的（例如項鍊犧牲生命），正負號要正確顯示
 function signed(v, digits){
+  if(v instanceof Decimal){
+    const t = digits ? (v.abs().lt(1e15) ? v.toNumber().toFixed(digits) : fmtNum(v)) : fmtNum(v.round());
+    return (v.gte(0) ? '+' : '') + t;
+  }
   const n = digits ? v.toFixed(digits) : fmtNum(Math.round(v)); // 整數部分（攻擊／生命）用 K／M／B／T（超過 T 改 10 的次方）縮寫
   return (v >= 0 ? '+' : '') + n;
 }
 function statLine(base, rarity, refine){
-  const m = RARITY[rarity].mult * refineMul(refine||0);//強化石2
+  const m = refineMul(refine||0).mul(RARITY[rarity].mult);//強化石2
   const parts = [];
   // 副武器數值很小（例如 +0.5），需顯示到小數點後一位
   const sv = v => base.slot==='offhand'
-    ? ((v>=0?'+':'') + (Math.abs(v) >= 1000 ? fmtNum(v) : parseFloat(v.toFixed(1)))) // 小於 1000 保留小數，達 1000 以上用 K／M／B／T（超過 T 改 10 的次方）縮寫
+    ? ((v.gte(0)?'+':'') + (v.abs().gte(1000) ? fmtNum(v) : parseFloat(v.toNumber().toFixed(1)))) // 小於 1000 保留小數，達 1000 以上用 K／M／B／T（超過 T 改 10 的次方）縮寫
     : signed(v);
-  if(base.atk)  parts.push('攻擊 ' + sv(base.atk*m));
-  if(base.hp)   parts.push('生命 ' + sv(base.hp*m));
-  if(base.spd)  parts.push('攻速 ' + signed(base.spd*m, 2));
-  if(base.crit) { const cv = base.crit*m; parts.push('暴擊 ' + (Math.abs(cv) >= 1000 ? (cv>=0?'+':'') + fmtNum(cv) : signed(cv, 1)) + '%'); } // 小於 1000 保留一位小數，達 1000 以上用 K／M／B／T（超過 T 改 10 的次方）縮寫
+  if(base.atk)  parts.push('攻擊 ' + sv(m.mul(base.atk)));
+  if(base.hp)   parts.push('生命 ' + sv(m.mul(base.hp)));
+  if(base.spd)  parts.push('攻速 ' + signed(m.mul(base.spd), 2));
+  if(base.crit) { const cv = m.mul(base.crit); parts.push('暴擊 ' + (cv.abs().gte(1000) ? (cv.gte(0)?'+':'') + fmtNum(cv) : signed(cv, 1)) + '%'); } // 小於 1000 保留一位小數，達 1000 以上用 K／M／B／T（超過 T 改 10 的次方）縮寫
   if(base.multi)parts.push('彈道 +' + Math.floor(base.multi*(rarity==='SSR'?2:1)));
   return SLOT_LABEL[base.slot] + ' · ' + parts.join('　');
 }
@@ -5266,10 +5286,11 @@ function statLine(base, rarity, refine){
 function upCost(u){
   const lv = fin(state.up[u.key], 0);
   const g = (exOn(u.key) && u.exGrow != null) ? u.exGrow : u.grow; // 解鎖 EX 後改用 EX 的費用成長
-  return Math.round(u.base * Math.pow(g, lv));
+  return Decimal.pow(g, lv).mul(u.base).round();
 }
 
 // 這個鍛造項目現在能不能買（已解鎖、沒滿級）
+function canPayUp(u, c){ return u.currency === 'gem' ? state.gem >= c.toNumber() : state.gold.gte(c); }
 function upgradeAvailable(u){
   if(u.requiresLevel != null && state.unlockedLevel <= u.requiresLevel) return false;
   { const m = upMax(u); if(m != null && state.up[u.key] >= m) return false; }
@@ -5281,15 +5302,15 @@ function upgradeAllCheapest(){
   const bought = {};
   let count = 0;
   for(let guard=0; guard<20000; guard++){
-    let best = null, bestCost = Infinity;
+    let best = null, bestCost = null;
     UPGRADES.forEach(u=>{
       if(u.currency) return; // 用鑽石購買的項目（鋼鐵殺手）不納入金幣一鍵強化
       if(!upgradeAvailable(u)) return;
       const c = upCost(u);
-      if(Number.isFinite(c) && c < bestCost){ bestCost = c; best = u; }
+      if(c.mantissa === c.mantissa && (bestCost === null || c.lt(bestCost))){ bestCost = c; best = u; }
     });
-    if(!best || !(state.gold >= bestCost)) break; // 用 >= 反向判斷，NaN 一律擋下
-    state.gold -= bestCost;
+    if(!best || !state.gold.gte(bestCost)) break; // 用 gte 反向判斷，NaN 一律擋下
+    state.gold = state.gold.sub(bestCost);
     state.up[best.key]++;
     bought[best.key] = (bought[best.key] || 0) + 1;
     count++;
@@ -5308,9 +5329,9 @@ function renderUpgrades(){
   // 一鍵強化按鈕：連最便宜的項目都買不起時停用
   const allBtn = document.getElementById('upAllBtn');
   if(allBtn){
-    let cheapest = Infinity;
-    UPGRADES.forEach(u=>{ if(!u.currency && upgradeAvailable(u)){ const c = upCost(u); if(Number.isFinite(c) && c < cheapest) cheapest = c; } });
-    allBtn.disabled = !(state.gold >= cheapest);
+    let cheapest = null;
+    UPGRADES.forEach(u=>{ if(!u.currency && upgradeAvailable(u)){ const c = upCost(u); if(c.mantissa === c.mantissa && (cheapest === null || c.lt(cheapest))) cheapest = c; } });
+    allBtn.disabled = !(cheapest && state.gold.gte(cheapest));
     allBtn.onclick = upgradeAllCheapest;
   }
   box.innerHTML = UPGRADES.map(u=>{
@@ -5332,10 +5353,11 @@ function renderUpgrades(){
     const cost = upCost(u);
     // 暴擊傷害額外加上暴擊率溢出轉換的量
     const overflow  = u.key === 'critdmg' ? critOverflowAmount() : 0;
-    const curBody  = u.bodyFmt(u.full(lv) + overflow);
+    const addOv = (v, o)=> (v instanceof Decimal || o instanceof Decimal) ? D(v).add(o) : v + o;
+    const curBody  = u.bodyFmt(addOv(u.full(lv), overflow));
     const relicExtra = u.key==='defense' ? relicLv('holy') : u.key==='monweaken' ? relicLv('wrath') : u.key==='shield' ? relicLv('mirror') : 0;
     const relicExtraTxt = relicExtra > 0 ? `<span style="color:var(--ember-hot)">(+${relicExtra})</span>` : '';
-    const nextBody = u.bodyFmt(u.full(lv+1) + overflow);
+    const nextBody = u.bodyFmt(addOv(u.full(lv+1), overflow));
     if(u.nextOnly){
       return `<div class="up">
       <div class="ico">${u.icon}</div>
@@ -5344,7 +5366,7 @@ function renderUpgrades(){
         <div class="val">${maxed ? (exOn(u.key) ? '已達 EX 等級上限' : '機率已全數轉為傳說') : '下一級　'+u.nextFmt(lv)}</div>
       </div>
       <div class="upbtns">
-        <button data-up="${u.key}" ${maxed||(u.currency==='gem'?state.gem:state.gold)<cost?'disabled':''}>
+        <button data-up="${u.key}" ${maxed||!canPayUp(u, cost)?'disabled':''}>
           ${maxed ? '已滿級' : (u.currency==='gem'?'💎 ':'💰 ')+fmtNum(cost)}
         </button>
         ${(exUnlocked() && !u.noEx && !exOn(u.key)) ? `<button class="exbtn" data-exunlock="${u.key}" ${state.gem<EX_UNLOCK_GEM?'disabled':''}>💎 ${fmtNum(EX_UNLOCK_GEM)}<small>解鎖 EX</small></button>` : ''}
@@ -5363,7 +5385,7 @@ function renderUpgrades(){
         </div>
       </div>
       <div class="upbtns">
-        <button data-up="${u.key}" ${maxed||(u.currency==='gem'?state.gem:state.gold)<cost?'disabled':''}>
+        <button data-up="${u.key}" ${maxed||!canPayUp(u, cost)?'disabled':''}>
           ${maxed ? '已滿級' : (u.currency==='gem'?'💎 ':'💰 ')+fmtNum(cost)}
         </button>
         ${(exUnlocked() && !u.noEx && !exOn(u.key)) ? `<button class="exbtn" data-exunlock="${u.key}" ${state.gem<EX_UNLOCK_GEM?'disabled':''}>💎 ${fmtNum(EX_UNLOCK_GEM)}<small>解鎖 EX</small></button>` : ''}
@@ -5375,11 +5397,10 @@ function renderUpgrades(){
       const u = UPGRADES.find(x=>x.key===b.dataset.up);
       if(u.requiresLevel != null && state.unlockedLevel <= u.requiresLevel) return; // 未解鎖不能購買
       const cost = upCost(u);
-      if(!Number.isFinite(cost)) return; // 費用算不出來就不放行，避免把金幣扣成 NaN
-      const wallet = u.currency === 'gem' ? 'gem' : 'gold'; // 鋼鐵殺手用鑽石，其餘用金幣
-      if(!(state[wallet] >= cost)) return;  // 用 >= 反向判斷，NaN 一律擋下（NaN 比較永遠是 false）
+      if(!(cost.mantissa === cost.mantissa)) return; // 費用算不出來就不放行，避免把金幣扣成 NaN
+      if(!canPayUp(u, cost)) return;  // 鋼鐵殺手用鑽石，其餘用金幣
       { const m = upMax(u); if(m != null && state.up[u.key] >= m) return; }
-      state[wallet] -= cost;
+      if(u.currency === 'gem') state.gem -= cost.toNumber(); else state.gold = state.gold.sub(cost);
       state.up[u.key]++;
       save(); syncUI(); renderUpgrades(); renderRefine();
       toast(`${u.name} 提升到 Lv.${state.up[u.key]}`);
@@ -5401,12 +5422,12 @@ function renderUpgrades(){
 
 // 精煉費用：4 + 目前精煉等級，再扣掉鍛造台「精煉成本」的減免，最低為 1
 function refineCost(slot){
-  const base = Math.pow(REFINE_COST_BASE, getRefine(slot) + 1);
+  const base = Decimal.pow(REFINE_COST_BASE, getRefine(slot) + 1);
   const lv = fin(state.up.breakboost, 0);
   const cost = exOn('breakboost')
-    ? base * (1 - lv * EX_REFINE_REDUCE_PCT_PER_LV / 100)
-    : base - lv * REFINE_COST_REDUCE_PER_LV;
-  return Math.max(1, Math.ceil(cost - 1e-9));
+    ? base.mul(1 - lv * EX_REFINE_REDUCE_PCT_PER_LV / 100)
+    : base.sub(lv * REFINE_COST_REDUCE_PER_LV);
+  return Decimal.max(1, cost.sub(1e-9).ceil());
 }//強化石費用
 
 // 一鍵強化：反覆找目前已裝備、且精煉費用最低的一件裝備升級，重複到強化石不夠支付為止。
@@ -5415,13 +5436,13 @@ function refineAllCheapest(){
   while(true){
     const slots = activeSlots().filter(s=>state.equipped[s]);
     if(!slots.length) break;
-    let bestSlot = null, bestCost = Infinity;
+    let bestSlot = null, bestCost = null;
     slots.forEach(s=>{
       const cost = refineCost(s);
-      if(cost < bestCost){ bestCost = cost; bestSlot = s; }
+      if(bestCost === null || cost.lt(bestCost)){ bestCost = cost; bestSlot = s; }
     });
-    if(bestSlot == null || !(state.stone >= bestCost)) break; // 用 >= 反向判斷，NaN 一律擋下
-    state.stone -= bestCost;
+    if(bestSlot == null || !state.stone.gte(bestCost)) break; // 用 gte 反向判斷，NaN 一律擋下
+    state.stone = state.stone.sub(bestCost);
     addRefine(bestSlot, 1);
     count++;
   }
@@ -5449,7 +5470,7 @@ function renderSkills(){
       statusText = def.lockHintFn ? def.lockHintFn() : '尚未習得，去「召喚」試試手氣';
     } else if(key === 'earthwall'){
       const st = stats();
-      statusText = `生成血量 ×${earthwallMaxHpMult()}（${fmtNum(Math.round(earthwallMaxHp(st)))}）　每 ${earthwallInterval(st).toFixed(1)} 秒回復 ${fmtNum(Math.round(earthwallHp(st)))}　擊破後 ${earthwallInterval(st).toFixed(1)} 秒重生`;
+      statusText = `生成血量 ×${earthwallMaxHpMult()}（${fmtNum(dround(earthwallMaxHp(st)))}）　每 ${earthwallInterval(st).toFixed(1)} 秒回復 ${fmtNum(dround(earthwallHp(st)))}　擊破後 ${earthwallInterval(st).toFixed(1)} 秒重生`;
       if(skillExOn('earthwall')){
         statusText += `　反擊：小怪 ${(Math.min(EARTHWALL_EX_MINION_CAP, draws*EARTHWALL_EX_MINION_PCT)*100).toFixed(1)}% 最大生命，王 ${fmtNum(draws*EARTHWALL_EX_BOSS_PCT*100)}% 攻擊（可爆擊）`;
       }
@@ -5553,9 +5574,9 @@ function renderRefine(){
     if(allBtn){ allBtn.disabled = true; allBtn.onclick = null; }
     return;
   }
-  const cheapestCost = Math.min(...slots.map(s=>refineCost(s)));
+  const cheapestCost = slots.map(s=>refineCost(s)).reduce((a, b)=>a.lt(b) ? a : b);
   if(allBtn){
-    allBtn.disabled = !(state.stone >= cheapestCost);
+    allBtn.disabled = !state.stone.gte(cheapestCost);
     allBtn.onclick = refineAllCheapest;
   }
   box.innerHTML = slots.map(s=>{
@@ -5569,15 +5590,15 @@ function renderRefine(){
         <div class="nm">${base.name}　<span style="color:var(--bone-dim);font-size:12px">精煉 +${fmtNum(rlv)}</span></div>
         <div class="val">${statLine(base, c.rarity, rlv)}</div>
       </div>
-      <button data-ref="${s}" ${state.stone<cost?'disabled':''}>🔮 ${fmtNum(cost)}</button>
+      <button data-ref="${s}" ${state.stone.lt(cost)?'disabled':''}>🔮 ${fmtNum(cost)}</button>
     </div>`;
   }).join('');
   box.querySelectorAll('[data-ref]').forEach(b=>{
     b.onclick = ()=>{
       const s = b.dataset.ref;
       const cost = refineCost(s);
-      if(state.stone < cost) return;
-      state.stone -= cost;
+      if(state.stone.lt(cost)) return;
+      state.stone = state.stone.sub(cost);
       addRefine(s, 1);
       save(); syncUI(); renderRefine(); renderEquip(); renderUpgrades();
       toast(`精煉成功 +${fmtNum(getRefine(s))}`);
@@ -5692,7 +5713,7 @@ const ACH_REPEAT = [
 const ACH_KILL_TIERS = [[100,10],[500,50],[1000,100],[5000,150],[10000,200],[50000,250],[100000,300]];
 const ACH_KILLS = ACH_KILL_TIERS.map(([n,gem],i)=>({ id:'kill_'+n, icon:'☠️', name:`累計擊殺 ${n.toLocaleString()} 隻敵人`, gem, test:()=>(state.totalKills||0) >= n, prog:()=>state.totalKills||0, goal:n }));
 const ACH_GOLDS = [];
-for(let d=3; d<=40; d++) ACH_GOLDS.push({ id:'gold_'+d, icon:'💰', name:`持有金錢達到 ${d} 位數`, gem:100 + 20*(d-3), goal:d, latch:true, test:()=>state.gold >= Math.pow(10, d-1), prog:()=>state.gold });
+for(let d=3; d<=40; d++) ACH_GOLDS.push({ id:'gold_'+d, icon:'💰', name:`持有金錢達到 ${d} 位數`, gem:100 + 20*(d-3), goal:d, latch:true, test:()=>state.gold.gte(Decimal.pow(10, d-1)), prog:()=>state.gold });
 const ACH_CHAINS = [ { title:'擊殺', list:ACH_KILLS }, { title:'金錢（持有，非累計）', list:ACH_GOLDS } ];
 
 function repAvail(r){ return Math.max(0, Math.floor(r.prog() / r.step) - (state.ach.rep[r.key] || 0)); }
