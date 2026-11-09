@@ -830,6 +830,11 @@ const RELICS = [
   { key:'wrath',   icon:'🌩️', name:'神怒天罰',       max:50,
     desc:'額外增加怪物弱化等級：神器等級 × 1',
     eff:lv=>`怪物弱化等級 +${lv}（有效 Lv.${fin(state.up.monweaken,0)+lv}）` },
+  { key:'space',  icon:'🔭', name:'空間折疊魔鏡',
+    // 解鎖：鍛造台「遠距範圍減少」解鎖（通關第 90 關後）；上限：每通關 10 關 +4（通關 100 關 ＝ 40 等）；未解鎖時上限為 0（不會被抽到）
+    get max(){ return state.unlockedLevel > 90 ? Math.floor(maxClearedLevel() / 10) * 4 : 0; },
+    desc:'增加遠距範圍減少等級：神器等級 × 1',
+    eff:lv=>`遠距範圍減少等級 +${lv}（有效 Lv.${fin(state.up.rangedreduce,0)+lv}）` },
   { key:'mirror', icon:'🪞', name:'鏡界防壁',
     // 解鎖：魔法護盾解鎖（通關第 100 關後）；未解鎖時上限為 0（不會被抽到）
     get max(){ return state.unlockedLevel > 100 ? 50 : 0; },
@@ -1578,9 +1583,9 @@ const UPGRADES = [
   { key:'rangedreduce', icon:'🏹', name:'遠距範圍減少', base:600, grow:1.22, exGrow:1.2, per:1, fmt:v=>'-'+v.toFixed(0),
     requiresLevel:90,
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）達到第 90 關時解鎖。`,
-    maxFn: ()=> Math.max(0, RANGED_BASE_RANGE + state.unlockedLevel - RANGED_MIN_RANGE),
+    maxFn: ()=> Math.max(0, RANGED_BASE_RANGE + state.unlockedLevel - RANGED_MIN_RANGE - relicLv('space')),  // 與神器「空間折疊魔鏡」共用射程下限
     body:lv=>lv, full:lv=>lv,
-    perFmt:lv=>'距離 '+Math.max(RANGED_MIN_RANGE, RANGED_BASE_RANGE + state.unlockedLevel - lv),
+    perFmt:lv=>'距離 '+Math.max(RANGED_MIN_RANGE, RANGED_BASE_RANGE + state.unlockedLevel - lv - relicLv('space')),
     bodyFmt:v=>'遠距距離 -'+v.toFixed(0) },
   // 緩速：通關第 95 關後解鎖（放在「遠距範圍減少」下方，未解鎖以「？」顯示）。
   // 每級讓移動速度加成-1，最多扣到加成歸零。
@@ -2630,7 +2635,7 @@ const RANGED_BOSS_IMG_MAX = 2;          // 圖片張數上限
 const RANGED_BOSS_RANGE = 300;          // 遠程魔王固定射程（不受關卡數／鍛造台影響；≤350 所以不會無視土牆，會先打完土牆）
 const RANGED_BOSSES = ['🧛','👹'];       // 沒圖片時的 emoji
 let rangedBossImgs = [];
-function rangedRangeFor(level){ return Math.max(RANGED_MIN_RANGE, RANGED_BASE_RANGE + level - fin(state.up.rangedreduce, 0)); }
+function rangedRangeFor(level){ return Math.max(RANGED_MIN_RANGE, RANGED_BASE_RANGE + level - fin(state.up.rangedreduce, 0) - relicLv('space')); }
 function steelHpFor(level){ return Math.max(1, level*3 - steelReduceTotal()); } // 生命固定為關卡數 × 3
 // 鋼鐵敵人每次被打固定只損失 1 點生命；其他敵人照原本規則（守護圈減傷）
 // 第 101 關起：敵人受到的傷害 ×0.93^(關卡數-100)（鋼鐵敵人固定 1 點，不受影響）
@@ -5357,7 +5362,7 @@ function renderUpgrades(){
     const overflow  = u.key === 'critdmg' ? critOverflowAmount() : 0;
     const addOv = (v, o)=> (v instanceof Decimal || o instanceof Decimal) ? D(v).add(o) : v + o;
     const curBody  = u.bodyFmt(addOv(u.full(lv), overflow));
-    const relicExtra = u.key==='defense' ? relicLv('holy') : u.key==='monweaken' ? relicLv('wrath') : u.key==='shield' ? relicLv('mirror') : 0;
+    const relicExtra = u.key==='defense' ? relicLv('holy') : u.key==='rangedreduce' ? relicLv('space') : u.key==='monweaken' ? relicLv('wrath') : u.key==='shield' ? relicLv('mirror') : 0;
     const relicExtraTxt = relicExtra > 0 ? `<span style="color:var(--ember-hot)">(+${relicExtra})</span>` : '';
     const nextBody = u.bodyFmt(addOv(u.full(lv+1), overflow));
     if(u.nextOnly){
