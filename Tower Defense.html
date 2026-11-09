@@ -509,14 +509,18 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 #guideCard .btn + .btn{margin-top:9px}
 
 /* ── 提示 ──────────────────────────────────── */
-#toast{
-  position:absolute;left:50%;bottom:86px;transform:translateX(-50%) translateY(14px);
-  background:rgba(12,6,14,.96);border:1px solid var(--stoneline);
-  border-radius:10px;padding:10px 17px;font-size:13px;font-weight:700;
-  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
-  z-index:50;white-space:nowrap;max-width:88%;
+#toastStack{
+  position:absolute;left:50%;bottom:86px;transform:translateX(-50%);
+  width:88%;display:flex;flex-direction:column;align-items:center;gap:6px;
+  pointer-events:none;z-index:50;
 }
-#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toastItem{
+  background:rgba(12,6,14,.96);border:1px solid var(--stoneline);
+  border-radius:10px;padding:9px 17px;font-size:13px;font-weight:700;
+  text-align:center;white-space:pre-line;max-width:100%;
+  opacity:0;transform:translateY(10px);transition:opacity .2s,transform .2s;
+}
+.toastItem.on{opacity:1;transform:translateY(0)}
 
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 
@@ -723,7 +727,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
     <button class="tab" data-s="skills"><i>🎇</i>技能</button>
   </nav>
 
-  <div id="toast"></div>
+  <div id="toastStack"></div>
 
   <!-- 新手導引：提醒領取免費十連抽 -->
   <div id="guideOv">
@@ -790,11 +794,10 @@ const dratio = (a, b) => D(a).div(b).toNumber();   // 血量比例（供血條�
 const SAVE_KEY = 'emberTrial_v1';
 const SPAWN_SECONDS = 155;        // 所有怪物出完的時間點（2:35），清空怪物過關
 const WAVES_PER_LEVEL = 20;       // 每關 20 波
-const LEVEL_COUNT = 375;           // 共 375 關
-const LEVEL_HP_GROWTH = 1.286;                                  // 血量成長係數
-const LEVEL_ATK_GROWTH = 1.21;                                  // 攻擊成長係數
-// 第 120 關之後（第 121 關起）：每關的血量／攻擊成長係數皆固定為 1.4（前 120 關不變）
-const GROWTH_BOOST_AFTER_LEVEL = 110, GROWTH_LATE = 1.6; // 第 111 關起：血量與攻擊成長係數皆為 1.6
+const LEVEL_COUNT = 500;           // 共 500 關
+const LEVEL_HP_GROWTH = 1.286;                              // 初始怪物血量成長係數
+const LEVEL_ATK_GROWTH = 1.21;                              // 初始怪物攻擊成長係數
+const GROWTH_BOOST_AFTER_LEVEL = 110, GROWTH_LATE = 1.6;    // 第 111 關起：血量與攻擊成長係數皆為 1.6
 function levelGrowthMul(base, level){
   const lv = Math.max(1, level);
   const steps = lv - 1, early = Math.min(steps, GROWTH_BOOST_AFTER_LEVEL - 1), late = Math.max(0, lv - GROWTH_BOOST_AFTER_LEVEL);
@@ -987,7 +990,7 @@ const RARITY_ODDS = [['N',.50],['R',.30],['SR',.15],['SSR',.05]];
    階段3（331~781 級）每級 稀有 -10，全部給傳說　　　　　　　　 → 781 級全傳說 */
 const SUMMON_BASE_COST = 500;
 const SUMMON_COST_GROW = 1.05;
-const SUMMON_UNLOCK_LEVEL = 85;  //通關第 85 關後開放
+const SUMMON_UNLOCK_LEVEL = 85;    // 通關第 85 關後開放
 const SUMMON_EX_MAX_LV = 1000;     // 召喚強化 EX：等級上限提升為 1000
 const SUMMON_EX_GEM_PER_10LV = 1;  // 召喚強化 EX：每 10 級，召喚 10 次所需鑽石 -1
 const SUMMON_STAGE1_END = 125, SUMMON_STAGE2_END = 330, SUMMON_MAX_LV = 781;
@@ -1026,13 +1029,13 @@ const FIREBALL_EX_SPLASH_PCT = 0.5;         // 擴散傷害固定為大火球的
 const FIREBALL_EX_SPLASH_TIME = 0.3;        // 爆風從中心擴散到最大範圍的時間（秒）
 const FIREBALL_EX_R = 16;                   // 大火球本體半徑（原本單顆是 6）
 const FIREBALL_EX_GROUND_SPEED = 460;       // 大火球水平飛行速度（決定飛行時間）
-const ICE_EX_DMG_MULT = 15;      // 冰椎術 EX：冰刃傷害 ＝ 原本單顆冰椎 × 15
-const ICE_EX_SPD_MULT = 0.2;     // 冰椎術 EX：發射頻率 ＝ 角色攻速 × 0.2（原本 ×0.5）
-const ICE_EX_WIDTH = 100;        // 冰刃／冰痕寬度
-const ICE_EX_SLOW_PCT = 0.75;    // 冰刃命中緩速比例
-const ICE_EX_SLOW_TIME = 1.5;    // 冰刃命中緩速時間（秒）
-const ICE_EX_TRAIL_LIFE = 1;     // 冰痕存在時間（秒）
-const ICE_EX_TICK = 0.25;        // 冰痕傷害間隔（秒），1 秒共 4 下
+const ICE_EX_DMG_MULT = 15;        // 冰椎術 EX：冰刃傷害 ＝ 原本單顆冰椎 × 15
+const ICE_EX_SPD_MULT = 0.2;       // 冰椎術 EX：發射頻率 ＝ 角色攻速 × 0.2（原本 ×0.5）
+const ICE_EX_WIDTH = 100;          // 冰刃／冰痕寬度
+const ICE_EX_SLOW_PCT = 0.75;      // 冰刃命中緩速比例
+const ICE_EX_SLOW_TIME = 1.5;      // 冰刃命中緩速時間（秒）
+const ICE_EX_TRAIL_LIFE = 1;       // 冰痕存在時間（秒）
+const ICE_EX_TICK = 0.25;          // 冰痕傷害間隔（秒），1 秒共 4 下
 const LIGHTNING_EX_UNLOCK_LEVEL = 90;      // 閃電術 EX：過關進度需超過第 90 關才開放（跟冰火的 80 不同）
 const LIGHTNING_EX_SPD_MULT = 0.4;         // 閃電術 EX：施放頻率 ＝ 角色攻速 × 0.4（原本 ×0.9）
 const LIGHTNING_EX_DMG_MULT = 1.6;         // 閃電術 EX：每一下傷害 ＝ 原本單下 × 1.6
@@ -1384,11 +1387,11 @@ const EQUIP_POOL = [
   { id:'s4', slot:'shoes', name:'龍鱗戰靴',   icon:'🦶', hp:28, atk:1 },
 ];
 const SLOT_LABEL = { weapon:'武器', armor:'防具', trinket:'飾品', offhand:'副武器', hat:'帽子', shoes:'鞋子' };
-const OFFHAND_UNLOCK_LEVEL = 65;   // 通關第 65 關（進度超過 65）後解鎖副武器
+const OFFHAND_UNLOCK_LEVEL = 65;    // 通關第 65 關（進度超過 65）後解鎖副武器
 const SLOT_ICON = { weapon:'🗡️', armor:'🛡️', trinket:'💍', offhand:'📘', hat:'🎩', shoes:'👢' }; // 背包分組標題用的部位圖示
-const bagFolded = {};              // 背包各部位是否收合（只存在記憶體，重開頁面會全部展開）
+const bagFolded = {};               // 背包各部位是否收合（只存在記憶體，重開頁面會全部展開）
 const SHOES_UNLOCK_LEVEL = 100;     // 通關第 100 關（進度超過 100）後解鎖鞋子
-const HAT_UNLOCK_LEVEL = 75;       // 通關第 75 關（進度超過 75）後解鎖帽子
+const HAT_UNLOCK_LEVEL = 75;        // 通關第 75 關（進度超過 75）後解鎖帽子
 const ALL_SLOTS = ['weapon','armor','trinket','offhand','hat','shoes'];
 function offhandUnlocked(){ return state.unlockedLevel > OFFHAND_UNLOCK_LEVEL; }
 function hatUnlocked(){ return state.unlockedLevel > HAT_UNLOCK_LEVEL; }
@@ -2958,11 +2961,18 @@ cv.addEventListener('pointerup',   ()=>{ dragging=false; });
 cv.addEventListener('pointercancel',()=>{ dragging=false; });
 
 /* 遠距敵人火球：地面座標等速前進、高度 z ＝ 4h·u·(1-u) 的拋物線，球會飛越土牆 */
+// 圓形土牆的「視覺」外側半徑：繪製時岩塊底部內縮 baseOff（普通 12／EX 30，皆 × fz），岩塊再向外隆起；
+// 火球落在這道視覺牆面的外緣，而不是判定用的 wall.radius（那個位置在視覺牆外面）。
+function ringWallLobRadius(w){
+  const ex = skillExOn('earthwall');
+  return w.radius - (ex ? EARTHWALL_EX_DRAW_OFFSET : 12) * fz + (ex ? 7.5 : 17) * fz;
+}
 function fireEnemyLob(e, wall){
   let ex, ey;
   if(wall && wall.ring){ // 圓形土牆：落點在「怪物 → 主角」連線與牆圈的交點
     const cx = run.heroX, cy = heroCY(), d = Math.hypot(e.x - cx, e.y - cy) || 1;
-    ex = cx + (e.x - cx) / d * wall.radius; ey = cy + (e.y - cy) / d * wall.radius;
+    const lr = ringWallLobRadius(wall);
+    ex = cx + (e.x - cx) / d * lr; ey = cy + (e.y - cy) / d * lr;
   } else { ex = wall ? e.x : run.heroX; ey = wall ? wall.y : heroCY(); }
   const dist = Math.hypot(ex - e.x, ey - e.y);
   run.eshots.push({
@@ -3167,12 +3177,6 @@ function drawIceTrailEx(){
       ctx.fillStyle = `rgba(150,215,255,${(.16+.14*r.tk)*r.fade})`;
       ctx.fillRect(a, -hw, 6, iceExWidth());
     }
-    // 兩側霜線
-    for(let a=0; a<b.len+6; a+=14){
-      const r = iceRow(b, a); if(!r) continue;
-      ctx.globalAlpha = .5*r.fade; ctx.fillStyle = '#d8f3ff';
-      ctx.fillRect(a-8, -hw, 8, 2); ctx.fillRect(a-8, hw-2, 8, 2);
-    }
     // 霜晶碎片
     b.shards.forEach(k=>{
       const r = iceRow(b, k.a); if(!r) return;
@@ -3233,7 +3237,7 @@ function updateFireballEx(dt, s){
       popText(direct.x, direct.y-direct.r-4, fmtNum(d), l.crit);
       hit.add(direct);
     }
-    if(l.crit) burst(l.ex, l.ey, '#fff9c4', 26);
+    if(l.crit) burst(l.ex, l.ey, '#fff9c4', 14);
     run.shake = Math.max(run.shake, 0.12);
     run.blasts.push({ x:l.ex, y:l.ey, t:0, dmg: dmg.mul(FIREBALL_EX_SPLASH_PCT), hit, crit:l.crit });
   }
@@ -3268,8 +3272,6 @@ function drawFireballEx(){
     g.addColorStop(0,'rgba(255,240,190,.85)'); g.addColorStop(0.55,'rgba(255,150,50,.5)'); g.addColorStop(1,'rgba(255,90,20,.15)');
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.arc(b.x,b.y,R,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle = b.crit ? '#fff9c4' : '#ffb347'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(b.x,b.y,R,0,Math.PI*2); ctx.stroke();
     ctx.restore();
   });
   // 飛行中的大火球
@@ -5317,8 +5319,8 @@ function upgradeAllCheapest(){
   }
   if(count > 0){
     save(); syncUI(); renderUpgrades(); renderRefine();
-    const detail = UPGRADES.filter(u=>bought[u.key]).map(u=>`${u.name}+${bought[u.key]}`).join('、');
-    toast(`一鍵強化完成，共 ${count} 次（${detail}）`);
+    const lines = [`一鍵強化完成，共 ${count} 次`].concat(UPGRADES.filter(u=>bought[u.key]).map(u=>`${u.name} +${bought[u.key]}`));
+    toast(lines.join('\n'));
   } else {
     toast('金幣不足，無法強化');
   }
@@ -5885,22 +5887,22 @@ function syncUI(){
   syncAchDot();
 }
 
-let toastTimer = null;
-let toastQueue = [];
+const TOAST_MS = 1700, TOAST_MAX = 10;
+// 提示改成往下堆疊：新提示出現在舊提示下方，各自依自己的顯示時間消失；支援 \n 多行
 function toast(msg){
-  toastQueue.push(msg);
-  if(!toastTimer) processToastQueue(); // 沒有東西正在顯示才立刻播放，否則排隊等前一則播完
-}
-function processToastQueue(){
-  const msg = toastQueue.shift();
-  if(msg === undefined){ toastTimer = null; return; }
-  const el = document.getElementById('toast');
+  const box = document.getElementById('toastStack');
+  if(!box) return;
+  const el = document.createElement('div');
+  el.className = 'toastItem';
   el.textContent = msg;
-  el.classList.add('on');
-  toastTimer = setTimeout(()=>{
+  box.appendChild(el);
+  while(box.children.length > TOAST_MAX) box.removeChild(box.firstChild);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('on')));
+  const lines = String(msg).split('\n').length;
+  setTimeout(()=>{
     el.classList.remove('on');
-    setTimeout(processToastQueue, 220); // 短暫間隔再顯示下一則，避免像瞬間跳字看不清楚
-  }, 1700);
+    setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); }, 220);
+  }, TOAST_MS + Math.min(lines-1, 8) * 350);
 }
 
 function show(name){
