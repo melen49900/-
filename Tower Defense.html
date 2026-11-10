@@ -818,7 +818,7 @@ const RELIC_PULL10_COUNT = 4;   // 神器模式十連抽：固定 4 神器＋6 �
 function chaosLv(){ return state.relicUnlocked ? Math.max(0, Math.round(fin(state.ach && state.ach.points, 0))) : 0; }
 function relicLv(k){ if(k === 'chaos') return chaosLv(); return Math.max(0, Math.round(fin(state.relics && state.relics[k], 0))); }
 function relicTotalLevel(){ return RELICS.reduce((t,r)=>t+relicLv(r.key), 0); } // 神器總等級（含混沌魔盒；烈陽之心、成就「神器等級」都用這個）
-function chaosMul(){ return Decimal.pow(1.02, chaosLv()); }
+function chaosMul(){ return Decimal.pow(1.018, chaosLv()); }
 function skillTotalLevel(){ return Object.keys(SKILL_DEFS).reduce((t,k)=>t+Math.max(0, fin(state.skills[k] && state.skills[k].draws, 0)), 0); }
 const RELICS = [
   { key:'blood',   icon:'🩸', name:'嗜血匕首',       max:10,
@@ -861,16 +861,16 @@ const RELICS = [
     desc:'敵人減傷等級減少：神器等級 × 1 ',
     eff:lv=>`無視敵人減傷 ${lv} 等（目前 ${voidCurrentDefLv(state.unlockedLevel)} 等）` },
   { key:'gold',    icon:'👑', name:'金碧輝煌',       max:100,
-    desc:'獲得金幣額外增加：〈金幣強化等級〉× 神器等級 × 0.1%',
-    eff:lv=>`金幣 ×${fmtX(1+fin(state.up.goldboost,0)*lv*0.001)}（金幣強化 Lv.${fin(state.up.goldboost,0)}）` },
+    desc:'獲得金幣額外增加：〈金幣強化等級〉× 神器等級 × 0.5%',
+    eff:lv=>`金幣 ×${fmtX(1+fin(state.up.goldboost,0)*lv*0.005)}（金幣強化 Lv.${fin(state.up.goldboost,0)}）` },
   { key:'midas',   icon:'🪙', name:'點石成金',
     // 解鎖：金碧輝煌達到 10 級；未解鎖時上限為 0（不會被抽到）
     get max(){ return relicLv('gold') >= 10 ? 200 : 0; },
     desc:'獲得金幣每層皆額外增加2%',
     eff:lv=>`獲得金幣 ×${fmtX(Math.pow(1.02,relicLv('gold')+lv))}（金碧輝煌 Lv.${relicLv('gold')}＋神器等級 ${lv}` },
   { key:'refine',  icon:'📔', name:'精煉大師日記',   max:100,
-    desc:'強化石獲得額外增加：〈精煉成本等級〉× 神器等級 × 0.1%',
-    eff:lv=>`強化石 ×${fmtX(1+fin(state.up.breakboost,0)*lv*0.001)}（精煉成本 Lv.${fin(state.up.breakboost,0)}）` },
+    desc:'強化石獲得額外增加：〈精煉成本等級〉× 神器等級 × 0.2%',
+    eff:lv=>`強化石 ×${fmtX(1+fin(state.up.breakboost,0)*lv*0.002)}（精煉成本 Lv.${fin(state.up.breakboost,0)}）` },
   { key:'bowl',    icon:'🏺', name:'聚寶盆',
     // 解鎖：精煉大師日記達到 10 級；未解鎖時上限為 0（不會被抽到）
     get max(){ return relicLv('refine') >= 10 ? 200 : 0; },
@@ -916,8 +916,8 @@ const RELICS = [
     desc:lv=>`獲得最大生命每<累計答對>皆額外增加${fmtPct(lv*0.02,2)}%`,
     eff:lv=>`最大生命 ×${fmtX(relicShieldMul())}（累計答對 ${fmtNum(fin(state.qs.correct,0))}）` },
   { key:'chaos',   icon:'🎁', name:'混沌魔盒',       max:Infinity, chaos:true,
-    desc:'最大生命及攻擊力每神器等級皆額外增加2%',
-    eff:lv=>`最大生命及攻擊力 ×${fmtX(Decimal.pow(1.02,lv))}` },
+    desc:'最大生命及攻擊力每神器等級皆額外增加1.8%',
+    eff:lv=>`最大生命及攻擊力 ×${fmtX(Decimal.pow(1.018,lv))}` },
 ];
 const VOID_UNLOCK_CLEAR = 110;
 // 虛空穿刺：敵人減傷等級 ＝ (關卡數 - 100) - 神器等級，最低 0
@@ -951,9 +951,9 @@ function relicShieldMul(){ return Decimal.pow(1 + 0.0002 * relicLv('shield'), Ma
 function relicAtkMul(){ return chaosMul().mul((1 + skillTotalLevel() * relicLv('soul') * 0.001) * (1 + relicTotalLevel() * relicLv('sun') * 0.001) * relicWisdomMul()).mul(relicSwordMul()); } // 靈魂迴響 × 烈陽之心：連乘
 function relicGreedMul(){ return Decimal.pow(1 + relicLv('greed') * 0.001, relicLv('midas') + relicLv('bowl')); } // 貪婪者之戒：金幣與強化石皆連乘
 function relicMidasMul(){ return (relicLv('midas') > 0 ? Decimal.pow(1.02, relicLv('gold') + relicLv('midas')) : DONE).mul(relicGreedMul()); } // 點石成金：獲得金幣 ×1.02^神器等級（與其他金幣加成連乘）
-function relicGoldExtraPct(){ return fin(state.up.goldboost,0) * relicLv('gold') * 0.1; }
+function relicGoldExtraPct(){ return fin(state.up.goldboost,0) * relicLv('gold') * 0.5; }
 function relicBowlMul(){ return relicLv('bowl') > 0 ? Decimal.pow(1.02, relicLv('refine') + relicLv('bowl')) : DONE; } // 聚寶盆：強化石 ×1.02^(精煉大師日記等級+神器等級)
-function relicStoneMul(){ return relicBowlMul().mul(relicGreedMul()).mul(1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.001); }
+function relicStoneMul(){ return relicBowlMul().mul(relicGreedMul()).mul(1 + fin(state.up.breakboost,0) * relicLv('refine') * 0.002); }
 function streakAfterBreak(){
   const lv = relicLv('horn');
   if(lv <= 0) return 0;
@@ -1520,7 +1520,7 @@ const UPGRADES = [
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 45 關時解鎖。`,
     body:lv=>(1 - Math.pow(DEFENSE_MULT_PER_LV, lv)) * 100,
     full:lv=>(1 - Math.pow(DEFENSE_MULT_PER_LV, lv)) * 100,
-    perFmt:lv=>'受傷 ×'+Math.pow(DEFENSE_MULT_PER_LV, lv).toFixed(3),
+    perFmt:lv=>'受傷 ×'+Math.pow(DEFENSE_MULT_PER_LV, lv).toExponential(3),
     bodyFmt:v=>'-'+v.toFixed(1)+'%' },
   // 精煉成本：第 50 關才會解鎖，解鎖前在減傷下方以「？」顯示。解鎖後每級讓「每次精煉消耗的強化石」-REFINE_COST_REDUCE_PER_LV（最低為 1）。
   { key:'breakboost', icon:'♻️', name:'精煉成本', base:40, grow:1.11, per:1, fmt:v=>'-'+v.toFixed(0),
@@ -1537,7 +1537,7 @@ const UPGRADES = [
     lockHintFn: ()=>`過關進度（目前解鎖到第 ${state.unlockedLevel} 關）超過第 55 關時解鎖。`,
     body:lv=>(1 - Math.pow(MONSTER_WEAKEN_MULT_PER_LV, lv)) * 100,
     full:lv=>(1 - Math.pow(exOn('monweaken') ? EX_MONSTER_WEAKEN_MULT_PER_LV : MONSTER_WEAKEN_MULT_PER_LV, lv)) * 100,
-    perFmt:lv=>'怪物生命 ×'+Math.pow(exOn('monweaken') ? EX_MONSTER_WEAKEN_MULT_PER_LV : MONSTER_WEAKEN_MULT_PER_LV, lv).toFixed(3),
+    perFmt:lv=>'怪物生命 ×'+Math.pow(exOn('monweaken') ? EX_MONSTER_WEAKEN_MULT_PER_LV : MONSTER_WEAKEN_MULT_PER_LV, lv).toExponential(3),
     bodyFmt:v=>'-'+v.toFixed(1)+'%' },
   // 守護半徑減少：第 60 關後解鎖。每級守護者的守護圈半徑 -1。
   // 上限：守護圈半徑（250+關卡數）最多減到只剩 80，所以上限 ＝ 170 + 過關進度。
@@ -2607,7 +2607,7 @@ function slowMaxLevel(){ return levelSpeedBonus(state.unlockedLevel); } // 上�
 // 距離 > 土牆距離（350）：無視土牆，直接朝主角前進、進入射程就停下來拋火球攻擊主角（火球越過土牆）。
 // 距離 ≤ 350：土牆在射程內時停下來攻擊土牆；沒有土牆則照常朝主角前進。
 const RANGED_UNLOCK_LEVEL = 85;
-const RANGED_BASE_RANGE = 320, RANGED_MIN_RANGE = 250;// 攻擊距離 ＝ 320 + 關卡數（鍛造台「遠距範圍減少」每級 -1，下限 250）。
+const RANGED_BASE_RANGE = 320, RANGED_MIN_RANGE = 200;// 攻擊距離 ＝ 320 + 關卡數（鍛造台「遠距範圍減少」每級 -1，下限 250）。
 const RANGED_SHOOT_INTERVAL = 1.6;      // 每 1.6 秒拋一顆火球（每顆傷害 ＝ 敵人 dps × 間隔，總 DPS 與近戰相同）
 const RANGED_DEF = { emoji:'🧙', hp:0.8, spd:0.8, r:15, gold:1.5, ranged:true, rate:6 }; // 移速稍慢、出場率 6%
 // ── 魔王攻擊疊加（所有關卡、所有階段）──
