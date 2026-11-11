@@ -886,6 +886,16 @@ const RELICS = [
     get max(){ return (relicLv('midas') >= 10 && relicLv('bowl') >= 10) ? 50 : 0; },
     desc:lv=>`金幣及強化石每層皆額外增加${fmtPct(lv*0.1,1)}%`,
     eff:lv=>`金幣及強化石皆 ×${fmtX(Math.pow(1+lv*0.001, relicLv('midas')+relicLv('bowl')))}（點石成金 Lv.${relicLv('midas')}＋聚寶盆 Lv.${relicLv('bowl')}）` },
+  { key:'beast',   icon:'🦖', name:'巨獸斬殺者',
+    // 解鎖：無（與神器開啟共同）；效果：對王傷害 ×1.015^神器等級
+    max:150,
+    desc:'對王傷害每神器等級皆額外增加1.5%',
+    eff:lv=>`對王傷害 ×${fmtX(Decimal.pow(1.015, lv))}` },
+  { key:'reaper',  icon:'🌾', name:'收割者鐮刀',
+    // 解鎖：無（與神器開啟共同）；效果：對小怪（鋼鐵敵人除外）傷害 ×1.015^神器等級
+    max:100,
+    desc:'對小怪傷害(鋼鐵除外)每神器等級皆額外增加1.5%',
+    eff:lv=>`對小怪傷害(鋼鐵除外) ×${fmtX(Decimal.pow(1.015, lv))}` },
   { key:'ruin',    icon:'💀', name:'荒蕪毀滅',       max:100,
     desc:'技能效果每層皆額外增加1.5%',
     eff:lv=>`技能效果皆 ×${fmtX(Math.pow(1.015, lv))}` },
@@ -927,6 +937,8 @@ const RELICS = [
 const VOID_UNLOCK_CLEAR = 110;
 // 虛空穿刺：敵人減傷等級 ＝ (關卡數 - 100) - 神器等級，最低 0
 function voidCurrentDefLv(level){ return Math.max(0, level - ENEMY_DEF_BASE_LEVEL - relicLv('void')); }
+function relicReaperMul(){ const lv = relicLv('reaper'); return lv > 0 ? Decimal.pow(1.015, lv) : DONE; } // 收割者鐮刀：對小怪（鋼鐵除外）傷害
+function relicBeastMul(){ const lv = relicLv('beast'); return lv > 0 ? Decimal.pow(1.015, lv) : DONE; }   // 巨獸斬殺者：對王傷害
 function relicRuinMul(){ return Math.pow(1.015, relicLv('ruin')); }      // 荒蕪毀滅：所有技能效果 ×1.015^神器等級（與各技能神器加成「連乘」）
 function relicCycloneMul(){ return (1 + relicLv('cyclone') * 0.01) * relicRuinMul(); }   // 颶風之核：旋風術傷害
 function relicEarthMul(){ return (1 + relicLv('earth') * 0.01) * relicRuinMul(); }        // 大地之脈：土牆生命與回復
@@ -2652,7 +2664,7 @@ function enemyLevelDefMul(){
   return lv >= ENEMY_DEF_START_LEVEL ? Math.pow(ENEMY_DEF_MULT_PER_LV, voidCurrentDefLv(lv)) : 1;
 }
 // skipLevelDef=true：略過第 101 關起的關卡減傷（土牆 EX 對小怪的生命百分比反擊使用）
-function enemyDmg(e, dmg, skipLevelDef){ if(e.spawnT > 0) return DZERO; if(e.steel) return DONE; return D(dmg).mul(guardMul(e) * (skipLevelDef ? 1 : enemyLevelDefMul())); }
+function enemyDmg(e, dmg, skipLevelDef){ if(e.spawnT > 0) return DZERO; if(e.steel) return DONE; return D(dmg).mul(guardMul(e) * (skipLevelDef ? 1 : enemyLevelDefMul())).mul(e.boss ? relicBeastMul() : relicReaperMul()); }
 function pickMonsterBase(pool){
   let roll = Math.random()*100, acc = 0;
   for(const m of pool){
@@ -5718,9 +5730,9 @@ const ACH_REPEAT = [
   { key:'clear',  icon:'🚩', name:'通關',     step:10, gem:100, unit:'關',  desc:'每通關 10 關',               prog:()=>maxClearedLevel() },
   { key:'quiz',   icon:'📝', name:'答對',     step:20, gem:100, unit:'題',  desc:'每累計答對 20 題',           prog:()=>Math.max(0, Math.round(fin(state.qs.correct, 0))) },
   { key:'pull10', icon:'🎰', name:'十連抽',   step:10, gem:100, unit:'次',  desc:'每十連抽 10 次',             prog:()=>state.pull10Count || 0 },
-  { key:'relic',  icon:'🏺', name:'神器', step:10, gem:100, unit:'等',  desc:'神器等級合計每 10 等',       prog:()=>relicLevelSum() },
   { key:'upgrade', icon:'🔨', name:'鍛造台', step:100, gem:100, unit:'等', desc:'鍛造台等級合計每 100 等', prog:()=>UPGRADES.reduce((t,u)=>t+Math.max(0, Math.round(fin(state.up[u.key], 0))), 0) },
   { key:'refine', icon:'⚒️', name:'精煉',     step:10, gem:100, unit:'等',  desc:'裝備精煉等級合計每 10 等',   prog:()=>ALL_SLOTS.reduce((t,sl)=>t+getRefine(sl), 0) },
+  { key:'relic',  icon:'🏺', name:'神器等級', step:10, gem:100, unit:'等',  desc:'神器等級合計每 10 等',       prog:()=>relicLevelSum() },
   { key:'skill', icon:'🎇', name:'技能',     step:30, gem:100, unit:'等',  desc:'技能總等級每 30 等',         prog:()=>skillTotalLevel() },
 ];
 // 一次性成就（依序解鎖，前一項完成前隱藏下一項）
@@ -5731,7 +5743,11 @@ for(let d=3; d<=50; d++) ACH_GOLDS.push({ id:'gold_'+d, icon:'💰', name:`持�
 const ACH_STONES = [];
 for(let d=3; d<=50; d++) ACH_STONES.push({ id:'stone_'+d, icon:'🔮', name:`持有強化石達到 ${d} 位數`, gem:100 + 20*(d-3), goal:d, latch:true, test:()=>state.stone.gte(Decimal.pow(10, d-1)), prog:()=>state.stone, held:()=>state.stone });
 ACH_GOLDS.forEach(a=>{ a.held = ()=>state.gold; });
-const ACH_CHAINS = [ { key:'kill', title:'擊殺', list:ACH_KILLS }, { key:'gold', title:'金錢（持有，非累計）', list:ACH_GOLDS }, { key:'stone', title:'強化石（持有，非累計）', list:ACH_STONES } ];
+// 神器數量：第 N 個神器 ＝ 100+10×N 鑽；項目數＝神器種類數（混沌魔盒不算），新增神器時自動增加
+function relicOwnedCount(){ return RELICS.reduce((t,r)=>t + ((!r.chaos && relicLv(r.key) > 0) ? 1 : 0), 0); }
+const ACH_RELICS = [];
+RELICS.filter(r=>!r.chaos).forEach((r,i)=>{ const n = i+1; ACH_RELICS.push({ id:'relicn_'+n, icon:'🏺', name:`獲得 ${n} 個神器`, gem:100+10*n, goal:n, test:()=>relicOwnedCount() >= n, prog:()=>relicOwnedCount() }); });
+const ACH_CHAINS = [ { key:'kill', title:'擊殺', list:ACH_KILLS }, { key:'gold', title:'金錢（持有，非累計）', list:ACH_GOLDS }, { key:'stone', title:'強化石（持有，非累計）', list:ACH_STONES }, { key:'relicn', title:'神器數量', list:ACH_RELICS } ];
 const achOpen = {};   // 各成就鏈是否展開已領取的成就（只存在記憶體，預設全部摺疊）
 
 function repAvail(r){ return Math.max(0, Math.floor(r.prog() / r.step) - (state.ach.rep[r.key] || 0)); }
@@ -5795,7 +5811,7 @@ function renderAch(){
   latchAchievements();
   const sum = document.getElementById('achSummary');
   sum.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:900">
-      <span>🏆 成就點數</span><span style="color:var(--gold);font-size:18px">${fmtNum(state.ach.points)}</span></div>
+      <span>🏆 成就點數</span><span style="color:var(--gold);font-size:18px">${Math.round(fin(state.ach.points, 0))}</span></div>
     <div style="font-size:11px;color:var(--bone-dim);margin-top:6px;line-height:1.7">累計擊殺 ${fmtNum(state.totalKills||0)}　累計登入 ${state.loginDays||0} 天　十連抽 ${state.pull10Count||0} 次</div>`;
   const ready = achReadyCount();
   const allBtn = document.getElementById('achClaimAll');
