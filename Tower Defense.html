@@ -476,6 +476,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 @keyframes tabBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 .ach-h{margin:14px 0 6px;font-size:13px;font-weight:900;color:var(--gold)}
 .ach-row{display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:7px;border:1px solid var(--stoneline);border-radius:12px;background:rgba(255,255,255,.03)}
+.ach-fold{display:block;width:100%;margin:0 0 7px;padding:7px 10px;border:1px dashed var(--stoneline);border-radius:10px;background:transparent;color:var(--bone-dim);font-size:12px;font-weight:900;cursor:pointer;text-align:left}
 .ach-row.ready{border-color:var(--ember-hot);box-shadow:0 0 10px rgba(255,140,60,.25)}
 .ach-row.got{opacity:.5}
 .ach-row .ico{font-size:24px;width:34px;text-align:center}
@@ -855,6 +856,10 @@ const RELICS = [
   { key:'dragon',  icon:'🐲', name:'龍骨重鎧',       max:100,
     desc:'生命值額外增加（連乘）：〈裝備總等級〉× 神器等級 × 1%',
     eff:lv=>`最大生命 ×${fmtX(1+equipTotalLevel()*lv*0.01)}（裝備總等級 ${equipTotalLevel()}）` },
+  { key:'abyss',   icon:'🕳️', name:'深淵意志',       max:50,
+    // 解鎖：無（與神器開啟共同）；效果：最大生命 ×(1+神器等級×0.0005)^通關層數
+    desc:lv=>`最大生命每通關層數皆額外增加${fmtPct(lv*0.05,2)}%`,
+    eff:lv=>`最大生命 ×${fmtX(relicAbyssMulFor(lv))}（通關 ${maxClearedLevel()} 層）` },
   { key:'void',    icon:'🪓', name:'虛空穿刺',
     // 解鎖：通關第 110 關；上限：通關 110 關為 10 等，之後每多通關 10 關 +10 等（120 關 20 等…）；未解鎖時上限為 0（不會被抽到）
     get max(){ const c = maxClearedLevel(); return c >= VOID_UNLOCK_CLEAR ? 10 + Math.floor((c - VOID_UNLOCK_CLEAR) / 10) * 10 : 0; },
@@ -944,7 +949,9 @@ function iceAngles(base){
 // 神器效果（供各處呼叫）
 function critCap(){ return CRIT_CAP + relicLv('blood'); }
 function equipTotalLevel(){ return activeSlots().reduce((t,s)=>t+getRefine(s), 0); } // 裝備總等級＝各部位精煉等級總和
-function relicHpMul(){ return chaosMul().mul((1 + fin(state.up.hp,0) * relicLv('aurora') * 0.005) * (1 + equipTotalLevel() * relicLv('dragon') * 0.01) * relicWisdomMul()).mul(relicShieldMul()); } // 極光法陣守護 × 龍骨重鎧 × 智慧之神的祝福／護盾：連乘
+function relicAbyssMulFor(lv){ return Decimal.pow(1 + lv * 0.0005, maxClearedLevel()); } // 深淵意志：最大生命 (1+0.0005×等級)^通關層數
+function relicAbyssMul(){ return relicAbyssMulFor(relicLv('abyss')); }
+function relicHpMul(){ return relicAbyssMul().mul(chaosMul()).mul((1 + fin(state.up.hp,0) * relicLv('aurora') * 0.005) * (1 + equipTotalLevel() * relicLv('dragon') * 0.01) * relicWisdomMul()).mul(relicShieldMul()); } // 極光法陣守護 × 龍骨重鎧 × 智慧之神的祝福／護盾：連乘
 function relicWisdomMul(){ return 1 + Math.max(0, fin(state.qs && state.qs.correct, 0)) * relicLv('wisdom') * 0.007; } // 智慧之神的祝福：累計答對 × 神器等級 × 0.7%（同時強化生命及攻擊）
 function relicSwordMul(){ return Decimal.pow(1 + 0.0002 * relicLv('sword'), Math.max(0, fin(state.qs && state.qs.correct, 0))); }   // 智慧之神的長劍：攻擊力 (1+0.0002×等級)^累計答對
 function relicShieldMul(){ return Decimal.pow(1 + 0.0002 * relicLv('shield'), Math.max(0, fin(state.qs && state.qs.correct, 0))); } // 智慧之神的護盾：最大生命 (1+0.0002×等級)^累計答對
@@ -5707,7 +5714,7 @@ function maxClearedLevel(){
 function relicLevelSum(){ return relicTotalLevel(); } // 含混沌魔盒（與烈陽之心一致，互相計算）
 // 可重複成就：每達到 step 的倍數就多一項可領
 const ACH_REPEAT = [
-  { key:'login',  icon:'📅', name:'登入',     step:3,  gem:100, unit:'天',  desc:'每累計登入 3 天（不需連續）', prog:()=>state.loginDays || 0 },
+  { key:'login',  icon:'📅', name:'登入',     step:3,  gem:500, unit:'天',  desc:'每累計登入 3 天（不需連續）', prog:()=>state.loginDays || 0 },
   { key:'clear',  icon:'🚩', name:'通關',     step:10, gem:100, unit:'關',  desc:'每通關 10 關',               prog:()=>maxClearedLevel() },
   { key:'quiz',   icon:'📝', name:'答對',     step:20, gem:100, unit:'題',  desc:'每累計答對 20 題',           prog:()=>Math.max(0, Math.round(fin(state.qs.correct, 0))) },
   { key:'pull10', icon:'🎰', name:'十連抽',   step:10, gem:100, unit:'次',  desc:'每十連抽 10 次',             prog:()=>state.pull10Count || 0 },
@@ -5717,11 +5724,15 @@ const ACH_REPEAT = [
   { key:'skill', icon:'🎇', name:'技能',     step:30, gem:100, unit:'等',  desc:'技能總等級每 30 等',         prog:()=>skillTotalLevel() },
 ];
 // 一次性成就（依序解鎖，前一項完成前隱藏下一項）
-const ACH_KILL_TIERS = [[100,10],[500,50],[1000,100],[5000,150],[10000,200],[50000,250],[100000,300]];
+const ACH_KILL_TIERS = [[100,10],[500,50],[1000,100],[5000,150],[10000,200],[50000,250],[100000,300],[200000,400],[300000,500]];
 const ACH_KILLS = ACH_KILL_TIERS.map(([n,gem],i)=>({ id:'kill_'+n, icon:'☠️', name:`累計擊殺 ${n.toLocaleString()} 隻敵人`, gem, test:()=>(state.totalKills||0) >= n, prog:()=>state.totalKills||0, goal:n }));
 const ACH_GOLDS = [];
-for(let d=3; d<=40; d++) ACH_GOLDS.push({ id:'gold_'+d, icon:'💰', name:`持有金錢達到 ${d} 位數`, gem:100 + 20*(d-3), goal:d, latch:true, test:()=>state.gold.gte(Decimal.pow(10, d-1)), prog:()=>state.gold });
-const ACH_CHAINS = [ { title:'擊殺', list:ACH_KILLS }, { title:'金錢（持有，非累計）', list:ACH_GOLDS } ];
+for(let d=3; d<=50; d++) ACH_GOLDS.push({ id:'gold_'+d, icon:'💰', name:`持有金錢達到 ${d} 位數`, gem:100 + 20*(d-3), goal:d, latch:true, test:()=>state.gold.gte(Decimal.pow(10, d-1)), prog:()=>state.gold });
+const ACH_STONES = [];
+for(let d=3; d<=50; d++) ACH_STONES.push({ id:'stone_'+d, icon:'🔮', name:`持有強化石達到 ${d} 位數`, gem:100 + 20*(d-3), goal:d, latch:true, test:()=>state.stone.gte(Decimal.pow(10, d-1)), prog:()=>state.stone, held:()=>state.stone });
+ACH_GOLDS.forEach(a=>{ a.held = ()=>state.gold; });
+const ACH_CHAINS = [ { key:'kill', title:'擊殺', list:ACH_KILLS }, { key:'gold', title:'金錢（持有，非累計）', list:ACH_GOLDS }, { key:'stone', title:'強化石（持有，非累計）', list:ACH_STONES } ];
+const achOpen = {};   // 各成就鏈是否展開已領取的成就（只存在記憶體，預設全部摺疊）
 
 function repAvail(r){ return Math.max(0, Math.floor(r.prog() / r.step) - (state.ach.rep[r.key] || 0)); }
 function achIsDone(a){ return !!(state.ach.done[a.id] || a.test()); }
@@ -5729,7 +5740,7 @@ function achVisible(list, i){ return i === 0 || achIsDone(list[i-1]); }
 // 金錢是「持有」不是累計，達成當下就記錄起來（之後花掉也算完成）
 function latchAchievements(){
   let changed = false;
-  ACH_GOLDS.forEach(a=>{ if(!state.ach.done[a.id] && a.test()){ state.ach.done[a.id] = true; changed = true; } });
+  ACH_GOLDS.concat(ACH_STONES).forEach(a=>{ if(!state.ach.done[a.id] && a.test()){ state.ach.done[a.id] = true; changed = true; } });
   return changed;
 }
 function achReadyCount(){
@@ -5805,11 +5816,19 @@ function renderAch(){
   });
   ACH_CHAINS.forEach(c=>{
     html += `<div class="ach-h">${c.title}</div>`;
-    c.list.forEach((a,i)=>{
-      if(!achVisible(c.list, i)) return;
+    // 摺疊：已領取的成就預設收起，只顯示可領與最新（進行中）成就；全部領完則保留最後一項
+    const vis = [];
+    c.list.forEach((a,i)=>{ if(achVisible(c.list, i)) vis.push([a,i]); });
+    let shown = vis.filter(([a])=>!state.ach.claimed[a.id]);
+    if(!shown.length && vis.length) shown = [vis[vis.length-1]];
+    const foldedList = vis.filter(v=>!shown.includes(v));
+    const open = !!achOpen[c.key];
+    if(foldedList.length) html += `<button type="button" class="ach-fold" data-fold="${c.key}">${open?'▼ 收合':'▶ 展開'}已完成成就（${foldedList.length} 項）</button>`;
+    const order = open ? vis : shown;
+    order.forEach(([a,i])=>{
       const done = achIsDone(a), got = !!state.ach.claimed[a.id];
       let ds;
-      if(a.latch) ds = done ? '已達成' : `目前持有 ${fmtNum(state.gold)}`;
+      if(a.latch) ds = done ? '已達成' : `目前持有 ${fmtNum(a.held())}`;
       else ds = done ? '已達成' : `${fmtNum(a.prog())} / ${fmtNum(a.goal)}`;
       html += `<div class="ach-row${done&&!got?' ready':''}${got?' got':''}">
         <div class="ico">${a.icon}</div>
@@ -5823,6 +5842,7 @@ function renderAch(){
   box.innerHTML = html;
   box.querySelectorAll('[data-rep]').forEach(b=>{ b.onclick = ()=>claimAchievement('rep', b.dataset.rep); });
   box.querySelectorAll('[data-one]').forEach(b=>{ b.onclick = ()=>claimAchievement('one', b.dataset.one); });
+  box.querySelectorAll('[data-fold]').forEach(b=>{ b.onclick = ()=>{ achOpen[b.dataset.fold] = !achOpen[b.dataset.fold]; renderAch(); }; });
 }
 document.getElementById('achClaimAll').onclick = claimAllAchievements;
 
