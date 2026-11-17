@@ -41,7 +41,7 @@
   const TIER_SUBJECTS = ['chinese', 'english', 'science', 'geography']; // 有「關卡分批解鎖」機制的科目
   const SUBJECT_CATEGORY_MAP = { math: '數學', chinese: '國文', english: '英文', science: '自然', geography: '社會' };
   const MATH_STAGE_MAX = 300;
-  const MEMORY_RATIO = 0.6; // 出題時「記住最近 6 成」避免馬上重複
+  const MEMORY_RATIO = 0.7; // 出題時「記住最近 7 成」避免馬上重複（原 0.6）
 
   // ── 進度資料骨架 ────────────────────────────────────────
   // 每個遊戲各自持有一份，存檔時整包存起來、讀檔時整包丟回來即可。

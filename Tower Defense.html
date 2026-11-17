@@ -1459,7 +1459,7 @@ const EX_HP_PCT_PER_LV  = 0.007;            // 生命值 EX：每級 +0.7% 全�
 const EX_HP_FLAT_MULT   = 5;                // 生命值 EX：固定值改為第 N 級 +5×N（原版每級 +15）
 const EX_SPD_PER_LV = 0.08;                 // 攻擊速度 EX：每級 +0.08 發/秒（原版 0.09）
 const EX_OUTPUT_PCT_PER_LV = 0.003;         // 攻擊速度 EX：每級另外 +0.3% 總輸出（攻擊力乘算）
-const EX_CRIT_PER_LV = 1;                   // 暴擊率 EX：每級 +1%，原始量（5＋等級×1＋裝備）再乘 (1＋等級×1%)；超過上限的部分才轉成暴擊傷害（原版每級 1.2%）
+const EX_CRIT_PER_LV = 1;                   // 暴擊率 EX：每級 +1%，原始量（5＋等級×1＋裝備）再乘 (1＋等級×1%)；超過上限的部分才轉成暴擊傷害
 const EX_CRIT_TOTAL_PCT_PER_LV = 0.01;      // 暴擊率 EX：總量每級額外 +1%
 const EX_CRITDMG_PER_LV = 1;                // 暴擊傷害 EX：每級 +1%，原始量（200＋等級×1＋裝備）再乘 (1＋等級×1%)，最後才加上暴擊率溢出的轉換值（轉換值不重複乘）
 const EX_CRITDMG_TOTAL_PCT_PER_LV = 0.01;   // 暴擊傷害 EX：總量每級額外 +1%
@@ -2029,6 +2029,7 @@ const TW_PRONOUNCE_FIX = [
   [/划/g, '滑'],      // 划船 應唸 huá；預設語音容易唸成 huà
   [/岔/g, '插'],
   [/臟/g, '葬'],
+  [/髮/g, '法'],
 ];
 function applyPronounceFix(text){
   let r = text;
