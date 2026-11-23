@@ -209,8 +209,8 @@ body{
   color:var(--bone-dim);font-size:8px;line-height:1;opacity:.75;cursor:pointer;font-family:inherit;
 }
 .up button.relic-spk:active{transform:none;box-shadow:none;background:rgba(255,255,255,.16);opacity:1}
-.up .ico:has(img.relicImg),.drop .ico:has(img.relicImg){width:36px}
-.ico img.relicImg{width:36px;height:36px;object-fit:contain;display:block;margin:0 auto;border-radius:6px}
+.up .ico:has(img.relicImg),.drop .ico:has(img.relicImg){width:45px}
+.ico img.relicImg{width:45px;height:45px;object-fit:contain;display:block;margin:0 auto;border-radius:6px}
 #heroSkinGrid{display:flex;gap:9px;margin-top:6px}
 .heroCard{
   flex:1;position:relative;border-radius:13px;border:1px solid var(--stoneline);
@@ -664,7 +664,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
         <button class="btn ghost sm" id="upAllBtn" style="margin-bottom:11px">💰 一鍵強化（自動選最便宜的項目）</button>
         <div class="card" id="upList"></div>
         <h2 class="sec" style="margin-top:18px">裝備精煉</h2>
-        <p class="sub">用強化石精煉已裝備的物品，強化倍率為 1＋0.1×(2.25^精煉等級−1)，精煉成本為 4^(精煉等級+1)。</p>
+        <p class="sub">用強化石精煉已裝備的物品，強化倍率為 1＋0.1×(2.24^精煉等級−1)，精煉成本為 4^(精煉等級+1)。</p>
         <button class="btn ghost sm" id="refineAllBtn" style="margin-bottom:11px">🔮 一鍵強化（自動選最便宜的裝備）</button>
         <div class="card" id="refineList"></div>
       </div>
@@ -834,6 +834,11 @@ const RELICS = [
   { key:'blood',   icon:'🩸', name:'嗜血匕首',       max:10,
     desc:'暴擊率上限增加：神器等級 × 1%',
     eff:lv=>`暴擊率上限 ${CRIT_CAP + lv}%（+${lv}%）` },
+  { key:'doom',    icon:'⏳', name:'厄運之刻',
+    // 解鎖：嗜血匕首滿級；未解鎖時上限為 0（不會被抽到）
+    get max(){ return relicLv('blood') >= 10 ? 100 : 0; },
+    desc:'暴擊傷害額外增加<暴擊傷害等級>×神器等級×0.1%',
+    eff:lv=>`暴擊傷害 ×${fmtX(1+fin(state.up.critdmg,0)*lv*0.001)}（暴擊傷害 Lv.${fin(state.up.critdmg,0)}）` },
   { key:'holy',    icon:'🕊️', name:'聖光庇護',       max:50,
     desc:'額外增加減傷等級：神器等級 × 1',
     eff:lv=>`減傷等級 +${lv}（有效 Lv.${fin(state.up.defense,0)+lv}）` },
@@ -900,12 +905,13 @@ const RELICS = [
     eff:lv=>`金幣及強化石皆 ×${fmtX(Math.pow(1+lv*0.001, relicLv('midas')+relicLv('bowl')))}（點石成金 Lv.${relicLv('midas')}＋聚寶盆 Lv.${relicLv('bowl')}）` },
   { key:'beast',   icon:'🦖', name:'巨獸斬殺者',
     // 解鎖：無（與神器開啟共同）；效果：對王傷害 ×1.015^神器等級
-    max:150,
+    // 上限：基礎 150；與收割者鐮刀同時達到上限時，兩者上限各 +10（無上限，兩者上限始終相差 50）
+    get max(){ return 150 + beastReaperBonus(); },
     desc:'對王傷害每神器等級皆額外增加1.5%',
     eff:lv=>`對王傷害 ×${fmtX(Decimal.pow(1.015, lv))}` },
   { key:'reaper',  icon:'🌾', name:'收割者鐮刀',
     // 解鎖：無（與神器開啟共同）；效果：對小怪（鋼鐵敵人除外）傷害 ×1.015^神器等級
-    max:100,
+    get max(){ return 100 + beastReaperBonus(); },   // 基礎 100，與巨獸斬殺者同步 +10
     desc:'對小怪傷害(鋼鐵除外)每神器等級皆額外增加1.5%',
     eff:lv=>`對小怪傷害(鋼鐵除外) ×${fmtX(Decimal.pow(1.015, lv))}` },
   { key:'ruin',    icon:'💀', name:'荒蕪毀滅',       max:100,
@@ -947,6 +953,14 @@ const RELICS = [
     eff:lv=>`最大生命及攻擊力 ×${fmtX(Decimal.pow(1.018,lv))}` },
 ];
 const VOID_UNLOCK_CLEAR = 110;
+// 巨獸斬殺者（基礎上限 150）與收割者鐮刀（基礎上限 100）同時達到上限時，兩者上限各 +10，可無限重複（兩者上限始終相差 50）
+function beastReaperBonus(){
+  const b = relicLv('beast'), r = relicLv('reaper');
+  let k = 0;
+  while(b >= 150 + 10*k && r >= 100 + 10*k) k++;
+  return 10 * k;
+}
+function relicDoomMul(){ return 1 + fin(state.up && state.up.critdmg, 0) * relicLv('doom') * 0.001; } // 厄運之刻：暴擊傷害 ×(1＋暴擊傷害等級×神器等級×0.1%)
 // 虛空穿刺：敵人減傷等級 ＝ (關卡數 - 100) - 神器等級，最低 0
 function voidCurrentDefLv(level){ return Math.max(0, level - ENEMY_DEF_BASE_LEVEL - relicLv('void')); }
 function relicReaperMul(){ const lv = relicLv('reaper'); return lv > 0 ? Decimal.pow(1.015, lv) : DONE; } // 收割者鐮刀：對小怪（鋼鐵除外）傷害
@@ -1448,7 +1462,7 @@ const REFINE_COST_REDUCE_PER_LV = 3; // 精煉成本：每級減少每次精煉�
    精煉成本 ＝ 4^(部位精煉等級+1)，再扣掉鍛造台「精煉成本」的減免（最低為 1）。
    精煉強化倍率 ＝ 1 + 0.1 × (4^(部位精煉等級) − 1)，0 等為 ×1，乘在該裝備的全部能力上（含暴擊率，溢出照舊轉暴擊傷害）。 */
 const REFINE_COST_BASE = 4;                 // 成本底數：4^(等級+1)
-const REFINE_POWER_BASE = 2.25;             // 強化底數：1 + 0.1×4^等級
+const REFINE_POWER_BASE = 2.24;            // 強化底數：1 + 0.1×4^等級
 const REFINE_POWER_COEF = 0.1;
 const REFINE_LV_CAP = 100000;               // Decimal 版：不再有溢位問題，上限放寬（原 400）
 const _refineMulCache = new Map();
@@ -2476,8 +2490,8 @@ function stats(){
     maxHp:   dfin(get('hp')).mul(relicHpMul()).round(), // 神器：極光法陣守護
     spd:     Math.min(SPD_CAP, fin(get('spd'), 0.4)),
     crit:    fin(Decimal.min(critCap(), rawCrit).toNumber(), 5),
-    critDmg: dfin(get('critdmg')).add(critOverflow),
-    critMul: dfin(get('critdmg')).add(critOverflow).div(100),
+    critDmg: dfin(get('critdmg')).add(critOverflow).mul(relicDoomMul()),
+    critMul: dfin(get('critdmg')).add(critOverflow).mul(relicDoomMul()).div(100),
   };
 }
 
@@ -5748,7 +5762,7 @@ const ACH_REPEAT = [
   { key:'quiz',   icon:'📝', name:'答對',     step:20, gem:100, unit:'題',  desc:'每累計答對 20 題',           prog:()=>Math.max(0, Math.round(fin(state.qs.correct, 0))) },
   { key:'pull10', icon:'🎰', name:'十連抽',   step:10, gem:100, unit:'次',  desc:'每十連抽 10 次',             prog:()=>state.pull10Count || 0 },
   { key:'upgrade', icon:'🔨', name:'鍛造台', step:100, gem:100, unit:'等', desc:'鍛造台等級合計每 100 等', prog:()=>UPGRADES.reduce((t,u)=>t+Math.max(0, Math.round(fin(state.up[u.key], 0))), 0) },
-  { key:'refine', icon:'⚒️', name:'精煉',     step:10, gem:100, unit:'等',  desc:'裝備精煉等級合計每 10 等',   prog:()=>ALL_SLOTS.reduce((t,sl)=>t+getRefine(sl), 0) },
+  { key:'refine', icon:'⚒️', name:'精煉',     step:6, gem:100, unit:'等',  desc:'裝備精煉等級合計每 6 等',   prog:()=>ALL_SLOTS.reduce((t,sl)=>t+getRefine(sl), 0) },
   { key:'relic',  icon:'🏺', name:'神器等級', step:10, gem:100, unit:'等',  desc:'神器等級合計每 10 等',       prog:()=>relicLevelSum() },
   { key:'skill', icon:'🎇', name:'技能',     step:30, gem:100, unit:'等',  desc:'技能總等級每 30 等',         prog:()=>skillTotalLevel() },
 ];
