@@ -2738,6 +2738,7 @@ function steelHpFor(level){ return Math.max(1, level*3 - steelReduceTotal()); } 
 // 第 101 關起：敵人受到的傷害 ×0.93^(關卡數-100)（鋼鐵敵人固定 1 點，不受影響）
 const ENEMY_DEF_START_LEVEL = 101, ENEMY_DEF_BASE_LEVEL = 100, ENEMY_DEF_MULT_PER_LV = 0.93;
 function enemyLevelDefMul(){
+  if(abyssActive()) return 1; // 無盡深淵：不套用關卡減傷
   const lv = (typeof run !== 'undefined' && run.level) ? run.level : 1;
   return lv >= ENEMY_DEF_START_LEVEL ? Math.pow(ENEMY_DEF_MULT_PER_LV, voidCurrentDefLv(lv)) : 1;
 }
@@ -2797,7 +2798,7 @@ const run = {
 /* ══════════════════════════════════════════
    無盡深淵（第 121 關「環形遠景」解鎖時同步開放）
    ・波數無限，從第 1 波起每波就是原本第 20 波的怪物數量（20 隻）
-   ・怪物血量每 10 波 ×10；基礎關卡＝目前最後解鎖的關卡（鋼鐵血量、遠距射程、關卡減傷都用它）
+   ・怪物血量與攻擊以第 1 關第 1 波為基礎，每 10 波 ×10；只有鋼鐵血量、遠距射程、守護圈使用目前最後解鎖的關卡
    ・移動速度加成：每 1 波 +1，上限 +200，可被鍛造台「緩速」抵銷
    ・每 10 波暫停答題：答對清除小怪（王不受影響）並獲得攻擊與生命 ×1.03
    ・只獎勵鑽石：每 1 波 1 鑽，依最高波數結算
@@ -2829,7 +2830,7 @@ function waveQuotaFor(w){
 }
 // 怪物血量 = 關卡基礎值（每關 × 係數）× 關內波數成長（20 波內只差 3 倍；無盡深淵：每 10 波 ×10）
 function enemyHpFor(level, w){
-  if(abyssActive()) return levelGrowthMul(LEVEL_HP_GROWTH, level).mul(17).mul(Decimal.pow(ABYSS_HP_PER_10, (w-1) / 10));
+  if(abyssActive()) return D(17).mul(Decimal.pow(ABYSS_HP_PER_10, (w-1) / 10)); // 無盡深淵：基礎＝第 1 關第 1 波的原始血量，不吃關卡成長
   return levelGrowthMul(LEVEL_HP_GROWTH, level).mul(17 * Math.pow(WAVE_HP_GROWTH, w-1));
 }
 // 移速倍率：關內 20 波線性提升到約 1.1 倍（無盡深淵固定 1）
@@ -3232,10 +3233,10 @@ function renderAbyssPanel(){
   const sw = state.abyss.startWave;
   box.innerHTML = `
     <h2 class="sec">🌀 無盡深淵</h2>
-    <p class="sub">波數無限，怪物每 10 波血量 ×10。每 10 波暫停答題，答對清除小怪並讓攻擊與生命 ×${ABYSS_BUFF}。</p>
+    <p class="sub">波數無限，怪物每 10 波血量 ×10。怪物以第 1 關第 1 波為基礎，只有鋼鐵血量、遠距射程、守護圈使用最後解鎖關卡。每 10 波暫停答題，答對以火球清除小怪並讓攻擊與生命 ×${ABYSS_BUFF}。</p>
     <div class="card">
       <div class="abyssStat"><span>歷史最高波數</span><span>${best}</span></div>
-      <div class="abyssStat"><span>基礎關卡（目前最後解鎖）</span><span>第 ${Math.min(LEVEL_COUNT, state.unlockedLevel)} 關</span></div>
+      <div class="abyssStat"><span>鋼鐵血量／遠距射程／守護圈 依據</span><span>第 ${Math.min(LEVEL_COUNT, state.unlockedLevel)} 關</span></div>
       <div class="abyssStat"><span>每波怪物數量</span><span>${ABYSS_QUOTA} 隻</span></div>
       <div class="abyssStat"><span>結算鑽石</span><span>每 1 波 1 💎＋答對累積</span></div>
     </div>
@@ -3391,7 +3392,7 @@ function spawnEnemy(){
   // 鍛造台「怪物弱化」：怪物生命每級 ×MONSTER_WEAKEN_MULT_PER_LV（累乘）
   const weakenMul = monsterWeakenMul();
   const hp = base.steel ? D(steelHpFor(run.level)) : enemyHpFor(run.level, w).mul(base.hp * (isBoss ? 14 : 1) * weakenMul);
-  let dps = levelGrowthMul(LEVEL_ATK_GROWTH, run.level).mul(isBoss ? 13 : 4);
+  let dps = levelGrowthMul(LEVEL_ATK_GROWTH, abyssActive() ? 1 : run.level).mul(isBoss ? 13 : 4); // 無盡深淵：攻擊基礎同為第 1 關
   if(abyssActive()) dps = dps.mul(Decimal.pow(ABYSS_HP_PER_10, (w-1) / 10)); // 無盡深淵：攻擊力與血量同樣每 10 波 ×10
   const sizeMul = farMode ? FAR_MONSTER_SIZE_MUL : 1;
   let spx = 32 + Math.random()*(W-64), spy = -30, spvx = (Math.random()-0.5) * 12;
