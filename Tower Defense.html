@@ -277,6 +277,28 @@ body{
 }
 
 /* 開場 / 結算覆蓋層 */
+#modeTabs{display:flex;gap:8px;margin-bottom:12px}
+.modeTab{flex:1;padding:10px 6px;border-radius:11px;border:1px solid var(--stoneline);background:rgba(0,0,0,.3);color:var(--bone-dim);font-family:inherit;font-size:13px;font-weight:900;cursor:pointer}
+.modeTab.on{color:var(--ember-hot);border-color:var(--ember);box-shadow:0 0 12px rgba(255,106,31,.25)}
+#mainPanel.hidden,#abyssPanel.hidden{display:none}
+.abyssStat{display:flex;justify-content:space-between;font-size:13px;font-weight:800;padding:6px 0;border-bottom:1px dashed var(--stoneline)}
+.abyssStat:last-child{border-bottom:0}
+.abyssStat span:last-child{color:var(--ember-hot);font-variant-numeric:tabular-nums}
+#abStartRange{width:100%;margin:8px 0 2px}
+#abyssQuiz{
+  position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  padding:16px;background:rgba(8,4,10,.93);backdrop-filter:blur(3px);z-index:6;overflow-y:auto;
+}
+#abyssQuiz.on{display:flex}
+#aqCard{width:100%;max-width:360px;margin:auto}
+#aqHead{font-size:18px;font-weight:900;color:var(--ember-hot);text-align:center;margin-bottom:4px}
+#aqRule{font-size:11px;color:var(--bone-dim);text-align:center;line-height:1.6;margin-bottom:10px}
+#aqSubject{font-size:11px;font-weight:800;letter-spacing:1px;color:var(--mana);margin-bottom:6px}
+#aqText{font-size:19px;font-weight:800;line-height:1.5;margin:0 0 8px}
+#aqImg{max-width:100%;border-radius:9px;margin:6px 0;display:none}
+#aqOpts .opt{display:block;margin-bottom:8px;border-radius:11px;border-right:1px solid var(--stoneline)}
+#aqFeed{min-height:24px;text-align:center;font-weight:800;font-size:14px;margin:6px 0 10px}
+#aqFeed.ok{color:#86efac} #aqFeed.no{color:#fda4c0}
 #overlay{
   position:absolute;inset:0;display:none;
   align-items:center;justify-content:center;padding:26px;
@@ -568,6 +590,11 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
     <section class="screen on" id="screen-battle">
 
       <div id="levelSelectPanel" class="pad">
+        <div id="modeTabs">
+          <button type="button" class="modeTab on" data-mode="main">⚔️ 主線關卡</button>
+          <button type="button" class="modeTab" data-mode="abyss">🌀 無盡深淵</button>
+        </div>
+        <div id="mainPanel">
         <h2 class="sec">烈焰試煉場</h2>
         <p class="sub">每關 20 波，關內怪物只會小幅變強，換關卡才會難度跳升。</p>
         <div id="lvNav">
@@ -578,6 +605,8 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
         <button type="button" class="btn" id="lvGo">挑戰</button>
         <button type="button" class="btn ghost sm" id="lvGridToggle">展開全部關卡</button>
         <div id="levelGrid" class="hidden"></div>
+        </div>
+        <div id="abyssPanel" class="hidden"></div>
       </div>
 
       <div id="stage" class="hidden">
@@ -593,6 +622,18 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
           <div id="wallWrap"><div id="wallText"></div><div id="wallBar"><div id="wallFill"></div></div></div>
           <div id="hpBar"><div id="hpFill"></div><div id="shieldFill"></div></div>
           <div id="hpText">100 / 100</div>
+        </div>
+        <div id="abyssQuiz">
+          <div id="aqCard">
+            <div id="aqHead">🌀 深淵試問・第 <span id="aqWave">10</span> 波</div>
+            <div id="aqRule">答對：對場上每隻小怪發射 1 枚火球（王不受影響），並獲得攻擊與生命 ×1.03 強化</div>
+            <div id="aqSubject">數學</div>
+            <p id="aqText"></p>
+            <img id="aqImg" alt="">
+            <div id="aqOpts"></div>
+            <div id="aqFeed"></div>
+            <button class="btn" id="aqNext" style="display:none">繼續戰鬥</button>
+          </div>
         </div>
         <div id="overlay">
           <div id="ovCard">
@@ -1729,7 +1770,8 @@ function freshState(){
     indigTier:IndigenousQuiz.createTierState(), // ← 族語階層解鎖進度，整包存檔
     qs:{ correct:0, wrong:0, streak:0, best:0, shield:3, shieldProgress:0 },
     best:{ wave:0, kills:0 },
-    unlockedLevel:1,                          // 目前解鎖到第幾關
+    abyss:{ bestWave:0, startWave:1 },        // 無盡深淵：歷史最高波數、下次選擇的起始波
+    unlockedLevel:1,                         // 目前解鎖到第幾關
     levelRecords:{},                          // { [level]: {cleared, bestWave, bestKills} }
     seenIntro:false,
     offhandSeen:false,                        // 副武器解鎖提示是否已顯示過
@@ -1844,6 +1886,9 @@ function load(){
       beam: Object.assign({draws:0}, (d.skills&&d.skills.beam)||{}),
     };
     state.levelRecords = Object.assign({}, d.levelRecords||{});
+    state.abyss = Object.assign({ bestWave:0, startWave:1 }, d.abyss||{});
+    state.abyss.bestWave  = Math.max(0, Math.round(fin(state.abyss.bestWave, 0)));
+    state.abyss.startWave = Math.max(1, Math.round(fin(state.abyss.startWave, 1)));
     state.relics = Object.assign({}, d.relics||{});
     { const a = d.ach || {};
       state.ach = { claimed:Object.assign({}, a.claimed||{}), done:Object.assign({}, a.done||{}), rep:Object.assign({}, a.rep||{}), points:Math.max(0, Math.round(fin(a.points, 0))) }; }
@@ -2492,8 +2537,8 @@ function stats(){
   const rawCrit = get('crit');
   const critOverflow = critOverflowAmount();
   return {
-    atk:     dfin(get('atk')).mul(exOutputMul()).mul(relicAtkMul()).round(), // 攻擊速度 EX 的「總輸出」加成與神器（靈魂迴響／烈陽之心）乘在最終攻擊上
-    maxHp:   dfin(get('hp')).mul(relicHpMul()).round(), // 神器：極光法陣守護
+    atk:     dfin(get('atk')).mul(exOutputMul()).mul(relicAtkMul()).mul(abyssBuffMul()).round(), // 攻擊速度 EX 的「總輸出」加成與神器（靈魂迴響／烈陽之心）乘在最終攻擊上；無盡深淵答題強化
+    maxHp:   dfin(get('hp')).mul(relicHpMul()).mul(abyssBuffMul()).round(), // 神器：極光法陣守護；無盡深淵答題強化
     spd:     Math.min(SPD_CAP, fin(get('spd'), 0.4)),
     crit:    fin(Decimal.min(critCap(), rawCrit).toNumber(), 5),
     critDmg: dfin(get('critdmg')).add(critOverflow).mul(relicDoomMul()),
@@ -2628,7 +2673,7 @@ function spawnSplitChildren(p){
   const sizeMul = farMode ? FAR_MONSTER_SIZE_MUL : 1;
   const w = p.wv;
   const hp = enemyHpFor(run.level, w).mul(st.hp * monsterWeakenMul());
-  const spd = ((17 * st.spd) + slowedSpeedBonus(run.level)) * waveSpeedMulFor(w) * enemySpeedScale();
+  const spd = ((17 * st.spd) + enemySpeedBonusFor(w)) * waveSpeedMulFor(w) * enemySpeedScale();
   for(let k=0;k<3;k++){
     const dir = k - 1; // -1、0、1
     const r = st.r * sizeMul;
@@ -2733,6 +2778,7 @@ const BOSSES = ['👺','🐲','💀','👿'];
 
 const run = {
   active:false, over:false,
+  mode:'main', paused:false, abyssBuff:DONE, startWave:1, quizzesDone:0, abyssGems:0,   // mode：'main' 主線／'abyss' 無盡深淵
   level:1,
   t:0, wave:1, spawned:0, waveQuota:0, spawnTimer:0,
   hp:new Decimal(100), maxHp:new Decimal(100), shield:new Decimal(0), maxShield:new Decimal(0), wallStack:0,
@@ -2748,16 +2794,47 @@ const run = {
   shake:0,
 };
 
-// 每關第 1 波 10 隻、第 20 波 20 隻，線性增加
-function waveQuotaFor(w){
-  return Math.round(10 + (w-1) * 10 / (WAVES_PER_LEVEL-1));
+/* ══════════════════════════════════════════
+   無盡深淵（第 121 關「環形遠景」解鎖時同步開放）
+   ・波數無限，從第 1 波起每波就是原本第 20 波的怪物數量（20 隻）
+   ・怪物血量每 10 波 ×10；基礎關卡＝目前最後解鎖的關卡（鋼鐵血量、遠距射程、關卡減傷都用它）
+   ・移動速度加成：每 1 波 +1，上限 +200，可被鍛造台「緩速」抵銷
+   ・每 10 波暫停答題：答對清除小怪（王不受影響）並獲得攻擊與生命 ×1.03
+   ・只獎勵鑽石：每 1 波 1 鑽，依最高波數結算
+   ・結算後可從歷史最高波 75% 以內的波數開始，跳過的每 10 波答題視為全對
+   ══════════════════════════════════════════ */
+const ABYSS_QUOTA = waveQuotaForBase(WAVES_PER_LEVEL); // 原始第 20 波的怪物數量
+const ABYSS_HP_PER_10 = 10;          // 每 10 波血量 ×10
+const ABYSS_SPD_CAP = 200;           // 速度加成上限
+const ABYSS_QUIZ_EVERY = 10;         // 每 10 波答題
+const ABYSS_BUFF = 1.03;             // 答對強化（攻擊、生命各自累乘）
+const ABYSS_START_RATIO = 0.75;      // 起始波最高可選歷史最高波的 75%
+function waveQuotaForBase(w){ return Math.round(10 + (w-1) * 10 / (WAVES_PER_LEVEL-1)); }
+function abyssActive(){ return run.mode === 'abyss'; }
+function abyssUnlocked(){ return state.unlockedLevel >= FAR_START_LEVEL; }
+function abyssBuffMul(){ return (run.mode === 'abyss' && run.active && run.abyssBuff) ? run.abyssBuff : DONE; }
+function abyssMaxStart(){ return Math.max(1, Math.floor(state.abyss.bestWave * ABYSS_START_RATIO)); }
+function abyssSkippedQuizzes(startWave){ return Math.max(0, Math.floor((startWave - 1) / ABYSS_QUIZ_EVERY)); }
+function abyssSpeedBonus(w){
+  const base = Math.min(ABYSS_SPD_CAP, Math.max(0, Math.floor(w)));
+  return Math.max(0, base - Math.max(0, fin(state.up.slow, 0)));
 }
-// 怪物血量 = 關卡基礎值（每關 × 係數）× 關內波數成長（20 波內只差 3 倍）
+// 敵人基礎移速加成：主線＝關卡加速加成（可被緩速抵銷）；無盡深淵＝每 1 波 +1
+function enemySpeedBonusFor(w){ return abyssActive() ? abyssSpeedBonus(w) : slowedSpeedBonus(run.level); }
+
+// 每關第 1 波 10 隻、第 20 波 20 隻，線性增加（無盡深淵：每波固定 20 隻）
+function waveQuotaFor(w){
+  if(abyssActive()) return ABYSS_QUOTA;
+  return waveQuotaForBase(w);
+}
+// 怪物血量 = 關卡基礎值（每關 × 係數）× 關內波數成長（20 波內只差 3 倍；無盡深淵：每 10 波 ×10）
 function enemyHpFor(level, w){
+  if(abyssActive()) return levelGrowthMul(LEVEL_HP_GROWTH, level).mul(17).mul(Decimal.pow(ABYSS_HP_PER_10, (w-1) / 10));
   return levelGrowthMul(LEVEL_HP_GROWTH, level).mul(17 * Math.pow(WAVE_HP_GROWTH, w-1));
 }
-// 移速倍率：關內 20 波線性提升到約 1.1 倍
+// 移速倍率：關內 20 波線性提升到約 1.1 倍（無盡深淵固定 1）
 function waveSpeedMulFor(w){
+  if(abyssActive()) return 1;
   return 1 + (w-1) * WAVE_SPD_GROWTH / (WAVES_PER_LEVEL-1);
 }
 
@@ -2767,6 +2844,7 @@ function openLevelSelect(){
   document.getElementById('levelSelectPanel').classList.remove('hidden');
   document.getElementById('stage').classList.add('hidden');
   renderLevelSelect();
+  applyMode();
 }
 function openStage(){
   document.getElementById('levelSelectPanel').classList.add('hidden');
@@ -2888,14 +2966,23 @@ function mixHex(hex, k){ // 把顏色往白色混 k（0～1），用來做受擊
   r += (255-r)*k; g += (255-g)*k; b += (255-b)*k;
   return `rgb(${r|0},${g|0},${b|0})`;
 }
-function startRun(level){
+function startRun(level, abyssStartWave){
+  const isAbyss = abyssStartWave != null;
+  run.mode = isAbyss ? 'abyss' : 'main';
+  run.paused = false; run.quizzesDone = 0; run.abyssGems = 0;
+  document.getElementById('abyssQuiz').classList.remove('on');
+  if(isAbyss){
+    level = Math.min(LEVEL_COUNT, state.unlockedLevel);   // 以目前最後解鎖的關卡作為基礎強度
+    run.startWave = Math.max(1, Math.round(abyssStartWave));
+    run.abyssBuff = Decimal.pow(ABYSS_BUFF, abyssSkippedQuizzes(run.startWave)); // 跳過的答題全部算對
+  } else { run.startWave = 1; run.abyssBuff = DONE; }
+  run.active=true; run.over=false;   // 先設 active／mode，stats() 才會套用答題強化
   const s = stats();
-  run.active=true; run.over=false;
   run.level = level || run.level || 1;
   setFarMode(run.level);
-  selectedLevel = run.level;
+  if(!isAbyss) selectedLevel = run.level;
   run.heroAng = -Math.PI/2; run.targetAng = -Math.PI/2;
-  run.t=0; run.wave=1; run.spawned=0; run.waveQuota=waveQuotaFor(1); run.spawnTimer=0;
+  run.t=0; run.wave=run.startWave; run.spawned=0; run.waveQuota=waveQuotaFor(run.startWave); run.spawnTimer=0;
   run.maxHp=s.maxHp; run.hp=s.maxHp;
   run.maxShield = shieldValue(s.maxHp); run.shield = run.maxShield; run.wallStack = 0;
   run.heroX=W/2; run.targetX=W/2; run.fireTimer=0; run.iceTimer=0; run.lightningTimer=0; run.whirlwindTimer=0; run.earthwallTimer=0; run.earthwallCd=0; run.beamTimer=0;
@@ -2922,7 +3009,40 @@ function goldLevelMul(level){
 }
 const GEM_CLEAR_CAP = 450; // 通關鑽石上限
 function levelTotalEnemies(){ let t = 0; for(let w=1; w<=WAVES_PER_LEVEL; w++) t += waveQuotaFor(w); return Math.max(1, t); }
+// 無盡深淵結算：只給鑽石，每 1 波 1 鑽，依本次到達的最高波數（含起始時跳過的波數）計算
+function endAbyss(){
+  run.active=false; run.over=true; run.paused=false;
+  document.getElementById('abyssQuiz').classList.remove('on');
+  const wave = Math.max(1, run.wave);
+  const prevBest = state.abyss.bestWave;
+  const waveGems = wave, quizGems = Math.max(0, Math.round(fin(run.abyssGems, 0)));
+  const gemGain = waveGems + quizGems;
+  state.gem = Math.max(0, fin(state.gem, 0) + gemGain);
+  state.abyss.bestWave = Math.max(prevBest, wave);
+  state.best.kills = Math.max(state.best.kills, run.kills);
+  state.abyss.startWave = Math.min(state.abyss.startWave, abyssMaxStart());
+  save(); syncUI(); renderAbyssPanel();
+
+  document.getElementById('ovTitle').textContent = '深淵吞沒了你';
+  document.getElementById('ovSub').innerHTML =
+    `撐到第 <b>${wave}</b> 波，擊倒 ${run.kills} 隻。` +
+    (wave > prevBest ? `<br><b style="color:var(--ember-hot)">🏆 新紀錄！</b>（原最高 ${prevBest} 波）` : `<br>歷史最高 ${state.abyss.bestWave} 波。`) +
+    `<br>下次最高可從第 ${abyssMaxStart()} 波開始。`;
+  const loot = document.getElementById('ovLoot');
+  loot.className = 'on';
+  loot.innerHTML = `<div><span>💎 波數（${wave} 波 × 1）</span><span>+${fmtNum(waveGems)}</span></div>` +
+    `<div><span>💎 答題累積</span><span>+${fmtNum(quizGems)}</span></div>` +
+    `<div><span>💎 合計</span><span>+${fmtNum(gemGain)}</span></div>`;
+  const ovBtn = document.getElementById('ovBtn'), ovBtn2 = document.getElementById('ovBtn2'), ovBtn3 = document.getElementById('ovBtn3');
+  ovBtn.textContent = '再次挑戰深淵';
+  ovBtn.onclick = ()=>{ openAbyssConfirm(); };
+  ovBtn3.style.display = 'none';
+  ovBtn2.style.display = 'block'; ovBtn2.textContent = '返回選關';
+  ovBtn2.onclick = ()=>{ openLevelSelect(); };
+  document.getElementById('overlay').classList.add('on');
+}
 function endRun(win){
+  if(run.mode === 'abyss'){ endAbyss(); return; }
   run.active=false; run.over=true;
 
   const levelMul  = goldLevelMul(run.level);   // 金幣／強化石增加係數（兩階段：100 關以前 ×1.25、101 關起 ×1.1）
@@ -2993,6 +3113,183 @@ function endRun(win){
   ovBtn2.textContent = '返回選關';
   ovBtn2.onclick = ()=>{ openLevelSelect(); };
 
+  document.getElementById('overlay').classList.add('on');
+}
+
+/* ── 無盡深淵：答題暫停 ── */
+let aqState = null;   // { q, subj, answered }
+function abyssPickQuestion(){
+  const subs = SUBJECT_ORDER.filter(s=>s !== 'indigenous' && subjectReady(s));
+  const subj = subs.length ? subs[Math.floor(Math.random()*subs.length)] : 'math';
+  let q = null;
+  try{
+    q = QuizEngine.pickQuestion(state.quiz, subj, bank(), {
+      historicalMathCorrect: state.qs.correct,
+      historicalSubjectCorrect: state.qs.correct,
+    });
+  }catch(e){}
+  return { subj, q };
+}
+function openAbyssQuiz(){
+  const pick = abyssPickQuestion();
+  if(!pick.q || !pick.q.q || !Array.isArray(pick.q.opts)){ return; } // 題目出不來時不卡住戰鬥
+  run.paused = true; dragging = false;
+  aqState = { q:pick.q, subj:pick.subj, answered:false };
+  document.getElementById('aqWave').textContent = run.wave - 1;
+  document.getElementById('aqSubject').textContent = SUBJ_NAME[pick.subj] || pick.subj;
+  document.getElementById('aqText').textContent = pick.q.q;
+  const img = document.getElementById('aqImg');
+  const src = resolveImageSrc(pick.q.img);
+  if(src){ img.src = src; img.style.display = 'block'; } else img.style.display = 'none';
+  const box = document.getElementById('aqOpts');
+  box.innerHTML = '';
+  pick.q.opts.forEach(o=>{
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.textContent = o;
+    b.onclick = ()=>abyssAnswer(o, b);
+    box.appendChild(b);
+  });
+  const feed = document.getElementById('aqFeed');
+  feed.textContent = ''; feed.className = '';
+  document.getElementById('aqNext').style.display = 'none';
+  document.getElementById('abyssQuiz').classList.add('on');
+}
+function abyssAnswer(choice, btn){
+  if(!aqState || aqState.answered) return;
+  aqState.answered = true;
+  const right = String(choice) === String(aqState.q.ans);
+  const feed = document.getElementById('aqFeed');
+  document.querySelectorAll('#aqOpts .opt').forEach(b=>{
+    b.disabled = true;
+    if(b.textContent === String(aqState.q.ans)) b.classList.add('right');
+  });
+  if(right){
+    btn.classList.add('right');
+    // 強化：攻擊與生命各 ×1.03（累乘），目前血量與護盾同步放大
+    run.abyssBuff = run.abyssBuff.mul(ABYSS_BUFF);
+    run.maxHp = run.maxHp.mul(ABYSS_BUFF); run.hp = run.hp.mul(ABYSS_BUFF);
+    run.maxShield = run.maxShield.mul(ABYSS_BUFF); run.shield = run.shield.mul(ABYSS_BUFF);
+    // 場上小怪立即死亡（王不影響）；分裂怪不再分裂
+    // 對每一隻小怪同時發射 1 枚火球 EX（必殺；繼續戰鬥後同時飛出）
+    let n = 0;
+    const ls = stats(), lox = run.heroX, loy = heroOY();
+    run.enemies.forEach(e=>{
+      if(e.boss || e.hp.lte(0)) return;
+      fireLob(ls, e, lox, loy);
+      run.lobs[run.lobs.length-1].lethal = true;
+      n++;
+    });
+    feed.className = 'ok';
+    // 答對鑽石：沿用答題頁公式（15＋連勝加成＋首答 20＋鑽石強化），累積進深淵；不增減連勝
+    const gain = 15 + Math.min(90, state.qs.streak) + 20 + gemBoostAmount();
+    run.abyssGems = (run.abyssGems || 0) + gain;
+    feed.textContent = `答對！+${gain} 💎（深淵累積），對 ${n} 隻小怪各發射 1 枚火球，攻擊與生命 ×${ABYSS_BUFF}（累計 ×${fmtX(run.abyssBuff)}）`;
+  } else {
+    btn.classList.add('wrong');
+    feed.className = 'no';
+    feed.textContent = `答錯了，正確答案是「${aqState.q.ans}」，沒有獲得強化`;
+  }
+  document.getElementById('aqNext').style.display = 'block';
+}
+document.getElementById('aqNext').onclick = ()=>{
+  document.getElementById('abyssQuiz').classList.remove('on');
+  aqState = null;
+  run.quizzesDone++;
+  run.paused = false;
+  syncBattleHud();
+};
+
+/* ── 無盡深淵：選關面板（模式分頁） ── */
+let selectedMode = 'main';
+function applyMode(){
+  if(selectedMode === 'abyss' && !abyssUnlocked()) selectedMode = 'main';
+  document.getElementById('mainPanel').classList.toggle('hidden', selectedMode !== 'main');
+  document.getElementById('abyssPanel').classList.toggle('hidden', selectedMode !== 'abyss');
+  document.querySelectorAll('.modeTab').forEach(t=>{
+    t.classList.toggle('on', t.dataset.mode === selectedMode);
+    if(t.dataset.mode === 'abyss') t.textContent = abyssUnlocked() ? '🌀 無盡深淵' : '🔒 無盡深淵';
+  });
+  if(selectedMode === 'abyss') renderAbyssPanel();
+}
+document.querySelectorAll('.modeTab').forEach(t=>{
+  t.onclick = ()=>{
+    if(t.dataset.mode === 'abyss' && !abyssUnlocked()){ toast(`通關第 ${FAR_START_LEVEL - 1} 關、解鎖環形遠景後開放無盡深淵`); return; }
+    selectedMode = t.dataset.mode; applyMode();
+  };
+});
+function abyssClampStart(v){ return Math.max(1, Math.min(abyssMaxStart(), Math.round(fin(Number(v), 1)))); }
+function renderAbyssPanel(){
+  const box = document.getElementById('abyssPanel');
+  if(!box) return;
+  if(!abyssUnlocked()){
+    box.innerHTML = `<h2 class="sec">🌀 無盡深淵</h2>
+      <p class="sub">通關第 ${FAR_START_LEVEL - 1} 關、解鎖環形遠景模式後同步開放。（目前解鎖到第 ${state.unlockedLevel} 關）</p>`;
+    return;
+  }
+  const best = state.abyss.bestWave, maxStart = abyssMaxStart();
+  state.abyss.startWave = abyssClampStart(state.abyss.startWave);
+  const sw = state.abyss.startWave;
+  box.innerHTML = `
+    <h2 class="sec">🌀 無盡深淵</h2>
+    <p class="sub">波數無限，怪物每 10 波血量 ×10。每 10 波暫停答題，答對清除小怪並讓攻擊與生命 ×${ABYSS_BUFF}。</p>
+    <div class="card">
+      <div class="abyssStat"><span>歷史最高波數</span><span>${best}</span></div>
+      <div class="abyssStat"><span>基礎關卡（目前最後解鎖）</span><span>第 ${Math.min(LEVEL_COUNT, state.unlockedLevel)} 關</span></div>
+      <div class="abyssStat"><span>每波怪物數量</span><span>${ABYSS_QUOTA} 隻</span></div>
+      <div class="abyssStat"><span>結算鑽石</span><span>每 1 波 1 💎＋答對累積</span></div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:900;margin-bottom:4px">起始波數（最高 ${maxStart}，為歷史最高的 ${Math.round(ABYSS_START_RATIO*100)}%）</div>
+      <div class="adm-row" style="margin-top:6px">
+        <button type="button" class="adm-stepbtn" data-abstep="-10">-10</button>
+        <button type="button" class="adm-stepbtn" data-abstep="-1">-1</button>
+        <input type="number" id="abStartNum" value="${sw}" min="1" max="${maxStart}" style="text-align:center">
+        <button type="button" class="adm-stepbtn" data-abstep="1">+1</button>
+        <button type="button" class="adm-stepbtn" data-abstep="10">+10</button>
+      </div>
+      <input type="range" id="abStartRange" min="1" max="${maxStart}" value="${sw}" ${maxStart <= 1 ? 'disabled' : ''}>
+      <div id="abStartNote" style="font-size:11px;color:var(--bone-dim);line-height:1.7"></div>
+    </div>
+    <button type="button" class="btn" id="abGo">進入深淵</button>`;
+  const num = box.querySelector('#abStartNum'), rng = box.querySelector('#abStartRange'), note = box.querySelector('#abStartNote');
+  const refresh = ()=>{
+    const v = state.abyss.startWave, k = abyssSkippedQuizzes(v);
+    note.innerHTML = k > 0
+      ? `跳過的 ${k} 次答題視為全對：開局攻擊與生命 ×${fmtX(Decimal.pow(ABYSS_BUFF, k))}。`
+      : '從第 1 波開始，沒有跳過的答題。';
+  };
+  const setV = v=>{ state.abyss.startWave = abyssClampStart(v); num.value = state.abyss.startWave; rng.value = state.abyss.startWave; refresh(); save(); };
+  num.onchange = ()=>setV(num.value);
+  rng.oninput = ()=>setV(rng.value);
+  box.querySelectorAll('[data-abstep]').forEach(b=>{ b.onclick = ()=>setV(state.abyss.startWave + Number(b.dataset.abstep)); });
+  box.querySelector('#abGo').onclick = ()=>openAbyssConfirm();
+  refresh();
+}
+function openAbyssConfirm(){
+  if(!abyssUnlocked()) return;
+  const lv = Math.min(LEVEL_COUNT, state.unlockedLevel);
+  const sw = abyssClampStart(state.abyss.startWave);
+  state.abyss.startWave = sw;
+  setFarMode(lv);
+  applyLevelTheme(lv);
+  openStage();
+  resizeCanvas();
+  const k = abyssSkippedQuizzes(sw);
+  document.getElementById('ovTitle').textContent = '🌀 無盡深淵';
+  document.getElementById('ovSub').innerHTML =
+    `從第 <b>${sw}</b> 波開始，每波 ${ABYSS_QUOTA} 隻怪物，血量每 10 波 ×10。<br>` +
+    (k > 0 ? `跳過 ${k} 次答題（視為全對）：攻擊與生命 ×${fmtX(Decimal.pow(ABYSS_BUFF, k))}。<br>` : '') +
+    `每 10 波暫停答題，答對清除小怪（王不受影響）並獲得 ×${ABYSS_BUFF} 強化。<br>` +
+    `倒下後結算：每 1 波 1 💎，加上答對累積的鑽石（不影響連勝）。`;
+  const loot = document.getElementById('ovLoot');
+  loot.className = ''; loot.innerHTML = '';
+  const ovBtn = document.getElementById('ovBtn'), ovBtn2 = document.getElementById('ovBtn2'), ovBtn3 = document.getElementById('ovBtn3');
+  ovBtn.textContent = '進入深淵';
+  ovBtn.onclick = ()=>{ save(); startRun(lv, sw); };
+  ovBtn3.style.display = 'none';
+  ovBtn2.style.display = 'block'; ovBtn2.textContent = '取消';
+  ovBtn2.onclick = ()=>{ openLevelSelect(); };
   document.getElementById('overlay').classList.add('on');
 }
 
@@ -3094,7 +3391,8 @@ function spawnEnemy(){
   // 鍛造台「怪物弱化」：怪物生命每級 ×MONSTER_WEAKEN_MULT_PER_LV（累乘）
   const weakenMul = monsterWeakenMul();
   const hp = base.steel ? D(steelHpFor(run.level)) : enemyHpFor(run.level, w).mul(base.hp * (isBoss ? 14 : 1) * weakenMul);
-  const dps = levelGrowthMul(LEVEL_ATK_GROWTH, run.level).mul(isBoss ? 13 : 4);
+  let dps = levelGrowthMul(LEVEL_ATK_GROWTH, run.level).mul(isBoss ? 13 : 4);
+  if(abyssActive()) dps = dps.mul(Decimal.pow(ABYSS_HP_PER_10, (w-1) / 10)); // 無盡深淵：攻擊力與血量同樣每 10 波 ×10
   const sizeMul = farMode ? FAR_MONSTER_SIZE_MUL : 1;
   let spx = 32 + Math.random()*(W-64), spy = -30, spvx = (Math.random()-0.5) * 12;
   if(farMode){
@@ -3113,7 +3411,7 @@ function spawnEnemy(){
     y: spy,
     vx: spvx,
     hp, maxHp:hp,
-    spd: ((isBoss ? 11 : 17 * base.spd) + slowedSpeedBonus(run.level)) * waveSpeedMulFor(w) * enemySpeedScale(),
+    spd: ((isBoss ? 11 : 17 * base.spd) + enemySpeedBonusFor(w)) * waveSpeedMulFor(w) * enemySpeedScale(),
     r: (isBoss ? 34 : base.r) * sizeMul,   // 判定半徑（子彈、冰刃、光束、爆風、擋牆都用這個）
     vr: (isBoss ? 34 : base.r) * sizeMul * (farMode ? FAR_MONSTER_VISUAL_MUL : 1), // 只用在繪製（圖片、光環、血條），不影響判定
     emoji: isBoss ? (bossRanged ? RANGED_BOSSES : BOSSES)[Math.floor(Math.random()*(bossRanged ? RANGED_BOSSES : BOSSES).length)] : base.emoji,
@@ -3277,6 +3575,13 @@ function updateFireballEx(dt, s){
     if(p.u < 1) continue;
     // 落地：直擊 ＋ 開始爆風
     run.lobs.splice(i,1);
+    if(l.lethal){ // 無盡深淵答對：必殺火球，落地直接清除該小怪（王不受影響），爆風純視覺不傷害任何人
+      const t = l.target;
+      if(t && !t.boss && t.hp.gt(0) && run.enemies.includes(t)){ t.noSplit = true; t.hp = DZERO; t.hit = 0.12; }
+      burst(l.ex, l.ey, '#ff9b3d', 8);
+      run.blasts.push({ x:l.ex, y:l.ey, t:0, dmg:DZERO, hit:new Set(), crit:false, visual:true });
+      continue;
+    }
     const dmg = l.crit ? l.dmg.mul(s.critMul) : l.dmg;
     const hit = new Set();
     let direct = (l.target && l.target.hp.gt(0) && run.enemies.includes(l.target)) ? l.target : null;
@@ -3301,7 +3606,7 @@ function updateFireballEx(dt, s){
   for(let i=run.blasts.length-1;i>=0;i--){
     const b = run.blasts[i];
     b.t += dt;
-    if(b.t <= FIREBALL_EX_SPLASH_TIME + dt){
+    if(!b.visual && b.t <= FIREBALL_EX_SPLASH_TIME + dt){
       const R = (fireballSplashDiameter()/2) * Math.min(1, b.t / FIREBALL_EX_SPLASH_TIME);
       for(const e of run.enemies){
         if(e.hp.lte(0) || b.hit.has(e)) continue;
@@ -3872,7 +4177,7 @@ function loop(now){
   const dt = Math.min(0.05, (now-last)/1000);
   last = now;
   const t0 = performance.now();
-  if(run.active) step(dt * battleSpeed);
+  if(run.active && !run.paused) step(dt * battleSpeed);
   const t1 = performance.now();
   draw();
   const t2 = performance.now();
@@ -3992,11 +4297,16 @@ function step(dt){
   run.t += dt;
 
   // 依時間推進波數（第20波所有怪物會在 SPAWN_SECONDS 出完，之後不再依時間推進）
-  const wantWave = Math.min(WAVES_PER_LEVEL, 1 + Math.floor(run.t / (SPAWN_SECONDS/WAVES_PER_LEVEL)));
+  const waveSec = SPAWN_SECONDS / WAVES_PER_LEVEL;
+  const wantWave = abyssActive()
+    ? run.startWave + Math.floor(run.t / waveSec)                   // 無盡深淵：沒有上限
+    : Math.min(WAVES_PER_LEVEL, 1 + Math.floor(run.t / waveSec));
   if(wantWave > run.wave){
-    run.wave = wantWave;
+    run.wave++;                       // 一次只推進 1 波，確保每 10 波都會觸發答題
     run.spawned = 0;
     run.waveQuota = waveQuotaFor(run.wave);
+    // 無盡深淵：每打完 10 波（進入 11、21、31…波前）強制暫停答題
+    if(abyssActive() && (run.wave - 1) % ABYSS_QUIZ_EVERY === 0){ openAbyssQuiz(); return; }
   }
 
   // 生怪
@@ -4204,7 +4514,7 @@ function step(dt){
       burst(e.x, e.y, e.boss ? '#ff3b6b' : (e.split ? '#ffe14a' : '#ffb347'), e.boss ? 38 : 13);
       if(e.boss) run.shake = 0.35;
       run.enemies.splice(i,1);
-      if(e.split) spawnSplitChildren(e);
+      if(e.split && !e.noSplit) spawnSplitChildren(e);
       continue;
     }
 
@@ -4356,7 +4666,7 @@ function step(dt){
   }
 
   // 通關條件：第20波的怪物已經全部生完，而且畫面上一隻都不剩
-  if(run.wave >= WAVES_PER_LEVEL && run.spawned >= run.waveQuota && run.enemies.length === 0){
+  if(!abyssActive() && run.wave >= WAVES_PER_LEVEL && run.spawned >= run.waveQuota && run.enemies.length === 0){
     syncBattleHud();
     endRun(true);
     return;
@@ -4387,11 +4697,19 @@ function step(dt){
 }
 
 function syncBattleHud(){
-  document.getElementById('waveTag').textContent = `第 ${run.level} 關 · 第 ${run.wave}/${WAVES_PER_LEVEL} 波`;
+  const isAb = abyssActive();
+  document.getElementById('waveTag').textContent = isAb
+    ? `🌀 深淵 · 第 ${run.wave} 波`
+    : `第 ${run.level} 關 · 第 ${run.wave}/${WAVES_PER_LEVEL} 波`;
 
   const tt = document.getElementById('timeTag');
-  const allSpawned = (run.wave >= WAVES_PER_LEVEL && run.spawned >= run.waveQuota);
-  if(allSpawned){
+  const allSpawned = (!isAb && run.wave >= WAVES_PER_LEVEL && run.spawned >= run.waveQuota);
+  if(isAb){
+    // 距離下一次答題還有幾波
+    const toQuiz = ABYSS_QUIZ_EVERY - ((run.wave - 1) % ABYSS_QUIZ_EVERY);
+    tt.textContent = `答題 ${toQuiz} 波後`;
+    tt.classList.toggle('low', toQuiz <= 1);
+  } else if(allSpawned){
     // 怪物出完了，改顯示還剩幾隻要清，呼應「清空過關」的規則
     tt.textContent = `剩 ${run.enemies.length} 隻`;
     tt.classList.toggle('low', run.enemies.length <= 3);
@@ -4405,7 +4723,9 @@ function syncBattleHud(){
   document.getElementById('runKill').textContent = `☠ ${run.kills}`;
   // 右上角金幣：套用與結算（endRun）相同的關卡係數與金幣強化，顯示的就是實際會拿到的金幣
   const gMul = goldLevelMul(run.level).mul(1 + goldBoostPct() / 100).mul(relicMidasMul());
-  document.getElementById('runGold').textContent = `💰 ${fmtNum(D(fin(run.gold, 0)).mul(gMul).round())}`;
+  document.getElementById('runGold').textContent = isAb
+    ? `💎 ${run.wave + Math.round(fin(run.abyssGems, 0))}`   // 無盡深淵：每 1 波 1 鑽＋答對累積
+    : `💰 ${fmtNum(D(fin(run.gold, 0)).mul(gMul).round())}`;
   const pct = run.maxHp.gt(0) ? Math.max(0, dratio(run.hp, run.maxHp)*100) : 0;
   // 121 關起：土牆血量顯示在角色血條上方
   const ww = document.getElementById('wallWrap');
@@ -5784,7 +6104,10 @@ ACH_GOLDS.forEach(a=>{ a.held = ()=>state.gold; });
 function relicOwnedCount(){ return RELICS.reduce((t,r)=>t + ((!r.chaos && relicLv(r.key) > 0) ? 1 : 0), 0); }
 const ACH_RELICS = [];
 RELICS.filter(r=>!r.chaos).forEach((r,i)=>{ const n = i+1; ACH_RELICS.push({ id:'relicn_'+n, icon:'🏺', name:`獲得 ${n} 個神器`, gem:100+10*n, goal:n, test:()=>relicOwnedCount() >= n, prog:()=>relicOwnedCount() }); });
-const ACH_CHAINS = [ { key:'kill', title:'擊殺', list:ACH_KILLS }, { key:'gold', title:'金錢（持有，非累計）', list:ACH_GOLDS }, { key:'stone', title:'強化石（持有，非累計）', list:ACH_STONES }, { key:'relicn', title:'神器數量', list:ACH_RELICS } ];
+// 無盡深淵：歷史最高波數每達 20 波一階，獎勵 100＋波數/2 鑽石與 1 點成就點數（上限 500 階＝10000 波）
+const ACH_ABYSS = [];
+for(let n=1; n<=500; n++){ const goal = 20*n; ACH_ABYSS.push({ id:'abyss_'+goal, icon:'🌀', name:`無盡深淵：抵達第 ${goal} 波`, gem:100 + goal/2, goal, test:()=>(state.abyss && state.abyss.bestWave || 0) >= goal, prog:()=>(state.abyss && state.abyss.bestWave || 0) }); }
+const ACH_CHAINS = [ { key:'kill', title:'擊殺', list:ACH_KILLS }, { key:'abyss', title:'無盡深淵（最高波數）', list:ACH_ABYSS },{ key:'gold', title:'金錢（持有，非累計）', list:ACH_GOLDS }, { key:'stone', title:'強化石（持有，非累計）', list:ACH_STONES }, { key:'relicn', title:'神器數量', list:ACH_RELICS } ];
 const achOpen = {};   // 各成就鏈是否展開已領取的成就（只存在記憶體，預設全部摺疊）
 
 function repAvail(r){ return Math.max(0, Math.floor(r.prog() / r.step) - (state.ach.rep[r.key] || 0)); }
