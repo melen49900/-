@@ -3043,7 +3043,7 @@ function endAbyss(settled){
   state.gem = Math.max(0, fin(state.gem, 0) + gemGain);
   state.abyss.bestWave = Math.max(prevBest, wave);
   state.best.kills = Math.max(state.best.kills, run.kills);
-  state.abyss.startWave = Math.min(state.abyss.startWave, abyssMaxStart());
+  state.abyss.startWave = abyssMaxStart(); // 再次挑戰預設為目前可選的最高波次（含深淵躍遷儀）
   save(); syncUI(); renderAbyssPanel();
 
   document.getElementById('ovTitle').textContent = settled ? '🏁 深淵結算' : '深淵吞沒了你';
@@ -3171,9 +3171,27 @@ document.getElementById('abSettle').onclick = abyssToggleSettle;
 /* ── 無盡深淵：答題暫停 ── */
 let aqState = null;   // { q, subj, answered }
 function abyssPickQuestion(){
-  const subs = SUBJECT_ORDER.filter(s=>s !== 'indigenous' && subjectReady(s));
+  // 族語：後台開啟且單字庫足夠時（subjectEligible），也會加入深淵題目輪替
+  const subs = SUBJECT_ORDER.filter(s=>s === 'indigenous' ? subjectEligible('indigenous') : subjectReady(s));
   const subj = subs.length ? subs[Math.floor(Math.random()*subs.length)] : 'math';
   let q = null;
+  if(subj === 'indigenous'){
+    try{
+      const iq = IndigenousQuiz.pickTieredQuestion(state.indigTier, indigenousWords);
+      if(iq && iq.options){
+        const correct = iq.options.find(o=>o.id === iq.correctId);
+        // 轉成與其他科目相同的格式：q／opts／ans，另外保留錄音資訊
+        q = { q:iq.promptText, opts:iq.options.map(o=>o.label), ans:correct ? correct.label : '',
+              promptText:iq.promptText, promptAudio:iq.promptAudio, optAudio:iq.options.map(o=>o.audio || null) };
+      }
+    }catch(e){}
+    if(q) return { subj, q };
+    // 族語題出不來就退回其他科目
+    const rest = subs.filter(s=>s !== 'indigenous');
+    const s2 = rest.length ? rest[Math.floor(Math.random()*rest.length)] : 'math';
+    try{ q = QuizEngine.pickQuestion(state.quiz, s2, bank(), { historicalMathCorrect:state.qs.correct, historicalSubjectCorrect:state.qs.correct }); }catch(e){}
+    return { subj:s2, q };
+  }
   try{
     q = QuizEngine.pickQuestion(state.quiz, subj, bank(), {
       historicalMathCorrect: state.qs.correct,
@@ -3195,17 +3213,28 @@ function openAbyssQuiz(){
   if(src){ img.src = src; img.style.display = 'block'; } else img.style.display = 'none';
   const box = document.getElementById('aqOpts');
   box.innerHTML = '';
-  pick.q.opts.forEach(o=>{
+  pick.q.opts.forEach((o, oi)=>{
     const wrap = document.createElement('div');
     wrap.className = 'ans-wrap';
     const b = document.createElement('button');
     b.className = 'aqopt';
     b.textContent = o;
     b.onclick = ()=>abyssAnswer(o, b);
-    const spk = document.createElement('button');
-    spk.type = 'button'; spk.className = 'opt-speak-btn'; spk.textContent = '🔊'; spk.title = '朗讀這個選項';
-    spk.onclick = (e)=>{ e.stopPropagation(); speakOption(o, pick.subj); };
-    wrap.appendChild(b); wrap.appendChild(spk);
+    wrap.appendChild(b);
+    if(pick.subj === 'indigenous'){
+      const au = pick.q.optAudio && pick.q.optAudio[oi];
+      if(au || CJK_RE.test(String(o))){ // 有錄音播錄音；沒錄音的中文選項用 TTS
+        const spk = document.createElement('button');
+        spk.type = 'button'; spk.className = 'opt-speak-btn'; spk.textContent = '🔊'; spk.title = '播放語音';
+        spk.onclick = (e)=>{ e.stopPropagation(); if(au) playIndigenousAudio(au); else speakIndigenousChinese(o); };
+        wrap.appendChild(spk);
+      }
+    } else {
+      const spk = document.createElement('button');
+      spk.type = 'button'; spk.className = 'opt-speak-btn'; spk.textContent = '🔊'; spk.title = '朗讀這個選項';
+      spk.onclick = (e)=>{ e.stopPropagation(); speakOption(o, pick.subj); };
+      wrap.appendChild(spk);
+    }
     box.appendChild(wrap);
   });
   const feed = document.getElementById('aqFeed');
