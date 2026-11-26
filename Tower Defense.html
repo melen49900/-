@@ -258,6 +258,10 @@ body{
   box-shadow:0 0 10px rgba(255,106,31,.35);
 }
 
+#abyssBar{position:absolute;top:42px;right:11px;z-index:4;display:none;gap:6px}
+#abyssBar.on{display:flex}
+#abyssBar button{cursor:pointer;background:rgba(0,0,0,.55);border:1px solid var(--stoneline);color:var(--bone);border-radius:7px;padding:4px 9px;font-weight:800;font-family:inherit;font-size:12px}
+#abyssBar button.armed{background:rgba(255,106,31,.28);border-color:var(--ember);color:var(--ember-hot)}
 #hpWrap{
   position:absolute;left:0;right:0;bottom:0;padding:9px 12px 12px;
   background:linear-gradient(0deg,rgba(8,4,10,.95),rgba(8,4,10,0));
@@ -296,7 +300,7 @@ body{
 #aqSubject{font-size:11px;font-weight:800;letter-spacing:1px;color:var(--mana);margin-bottom:6px}
 #aqText{font-size:19px;font-weight:800;line-height:1.5;margin:0 0 8px}
 #aqImg{max-width:100%;border-radius:9px;margin:6px 0;display:none}
-#aqOpts .opt{display:block;margin-bottom:8px;border-radius:11px;border-right:1px solid var(--stoneline)}
+
 #aqFeed{min-height:24px;text-align:center;font-weight:800;font-size:14px;margin:6px 0 10px}
 #aqFeed.ok{color:#86efac} #aqFeed.no{color:#fda4c0}
 #overlay{
@@ -358,17 +362,17 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
 }
 #qText{font-size:21px;font-weight:800;line-height:1.5;margin:0 0 4px;min-height:60px}
 #qImg{max-width:100%;border-radius:9px;margin:8px 0;display:none}
-.opt{
+.opt,.aqopt{
   width:100%;text-align:left;border:1px solid var(--stoneline);
   background:rgba(0,0,0,.3);color:var(--bone);
   border-radius:11px 0 0 11px;border-right:none;padding:14px 15px;
   font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;
   transition:background .1s,border-color .1s;flex:1;min-width:0;
 }
-.opt:active{background:rgba(255,255,255,.07)}
-.opt.right{border-color:#4ade80;background:rgba(74,222,128,.16);color:#bbf7d0}
-.opt.wrong{border-color:var(--blood);background:rgba(255,59,107,.14);color:#ffc4d2}
-.opt:disabled{cursor:default}
+.opt:active,.aqopt:active{background:rgba(255,255,255,.07)}
+.opt.right,.aqopt.right{border-color:#4ade80;background:rgba(74,222,128,.16);color:#bbf7d0}
+.opt.wrong,.aqopt.wrong{border-color:var(--blood);background:rgba(255,59,107,.14);color:#ffc4d2}
+.opt:disabled,.aqopt:disabled{cursor:default}
 .ans-wrap{position:relative;display:flex;align-items:stretch;margin-bottom:9px}
 .opt-speak-btn{
   flex:0 0 auto;padding:0 13px;border:1px solid var(--stoneline);border-left:none;
@@ -618,6 +622,7 @@ p.sub{font-size:12px;color:var(--bone-dim);margin:0 0 14px;line-height:1.6}
           <div id="runLoot"><span id="runKill">☠ 0</span><span id="runGold">💰 0</span></div>
         </div>
         <div id="perfTag">FPS --</div>
+        <div id="abyssBar"><button type="button" id="abWithdraw">💎 提領</button><button type="button" id="abSettle">🏁 結算</button></div>
         <div id="hpWrap">
           <div id="wallWrap"><div id="wallText"></div><div id="wallBar"><div id="wallFill"></div></div></div>
           <div id="hpBar"><div id="hpFill"></div><div id="shieldFill"></div></div>
@@ -2146,24 +2151,24 @@ function autoSpeakQuestion(){
   else speakPending = true;
 }
 // 朗讀目前題目：依科目把符號轉成國字，數學把「？」唸成「多少」、運算符號唸成加減乘除
-function speakQuestion(){
-  if(!curQ) return;
-  if(curSubj === 'indigenous'){
+function speakQuestion(q=curQ, subj=curSubj){
+  if(!q) return;
+  if(subj === 'indigenous'){
     // 族語發音一律播錄音；題目若沒有錄音（表示題目是中文），才用 TTS 唸中文
-    if(curQ.promptAudio) playIndigenousAudio(curQ.promptAudio);
-    else speakIndigenousChinese(curQ.promptText);
+    if(q.promptAudio) playIndigenousAudio(q.promptAudio);
+    else speakIndigenousChinese(q.promptText);
     return;
   }
   if(!speechCfg.enabled || !window.speechSynthesis) return;
-  let text = curQ.q || '';
-  if(curSubj === 'math'){
+  let text = q.q || '';
+  if(subj === 'math'){
     text = text
       .replace(/[?？]\s*$/, '多少').replace(/[?？]/g, '多少')
       .replace(/\+/g,'加').replace(/－/g,'減').replace(/×/g,'成以').replace(/÷/g,'除以')
       .replace(/＋/g,'加').replace(/＝/g,'等於').replace(/=/g,'等於');
     text = text.replace(/_+/g, '空格');
     _doSpeak(text, speechCfg.lang);
-  } else if(curSubj === 'english'){
+  } else if(subj === 'english'){
     text = text.replace(/[?？]/g, '').replace(/[“”‘’"']/g, '');
     text = text.replace(/_+/g, ' blank ');
     const isEnglishSentence = /^[A-Za-z0-9\s\-.,! ]+$/.test(text.trim());
@@ -2185,10 +2190,10 @@ function speakIndigenousChinese(text){
 }
 
 // 朗讀單一選項：英文科目且看起來是英文的選項用英文語音唸，其他一律用中文語音
-function speakOption(opt){
+function speakOption(opt, subj=curSubj){
   if(!speechCfg.enabled || !window.speechSynthesis) return;
   const text = String(opt);
-  const isEnglish = curSubj === 'english' && /^[A-Za-z\s\-'.,!?]+$/.test(text.trim());
+  const isEnglish = subj === 'english' && /^[A-Za-z\s\-'.,!?]+$/.test(text.trim());
   _doSpeak(text, isEnglish ? 'en-US' : speechCfg.lang);
 }
 
@@ -2779,7 +2784,7 @@ const BOSSES = ['👺','🐲','💀','👿'];
 
 const run = {
   active:false, over:false,
-  mode:'main', paused:false, abyssBuff:DONE, startWave:1, quizzesDone:0, abyssGems:0,   // mode：'main' 主線／'abyss' 無盡深淵
+  mode:'main', paused:false, abyssBuff:DONE, startWave:1, quizzesDone:0, abyssGems:0, wavesPaid:0, withdrawn:0, settleQueued:false, prevBest:0,   // mode：'main' 主線／'abyss' 無盡深淵
   level:1,
   t:0, wave:1, spawned:0, waveQuota:0, spawnTimer:0,
   hp:new Decimal(100), maxHp:new Decimal(100), shield:new Decimal(0), maxShield:new Decimal(0), wallStack:0,
@@ -2825,7 +2830,7 @@ function enemySpeedBonusFor(w){ return abyssActive() ? abyssSpeedBonus(w) : slow
 
 // 每關第 1 波 10 隻、第 20 波 20 隻，線性增加（無盡深淵：每波固定 20 隻）
 function waveQuotaFor(w){
-  if(abyssActive()) return ABYSS_QUOTA;
+  if(abyssActive()) return ABYSS_QUOTA + Math.floor((Math.max(1, w) - 1) / 50); // 每過 50 波 +1 隻（51 波 21 隻、101 波 22 隻…）
   return waveQuotaForBase(w);
 }
 // 怪物血量 = 關卡基礎值（每關 × 係數）× 關內波數成長（20 波內只差 3 倍；無盡深淵：每 10 波 ×10）
@@ -2970,7 +2975,8 @@ function mixHex(hex, k){ // 把顏色往白色混 k（0～1），用來做受擊
 function startRun(level, abyssStartWave){
   const isAbyss = abyssStartWave != null;
   run.mode = isAbyss ? 'abyss' : 'main';
-  run.paused = false; run.quizzesDone = 0; run.abyssGems = 0;
+  run.paused = false; run.quizzesDone = 0; run.abyssGems = 0; run.wavesPaid = 0; run.withdrawn = 0; run.settleQueued = false;
+  run.prevBest = state.abyss ? state.abyss.bestWave : 0;
   document.getElementById('abyssQuiz').classList.remove('on');
   if(isAbyss){
     level = Math.min(LEVEL_COUNT, state.unlockedLevel);   // 以目前最後解鎖的關卡作為基礎強度
@@ -3011,12 +3017,12 @@ function goldLevelMul(level){
 const GEM_CLEAR_CAP = 450; // 通關鑽石上限
 function levelTotalEnemies(){ let t = 0; for(let w=1; w<=WAVES_PER_LEVEL; w++) t += waveQuotaFor(w); return Math.max(1, t); }
 // 無盡深淵結算：只給鑽石，每 1 波 1 鑽，依本次到達的最高波數（含起始時跳過的波數）計算
-function endAbyss(){
+function endAbyss(settled){
   run.active=false; run.over=true; run.paused=false;
   document.getElementById('abyssQuiz').classList.remove('on');
   const wave = Math.max(1, run.wave);
-  const prevBest = state.abyss.bestWave;
-  const waveGems = wave, quizGems = Math.max(0, Math.round(fin(run.abyssGems, 0)));
+  const prevBest = run.prevBest;
+  const waveGems = Math.max(0, wave - run.wavesPaid), quizGems = Math.max(0, Math.round(fin(run.abyssGems, 0)));
   const gemGain = waveGems + quizGems;
   state.gem = Math.max(0, fin(state.gem, 0) + gemGain);
   state.abyss.bestWave = Math.max(prevBest, wave);
@@ -3024,16 +3030,17 @@ function endAbyss(){
   state.abyss.startWave = Math.min(state.abyss.startWave, abyssMaxStart());
   save(); syncUI(); renderAbyssPanel();
 
-  document.getElementById('ovTitle').textContent = '深淵吞沒了你';
+  document.getElementById('ovTitle').textContent = settled ? '🏁 深淵結算' : '深淵吞沒了你';
   document.getElementById('ovSub').innerHTML =
     `撐到第 <b>${wave}</b> 波，擊倒 ${run.kills} 隻。` +
     (wave > prevBest ? `<br><b style="color:var(--ember-hot)">🏆 新紀錄！</b>（原最高 ${prevBest} 波）` : `<br>歷史最高 ${state.abyss.bestWave} 波。`) +
     `<br>下次最高可從第 ${abyssMaxStart()} 波開始。`;
   const loot = document.getElementById('ovLoot');
   loot.className = 'on';
-  loot.innerHTML = `<div><span>💎 波數（${wave} 波 × 1）</span><span>+${fmtNum(waveGems)}</span></div>` +
+  loot.innerHTML = `<div><span>💎 波數（${wave} 波，已提領 ${run.wavesPaid} 波）</span><span>+${fmtNum(waveGems)}</span></div>` +
     `<div><span>💎 答題累積</span><span>+${fmtNum(quizGems)}</span></div>` +
-    `<div><span>💎 合計</span><span>+${fmtNum(gemGain)}</span></div>`;
+    (run.withdrawn ? `<div><span>💎 本次已提領</span><span>${fmtNum(run.withdrawn)}</span></div>` : '') +
+    `<div><span>💎 本次結算合計</span><span>+${fmtNum(gemGain)}</span></div>`;
   const ovBtn = document.getElementById('ovBtn'), ovBtn2 = document.getElementById('ovBtn2'), ovBtn3 = document.getElementById('ovBtn3');
   ovBtn.textContent = '再次挑戰深淵';
   ovBtn.onclick = ()=>{ openAbyssConfirm(); };
@@ -3117,6 +3124,29 @@ function endRun(win){
   document.getElementById('overlay').classList.add('on');
 }
 
+/* ── 無盡深淵：即時最高波數／提領／預約結算 ── */
+function abyssLiveBest(){
+  if(run.wave > state.abyss.bestWave){ state.abyss.bestWave = run.wave; save(); syncAchDot(); }
+}
+function abyssPendingGems(){ return Math.max(0, run.wave - run.wavesPaid) + Math.max(0, Math.round(fin(run.abyssGems, 0))); }
+function abyssWithdraw(){
+  if(!abyssActive() || !run.active || run.paused) return;
+  const n = abyssPendingGems();
+  if(n <= 0){ toast('目前沒有可提領的鑽石'); return; }
+  state.gem = Math.max(0, fin(state.gem, 0) + n);
+  run.wavesPaid = run.wave; run.abyssGems = 0; run.withdrawn += n;
+  save(); syncUI(); syncBattleHud();
+  toast(`💎 已提領 ${n} 顆鑽石（戰鬥繼續）`);
+}
+function abyssToggleSettle(){
+  if(!abyssActive() || !run.active || run.paused) return;
+  run.settleQueued = !run.settleQueued;
+  syncBattleHud();
+  toast(run.settleQueued ? '🏁 已預約：本波結束後直接結算' : '已取消預約結算');
+}
+document.getElementById('abWithdraw').onclick = abyssWithdraw;
+document.getElementById('abSettle').onclick = abyssToggleSettle;
+
 /* ── 無盡深淵：答題暫停 ── */
 let aqState = null;   // { q, subj, answered }
 function abyssPickQuestion(){
@@ -3145,23 +3175,30 @@ function openAbyssQuiz(){
   const box = document.getElementById('aqOpts');
   box.innerHTML = '';
   pick.q.opts.forEach(o=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'ans-wrap';
     const b = document.createElement('button');
-    b.className = 'opt';
+    b.className = 'aqopt';
     b.textContent = o;
     b.onclick = ()=>abyssAnswer(o, b);
-    box.appendChild(b);
+    const spk = document.createElement('button');
+    spk.type = 'button'; spk.className = 'opt-speak-btn'; spk.textContent = '🔊'; spk.title = '朗讀這個選項';
+    spk.onclick = (e)=>{ e.stopPropagation(); speakOption(o, pick.subj); };
+    wrap.appendChild(b); wrap.appendChild(spk);
+    box.appendChild(wrap);
   });
   const feed = document.getElementById('aqFeed');
   feed.textContent = ''; feed.className = '';
   document.getElementById('aqNext').style.display = 'none';
   document.getElementById('abyssQuiz').classList.add('on');
+  speakQuestion(pick.q, pick.subj); // 自動朗讀題目（與答題頁相同）
 }
 function abyssAnswer(choice, btn){
   if(!aqState || aqState.answered) return;
   aqState.answered = true;
   const right = String(choice) === String(aqState.q.ans);
   const feed = document.getElementById('aqFeed');
-  document.querySelectorAll('#aqOpts .opt').forEach(b=>{
+  document.querySelectorAll('#aqOpts .aqopt').forEach(b=>{
     b.disabled = true;
     if(b.textContent === String(aqState.q.ans)) b.classList.add('right');
   });
@@ -3237,7 +3274,7 @@ function renderAbyssPanel(){
     <div class="card">
       <div class="abyssStat"><span>歷史最高波數</span><span>${best}</span></div>
       <div class="abyssStat"><span>鋼鐵血量／遠距射程／守護圈 依據</span><span>第 ${Math.min(LEVEL_COUNT, state.unlockedLevel)} 關</span></div>
-      <div class="abyssStat"><span>每波怪物數量</span><span>${ABYSS_QUOTA} 隻</span></div>
+      <div class="abyssStat"><span>每波怪物數量</span><span>${ABYSS_QUOTA} 隻（每 50 波 +1）</span></div>
       <div class="abyssStat"><span>結算鑽石</span><span>每 1 波 1 💎＋答對累積</span></div>
     </div>
     <div class="card">
@@ -3279,7 +3316,7 @@ function openAbyssConfirm(){
   const k = abyssSkippedQuizzes(sw);
   document.getElementById('ovTitle').textContent = '🌀 無盡深淵';
   document.getElementById('ovSub').innerHTML =
-    `從第 <b>${sw}</b> 波開始，每波 ${ABYSS_QUOTA} 隻怪物，血量每 10 波 ×10。<br>` +
+    `從第 <b>${sw}</b> 波開始，每波 ${ABYSS_QUOTA} 隻怪物（每 50 波 +1），血量每 10 波 ×10。<br>` +
     (k > 0 ? `跳過 ${k} 次答題（視為全對）：攻擊與生命 ×${fmtX(Decimal.pow(ABYSS_BUFF, k))}。<br>` : '') +
     `每 10 波暫停答題，答對清除小怪（王不受影響）並獲得 ×${ABYSS_BUFF} 強化。<br>` +
     `倒下後結算：每 1 波 1 💎，加上答對累積的鑽石（不影響連勝）。`;
@@ -4303,7 +4340,9 @@ function step(dt){
     ? run.startWave + Math.floor(run.t / waveSec)                   // 無盡深淵：沒有上限
     : Math.min(WAVES_PER_LEVEL, 1 + Math.floor(run.t / waveSec));
   if(wantWave > run.wave){
+    if(abyssActive() && run.settleQueued){ endAbyss(true); return; } // 已預約結算：本波結束就直接結算
     run.wave++;                       // 一次只推進 1 波，確保每 10 波都會觸發答題
+    if(abyssActive()) abyssLiveBest();  // 即時更新最高波數（成就不必等結算）
     run.spawned = 0;
     run.waveQuota = waveQuotaFor(run.wave);
     // 無盡深淵：每打完 10 波（進入 11、21、31…波前）強制暫停答題
@@ -4699,6 +4738,11 @@ function step(dt){
 
 function syncBattleHud(){
   const isAb = abyssActive();
+  const bar = document.getElementById('abyssBar');
+  bar.classList.toggle('on', isAb && run.active);
+  const sb = document.getElementById('abSettle');
+  sb.textContent = run.settleQueued ? '🏁 本波後結算 ✓' : '🏁 結算';
+  sb.classList.toggle('armed', !!run.settleQueued);
   document.getElementById('waveTag').textContent = isAb
     ? `🌀 深淵 · 第 ${run.wave} 波`
     : `第 ${run.level} 關 · 第 ${run.wave}/${WAVES_PER_LEVEL} 波`;
@@ -4725,7 +4769,7 @@ function syncBattleHud(){
   // 右上角金幣：套用與結算（endRun）相同的關卡係數與金幣強化，顯示的就是實際會拿到的金幣
   const gMul = goldLevelMul(run.level).mul(1 + goldBoostPct() / 100).mul(relicMidasMul());
   document.getElementById('runGold').textContent = isAb
-    ? `💎 ${run.wave + Math.round(fin(run.abyssGems, 0))}`   // 無盡深淵：每 1 波 1 鑽＋答對累積
+    ? `💎 ${abyssPendingGems()}`   // 無盡深淵：可提領＝每 1 波 1 鑽＋答對累積（扣掉已提領）
     : `💰 ${fmtNum(D(fin(run.gold, 0)).mul(gMul).round())}`;
   const pct = run.maxHp.gt(0) ? Math.max(0, dratio(run.hp, run.maxHp)*100) : 0;
   // 121 關起：土牆血量顯示在角色血條上方
@@ -6320,6 +6364,7 @@ function show(name){
     if(!state.relicSeen){ state.relicSeen = true; save(); document.getElementById('dotRelic').classList.remove('on'); }
   }
   if(name==='battle') resizeCanvas();
+  if(name==='battle' && run.paused && aqState && !aqState.answered) speakQuestion(aqState.q, aqState.subj);
   if(name==='quiz' && speakPending){ speakPending = false; speakQuestion(); } // 補唸進遊戲時還沒唸的題目
 }
 document.querySelectorAll('.tab').forEach(t=>{
