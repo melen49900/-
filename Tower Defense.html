@@ -999,6 +999,11 @@ const RELICS = [
     get max(){ return relicLv('wisdom') >= 10 ? 30 : 0; },
     desc:lv=>`獲得最大生命每<累計答對>皆額外增加${fmtPct(lv*0.02,2)}%`,
     eff:lv=>`最大生命 ×${fmtX(relicShieldMul())}（累計答對 ${fmtNum(fin(state.qs.correct,0))}）` },
+  { key:'leap',    icon:'🌀', name:'深淵躍遷儀',
+    // 解鎖：無盡深淵歷史最高波數達 100 波；上限＝floor(歷史最高×96%) − floor(歷史最高×75%)；未解鎖時上限為 0（不會被抽到）
+    get max(){ const b = Math.max(0, fin(state.abyss && state.abyss.bestWave, 0)); return b >= 100 ? Math.max(0, Math.floor(b * ABYSS_START_RATIO_MAX) - Math.floor(b * ABYSS_START_RATIO)) : 0; },
+    desc:'增加無盡深淵模式起始波數，神器等級×1',
+    eff:lv=>`起始波數+${lv}` },
   { key:'chaos',   icon:'🎁', name:'混沌魔盒',       max:Infinity, chaos:true,
     desc:'最大生命及攻擊力每神器等級皆額外增加1.8%',
     eff:lv=>`最大生命及攻擊力 ×${fmtX(Decimal.pow(1.018,lv))}` },
@@ -2678,7 +2683,7 @@ function spawnSplitChildren(p){
   const sizeMul = farMode ? FAR_MONSTER_SIZE_MUL : 1;
   const w = p.wv;
   const hp = enemyHpFor(run.level, w).mul(st.hp * monsterWeakenMul());
-  const spd = ((17 * st.spd) + enemySpeedBonusFor(w)) * waveSpeedMulFor(w) * enemySpeedScale();
+  const spd = enemyRawSpeed(17 * st.spd, w) * waveSpeedMulFor(w) * enemySpeedScale();
   for(let k=0;k<3;k++){
     const dir = k - 1; // -1、0、1
     const r = st.r * sizeMul;
@@ -2804,33 +2809,44 @@ const run = {
    無盡深淵（第 121 關「環形遠景」解鎖時同步開放）
    ・波數無限，從第 1 波起每波就是原本第 20 波的怪物數量（20 隻）
    ・怪物血量與攻擊以第 1 關第 1 波為基礎，每 10 波 ×10；只有鋼鐵血量、遠距射程、守護圈使用目前最後解鎖的關卡
-   ・移動速度加成：每 1 波 +1，上限 +200，可被鍛造台「緩速」抵銷
+   ・移動速度加成：每 1 波 +1，原始速度＋加成−緩速 最高 200，緩速可抵銷加成
    ・每 10 波暫停答題：答對清除小怪（王不受影響）並獲得攻擊與生命 ×1.03
    ・只獎勵鑽石：每 1 波 1 鑽，依最高波數結算
    ・結算後可從歷史最高波 75% 以內的波數開始，跳過的每 10 波答題視為全對
    ══════════════════════════════════════════ */
 const ABYSS_QUOTA = waveQuotaForBase(WAVES_PER_LEVEL); // 原始第 20 波的怪物數量
 const ABYSS_HP_PER_10 = 10;          // 每 10 波血量 ×10
-const ABYSS_SPD_CAP = 200;           // 速度加成上限
+const ABYSS_SPD_CAP = 200;           // 速度上限：原始速度＋加成−緩速 最高 200
 const ABYSS_QUIZ_EVERY = 10;         // 每 10 波答題
 const ABYSS_BUFF = 1.03;             // 答對強化（攻擊、生命各自累乘）
-const ABYSS_START_RATIO = 0.75;      // 起始波最高可選歷史最高波的 75%
+const ABYSS_START_RATIO = 0.75;      // 起始波最高可選歷史最高波的 75%（基礎）
+const ABYSS_START_RATIO_MAX = 0.96;  // 深淵躍遷儀滿級時，起始波上限可達歷史最高波的 96%
+const ABYSS_SETTLE_MIN_WAVES = 20;   // 主動結算：本次至少要完成 20 波（或已達歷史最高波數）
 function waveQuotaForBase(w){ return Math.round(10 + (w-1) * 10 / (WAVES_PER_LEVEL-1)); }
+function abyssQuotaAt(w){ return ABYSS_QUOTA + Math.floor((Math.max(1, w) - 1) / 50); } // 每過 50 波 +1 隻
+function abyssBaseMaxStart(){ return Math.max(1, Math.floor(state.abyss.bestWave * ABYSS_START_RATIO)); }
+// 是否可以主動結算：本次已完成至少 20 波，或已達到（超過）歷史最高波數
+function abyssCanSettle(){ return (run.wave - run.startWave) >= ABYSS_SETTLE_MIN_WAVES || run.wave >= run.prevBest; }
 function abyssActive(){ return run.mode === 'abyss'; }
 function abyssUnlocked(){ return state.unlockedLevel >= FAR_START_LEVEL; }
 function abyssBuffMul(){ return (run.mode === 'abyss' && run.active && run.abyssBuff) ? run.abyssBuff : DONE; }
-function abyssMaxStart(){ return Math.max(1, Math.floor(state.abyss.bestWave * ABYSS_START_RATIO)); }
+function abyssMaxStart(){ return abyssBaseMaxStart() + relicLv('leap'); } // 深淵躍遷儀：起始波數上限 + 神器等級
 function abyssSkippedQuizzes(startWave){ return Math.max(0, Math.floor((startWave - 1) / ABYSS_QUIZ_EVERY)); }
+// 無盡深淵：加成每 1 波 +1（不設波數上限），扣掉緩速後與原始速度相加，總和最高 200
 function abyssSpeedBonus(w){
-  const base = Math.min(ABYSS_SPD_CAP, Math.max(0, Math.floor(w)));
-  return Math.max(0, base - Math.max(0, fin(state.up.slow, 0)));
+  return Math.max(0, Math.max(0, Math.floor(w)) - Math.max(0, fin(state.up.slow, 0)));
+}
+// 敵人「原始速度＋加成」（尚未乘波數倍率與場地縮放）：主線不封頂；深淵總和封頂 ABYSS_SPD_CAP
+function enemyRawSpeed(orig, w){
+  const v = orig + enemySpeedBonusFor(w);
+  return abyssActive() ? Math.min(ABYSS_SPD_CAP, v) : v;
 }
 // 敵人基礎移速加成：主線＝關卡加速加成（可被緩速抵銷）；無盡深淵＝每 1 波 +1
 function enemySpeedBonusFor(w){ return abyssActive() ? abyssSpeedBonus(w) : slowedSpeedBonus(run.level); }
 
 // 每關第 1 波 10 隻、第 20 波 20 隻，線性增加（無盡深淵：每波固定 20 隻）
 function waveQuotaFor(w){
-  if(abyssActive()) return ABYSS_QUOTA + Math.floor((Math.max(1, w) - 1) / 50); // 每過 50 波 +1 隻（51 波 21 隻、101 波 22 隻…）
+  if(abyssActive()) return abyssQuotaAt(w); // 每過 50 波 +1 隻（51 波 21 隻、101 波 22 隻…）
   return waveQuotaForBase(w);
 }
 // 怪物血量 = 關卡基礎值（每關 × 係數）× 關內波數成長（20 波內只差 3 倍；無盡深淵：每 10 波 ×10）
@@ -3140,6 +3156,11 @@ function abyssWithdraw(){
 }
 function abyssToggleSettle(){
   if(!abyssActive() || !run.active || run.paused) return;
+  if(!run.settleQueued && !abyssCanSettle()){
+    const need = Math.max(0, ABYSS_SETTLE_MIN_WAVES - (run.wave - run.startWave));
+    toast(`🏁 尚不能結算：需再完成 ${need} 波（或達到歷史最高 ${run.prevBest} 波）`);
+    return;
+  }
   run.settleQueued = !run.settleQueued;
   syncBattleHud();
   toast(run.settleQueued ? '🏁 已預約：本波結束後直接結算' : '已取消預約結算');
@@ -3222,6 +3243,8 @@ function abyssAnswer(choice, btn){
     // 答對鑽石：沿用答題頁公式（15＋連勝加成＋首答 20＋鑽石強化），累積進深淵；不增減連勝
     const gain = 15 + Math.min(90, state.qs.streak) + 20 + gemBoostAmount();
     run.abyssGems = (run.abyssGems || 0) + gain;
+    state.qs.correct = Math.max(0, Math.round(fin(state.qs.correct, 0))) + 1; // 深淵答對也累積累計答對（不影響連勝）
+    save(); syncUI();
     feed.textContent = `答對！+${gain} 💎（深淵累積），對 ${n} 隻小怪各發射 1 枚火球，攻擊與生命 ×${ABYSS_BUFF}（累計 ×${fmtX(run.abyssBuff)}）`;
   } else {
     btn.classList.add('wrong');
@@ -3273,12 +3296,11 @@ function renderAbyssPanel(){
     <p class="sub">波數無限，怪物每 10 波血量 ×10。怪物以第 1 關第 1 波為基礎，只有鋼鐵血量、遠距射程、守護圈使用最後解鎖關卡。每 10 波暫停答題，答對以火球清除小怪並讓攻擊與生命 ×${ABYSS_BUFF}。</p>
     <div class="card">
       <div class="abyssStat"><span>歷史最高波數</span><span>${best}</span></div>
-      <div class="abyssStat"><span>鋼鐵血量／遠距射程／守護圈 依據</span><span>第 ${Math.min(LEVEL_COUNT, state.unlockedLevel)} 關</span></div>
-      <div class="abyssStat"><span>每波怪物數量</span><span>${ABYSS_QUOTA} 隻（每 50 波 +1）</span></div>
+      <div class="abyssStat"><span>目前每波數量</span><span id="abQuota">${abyssQuotaAt(sw)} 隻</span></div>
       <div class="abyssStat"><span>結算鑽石</span><span>每 1 波 1 💎＋答對累積</span></div>
     </div>
     <div class="card">
-      <div style="font-size:13px;font-weight:900;margin-bottom:4px">起始波數（最高 ${maxStart}，為歷史最高的 ${Math.round(ABYSS_START_RATIO*100)}%）</div>
+      <div style="font-size:13px;font-weight:900;margin-bottom:4px">起始波數（最高 ${maxStart}，歷史最高的 ${Math.round(ABYSS_START_RATIO*100)}%${relicLv('leap') > 0 ? ` ＋ 深淵躍遷儀 ${relicLv('leap')}` : ''}）</div>
       <div class="adm-row" style="margin-top:6px">
         <button type="button" class="adm-stepbtn" data-abstep="-10">-10</button>
         <button type="button" class="adm-stepbtn" data-abstep="-1">-1</button>
@@ -3293,6 +3315,7 @@ function renderAbyssPanel(){
   const num = box.querySelector('#abStartNum'), rng = box.querySelector('#abStartRange'), note = box.querySelector('#abStartNote');
   const refresh = ()=>{
     const v = state.abyss.startWave, k = abyssSkippedQuizzes(v);
+    const qe = box.querySelector('#abQuota'); if(qe) qe.textContent = `${abyssQuotaAt(v)} 隻`;
     note.innerHTML = k > 0
       ? `跳過的 ${k} 次答題視為全對：開局攻擊與生命 ×${fmtX(Decimal.pow(ABYSS_BUFF, k))}。`
       : '從第 1 波開始，沒有跳過的答題。';
@@ -3316,7 +3339,7 @@ function openAbyssConfirm(){
   const k = abyssSkippedQuizzes(sw);
   document.getElementById('ovTitle').textContent = '🌀 無盡深淵';
   document.getElementById('ovSub').innerHTML =
-    `從第 <b>${sw}</b> 波開始，每波 ${ABYSS_QUOTA} 隻怪物（每 50 波 +1），血量每 10 波 ×10。<br>` +
+    `從第 <b>${sw}</b> 波開始，目前每波 ${abyssQuotaAt(sw)} 隻怪物（每 50 波 +1），血量每 10 波 ×10。<br>` +
     (k > 0 ? `跳過 ${k} 次答題（視為全對）：攻擊與生命 ×${fmtX(Decimal.pow(ABYSS_BUFF, k))}。<br>` : '') +
     `每 10 波暫停答題，答對清除小怪（王不受影響）並獲得 ×${ABYSS_BUFF} 強化。<br>` +
     `倒下後結算：每 1 波 1 💎，加上答對累積的鑽石（不影響連勝）。`;
@@ -3449,7 +3472,7 @@ function spawnEnemy(){
     y: spy,
     vx: spvx,
     hp, maxHp:hp,
-    spd: ((isBoss ? 11 : 17 * base.spd) + enemySpeedBonusFor(w)) * waveSpeedMulFor(w) * enemySpeedScale(),
+    spd: enemyRawSpeed(isBoss ? 11 : 17 * base.spd, w) * waveSpeedMulFor(w) * enemySpeedScale(),
     r: (isBoss ? 34 : base.r) * sizeMul,   // 判定半徑（子彈、冰刃、光束、爆風、擋牆都用這個）
     vr: (isBoss ? 34 : base.r) * sizeMul * (farMode ? FAR_MONSTER_VISUAL_MUL : 1), // 只用在繪製（圖片、光環、血條），不影響判定
     emoji: isBoss ? (bossRanged ? RANGED_BOSSES : BOSSES)[Math.floor(Math.random()*(bossRanged ? RANGED_BOSSES : BOSSES).length)] : base.emoji,
